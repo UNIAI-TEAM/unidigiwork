@@ -181,20 +181,6 @@ type Candidate = {
   graphDistance: 0 | 1 | 2;
 };
 
-const ENTITY_PRIORITY_BASE: Record<AiContextEntityType, number> = {
-  TASK: 0.6,
-  MEETING: 0.55,
-  WORKSPACE: 0.5,
-  EMAIL: 0.45,
-  DOCUMENT: 0.45,
-  CHAT_CHANNEL: 0.4,
-  MEETING_ARTIFACT: 0.72,
-  PERSON: 0.3,
-  TENANT: 0,
-  WORK_PRODUCT: 0.6,
-  EXECUTION: 0.55,
-  DECISION: 0.75,
-};
 
 export const MEETING_ARTIFACT_LABEL: Record<string, string> = {
   SUMMARY: "Tóm tắt cuộc họp",
