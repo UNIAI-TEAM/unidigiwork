@@ -19,7 +19,7 @@ import {
   type ContextSource,
 } from "@/domain/ai-context/contracts";
 import { parseQueryIntent } from "@/domain/ai-context/query-intent";
-import { rankContextCandidates, CONTEXT_RANKER_VERSION } from "@/domain/ai-context/context-ranker";
+import { rankUnifiedContext, CONTEXT_RANKER_VERSION } from "@/domain/ai-context/context-ranker";
 import {
   computeTemporalFreshness,
   freshnessTag,
