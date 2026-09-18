@@ -92,7 +92,9 @@ function DecisionsPage() {
   const [open, setOpen] = useSidebarState();
   const { t } = useI18n();
   const qc = useQueryClient();
-  const [status, setStatus] = useState<"CANDIDATE" | "CONFIRMED" | "ALL">("CANDIDATE");
+  const { id: focusId, meeting: focusMeeting } = Route.useSearch();
+  const focused = Boolean(focusId || focusMeeting);
+  const [status, setStatus] = useState<"CANDIDATE" | "CONFIRMED" | "ALL">(focused ? "ALL" : "CANDIDATE");
   const [selected, setSelected] = useState<DecisionRow | null>(null);
 
   const fetchDecisions = useServerFn(listDecisions);
@@ -100,7 +102,13 @@ function DecisionsPage() {
     queryKey: ["decisions", status],
     queryFn: () => fetchDecisions({ data: { status, limit: 100 } }),
   });
-  const rows = useMemo(() => data ?? [], [data]);
+  const rows = useMemo(() => {
+    const all = data ?? [];
+    if (focusId) return all.filter((d) => d.id === focusId);
+    if (focusMeeting) return all.filter((d) => d.sourceId === focusMeeting);
+    return all;
+  }, [data, focusId, focusMeeting]);
+
 
   const confirmFn = useServerFn(setDecisionConfirmation);
   const supersedeFn = useServerFn(supersedeDecision);
