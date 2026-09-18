@@ -25,6 +25,10 @@ import {
 } from "@/lib/api/decisions.functions";
 
 export const Route = createFileRoute("/_authenticated/decisions")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    id: typeof s.id === "string" ? s.id : undefined,
+    meeting: typeof s.meeting === "string" ? s.meeting : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Duyệt quyết định — UNIWORK" },
@@ -43,6 +47,7 @@ export const Route = createFileRoute("/_authenticated/decisions")({
   }),
   component: DecisionsPage,
 });
+
 
 const STATUS_LABEL: Record<string, string> = {
   CANDIDATE: "Chờ xác nhận",
