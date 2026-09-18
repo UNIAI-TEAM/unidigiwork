@@ -19,10 +19,7 @@ import {
   type ContextSource,
 } from "@/domain/ai-context/contracts";
 import { parseQueryIntent } from "@/domain/ai-context/query-intent";
-import {
-  rankContextCandidates,
-  CONTEXT_RANKER_VERSION,
-} from "@/domain/ai-context/context-ranker";
+import { rankContextCandidates, CONTEXT_RANKER_VERSION } from "@/domain/ai-context/context-ranker";
 import {
   computeTemporalFreshness,
   freshnessTag,
@@ -34,11 +31,81 @@ type Db = SupabaseClient<any, any, any>;
 
 // Stopword tiếng Việt/Anh thường gặp trong câu hỏi — loại bỏ để lấy từ khoá tra cứu.
 const QUERY_STOPWORDS = new Set([
-  "là","gì","của","có","cho","các","những","và","hay","hoặc","với","về","trong","ngoài","trên","dưới",
-  "bao","nhiêu","nào","ai","khi","thì","này","đó","được","bị","đang","đã","sẽ","cần","phải","tôi","bạn",
-  "chúng","ta","hãy","xin","vui","lòng","một","cái","số","thế","sao","tại","vì","để","theo","từ","đến",
-  "what","is","the","a","an","of","for","to","in","on","and","or","how","many","much","who","when","why",
-  "please","tell","me","my","our","current","status",
+  "là",
+  "gì",
+  "của",
+  "có",
+  "cho",
+  "các",
+  "những",
+  "và",
+  "hay",
+  "hoặc",
+  "với",
+  "về",
+  "trong",
+  "ngoài",
+  "trên",
+  "dưới",
+  "bao",
+  "nhiêu",
+  "nào",
+  "ai",
+  "khi",
+  "thì",
+  "này",
+  "đó",
+  "được",
+  "bị",
+  "đang",
+  "đã",
+  "sẽ",
+  "cần",
+  "phải",
+  "tôi",
+  "bạn",
+  "chúng",
+  "ta",
+  "hãy",
+  "xin",
+  "vui",
+  "lòng",
+  "một",
+  "cái",
+  "số",
+  "thế",
+  "sao",
+  "tại",
+  "vì",
+  "để",
+  "theo",
+  "từ",
+  "đến",
+  "what",
+  "is",
+  "the",
+  "a",
+  "an",
+  "of",
+  "for",
+  "to",
+  "in",
+  "on",
+  "and",
+  "or",
+  "how",
+  "many",
+  "much",
+  "who",
+  "when",
+  "why",
+  "please",
+  "tell",
+  "me",
+  "my",
+  "our",
+  "current",
+  "status",
 ]);
 
 function deriveSearchQueries(raw: string): string[] {
@@ -60,7 +127,6 @@ function deriveSearchQueries(raw: string): string[] {
 }
 
 const SEARCH_TO_GRAPH: Record<string, AiContextEntityType> = {
-
   PROJECT: "WORKSPACE",
   TASK: "TASK",
   MEETING: "MEETING",
@@ -140,7 +206,6 @@ export const MEETING_ARTIFACT_LABEL: Record<string, string> = {
   FOLLOW_UP: "Thư theo dõi",
 };
 
-
 export async function resolveTenantForActor(
   supabase: Db,
   userId: string,
@@ -208,7 +273,8 @@ async function hydrateSelected(
         for (const a of (assignees ?? []) as Array<{ task_id: string }>)
           assigneeCount.set(a.task_id, (assigneeCount.get(a.task_id) ?? 0) + 1);
         for (const t of (tasks ?? []) as Array<Record<string, any>>) {
-          const overdue = t["due_at"] && new Date(t["due_at"]).getTime() < Date.now() && t["status"] !== "DONE";
+          const overdue =
+            t["due_at"] && new Date(t["due_at"]).getTime() < Date.now() && t["status"] !== "DONE";
           put(
             "TASK",
             t["id"],
@@ -237,7 +303,11 @@ async function hydrateSelected(
         .in("id", wsIds)
         .then(({ data }) => {
           for (const w of (data ?? []) as Array<Record<string, any>>)
-            put("WORKSPACE", w["id"], `dự án: ${w["name"]} · phạm vi: ${w["visibility"]} · ${cleanExcerpt(w["description"], 300)}`);
+            put(
+              "WORKSPACE",
+              w["id"],
+              `dự án: ${w["name"]} · phạm vi: ${w["visibility"]} · ${cleanExcerpt(w["description"], 300)}`,
+            );
         }),
     );
   }
@@ -255,7 +325,11 @@ async function hydrateSelected(
             put(
               "MEETING",
               m["id"],
-              [`thời gian: ${m["start_at"]}`, `trạng thái: ${m["status"]}`, m["agenda"] ? `agenda: ${cleanExcerpt(m["agenda"], 400)}` : null]
+              [
+                `thời gian: ${m["start_at"]}`,
+                `trạng thái: ${m["status"]}`,
+                m["agenda"] ? `agenda: ${cleanExcerpt(m["agenda"], 400)}` : null,
+              ]
                 .filter(Boolean)
                 .join(" · "),
             );
@@ -301,7 +375,11 @@ async function hydrateSelected(
         for (const m of (data ?? []) as Array<Record<string, any>>) {
           if (seen.has(m["thread_id"])) continue;
           seen.add(m["thread_id"]);
-          put("EMAIL", m["thread_id"], `tiêu đề: ${m["subject"] ?? ""} · gửi lúc: ${m["sent_at"] ?? ""} · trích: ${cleanExcerpt(m["body"], 400)}`);
+          put(
+            "EMAIL",
+            m["thread_id"],
+            `tiêu đề: ${m["subject"] ?? ""} · gửi lúc: ${m["sent_at"] ?? ""} · trích: ${cleanExcerpt(m["body"], 400)}`,
+          );
         }
       })(),
     );
@@ -325,7 +403,8 @@ async function hydrateSelected(
           if (list.length < 5) list.push(cleanExcerpt(m["body"], 140));
           grouped.set(m["channel_id"], list);
         }
-        for (const [id, msgs] of grouped) put("CHAT_CHANNEL", id, `tin nhắn gần đây: ${msgs.join(" | ")}`);
+        for (const [id, msgs] of grouped)
+          put("CHAT_CHANNEL", id, `tin nhắn gần đây: ${msgs.join(" | ")}`);
       })(),
     );
   }
@@ -383,14 +462,22 @@ async function buildFacts(
 ): Promise<ContextFact[]> {
   if (!workspaceId) return [];
   const nowIso = new Date().toISOString();
-  const base = () => supabase.from("tasks").select("id", { count: "exact", head: true }).eq("tenant_id", tenantId).eq("workspace_id", workspaceId).is("deleted_at", null);
+  const base = () =>
+    supabase
+      .from("tasks")
+      .select("id", { count: "exact", head: true })
+      .eq("tenant_id", tenantId)
+      .eq("workspace_id", workspaceId)
+      .is("deleted_at", null);
   const [overdue, open] = await Promise.all([
     base().lt("due_at", nowIso).neq("status", "DONE"),
     base().neq("status", "DONE"),
   ]);
   const facts: ContextFact[] = [];
-  if (typeof overdue.count === "number") facts.push({ key: "overdueTasks", value: overdue.count, sourceIds: [] });
-  if (typeof open.count === "number") facts.push({ key: "openTasks", value: open.count, sourceIds: [] });
+  if (typeof overdue.count === "number")
+    facts.push({ key: "overdueTasks", value: overdue.count, sourceIds: [] });
+  if (typeof open.count === "number")
+    facts.push({ key: "openTasks", value: open.count, sourceIds: [] });
   return facts;
 }
 
@@ -406,8 +493,14 @@ export async function buildAiContextPack(
   const timings: Record<string, number> = {};
   const failures: string[] = [];
   const requestId = crypto.randomUUID();
-  const maxSources = Math.min(request.maxSources ?? AI_CONTEXT_POLICY.maxSourcesDefault, AI_CONTEXT_POLICY.maxSourcesHard);
-  const maxTokens = Math.min(request.maxTokens ?? AI_CONTEXT_POLICY.maxTokensDefault, AI_CONTEXT_POLICY.maxTokensHard);
+  const maxSources = Math.min(
+    request.maxSources ?? AI_CONTEXT_POLICY.maxSourcesDefault,
+    AI_CONTEXT_POLICY.maxSourcesHard,
+  );
+  const maxTokens = Math.min(
+    request.maxTokens ?? AI_CONTEXT_POLICY.maxTokensDefault,
+    AI_CONTEXT_POLICY.maxTokensHard,
+  );
 
   const tenantId = await resolveTenantForActor(supabase, userId, tenantHint);
   const intent = parseQueryIntent(request.query);
@@ -422,7 +515,15 @@ export async function buildAiContextPack(
     sources: [],
     facts: [],
     ambiguity: null,
-    retrieval: { strategy, query: request.query, resultCount: 0, graphExpansionDepth: 0, truncated: false, timeRange, timings },
+    retrieval: {
+      strategy,
+      query: request.query,
+      resultCount: 0,
+      graphExpansionDepth: 0,
+      truncated: false,
+      timeRange,
+      timings,
+    },
     budget: { estimatedTokens: 0, maxTokens },
     partial: false,
     failures,
@@ -447,7 +548,9 @@ export async function buildAiContextPack(
   const tSearch = Date.now();
   let searchItems: ReturnType<typeof mapRow>[] = [];
   if (request.query.trim().length >= 2) {
-    const entityTypes = (request.requestedEntityTypes ?? intent.entityHints).map((t) => GRAPH_TO_SEARCH[t]);
+    const entityTypes = (request.requestedEntityTypes ?? intent.entityHints).map(
+      (t) => GRAPH_TO_SEARCH[t],
+    );
     // Câu hỏi tự nhiên không khớp LIKE toàn chuỗi → thử lần lượt: câu đầy đủ,
     // cụm từ khoá (bỏ stopword), rồi từng từ khoá dài nhất.
     for (const q of deriveSearchQueries(request.query)) {
@@ -477,7 +580,8 @@ export async function buildAiContextPack(
     const top = searchItems[0]!;
     const second = searchItems[1];
     const strong = top.matchType === "EXACT" || top.matchType === "PREFIX";
-    const close = second && second.entityType === top.entityType && Math.abs(second.score - top.score) < 0.08;
+    const close =
+      second && second.entityType === top.entityType && Math.abs(second.score - top.score) < 0.08;
     if (strong && !close) {
       root = {
         entityType: SEARCH_TO_GRAPH[top.entityType] ?? "WORKSPACE",
@@ -532,7 +636,8 @@ export async function buildAiContextPack(
     if (error) failures.push("WORK_GRAPH");
     else {
       graphDepth = AI_CONTEXT_POLICY.graphDepth;
-      const rels = ((raw ?? {}) as { relationships?: Array<Record<string, any>> }).relationships ?? [];
+      const rels =
+        ((raw ?? {}) as { relationships?: Array<Record<string, any>> }).relationships ?? [];
       // RLS-aware: entity nào actor không thấy sẽ bị loại hoàn toàn (không leak quan hệ).
       const resolved = await resolveWorkEntities(
         supabase,
@@ -626,10 +731,22 @@ export async function buildAiContextPack(
       })
       .map((c) => {
         let priority = ENTITY_PRIORITY_BASE[c.type];
-        if (intent.wantsBlockers && (c.type === "TASK" || c.relationship === "BLOCKS" || c.relationship === "DEPENDS_ON")) priority += 0.2;
-        if (intent.wantsCommunication && (c.type === "EMAIL" || c.type === "CHAT_CHANNEL" || c.type === "MEETING")) priority += 0.2;
+        if (
+          intent.wantsBlockers &&
+          (c.type === "TASK" || c.relationship === "BLOCKS" || c.relationship === "DEPENDS_ON")
+        )
+          priority += 0.2;
+        if (
+          intent.wantsCommunication &&
+          (c.type === "EMAIL" || c.type === "CHAT_CHANNEL" || c.type === "MEETING")
+        )
+          priority += 0.2;
         if (intent.wantsLatestMeeting && c.type === "MEETING") priority += 0.25;
-        if (c.type === "MEETING_ARTIFACT" && (intent.wantsMeetingOutcome || root?.entityType === "MEETING")) priority += 0.3;
+        if (
+          c.type === "MEETING_ARTIFACT" &&
+          (intent.wantsMeetingOutcome || root?.entityType === "MEETING")
+        )
+          priority += 0.3;
         return { ...c, intentPriority: Math.min(1, priority) };
       }),
     rankNow,
@@ -660,7 +777,20 @@ export async function buildAiContextPack(
   const tHydrate = Date.now();
   let excerpts = new Map<string, string>();
   try {
-    excerpts = await hydrateSelected(supabase, tenantId, root ? [{ ...(root as unknown as Candidate), type: root.entityType, id: root.entityId } as Candidate, ...selected] : selected);
+    excerpts = await hydrateSelected(
+      supabase,
+      tenantId,
+      root
+        ? [
+            {
+              ...(root as unknown as Candidate),
+              type: root.entityType,
+              id: root.entityId,
+            } as Candidate,
+            ...selected,
+          ]
+        : selected,
+    );
   } catch {
     failures.push("HYDRATION");
   }
@@ -692,7 +822,16 @@ export async function buildAiContextPack(
     tokens += cost;
     const href = workEntityHref(c.type, c.id);
     const freshness = c.freshness ?? computeTemporalFreshness(c.type, c.updatedAt, rankNow);
-    sources.push({ sourceId, entityType: c.type, entityId: c.id, title: c.title, href, excerpt, updatedAt: c.updatedAt, freshness });
+    sources.push({
+      sourceId,
+      entityType: c.type,
+      entityId: c.id,
+      title: c.title,
+      href,
+      excerpt,
+      updatedAt: c.updatedAt,
+      freshness,
+    });
     entities.push({
       entityType: c.type,
       entityId: c.id,
@@ -709,9 +848,30 @@ export async function buildAiContextPack(
     return true;
   };
 
-  if (root) pushSource({ type: root.entityType, id: root.entityId, title: root.title, updatedAt: root.updatedAt ?? null, relationship: "ROOT", rank: 1 });
+  if (root)
+    pushSource({
+      type: root.entityType,
+      id: root.entityId,
+      title: root.title,
+      updatedAt: root.updatedAt ?? null,
+      relationship: "ROOT",
+      rank: 1,
+    });
   for (const c of selected) {
-    if (!pushSource({ type: c.type, id: c.id, title: c.title, updatedAt: c.updatedAt, snippet: c.snippet, relationship: c.relationship, rank: c.rank, freshness: c.freshness, rankBreakdown: c.rankBreakdown })) break;
+    if (
+      !pushSource({
+        type: c.type,
+        id: c.id,
+        title: c.title,
+        updatedAt: c.updatedAt,
+        snippet: c.snippet,
+        relationship: c.relationship,
+        rank: c.rank,
+        freshness: c.freshness,
+        rankBreakdown: c.rankBreakdown,
+      })
+    )
+      break;
   }
 
   const facts = await buildFacts(
@@ -767,16 +927,24 @@ export const GROUNDED_SYSTEM_PROMPT = [
 export function renderContextForModel(pack: AiContextPack): string {
   const lines: string[] = [];
   if (pack.root) lines.push(`ROOT: ${pack.root.entityType} · ${pack.root.title}`);
-  if (pack.retrieval.timeRange) lines.push(`TIME RANGE: ${pack.retrieval.timeRange.label} (${pack.retrieval.timeRange.from} → ${pack.retrieval.timeRange.to})`);
-  if (pack.facts.length) lines.push(`FACTS: ${pack.facts.map((f) => `${f.key}=${f.value}`).join(", ")}`);
-  if (pack.ambiguity) lines.push(`AMBIGUOUS ROOT CANDIDATES: ${pack.ambiguity.candidates.map((c) => c.title).join(" | ")}`);
+  if (pack.retrieval.timeRange)
+    lines.push(
+      `TIME RANGE: ${pack.retrieval.timeRange.label} (${pack.retrieval.timeRange.from} → ${pack.retrieval.timeRange.to})`,
+    );
+  if (pack.facts.length)
+    lines.push(`FACTS: ${pack.facts.map((f) => `${f.key}=${f.value}`).join(", ")}`);
+  if (pack.ambiguity)
+    lines.push(
+      `AMBIGUOUS ROOT CANDIDATES: ${pack.ambiguity.candidates.map((c) => c.title).join(" | ")}`,
+    );
   if (pack.partial) lines.push(`PARTIAL RETRIEVAL: ${pack.failures.join(",")}`);
   for (const s of pack.sources) {
     lines.push(
       `[SOURCE ${s.sourceId}]\ntype: ${s.entityType}\ntitle: ${s.title}\nupdated: ${s.updatedAt ?? "-"}\nfreshness: ${s.freshness ? `${freshnessTag(s.freshness)} (${s.freshness.level})` : "unknown"}\ncontent: ${s.excerpt}\n[/SOURCE ${s.sourceId}]`,
     );
   }
-  if (!pack.sources.length) lines.push("(không có nguồn nào truy xuất được trong quyền của người dùng)");
+  if (!pack.sources.length)
+    lines.push("(không có nguồn nào truy xuất được trong quyền của người dùng)");
   return lines.join("\n");
 }
 

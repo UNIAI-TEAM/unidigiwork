@@ -47,9 +47,13 @@ describe("context ranker", () => {
     const total = Object.values(RANK_WEIGHTS).reduce((a, b) => a + b, 0);
     expect(total).toBeCloseTo(1, 6);
     const [r] = rankContextCandidates([{ ...base, id: "x", updatedAt: daysAgo(2) }], now);
-    expect(Object.keys(r!.breakdown).sort()).toEqual(
-      ["freshness", "lexical", "priority", "proximity", "relationship"],
-    );
+    expect(Object.keys(r!.breakdown).sort()).toEqual([
+      "freshness",
+      "lexical",
+      "priority",
+      "proximity",
+      "relationship",
+    ]);
     expect(r!.score).toBeGreaterThan(0);
     expect(r!.score).toBeLessThanOrEqual(1);
   });
