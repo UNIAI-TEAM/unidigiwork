@@ -337,3 +337,40 @@ export const linkDecisionToTask = createServerFn({ method: "POST" })
     }
     return { linkId };
   });
+
+/** Tạo quyết định thủ công (luôn ở trạng thái chờ xác nhận — không tự lên sơ đồ). */
+export const createDecision = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        title: z.string().min(1).max(200),
+        detail: z.string().max(4000).nullish(),
+        workspaceId: z.string().uuid().nullish(),
+        decidedAt: z.string().datetime().nullish(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }): Promise<{ id: string }> => {
+    const tenantId = await currentTenantId(context.supabase, context.userId);
+    const { data: row, error } = await context.supabase
+      .from("decisions")
+      .insert({
+        tenant_id: tenantId,
+        workspace_id: data.workspaceId ?? null,
+        title: data.title.trim(),
+        detail: data.detail?.trim() || null,
+        status: "CANDIDATE",
+        origin: "MANUAL",
+        source_type: "MANUAL",
+        decided_at: data.decidedAt ?? new Date().toISOString(),
+        decided_by: context.userId,
+        created_by: context.userId,
+        updated_by: context.userId,
+        evidence: { enteredBy: context.userId, channel: "DECISION_REVIEW_UI" },
+      })
+      .select("id")
+      .single();
+    if (error) mapPgError(error);
+    return { id: (row as any).id as string };
+  });
