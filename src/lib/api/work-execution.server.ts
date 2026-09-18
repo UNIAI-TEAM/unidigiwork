@@ -188,7 +188,6 @@ async function planExecution(
       ]
         .filter(Boolean)
         .join("\n"),
-      providerOptions: { openai: { store: false } },
     });
     // Gate 9: hợp đồng kế hoạch nghiêm ngặt — output dị dạng bị từ chối an toàn.
     const result = parseExecutionPlan(res.text ?? "");
