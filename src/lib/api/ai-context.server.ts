@@ -179,6 +179,8 @@ type Candidate = {
   lexical: number;
   relationship: WorkRelationshipCode | "ROOT" | "SEARCH_MATCH" | null;
   graphDistance: 0 | 1 | 2;
+  /** Ghi đè ưu tiên nền khi cần (vd: quyết định theo trạng thái xác nhận). */
+  intentPriority?: number;
 };
 
 export const MEETING_ARTIFACT_LABEL: Record<string, string> = {
