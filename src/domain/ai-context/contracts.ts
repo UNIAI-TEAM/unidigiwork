@@ -40,6 +40,15 @@ export interface ContextRelationship {
   weight: number;
 }
 
+export interface ContextFreshness {
+  level: "fresh" | "recent" | "aging" | "stale" | "unknown";
+  label: string;
+  description: string;
+  ageDays: number | null;
+  decay: number;
+  halfLifeDays: number;
+}
+
 export interface ContextSource {
   sourceId: string;
   entityType: AiContextEntityType;
@@ -48,6 +57,7 @@ export interface ContextSource {
   href: string;
   excerpt: string;
   updatedAt: string | null;
+  freshness?: ContextFreshness | null;
 }
 
 export interface ContextFact {
