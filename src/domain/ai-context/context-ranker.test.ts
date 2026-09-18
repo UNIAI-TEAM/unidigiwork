@@ -11,7 +11,7 @@ describe("temporal freshness", () => {
     const doc = computeTemporalFreshness("DOCUMENT", daysAgo(10), now);
     expect(chat.decay).toBeLessThan(doc.decay);
     expect(chat.halfLifeDays).toBe(FRESHNESS_HALF_LIFE_DAYS.CHAT_CHANNEL);
-    expect(chat.level).toBe("stale");
+    expect(chat.level).toBe("aging");
     expect(doc.level).toBe("fresh");
   });
 
