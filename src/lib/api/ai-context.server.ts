@@ -608,26 +608,31 @@ export async function buildAiContextPack(
 
   if (timeRange) strategy = strategy === "MIXED" ? "MIXED" : "TIME_FILTERED";
 
-  /* --- PHASE H: ranking + per-type limits + budget --- */
-  const scored = candidates
-    .filter((c) => c.type !== "TENANT")
-    .filter((c) => {
-      if (!timeRange || !c.updatedAt) return true;
-      const ts = new Date(c.updatedAt).getTime();
-      return ts >= new Date(timeRange.from).getTime() && ts <= new Date(timeRange.to).getTime();
-    })
-    .map((c) => {
-      const relWeight = c.relationship && c.relationship in RELATIONSHIP_WEIGHTS ? RELATIONSHIP_WEIGHTS[c.relationship as WorkRelationshipCode] : 0.25;
-      let priority = ENTITY_PRIORITY_BASE[c.type];
-      if (intent.wantsBlockers && (c.type === "TASK" || c.relationship === "BLOCKS" || c.relationship === "DEPENDS_ON")) priority += 0.2;
-      if (intent.wantsCommunication && (c.type === "EMAIL" || c.type === "CHAT_CHANNEL" || c.type === "MEETING")) priority += 0.2;
-      if (intent.wantsLatestMeeting && c.type === "MEETING") priority += 0.25;
-      if (c.type === "MEETING_ARTIFACT" && (intent.wantsMeetingOutcome || root?.entityType === "MEETING")) priority += 0.3;
-      const proximity = c.graphDistance === 1 ? 0.35 : 0.1;
-      const rank = c.lexical * 0.35 + relWeight * 0.25 + priority * 0.25 + proximity + recencyBoost(c.updatedAt) * 0.6;
-      return { ...c, rank };
-    })
-    .sort((a, b) => b.rank - a.rank);
+  /* --- PHASE H: ranking (module riêng, giải thích được) + per-type limits + budget --- */
+  const rankNow = new Date();
+  const scored = rankContextCandidates(
+    candidates
+      .filter((c) => c.type !== "TENANT")
+      .filter((c) => {
+        if (!timeRange || !c.updatedAt) return true;
+        const ts = new Date(c.updatedAt).getTime();
+        return ts >= new Date(timeRange.from).getTime() && ts <= new Date(timeRange.to).getTime();
+      })
+      .map((c) => {
+        let priority = ENTITY_PRIORITY_BASE[c.type];
+        if (intent.wantsBlockers && (c.type === "TASK" || c.relationship === "BLOCKS" || c.relationship === "DEPENDS_ON")) priority += 0.2;
+        if (intent.wantsCommunication && (c.type === "EMAIL" || c.type === "CHAT_CHANNEL" || c.type === "MEETING")) priority += 0.2;
+        if (intent.wantsLatestMeeting && c.type === "MEETING") priority += 0.25;
+        if (c.type === "MEETING_ARTIFACT" && (intent.wantsMeetingOutcome || root?.entityType === "MEETING")) priority += 0.3;
+        return { ...c, intentPriority: Math.min(1, priority) };
+      }),
+    rankNow,
+  ).map((r) => ({
+    ...r.candidate,
+    rank: r.score,
+    freshness: r.freshness,
+    rankBreakdown: r.breakdown as unknown as Record<string, number>,
+  }));
 
   const perType = new Map<AiContextEntityType, number>();
   const seen = new Set<string>();
