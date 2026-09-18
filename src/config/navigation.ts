@@ -28,6 +28,7 @@ import {
   Store,
   Sparkles,
   ClipboardList,
+  Gavel,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { Key } from "@/lib/i18n";
