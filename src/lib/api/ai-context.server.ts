@@ -772,7 +772,7 @@ export function renderContextForModel(pack: AiContextPack): string {
   if (pack.partial) lines.push(`PARTIAL RETRIEVAL: ${pack.failures.join(",")}`);
   for (const s of pack.sources) {
     lines.push(
-      `[SOURCE ${s.sourceId}]\ntype: ${s.entityType}\ntitle: ${s.title}\nupdated: ${s.updatedAt ?? "-"}\ncontent: ${s.excerpt}\n[/SOURCE ${s.sourceId}]`,
+      `[SOURCE ${s.sourceId}]\ntype: ${s.entityType}\ntitle: ${s.title}\nupdated: ${s.updatedAt ?? "-"}\nfreshness: ${s.freshness ? `${freshnessTag(s.freshness)} (${s.freshness.level})` : "unknown"}\ncontent: ${s.excerpt}\n[/SOURCE ${s.sourceId}]`,
     );
   }
   if (!pack.sources.length) lines.push("(không có nguồn nào truy xuất được trong quyền của người dùng)");
