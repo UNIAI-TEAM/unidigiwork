@@ -1,5 +1,6 @@
 // Meeting Intelligence V1 — biên bản trực tiếp + tóm tắt AI có nguồn trích dẫn.
 import { useMemo, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { usePanelCollapse } from "@/hooks/use-panel-collapse";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
