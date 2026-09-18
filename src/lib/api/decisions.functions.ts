@@ -362,7 +362,7 @@ export const createDecision = createServerFn({ method: "POST" })
         detail: data.detail?.trim() || null,
         status: "CANDIDATE",
         origin: "MANUAL",
-        source_type: "MANUAL",
+        source_type: null,
         decided_at: data.decidedAt ?? new Date().toISOString(),
         decided_by: context.userId,
         created_by: context.userId,
