@@ -18,7 +18,7 @@ import {
 } from "@/domain/ai-copilot/contracts";
 
 const ACTIVE_TENANT_COOKIE = "uniwork_active_tenant";
-const MODEL = "openai/gpt-6-astra";
+const CONSUMER = "MY_AI" as const;
 
 const CopilotSchema = z.object({
   query: z.string().min(2).max(500),
