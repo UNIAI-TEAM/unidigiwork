@@ -332,9 +332,11 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
     },
   });
 
+  const [extractResult, setExtractResult] = useState<{ created: number; total: number } | null>(null);
   const extractDecisions = useMutation({
     mutationFn: () => extractMeetingDecisions({ data: { meetingId } }),
-    onSuccess: (r: { created: number; skipped: number; total: number }) => {
+    onSuccess: (r: { created: number; skipped: number; total: number; decisionIds: string[] }) => {
+      setExtractResult({ created: r.created, total: r.total });
       toast.success(
         r.created > 0
           ? `Đã ghi ${r.created} quyết định vào danh mục chờ xác nhận.`
@@ -345,6 +347,7 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
       toast.error(err instanceof Error ? err.message : "Không ghi được quyết định.");
     },
   });
+
 
 
 
