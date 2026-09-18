@@ -42,6 +42,7 @@ const KINDS: SearchKind[] = [
   "artifact",
   "document",
   "workproduct",
+  "decision",
   "email",
   "chat",
   "person",
@@ -111,6 +112,12 @@ const TYPE_META: Record<
     icon: FileText,
     chip: "bg-violet-500/15 text-violet-500 border-violet-500/30",
     iconBg: "bg-violet-500/15 text-violet-500",
+  },
+  decision: {
+    label: "Quyết định",
+    icon: Gavel,
+    chip: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30",
+    iconBg: "bg-emerald-500/15 text-emerald-600",
   },
   document: {
     label: "Tài liệu",
