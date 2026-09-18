@@ -170,11 +170,12 @@ async function planExecution(
     { order: 3, summary: "Đối chiếu với tiêu chí nghiệm thu", needsAction: false },
   ];
   try {
-    const { createLovableResponsesProvider } = await import("@/lib/ai-gateway.server");
-    const provider = createLovableResponsesProvider(apiKey);
-    const res = await generateText({
-      model: provider.responses(ORCHESTRATOR_MODEL),
+    const { callAiConsumer } = await import("./ai-consumer.server");
+    const res = await callAiConsumer({
+      consumer: "EXECUTIVE",
+      modelOverride: ORCHESTRATOR_MODEL,
       system: PLAN_SYSTEM,
+      apiKey,
       prompt: [
         `CÔNG VIỆC: ${spec.title}`,
         spec.description ? `MÔ TẢ: ${spec.description}` : "",
@@ -187,7 +188,6 @@ async function planExecution(
       ]
         .filter(Boolean)
         .join("\n"),
-      providerOptions: { openai: { store: false } },
     });
     // Gate 9: hợp đồng kế hoạch nghiêm ngặt — output dị dạng bị từ chối an toàn.
     const result = parseExecutionPlan(res.text ?? "");
