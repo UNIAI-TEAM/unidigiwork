@@ -140,6 +140,16 @@ export const listDecisionLinks = createServerFn({ method: "POST" })
     });
   });
 
+function stringifySnapshot(raw: unknown): Record<string, string | null> {
+  const out: Record<string, string | null> = {};
+  if (raw && typeof raw === "object") {
+    for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+      out[k] = v === null || v === undefined ? null : typeof v === "string" ? v : JSON.stringify(v);
+    }
+  }
+  return out;
+}
+
 export interface DecisionRevisionRow {
   id: string;
   decisionId: string;
@@ -148,7 +158,7 @@ export interface DecisionRevisionRow {
   rowVersion: number;
   changeKind: "CREATED" | "UPDATED";
   changedFields: string[];
-  snapshot: Record<string, unknown>;
+  snapshot: Record<string, string | null>;
   changedByName: string | null;
   changedAt: string;
   isCurrent: boolean;
@@ -200,7 +210,7 @@ export const listDecisionRevisions = createServerFn({ method: "POST" })
         rowVersion: r.row_version,
         changeKind: r.change_kind,
         changedFields: r.changed_fields ?? [],
-        snapshot: (r.snapshot ?? {}) as Record<string, unknown>,
+        snapshot: stringifySnapshot(r.snapshot),
         changedByName: r.changed_by ? (nameById.get(r.changed_by) ?? null) : null,
         changedAt: r.changed_at,
         isCurrent: d ? d.row_version === r.row_version : false,
