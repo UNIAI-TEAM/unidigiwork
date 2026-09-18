@@ -92,6 +92,7 @@ export interface AiContextPack {
     truncated: boolean;
     timeRange?: { from: string; to: string; label: string } | null;
     timings: Record<string, number>;
+    rankerVersion?: string;
   };
   budget: { estimatedTokens: number; maxTokens: number };
   partial: boolean;
