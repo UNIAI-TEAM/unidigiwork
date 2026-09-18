@@ -332,6 +332,22 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
     },
   });
 
+  const extractDecisions = useMutation({
+    mutationFn: () => extractMeetingDecisions({ data: { meetingId } }),
+    onSuccess: (r: { created: number; skipped: number; total: number }) => {
+      toast.success(
+        r.created > 0
+          ? `Đã ghi ${r.created} quyết định vào danh mục chờ xác nhận.`
+          : "Tất cả quyết định trong biên bản đã có trong danh mục.",
+      );
+    },
+    onError: (err: unknown) => {
+      toast.error(err instanceof Error ? err.message : "Không ghi được quyết định.");
+    },
+  });
+
+
+
   const invalidateTranscript = () => {
     void queryClient.invalidateQueries({ queryKey: ["meeting-transcript", meetingId] });
   };
