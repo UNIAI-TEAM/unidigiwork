@@ -98,6 +98,12 @@ export function cleanExcerpt(raw: unknown, cap: number = AI_CONTEXT_POLICY.excer
   return text.length > cap ? `${text.slice(0, cap)}…` : text;
 }
 
+type ScoredCandidate = Candidate & {
+  rank: number;
+  freshness: TemporalFreshness;
+  rankBreakdown: Record<string, number>;
+};
+
 type Candidate = {
   type: AiContextEntityType;
   id: string;
