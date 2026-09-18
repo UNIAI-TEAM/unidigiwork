@@ -464,7 +464,7 @@ function SearchPage() {
                               <CalendarIcon className="h-3.5 w-3.5" /> {fmtDate(r.occurredAt)}
                             </span>
                             <FreshnessBadge
-                              entityType={r.entityType}
+                              entityType={r.entityType === "PROJECT" ? "WORKSPACE" : r.entityType}
                               updatedAt={r.occurredAt}
                               showTime={false}
                             />
