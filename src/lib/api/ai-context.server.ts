@@ -746,6 +746,39 @@ export async function buildAiContextPack(
 
   if (timeRange) strategy = strategy === "MIXED" ? "MIXED" : "TIME_FILTERED";
 
+  /* --- PHASE G2: ưu tiên quyết định theo trạng thái xác nhận ---
+     Đề xuất AI phải dựa trên điều hành thực tế: quyết định ĐÃ XÁC NHẬN đứng
+     trước mọi bản ghi công việc; quyết định chờ xác nhận bị hạ mạnh để không
+     dẫn dắt câu trả lời. (Trên Work Graph chỉ có quyết định đã xác nhận; luồng
+     tìm kiếm có thể trả cả bản chờ, nên cần đọc trạng thái thật.) */
+  const decisionCandidates = candidates.filter((c) => c.type === "DECISION");
+  if (decisionCandidates.length) {
+    const tDecision = Date.now();
+    const { data: dRows, error: dErr } = await supabase
+      .from("decisions")
+      .select("id,status")
+      .eq("tenant_id", tenantId)
+      .in(
+        "id",
+        decisionCandidates.map((c) => c.id),
+      );
+    timings["decisionStatus"] = Date.now() - tDecision;
+    if (dErr) failures.push("DECISION_STATUS");
+    else {
+      const statusById = new Map(
+        ((dRows ?? []) as Array<Record<string, any>>).map((d) => [
+          String(d["id"]),
+          String(d["status"]),
+        ]),
+      );
+      for (const c of decisionCandidates) {
+        const st = statusById.get(c.id);
+        // Không đọc được trạng thái → coi như chưa xác nhận, an toàn trước.
+        c.intentPriority = st === "CONFIRMED" ? 1 : st === "SUPERSEDED" ? 0.55 : 0.15;
+      }
+    }
+  }
+
   /* --- PHASE H: ranking (module riêng, giải thích được) + per-type limits + budget --- */
   const rankNow = new Date();
   const eligible = candidates
