@@ -10179,6 +10179,14 @@ export type Database = {
         Args: { _id: string; _seconds: number; _worker: string }
         Returns: boolean
       }
+      extract_decisions_from_meeting: {
+        Args: { _meeting_id: string }
+        Returns: {
+          created: number
+          skipped: number
+          total: number
+        }[]
+      }
       fail_meeting_recording: {
         Args: { _error: string; _recording_id: string }
         Returns: {

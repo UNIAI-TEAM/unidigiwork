@@ -78,6 +78,13 @@
       "when": 1789714333258,
       "tag": "0010_decision_revisions_history",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1789718776477,
+      "tag": "0011_extract_decisions_from_meeting",
+      "breakpoints": true
     }
   ]
 }

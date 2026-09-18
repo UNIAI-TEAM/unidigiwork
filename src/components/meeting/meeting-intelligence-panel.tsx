@@ -156,6 +156,7 @@ function TranscriptImportStatusCard({
 import {
   confirmMeetingActionItem,
   dismissMeetingActionItem,
+  extractMeetingDecisions,
   generateMeetingSummary,
   getMeetingSummary,
   getMeetingSummaryProgress,
@@ -330,6 +331,22 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
       toast.error(message);
     },
   });
+
+  const extractDecisions = useMutation({
+    mutationFn: () => extractMeetingDecisions({ data: { meetingId } }),
+    onSuccess: (r: { created: number; skipped: number; total: number }) => {
+      toast.success(
+        r.created > 0
+          ? `Đã ghi ${r.created} quyết định vào danh mục chờ xác nhận.`
+          : "Tất cả quyết định trong biên bản đã có trong danh mục.",
+      );
+    },
+    onError: (err: unknown) => {
+      toast.error(err instanceof Error ? err.message : "Không ghi được quyết định.");
+    },
+  });
+
+
 
   const invalidateTranscript = () => {
     void queryClient.invalidateQueries({ queryKey: ["meeting-transcript", meetingId] });
@@ -589,9 +606,26 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
 
           {summary.decisions.length > 0 && (
             <div className="space-y-2">
-              <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                <Gavel className="h-3 w-3" /> Quyết định
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                  <Gavel className="h-3 w-3" /> Quyết định
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-6 gap-1 text-[10px]"
+                  disabled={extractDecisions.isPending}
+                  onClick={() => extractDecisions.mutate()}
+                >
+                  {extractDecisions.isPending ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Gavel className="h-3 w-3" />
+                  )}
+                  Ghi vào danh mục Quyết định
+                </Button>
               </div>
+
               {summary.decisions.map((d, i) => (
                 <div key={i} className="rounded-md border border-border bg-background p-2">
                   <div className="flex items-start justify-between gap-2">
