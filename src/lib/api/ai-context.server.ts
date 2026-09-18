@@ -966,6 +966,7 @@ export const GROUNDED_SYSTEM_PROMPT = [
   "Nếu không có MEETING_ARTIFACT nào cho cuộc họp được hỏi, hãy nói rõ cuộc họp chưa có biên bản/tóm tắt AI thay vì tự suy luận.",
   "Mỗi khẳng định về quyết định, việc cần làm hay rủi ro phải trích dẫn đúng sourceId của artifact tương ứng.",
   "Mỗi nguồn có trường freshness (Mới / Khá mới / Có thể đã thay đổi / Có thể lỗi thời). Ưu tiên nguồn mới hơn khi các nguồn mâu thuẫn, và nói rõ khi kết luận dựa trên nguồn có thể đã lỗi thời.",
+  "Quyết định có trạng thái 'Đã xác nhận' là điều hành thực tế của tổ chức: khi liên quan, hãy trả lời dựa trên các quyết định đó TRƯỚC, rồi mới đến bản ghi công việc; quyết định 'Chờ xác nhận' chỉ được nhắc tới như đề xuất chưa chốt, không dùng làm căn cứ kết luận.",
   "Trả lời ngắn gọn, đúng ngôn ngữ của câu hỏi.",
   'Chỉ trả về JSON hợp lệ dạng {"answer": string, "citations": [{"sourceId": string}]} — không kèm markdown fence.',
 ].join("\n");
