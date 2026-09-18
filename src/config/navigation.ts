@@ -28,6 +28,7 @@ import {
   Store,
   Sparkles,
   ClipboardList,
+  Gavel,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { Key } from "@/lib/i18n";
@@ -308,6 +309,16 @@ export const NAV_ITEMS: NavItem[] = [
     match: ["/work-catalog"],
     visibility: "everyone",
     order: 3,
+  },
+  {
+    id: "decisions",
+    labelKey: "nav.decisions",
+    icon: Gavel,
+    href: "/decisions",
+    group: "automation",
+    match: ["/decisions"],
+    visibility: "everyone",
+    order: 3.5,
   },
   {
     id: "ai-market",

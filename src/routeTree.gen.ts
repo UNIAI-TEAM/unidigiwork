@@ -55,6 +55,7 @@ import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/h
 import { Route as AuthenticatedHelpRouteImport } from './routes/_authenticated/help'
 import { Route as AuthenticatedEmailRouteImport } from './routes/_authenticated/email'
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
+import { Route as AuthenticatedDecisionsRouteImport } from './routes/_authenticated/decisions'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/chat'
 import { Route as AuthenticatedCeoRouteImport } from './routes/_authenticated/ceo'
@@ -378,6 +379,11 @@ const AuthenticatedEmailRoute = AuthenticatedEmailRouteImport.update({
 const AuthenticatedDocumentsRoute = AuthenticatedDocumentsRouteImport.update({
   id: '/documents',
   path: '/documents',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDecisionsRoute = AuthenticatedDecisionsRouteImport.update({
+  id: '/decisions',
+  path: '/decisions',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
@@ -913,6 +919,7 @@ export interface FileRoutesByFullPath {
   '/ceo': typeof AuthenticatedCeoRoute
   '/chat': typeof AuthenticatedChatRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/decisions': typeof AuthenticatedDecisionsRoute
   '/documents': typeof AuthenticatedDocumentsRouteWithChildren
   '/email': typeof AuthenticatedEmailRoute
   '/help': typeof AuthenticatedHelpRoute
@@ -1049,6 +1056,7 @@ export interface FileRoutesByTo {
   '/ceo': typeof AuthenticatedCeoRoute
   '/chat': typeof AuthenticatedChatRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/decisions': typeof AuthenticatedDecisionsRoute
   '/documents': typeof AuthenticatedDocumentsRouteWithChildren
   '/email': typeof AuthenticatedEmailRoute
   '/help': typeof AuthenticatedHelpRoute
@@ -1189,6 +1197,7 @@ export interface FileRoutesById {
   '/_authenticated/ceo': typeof AuthenticatedCeoRoute
   '/_authenticated/chat': typeof AuthenticatedChatRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/decisions': typeof AuthenticatedDecisionsRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRouteWithChildren
   '/_authenticated/email': typeof AuthenticatedEmailRoute
   '/_authenticated/help': typeof AuthenticatedHelpRoute
@@ -1329,6 +1338,7 @@ export interface FileRouteTypes {
     | '/ceo'
     | '/chat'
     | '/dashboard'
+    | '/decisions'
     | '/documents'
     | '/email'
     | '/help'
@@ -1465,6 +1475,7 @@ export interface FileRouteTypes {
     | '/ceo'
     | '/chat'
     | '/dashboard'
+    | '/decisions'
     | '/documents'
     | '/email'
     | '/help'
@@ -1604,6 +1615,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ceo'
     | '/_authenticated/chat'
     | '/_authenticated/dashboard'
+    | '/_authenticated/decisions'
     | '/_authenticated/documents'
     | '/_authenticated/email'
     | '/_authenticated/help'
@@ -2085,6 +2097,13 @@ declare module '@tanstack/react-router' {
       path: '/documents'
       fullPath: '/documents'
       preLoaderRoute: typeof AuthenticatedDocumentsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/decisions': {
+      id: '/_authenticated/decisions'
+      path: '/decisions'
+      fullPath: '/decisions'
+      preLoaderRoute: typeof AuthenticatedDecisionsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dashboard': {
@@ -2873,6 +2892,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCeoRoute: typeof AuthenticatedCeoRoute
   AuthenticatedChatRoute: typeof AuthenticatedChatRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedDecisionsRoute: typeof AuthenticatedDecisionsRoute
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRouteWithChildren
   AuthenticatedEmailRoute: typeof AuthenticatedEmailRoute
   AuthenticatedHelpRoute: typeof AuthenticatedHelpRoute
@@ -2923,6 +2943,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCeoRoute: AuthenticatedCeoRoute,
   AuthenticatedChatRoute: AuthenticatedChatRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedDecisionsRoute: AuthenticatedDecisionsRoute,
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRouteWithChildren,
   AuthenticatedEmailRoute: AuthenticatedEmailRoute,
   AuthenticatedHelpRoute: AuthenticatedHelpRoute,
