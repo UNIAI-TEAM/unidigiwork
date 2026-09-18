@@ -421,6 +421,39 @@ async function hydrateSelected(
     );
   }
 
+  // DECISION: chỉ quyết định đã xác nhận mới tồn tại trên Work Graph; hydrate
+  // đúng trạng thái xác nhận từ bảng nguồn để AI biết đây là kết luận chính thức.
+  const decisionIds = byType.get("DECISION") ?? [];
+  if (decisionIds.length) {
+    jobs.push(
+      supabase
+        .from("decisions")
+        .select(
+          "id,title,detail,status,origin,source_type,source_id,decided_at,confirmed_at,superseded_by",
+        )
+        .eq("tenant_id", tenantId)
+        .in("id", decisionIds)
+        .then(({ data }) => {
+          for (const d of (data ?? []) as Array<Record<string, any>>)
+            put(
+              "DECISION",
+              d["id"],
+              [
+                `trạng thái: ${DECISION_STATUS_LABEL[String(d["status"])] ?? d["status"]}`,
+                d["confirmed_at"] ? `xác nhận lúc: ${d["confirmed_at"]}` : "chưa xác nhận",
+                d["decided_at"] ? `quyết định lúc: ${d["decided_at"]}` : null,
+                `nguồn: ${d["origin"] ?? "-"}${d["source_type"] ? `/${d["source_type"]}` : ""}`,
+                d["superseded_by"] ? `đã bị thay thế bởi: ${d["superseded_by"]}` : null,
+                `nội dung: ${cleanExcerpt(d["title"], 200)}`,
+                d["detail"] ? `chi tiết: ${cleanExcerpt(d["detail"], 400)}` : null,
+              ]
+                .filter(Boolean)
+                .join(" · "),
+            );
+        }),
+    );
+  }
+
   const personIds = byType.get("PERSON") ?? [];
   if (personIds.length) {
     jobs.push(
