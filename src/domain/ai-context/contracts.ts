@@ -31,6 +31,8 @@ export interface ContextEntity {
   updatedAt?: string | null;
   href: string;
   sourceRank: number;
+  freshness?: ContextFreshness | null;
+  rankBreakdown?: Record<string, number> | null;
 }
 
 export interface ContextRelationship {
@@ -38,6 +40,15 @@ export interface ContextRelationship {
   to: { type: AiContextEntityType; id: string };
   relationship: WorkRelationshipCode;
   weight: number;
+}
+
+export interface ContextFreshness {
+  level: "fresh" | "recent" | "aging" | "stale" | "unknown";
+  label: string;
+  description: string;
+  ageDays: number | null;
+  decay: number;
+  halfLifeDays: number;
 }
 
 export interface ContextSource {
@@ -48,6 +59,7 @@ export interface ContextSource {
   href: string;
   excerpt: string;
   updatedAt: string | null;
+  freshness?: ContextFreshness | null;
 }
 
 export interface ContextFact {
@@ -80,6 +92,7 @@ export interface AiContextPack {
     truncated: boolean;
     timeRange?: { from: string; to: string; label: string } | null;
     timings: Record<string, number>;
+    rankerVersion?: string;
   };
   budget: { estimatedTokens: number; maxTokens: number };
   partial: boolean;
