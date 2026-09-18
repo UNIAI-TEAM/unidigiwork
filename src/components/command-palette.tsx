@@ -29,6 +29,7 @@ import {
   CreditCard,
   Briefcase,
   Loader2,
+  Gavel,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -65,6 +66,7 @@ const KIND_ICON: Record<SearchKind, LucideIcon> = {
   meeting: Video,
   artifact: Sparkles,
   workproduct: FileText,
+  decision: Gavel,
   document: FileText,
   email: Mail,
   chat: MessageSquare,
@@ -77,6 +79,7 @@ const KIND_LABEL_KEY: Record<SearchKind, Key> = {
   meeting: "cmd.kind.meeting",
   artifact: "cmd.kind.artifact",
   workproduct: "cmd.kind.workproduct",
+  decision: "cmd.kind.decision",
   document: "cmd.kind.document",
   email: "cmd.kind.email",
   chat: "cmd.kind.chat",
