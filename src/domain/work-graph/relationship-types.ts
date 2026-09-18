@@ -13,6 +13,7 @@ export const WORK_ENTITY_TYPES = [
   "MEETING_ARTIFACT",
   "WORK_PRODUCT",
   "EXECUTION",
+  "DECISION",
 ] as const;
 export type WorkEntityType = (typeof WORK_ENTITY_TYPES)[number];
 
@@ -113,6 +114,13 @@ export const RELATIONSHIP_RULES: readonly RelationshipRule[] = [
   { code: "PRODUCES", source: "EXECUTION", target: "WORK_PRODUCT", userCreatable: false },
   { code: "BELONGS_TO", source: "EXECUTION", target: "WORKSPACE", userCreatable: false },
   { code: "PERFORMS", source: "PERSON", target: "EXECUTION", userCreatable: false },
+  // Decision authority (decisions / decision_links) — only confirmed facts are projected.
+  { code: "BELONGS_TO", source: "DECISION", target: "WORKSPACE", userCreatable: false },
+  { code: "CREATED_BY", source: "PERSON", target: "DECISION", userCreatable: false },
+  { code: "GENERATES", source: "MEETING", target: "DECISION", userCreatable: false },
+  { code: "REALIZED_AS", source: "MEETING_ARTIFACT", target: "DECISION", userCreatable: false },
+  { code: "REALIZED_AS", source: "TASK", target: "DECISION", userCreatable: false },
+  { code: "REALIZED_AS", source: "WORK_PRODUCT", target: "DECISION", userCreatable: false },
 ];
 
 export function isRelationshipAllowed(
@@ -203,6 +211,7 @@ const ENTITY_LABELS: Record<WorkEntityType, { vi: string; en: string }> = {
   MEETING_ARTIFACT: { vi: "Kết quả cuộc họp", en: "Meeting artifact" },
   WORK_PRODUCT: { vi: "Kết quả công việc", en: "Work product" },
   EXECUTION: { vi: "Lượt thực thi", en: "Execution" },
+  DECISION: { vi: "Quyết định", en: "Decision" },
 };
 
 export function entityTypeLabel(type: string, lang: "vi" | "en" = "vi"): string {
