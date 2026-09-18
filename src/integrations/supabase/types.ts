@@ -1957,6 +1957,50 @@ export type Database = {
           },
         ]
       }
+      decision_revisions: {
+        Row: {
+          change_kind: string
+          changed_at: string
+          changed_by: string | null
+          changed_fields: string[]
+          decision_id: string
+          id: string
+          row_version: number
+          snapshot: Json
+          tenant_id: string
+        }
+        Insert: {
+          change_kind: string
+          changed_at?: string
+          changed_by?: string | null
+          changed_fields?: string[]
+          decision_id: string
+          id?: string
+          row_version: number
+          snapshot: Json
+          tenant_id: string
+        }
+        Update: {
+          change_kind?: string
+          changed_at?: string
+          changed_by?: string | null
+          changed_fields?: string[]
+          decision_id?: string
+          id?: string
+          row_version?: number
+          snapshot?: Json
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "decision_revisions_decision_id_fkey"
+            columns: ["decision_id"]
+            isOneToOne: false
+            referencedRelation: "decisions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       decisions: {
         Row: {
           confirmed_at: string | null
