@@ -8,7 +8,7 @@ import { RELATIONSHIP_WEIGHTS, type AiContextEntityType } from "./contracts";
 import type { QueryIntent } from "./query-intent";
 import { computeTemporalFreshness, type TemporalFreshness } from "./temporal-freshness";
 
-export const CONTEXT_RANKER_VERSION = "ranker-v4-recency";
+export const CONTEXT_RANKER_VERSION = "ranker-v5-decision-first";
 
 export type RankRelationship = WorkRelationshipCode | "ROOT" | "SEARCH_MATCH" | null;
 
@@ -91,7 +91,10 @@ export const ENTITY_PRIORITY_BASE: Record<AiContextEntityType, number> = {
   TENANT: 0,
   WORK_PRODUCT: 0.6,
   EXECUTION: 0.55,
-  DECISION: 0.75,
+  // Quyết định (đã xác nhận) là authority điều hành cao nhất — đứng TRƯỚC mọi
+  // bản ghi công việc. Tầng truy xuất hạ ưu tiên quyết định chưa xác nhận
+  // bằng intentPriority, nên mức nền này áp cho quyết định đã chốt.
+  DECISION: 0.95,
 };
 
 const clamp01 = (n: number) => Math.min(1, Math.max(0, n));

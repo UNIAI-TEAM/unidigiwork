@@ -179,6 +179,8 @@ type Candidate = {
   lexical: number;
   relationship: WorkRelationshipCode | "ROOT" | "SEARCH_MATCH" | null;
   graphDistance: 0 | 1 | 2;
+  /** Ghi đè ưu tiên nền khi cần (vd: quyết định theo trạng thái xác nhận). */
+  intentPriority?: number;
 };
 
 export const MEETING_ARTIFACT_LABEL: Record<string, string> = {
@@ -744,6 +746,39 @@ export async function buildAiContextPack(
 
   if (timeRange) strategy = strategy === "MIXED" ? "MIXED" : "TIME_FILTERED";
 
+  /* --- PHASE G2: ưu tiên quyết định theo trạng thái xác nhận ---
+     Đề xuất AI phải dựa trên điều hành thực tế: quyết định ĐÃ XÁC NHẬN đứng
+     trước mọi bản ghi công việc; quyết định chờ xác nhận bị hạ mạnh để không
+     dẫn dắt câu trả lời. (Trên Work Graph chỉ có quyết định đã xác nhận; luồng
+     tìm kiếm có thể trả cả bản chờ, nên cần đọc trạng thái thật.) */
+  const decisionCandidates = candidates.filter((c) => c.type === "DECISION");
+  if (decisionCandidates.length) {
+    const tDecision = Date.now();
+    const { data: dRows, error: dErr } = await supabase
+      .from("decisions")
+      .select("id,status")
+      .eq("tenant_id", tenantId)
+      .in(
+        "id",
+        decisionCandidates.map((c) => c.id),
+      );
+    timings["decisionStatus"] = Date.now() - tDecision;
+    if (dErr) failures.push("DECISION_STATUS");
+    else {
+      const statusById = new Map(
+        ((dRows ?? []) as Array<Record<string, any>>).map((d) => [
+          String(d["id"]),
+          String(d["status"]),
+        ]),
+      );
+      for (const c of decisionCandidates) {
+        const st = statusById.get(c.id);
+        // Không đọc được trạng thái → coi như chưa xác nhận, an toàn trước.
+        c.intentPriority = st === "CONFIRMED" ? 1 : st === "SUPERSEDED" ? 0.55 : 0.15;
+      }
+    }
+  }
+
   /* --- PHASE H: ranking (module riêng, giải thích được) + per-type limits + budget --- */
   const rankNow = new Date();
   const eligible = candidates
@@ -931,6 +966,7 @@ export const GROUNDED_SYSTEM_PROMPT = [
   "Nếu không có MEETING_ARTIFACT nào cho cuộc họp được hỏi, hãy nói rõ cuộc họp chưa có biên bản/tóm tắt AI thay vì tự suy luận.",
   "Mỗi khẳng định về quyết định, việc cần làm hay rủi ro phải trích dẫn đúng sourceId của artifact tương ứng.",
   "Mỗi nguồn có trường freshness (Mới / Khá mới / Có thể đã thay đổi / Có thể lỗi thời). Ưu tiên nguồn mới hơn khi các nguồn mâu thuẫn, và nói rõ khi kết luận dựa trên nguồn có thể đã lỗi thời.",
+  "Quyết định có trạng thái 'Đã xác nhận' là điều hành thực tế của tổ chức: khi liên quan, hãy trả lời dựa trên các quyết định đó TRƯỚC, rồi mới đến bản ghi công việc; quyết định 'Chờ xác nhận' chỉ được nhắc tới như đề xuất chưa chốt, không dùng làm căn cứ kết luận.",
   "Trả lời ngắn gọn, đúng ngôn ngữ của câu hỏi.",
   'Chỉ trả về JSON hợp lệ dạng {"answer": string, "citations": [{"sourceId": string}]} — không kèm markdown fence.',
 ].join("\n");
