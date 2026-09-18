@@ -103,19 +103,15 @@ export async function runAiTaskExecution(
     }));
 
 
-  const { createLovableResponsesProvider } = await import("@/lib/ai-gateway.server");
-  const provider = createLovableResponsesProvider(apiKey);
-
-  const result = streamText({
-    model: provider.responses(AI_TASK_MODEL),
+  const { callAiConsumer } = await import("./ai-consumer.server");
+  const call = await callAiConsumer({
+    consumer: "AI_WORKER",
     system: systemPrompt(spec),
     prompt: userPrompt(spec, pack),
-    providerOptions: {
-      openai: { forceReasoning: true, reasoningEffort: "medium", reasoningSummary: "auto", store: false },
-    },
+    apiKey,
   });
-  const raw = await result.text;
-  const usage = await result.usage;
+  const raw = call.text;
+  const usage = call.usage;
 
   const parsed = parseModelJson(raw);
   const safeSources = usableSources(pack.sources);
