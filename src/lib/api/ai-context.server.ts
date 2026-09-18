@@ -435,33 +435,73 @@ async function hydrateSelected(
   const decisionIds = byType.get("DECISION") ?? [];
   if (decisionIds.length) {
     jobs.push(
-      supabase
-        .from("decisions")
-        .select(
-          "id,title,detail,status,origin,source_type,source_id,decided_at,confirmed_at,superseded_by",
-        )
-        .eq("tenant_id", tenantId)
-        .in("id", decisionIds)
-        .then(({ data }) => {
-          for (const d of (data ?? []) as Array<Record<string, any>>)
-            put(
-              "DECISION",
-              d["id"],
-              [
-                `trạng thái: ${DECISION_STATUS_LABEL[String(d["status"])] ?? d["status"]}`,
-                d["confirmed_at"] ? `xác nhận lúc: ${d["confirmed_at"]}` : "chưa xác nhận",
-                d["decided_at"] ? `quyết định lúc: ${d["decided_at"]}` : null,
-                `nguồn: ${d["origin"] ?? "-"}${d["source_type"] ? `/${d["source_type"]}` : ""}`,
-                d["superseded_by"] ? `đã bị thay thế bởi: ${d["superseded_by"]}` : null,
-                `nội dung: ${cleanExcerpt(d["title"], 200)}`,
-                d["detail"] ? `chi tiết: ${cleanExcerpt(d["detail"], 400)}` : null,
-              ]
-                .filter(Boolean)
-                .join(" · "),
-            );
-        }),
+      (async () => {
+        const [{ data: rows }, { data: revs }] = await Promise.all([
+          supabase
+            .from("decisions")
+            .select(
+              "id,title,detail,status,origin,source_type,source_id,decided_at,confirmed_at,superseded_by,row_version",
+            )
+            .eq("tenant_id", tenantId)
+            .in("id", decisionIds),
+          // Lịch sử phiên bản: AI cần thấy quyết định đã thay đổi thế nào, không chỉ bản hiện tại.
+          supabase
+            .from("decision_revisions")
+            .select("decision_id,row_version,change_kind,changed_fields,snapshot,changed_at")
+            .eq("tenant_id", tenantId)
+            .in("decision_id", decisionIds)
+            .order("changed_at", { ascending: false })
+            .limit(60),
+        ]);
+        const revByDecision = new Map<string, string[]>();
+        for (const r of (revs ?? []) as Array<Record<string, any>>) {
+          const id = String(r["decision_id"]);
+          const list = revByDecision.get(id) ?? [];
+          if (list.length >= 4) continue;
+          const snap = (r["snapshot"] ?? {}) as Record<string, any>;
+          const fields = Array.isArray(r["changed_fields"]) ? r["changed_fields"] : [];
+          list.push(
+            [
+              `v${r["row_version"] ?? "-"}`,
+              r["changed_at"],
+              r["change_kind"] ?? "UPDATE",
+              fields.length ? `đổi: ${fields.join(",")}` : null,
+              snap["status"] ? `trạng thái khi đó: ${DECISION_STATUS_LABEL[String(snap["status"])] ?? snap["status"]}` : null,
+              fields.includes("title") && snap["title"]
+                ? `nội dung khi đó: ${cleanExcerpt(snap["title"], 160)}`
+                : null,
+            ]
+              .filter(Boolean)
+              .join(" "),
+          );
+          revByDecision.set(id, list);
+        }
+        for (const d of (rows ?? []) as Array<Record<string, any>>) {
+          const history = revByDecision.get(String(d["id"])) ?? [];
+          put(
+            "DECISION",
+            d["id"],
+            [
+              `trạng thái: ${DECISION_STATUS_LABEL[String(d["status"])] ?? d["status"]}`,
+              d["confirmed_at"] ? `xác nhận lúc: ${d["confirmed_at"]}` : "chưa xác nhận",
+              d["decided_at"] ? `quyết định lúc: ${d["decided_at"]}` : null,
+              `nguồn: ${d["origin"] ?? "-"}${d["source_type"] ? `/${d["source_type"]}` : ""}`,
+              d["superseded_by"] ? `đã bị thay thế bởi: ${d["superseded_by"]}` : null,
+              `nội dung: ${cleanExcerpt(d["title"], 200)}`,
+              d["detail"] ? `chi tiết: ${cleanExcerpt(d["detail"], 400)}` : null,
+              `phiên bản hiện tại: v${d["row_version"] ?? "-"}`,
+              history.length
+                ? `lịch sử thay đổi (mới → cũ): ${history.join(" | ")}`
+                : "lịch sử thay đổi: chưa có bản ghi",
+            ]
+              .filter(Boolean)
+              .join(" · "),
+          );
+        }
+      })(),
     );
   }
+
 
   const personIds = byType.get("PERSON") ?? [];
   if (personIds.length) {
@@ -967,6 +1007,8 @@ export const GROUNDED_SYSTEM_PROMPT = [
   "Mỗi khẳng định về quyết định, việc cần làm hay rủi ro phải trích dẫn đúng sourceId của artifact tương ứng.",
   "Mỗi nguồn có trường freshness (Mới / Khá mới / Có thể đã thay đổi / Có thể lỗi thời). Ưu tiên nguồn mới hơn khi các nguồn mâu thuẫn, và nói rõ khi kết luận dựa trên nguồn có thể đã lỗi thời.",
   "Quyết định có trạng thái 'Đã xác nhận' là điều hành thực tế của tổ chức: khi liên quan, hãy trả lời dựa trên các quyết định đó TRƯỚC, rồi mới đến bản ghi công việc; quyết định 'Chờ xác nhận' chỉ được nhắc tới như đề xuất chưa chốt, không dùng làm căn cứ kết luận.",
+  "Nguồn quyết định kèm 'phiên bản hiện tại' và 'lịch sử thay đổi (mới → cũ)'. Khi đề xuất, hãy đọc cả lịch sử: nêu rõ quyết định đã đổi nội dung/trạng thái ra sao, đề xuất theo hướng thay đổi gần nhất, và cảnh báo nếu công việc đang bám theo một phiên bản cũ hoặc một quyết định đã bị thay thế. Không suy diễn thay đổi nào không có trong lịch sử.",
+
   "Trả lời ngắn gọn, đúng ngôn ngữ của câu hỏi.",
   'Chỉ trả về JSON hợp lệ dạng {"answer": string, "citations": [{"sourceId": string}]} — không kèm markdown fence.',
 ].join("\n");
