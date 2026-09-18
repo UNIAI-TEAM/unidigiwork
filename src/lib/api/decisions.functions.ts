@@ -140,6 +140,75 @@ export const listDecisionLinks = createServerFn({ method: "POST" })
     });
   });
 
+export interface DecisionRevisionRow {
+  id: string;
+  decisionId: string;
+  decisionTitle: string;
+  currentStatus: DecisionStatus;
+  rowVersion: number;
+  changeKind: "CREATED" | "UPDATED";
+  changedFields: string[];
+  snapshot: Record<string, unknown>;
+  changedByName: string | null;
+  changedAt: string;
+  isCurrent: boolean;
+}
+
+/** Lịch sử phiên bản quyết định theo tổ chức (append-only, chỉ đọc). */
+export const listDecisionRevisions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        decisionId: z.string().uuid().optional(),
+        limit: z.number().int().min(1).max(300).default(200),
+      })
+      .parse(i ?? {}),
+  )
+  .handler(async ({ data, context }): Promise<DecisionRevisionRow[]> => {
+    const tenantId = await currentTenantId(context.supabase, context.userId);
+    let q = context.supabase
+      .from("decision_revisions")
+      .select("id,decision_id,row_version,change_kind,changed_fields,snapshot,changed_by,changed_at")
+      .eq("tenant_id", tenantId)
+      .order("changed_at", { ascending: false })
+      .limit(data.limit);
+    if (data.decisionId) q = q.eq("decision_id", data.decisionId);
+    const { data: rows, error } = await q;
+    if (error) mapPgError(error);
+    const list = rows ?? [];
+    if (!list.length) return [];
+
+    const decisionIds = [...new Set(list.map((r: any) => r.decision_id))];
+    const userIds = [...new Set(list.map((r: any) => r.changed_by).filter(Boolean))] as string[];
+    const [{ data: decisions }, { data: people }] = await Promise.all([
+      context.supabase.from("decisions").select("id,title,status,row_version").in("id", decisionIds),
+      userIds.length
+        ? context.supabase.from("profiles").select("id,display_name").in("id", userIds)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+    const dById = new Map((decisions ?? []).map((d: any) => [d.id, d]));
+    const nameById = new Map((people ?? []).map((p: any) => [p.id, p.display_name as string]));
+
+    return list.map((r: any) => {
+      const d = dById.get(r.decision_id);
+      return {
+        id: r.id,
+        decisionId: r.decision_id,
+        decisionTitle: d?.title ?? "Quyết định",
+        currentStatus: (d?.status ?? "CANDIDATE") as DecisionStatus,
+        rowVersion: r.row_version,
+        changeKind: r.change_kind,
+        changedFields: r.changed_fields ?? [],
+        snapshot: (r.snapshot ?? {}) as Record<string, unknown>,
+        changedByName: r.changed_by ? (nameById.get(r.changed_by) ?? null) : null,
+        changedAt: r.changed_at,
+        isCurrent: d ? d.row_version === r.row_version : false,
+      };
+    });
+  });
+
+
 /** Xác nhận / từ chối một quyết định (RPC kiểm tra quyền theo tổ chức). */
 export const setDecisionConfirmation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
