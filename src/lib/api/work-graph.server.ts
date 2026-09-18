@@ -221,6 +221,30 @@ export async function resolveWorkEntities(
             }),
         );
         break;
+      case "DECISION":
+        jobs.push(
+          supabase
+            .from("decisions")
+            .select("id,title,status,origin,source_type,source_id,updated_at")
+            .in("id", ids)
+            .then(({ data }) => {
+              (data ?? []).forEach((r: any) => {
+                out.set(key("DECISION", r.id), {
+                  type: "DECISION",
+                  id: r.id,
+                  title: r.title ?? "Quyết định",
+                  subtitle: r.status ?? null,
+                  // Deep-link về nguồn gốc quyết định (cuộc họp) khi có.
+                  href:
+                    r.source_type === "MEETING" && r.source_id
+                      ? `/meeting/${r.source_id}?decision=${r.id}`
+                      : workEntityHref("DECISION", r.id),
+                  updatedAt: r.updated_at ?? null,
+                });
+              });
+            }),
+        );
+        break;
       default:
         break;
     }

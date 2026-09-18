@@ -1894,6 +1894,163 @@ export type Database = {
           },
         ]
       }
+      decision_links: {
+        Row: {
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string
+          created_by: string | null
+          decision_id: string
+          evidence: Json
+          id: string
+          relationship: string
+          source_id: string
+          source_type: string
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          decision_id: string
+          evidence?: Json
+          id?: string
+          relationship?: string
+          source_id: string
+          source_type: string
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          decision_id?: string
+          evidence?: Json
+          id?: string
+          relationship?: string
+          source_id?: string
+          source_type?: string
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "decision_links_decision_id_fkey"
+            columns: ["decision_id"]
+            isOneToOne: false
+            referencedRelation: "decisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "decision_links_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      decisions: {
+        Row: {
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string
+          created_by: string | null
+          decided_at: string | null
+          decided_by: string | null
+          detail: string | null
+          evidence: Json
+          id: string
+          origin: string
+          row_version: number
+          source_id: string | null
+          source_ref: string | null
+          source_type: string | null
+          status: string
+          superseded_by: string | null
+          tenant_id: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          detail?: string | null
+          evidence?: Json
+          id?: string
+          origin: string
+          row_version?: number
+          source_id?: string | null
+          source_ref?: string | null
+          source_type?: string | null
+          status?: string
+          superseded_by?: string | null
+          tenant_id: string
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          detail?: string | null
+          evidence?: Json
+          id?: string
+          origin?: string
+          row_version?: number
+          source_id?: string | null
+          source_ref?: string | null
+          source_type?: string | null
+          status?: string
+          superseded_by?: string | null
+          tenant_id?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "decisions_superseded_by_fkey"
+            columns: ["superseded_by"]
+            isOneToOne: false
+            referencedRelation: "decisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "decisions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "decisions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       demo_requests: {
         Row: {
           created_at: string
@@ -8668,6 +8825,7 @@ export type Database = {
         Args: { _source_ids: string[]; _title: string }
         Returns: string
       }
+      _project_decision_link: { Args: { _link_id: string }; Returns: string }
       _raise_quota_exceeded: {
         Args: { _delta: number; _meter_key: string; _tenant_id: string }
         Returns: undefined
@@ -8732,6 +8890,10 @@ export type Database = {
       _test_unconfirm_auth_email: {
         Args: { _user_id: string }
         Returns: boolean
+      }
+      _touch_decision_graph_node: {
+        Args: { _decision_id: string }
+        Returns: string
       }
       _touch_document_graph_node: {
         Args: { _document_id: string; _version?: number }
@@ -9108,6 +9270,15 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      backfill_decisions_from_meetings: {
+        Args: { _limit?: number; _tenant_id?: string }
+        Returns: {
+          decision_edges: number
+          decision_nodes: number
+          decisions_created: number
+          links_created: number
+        }[]
+      }
       bind_work_product_execution: {
         Args: {
           _code: string
@@ -9457,6 +9628,62 @@ export type Database = {
       compute_work_quality_score: {
         Args: { _assessment: Json }
         Returns: number
+      }
+      confirm_decision: {
+        Args: { _confirm?: boolean; _decision_id: string }
+        Returns: {
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string
+          created_by: string | null
+          decided_at: string | null
+          decided_by: string | null
+          detail: string | null
+          evidence: Json
+          id: string
+          origin: string
+          row_version: number
+          source_id: string | null
+          source_ref: string | null
+          source_type: string | null
+          status: string
+          superseded_by: string | null
+          tenant_id: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "decisions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      confirm_decision_link: {
+        Args: { _confirm?: boolean; _link_id: string }
+        Returns: {
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string
+          created_by: string | null
+          decision_id: string
+          evidence: Json
+          id: string
+          relationship: string
+          source_id: string
+          source_type: string
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "decision_links"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       confirm_meeting_action_item: {
         Args: {
