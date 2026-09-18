@@ -100,22 +100,14 @@ export const askUniCopilot = createServerFn({ method: "POST" })
     }
     const safeSources = usableSources(pack.sources);
 
-    const apiKey = process.env["LOVABLE_API_KEY"];
-    if (!apiKey)
-      throw new ApiError({
-        code: "AI_GATEWAY_UNAVAILABLE",
-        message: "UNI hiện chưa thể trả lời. Vui lòng thử lại.",
-      });
-
-    const { createLovableResponsesProvider } = await import("@/lib/ai-gateway.server");
-    const provider = createLovableResponsesProvider(apiKey);
+    const { callAiConsumer } = await import("./ai-consumer.server");
 
     let raw = "";
     let usage: UniCopilotResponse["usage"] = null;
     const provStart = Date.now();
     try {
-      const result = streamText({
-        model: provider.responses(MODEL),
+      const call = await callAiConsumer({
+        consumer: CONSUMER,
         system: buildCopilotSystemPrompt(intent),
         prompt: buildCopilotUserPrompt({
           query: data.query,
@@ -123,22 +115,9 @@ export const askUniCopilot = createServerFn({ method: "POST" })
           contextBlock: renderContextForModel(pack) + skillBlock,
           conversation: data.history ?? [],
         }),
-        providerOptions: {
-          openai: {
-            forceReasoning: true,
-            reasoningEffort: "low",
-            reasoningSummary: "auto",
-            store: false,
-          },
-        },
       });
-      raw = await result.text;
-      const u = await result.usage;
-      usage = {
-        inputTokens: u?.inputTokens ?? 0,
-        outputTokens: u?.outputTokens ?? 0,
-        model: MODEL,
-      };
+      raw = call.text;
+      usage = call.usage;
     } catch {
       throw new ApiError({
         code: "AI_GATEWAY_UNAVAILABLE",
