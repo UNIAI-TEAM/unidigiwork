@@ -52,10 +52,59 @@ describe("context ranker", () => {
       "lexical",
       "priority",
       "proximity",
+      "recency",
       "relationship",
     ]);
     expect(r!.score).toBeGreaterThan(0);
     expect(r!.score).toBeLessThanOrEqual(1);
+  });
+});
+
+describe("ưu tiên thực thể mới nhất", () => {
+  const base = {
+    type: "TASK" as const,
+    lexical: 0.5,
+    relationship: "BELONGS_TO" as const,
+    graphDistance: 1 as const,
+    intentPriority: 0.6,
+  };
+
+  it("thực thể mới nhất trong tập nhận recency = 1, cũ nhất = 0", () => {
+    const ranked = rankContextCandidates(
+      [
+        { ...base, id: "old", updatedAt: daysAgo(60) },
+        { ...base, id: "mid", updatedAt: daysAgo(30) },
+        { ...base, id: "new", updatedAt: daysAgo(0) },
+      ],
+      now,
+    );
+    expect(ranked.map((r) => r.candidate.id)).toEqual(["new", "mid", "old"]);
+    expect(ranked[0]!.breakdown.recency).toBeCloseTo(1, 6);
+    expect(ranked[2]!.breakdown.recency).toBeCloseTo(0, 6);
+  });
+
+  it("tài liệu mới vượt tài liệu cũ dù cùng loại có chu kỳ bán rã dài", () => {
+    const ranked = rankContextCandidates(
+      [
+        { ...base, type: "DOCUMENT" as const, id: "doc-old", updatedAt: daysAgo(40) },
+        { ...base, type: "DOCUMENT" as const, id: "doc-new", updatedAt: daysAgo(2) },
+      ],
+      now,
+    );
+    expect(ranked[0]!.candidate.id).toBe("doc-new");
+  });
+
+  it("nguồn không có mốc thời gian không bị phạt tuyệt đối", () => {
+    const ranked = rankContextCandidates(
+      [
+        { ...base, id: "no-date", updatedAt: null },
+        { ...base, id: "old", updatedAt: daysAgo(120) },
+        { ...base, id: "new", updatedAt: daysAgo(1) },
+      ],
+      now,
+    );
+    const noDate = ranked.find((r) => r.candidate.id === "no-date")!;
+    expect(noDate.breakdown.recency).toBeCloseTo(0.35, 6);
   });
 });
 

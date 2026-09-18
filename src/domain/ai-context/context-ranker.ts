@@ -8,7 +8,7 @@ import { RELATIONSHIP_WEIGHTS, type AiContextEntityType } from "./contracts";
 import type { QueryIntent } from "./query-intent";
 import { computeTemporalFreshness, type TemporalFreshness } from "./temporal-freshness";
 
-export const CONTEXT_RANKER_VERSION = "ranker-v3-unified";
+export const CONTEXT_RANKER_VERSION = "ranker-v4-recency";
 
 export type RankRelationship = WorkRelationshipCode | "ROOT" | "SEARCH_MATCH" | null;
 
@@ -28,6 +28,11 @@ export interface RankInput {
   /** Ưu tiên theo ý định câu hỏi [0,1]. Bỏ trống thì ranker tự tính từ intent. */
   intentPriority?: number;
   channel?: ContextChannel;
+  /**
+   * Độ mới TƯƠNG ĐỐI trong chính tập ứng viên [0,1]; 1 = thực thể mới nhất.
+   * Ranker tự tính, consumer không cần truyền.
+   */
+  recency?: number;
 }
 
 /** Ứng viên đến từ Work Graph (bounded traversal quanh root). */
@@ -50,6 +55,8 @@ export interface RankBreakdown {
   priority: number;
   proximity: number;
   freshness: number;
+  /** Độ mới tương đối so với các ứng viên còn lại. */
+  recency: number;
 }
 
 export interface RankedCandidate<T extends RankInput = RankInput> {
@@ -63,11 +70,12 @@ export interface RankedCandidate<T extends RankInput = RankInput> {
 
 /** Trọng số chuẩn hoá — tổng = 1. Đổi trọng số thì phải đổi CONTEXT_RANKER_VERSION. */
 export const RANK_WEIGHTS = {
-  lexical: 0.28,
-  relationship: 0.2,
-  priority: 0.2,
-  proximity: 0.14,
-  freshness: 0.18,
+  lexical: 0.24,
+  relationship: 0.17,
+  priority: 0.17,
+  proximity: 0.12,
+  freshness: 0.16,
+  recency: 0.14,
 } as const;
 
 /** Ưu tiên nền theo loại thực thể — nguồn duy nhất, không lặp ở tầng truy xuất. */
@@ -142,13 +150,17 @@ export function rankCandidate<T extends RankInput>(
     priority: clamp01(candidate.intentPriority ?? ENTITY_PRIORITY_BASE[candidate.type] ?? 0.3),
     proximity: proximityScore(candidate.graphDistance),
     freshness: clamp01(freshness.decay),
+    // Khi ranker không tính được thứ hạng tương đối (một ứng viên duy nhất),
+    // dùng chính độ tươi tuyệt đối để không thưởng/phạt sai.
+    recency: clamp01(candidate.recency ?? freshness.decay),
   };
   const score =
     breakdown.lexical * RANK_WEIGHTS.lexical +
     breakdown.relationship * RANK_WEIGHTS.relationship +
     breakdown.priority * RANK_WEIGHTS.priority +
     breakdown.proximity * RANK_WEIGHTS.proximity +
-    breakdown.freshness * RANK_WEIGHTS.freshness;
+    breakdown.freshness * RANK_WEIGHTS.freshness +
+    breakdown.recency * RANK_WEIGHTS.recency;
 
   return {
     candidate,
@@ -172,11 +184,37 @@ const byScore = <T extends RankInput>(a: RankedCandidate<T>, b: RankedCandidate<
  * Xếp hạng danh sách đã chuẩn hoá. Thứ tự ổn định: điểm giảm dần, hoà điểm thì
  * nguồn mới hơn đứng trước, cuối cùng theo id.
  */
+/**
+ * Gán độ mới TƯƠNG ĐỐI trong tập ứng viên: thực thể mới nhất = 1, cũ nhất = 0.
+ * Đây là tín hiệu "ưu tiên thực thể mới nhất", độc lập với độ tươi tuyệt đối
+ * (vốn phụ thuộc chu kỳ bán rã của từng loại). Ứng viên không có mốc thời gian
+ * nhận 0.35 — không thưởng, không phạt nặng.
+ */
+function withRelativeRecency<T extends RankInput>(candidates: T[]): T[] {
+  const times = candidates.map((c) => {
+    const ts = c.updatedAt ? new Date(c.updatedAt).getTime() : Number.NaN;
+    return Number.isNaN(ts) ? null : ts;
+  });
+  const known = times.filter((t): t is number => t !== null);
+  if (known.length < 2) return candidates;
+  const newest = Math.max(...known);
+  const oldest = Math.min(...known);
+  const span = newest - oldest;
+  return candidates.map((c, i) => {
+    if (c.recency !== undefined) return c;
+    const t = times[i];
+    if (t === null) return { ...c, recency: 0.35 };
+    return { ...c, recency: span === 0 ? 1 : (t - oldest) / span };
+  });
+}
+
 export function rankContextCandidates<T extends RankInput>(
   candidates: T[],
   now: Date = new Date(),
 ): RankedCandidate<T>[] {
-  return candidates.map((c) => rankCandidate(c, now)).sort(byScore);
+  return withRelativeRecency(candidates)
+    .map((c) => rankCandidate(c, now))
+    .sort(byScore);
 }
 
 export interface UnifiedRankRequest<M = unknown> {
@@ -240,5 +278,7 @@ export function rankUnifiedContext<M = unknown>(
       computeIntentPriority(c, request.intent ?? null, request.rootType ?? null),
   }));
 
-  return normalized.map((c) => rankCandidate(c, now)).sort(byScore);
+  return withRelativeRecency(normalized)
+    .map((c) => rankCandidate(c, now))
+    .sort(byScore);
 }
