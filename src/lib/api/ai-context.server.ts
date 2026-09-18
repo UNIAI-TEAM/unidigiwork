@@ -19,6 +19,15 @@ import {
   type ContextSource,
 } from "@/domain/ai-context/contracts";
 import { parseQueryIntent } from "@/domain/ai-context/query-intent";
+import {
+  rankContextCandidates,
+  CONTEXT_RANKER_VERSION,
+} from "@/domain/ai-context/context-ranker";
+import {
+  computeTemporalFreshness,
+  freshnessTag,
+  type TemporalFreshness,
+} from "@/domain/ai-context/temporal-freshness";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any, any, any>;
