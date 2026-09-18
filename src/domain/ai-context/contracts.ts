@@ -132,6 +132,8 @@ export const AI_CONTEXT_POLICY = {
     TENANT: 0,
     WORK_PRODUCT: 5,
     EXECUTION: 5,
+    // Quyết định đã xác nhận là nguồn authority cao → luôn có suất trong context pack.
+    DECISION: 5,
   } as Record<AiContextEntityType, number>,
 } as const;
 
