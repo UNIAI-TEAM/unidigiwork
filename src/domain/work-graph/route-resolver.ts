@@ -25,6 +25,9 @@ export function workEntityHref(type: string, id: string, mobile = false): string
       return `/tasks?execution=${id}`;
     case "PERSON":
       return `/people/${id}`;
+    case "DECISION":
+      // Quyết định hiển thị trong ngữ cảnh nguồn; server resolver cấp link chính xác.
+      return `/meeting_/history?decision=${id}`;
     default:
       return "/home";
   }
