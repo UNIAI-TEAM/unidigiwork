@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { rankContextCandidates, RANK_WEIGHTS } from "./context-ranker";
+import { rankContextCandidates, rankUnifiedContext, RANK_WEIGHTS } from "./context-ranker";
 import { computeTemporalFreshness, FRESHNESS_HALF_LIFE_DAYS } from "./temporal-freshness";
 
 const now = new Date("2026-01-31T00:00:00.000Z");
