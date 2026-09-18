@@ -19,7 +19,7 @@ import {
   type ContextSource,
 } from "@/domain/ai-context/contracts";
 import { parseQueryIntent } from "@/domain/ai-context/query-intent";
-import { rankContextCandidates, CONTEXT_RANKER_VERSION } from "@/domain/ai-context/context-ranker";
+import { rankUnifiedContext, CONTEXT_RANKER_VERSION } from "@/domain/ai-context/context-ranker";
 import {
   computeTemporalFreshness,
   freshnessTag,
@@ -179,21 +179,6 @@ type Candidate = {
   lexical: number;
   relationship: WorkRelationshipCode | "ROOT" | "SEARCH_MATCH" | null;
   graphDistance: 0 | 1 | 2;
-};
-
-const ENTITY_PRIORITY_BASE: Record<AiContextEntityType, number> = {
-  TASK: 0.6,
-  MEETING: 0.55,
-  WORKSPACE: 0.5,
-  EMAIL: 0.45,
-  DOCUMENT: 0.45,
-  CHAT_CHANNEL: 0.4,
-  MEETING_ARTIFACT: 0.72,
-  PERSON: 0.3,
-  TENANT: 0,
-  WORK_PRODUCT: 0.6,
-  EXECUTION: 0.55,
-  DECISION: 0.75,
 };
 
 export const MEETING_ARTIFACT_LABEL: Record<string, string> = {
@@ -721,37 +706,23 @@ export async function buildAiContextPack(
 
   /* --- PHASE H: ranking (module riêng, giải thích được) + per-type limits + budget --- */
   const rankNow = new Date();
-  const scored = rankContextCandidates(
-    candidates
-      .filter((c) => c.type !== "TENANT")
-      .filter((c) => {
-        if (!timeRange || !c.updatedAt) return true;
-        const ts = new Date(c.updatedAt).getTime();
-        return ts >= new Date(timeRange.from).getTime() && ts <= new Date(timeRange.to).getTime();
-      })
-      .map((c) => {
-        let priority = ENTITY_PRIORITY_BASE[c.type];
-        if (
-          intent.wantsBlockers &&
-          (c.type === "TASK" || c.relationship === "BLOCKS" || c.relationship === "DEPENDS_ON")
-        )
-          priority += 0.2;
-        if (
-          intent.wantsCommunication &&
-          (c.type === "EMAIL" || c.type === "CHAT_CHANNEL" || c.type === "MEETING")
-        )
-          priority += 0.2;
-        if (intent.wantsLatestMeeting && c.type === "MEETING") priority += 0.25;
-        if (
-          c.type === "MEETING_ARTIFACT" &&
-          (intent.wantsMeetingOutcome || root?.entityType === "MEETING")
-        )
-          priority += 0.3;
-        return { ...c, intentPriority: Math.min(1, priority) };
-      }),
-    rankNow,
-  ).map((r) => ({
-    ...r.candidate,
+  const eligible = candidates
+    .filter((c) => c.type !== "TENANT")
+    .filter((c) => {
+      if (!timeRange || !c.updatedAt) return true;
+      const ts = new Date(c.updatedAt).getTime();
+      return ts >= new Date(timeRange.from).getTime() && ts <= new Date(timeRange.to).getTime();
+    })
+    .map((c) => ({ ...c, meta: c }));
+
+  const scored = rankUnifiedContext<Candidate>({
+    semantic: eligible.filter((c) => c.relationship === "SEARCH_MATCH"),
+    graph: eligible.filter((c) => c.relationship !== "SEARCH_MATCH"),
+    intent,
+    rootType: root?.entityType ?? null,
+    now: rankNow,
+  }).map((r) => ({
+    ...(r.candidate.meta as Candidate),
     rank: r.score,
     freshness: r.freshness,
     rankBreakdown: r.breakdown as unknown as Record<string, number>,
