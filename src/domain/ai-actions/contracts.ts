@@ -185,6 +185,18 @@ const ACTION_VERB_HINTS: { type: AiActionType; re: RegExp }[] = [
 const SEND_INTENT = /(gửi|gui)\s+(email|thư|thu|mail)|send (the )?email/i;
 const DELETE_INTENT = /(xoá|xóa|xoa|huỷ bỏ|delete|remove)\s+(task|công việc|tài liệu|document|user|thành viên)/i;
 
+/**
+ * Câu hỏi hiện trạng ("việc nào mới cập nhật gần đây?") không phải lệnh ghi.
+ * Ưu tiên kiểm tra trước ACTION_VERB_HINTS để "cập nhật" trong câu hỏi không bị
+ * hiểu thành UPDATE_TASK_FIELDS.
+ */
+const QUESTION_INTENT =
+  /(^|\s)(việc nào|viec nao|cái nào|cai nao|ai đang|ai dang|những gì|nhung gi|có gì|co gi|gì đang|gi dang|bao nhiêu|bao nhieu|khi nào|khi nao|vì sao|vi sao|tại sao|tai sao|thế nào|the nao|tình hình|tinh hinh|hiện trạng|hien trang|trạng thái|trang thai|tiến độ|tien do|liệt kê|liet ke|cho tôi biết|cho toi biet|tóm tắt|tom tat|xem lại|xem lai|báo cáo|bao cao|what|which|who|when|why|how|status|summary|list)(\s|$)|[?？]\s*$/i;
+
+/** Dấu hiệu "mới cập nhật/cập nhật gần đây" — mô tả độ mới, không phải lệnh sửa. */
+const RECENCY_PHRASE =
+  /(mới|moi|vừa|vua|gần đây|gan day|recently|latest|last)\s+(được\s+)?(cập nhật|cap nhat|update[d]?)|(cập nhật|cap nhat|update[d]?)\s+(mới nhất|moi nhat|gần đây|gan day|gần nhất|gan nhat|hôm nay|hom nay|tuần này|tuan nay|recently|latest)/i;
+
 export type ActionIntent =
   | { kind: "NONE" }
   | { kind: "PROPOSE"; actionType: AiActionType }
@@ -195,7 +207,13 @@ export function detectActionIntent(query: string): ActionIntent {
   const q = query ?? "";
   if (SEND_INTENT.test(q)) return { kind: "BLOCKED", reason: "SEND_EMAIL" };
   if (DELETE_INTENT.test(q)) return { kind: "BLOCKED", reason: "DELETE" };
-  for (const h of ACTION_VERB_HINTS) if (h.re.test(q)) return { kind: "PROPOSE", actionType: h.type };
+  const asking = RECENCY_PHRASE.test(q) || QUESTION_INTENT.test(q);
+  for (const h of ACTION_VERB_HINTS) {
+    if (!h.re.test(q)) continue;
+    // "cập nhật" trong câu hỏi hiện trạng → chỉ trả lời, không đề xuất sửa việc.
+    if (h.type === "UPDATE_TASK_FIELDS" && asking) return { kind: "NONE" };
+    return { kind: "PROPOSE", actionType: h.type };
+  }
   return { kind: "NONE" };
 }
 
