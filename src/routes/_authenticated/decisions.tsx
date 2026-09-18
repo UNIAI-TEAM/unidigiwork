@@ -200,6 +200,20 @@ function DecisionsPage() {
             </CardContent>
           </Card>
 
+          {focused ? (
+            <Card className="border-primary/30 bg-primary/5">
+              <CardContent className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
+                <span className="text-muted-foreground">
+                  Đang lọc theo {focusMeeting ? "quyết định trích xuất từ một cuộc họp" : "một quyết định cụ thể"}.
+                  Xác nhận để đưa lên sơ đồ công việc.
+                </span>
+                <Button size="sm" variant="outline" className="min-h-11" asChild>
+                  <Link to="/decisions">Bỏ lọc</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ) : null}
+
 
           <Tabs value={status} onValueChange={(v) => setStatus(v as typeof status)}>
             <TabsList>
