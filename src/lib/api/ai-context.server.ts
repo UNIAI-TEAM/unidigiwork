@@ -140,15 +140,6 @@ export const MEETING_ARTIFACT_LABEL: Record<string, string> = {
   FOLLOW_UP: "Thư theo dõi",
 };
 
-function recencyBoost(iso: string | null): number {
-  if (!iso) return 0;
-  const days = (Date.now() - new Date(iso).getTime()) / 86_400_000;
-  if (Number.isNaN(days) || days < 0) return 0.1;
-  if (days <= 2) return 0.15;
-  if (days <= 7) return 0.1;
-  if (days <= 30) return 0.05;
-  return 0;
-}
 
 export async function resolveTenantForActor(
   supabase: Db,
@@ -748,6 +739,7 @@ export async function buildAiContextPack(
       truncated: truncatedByLimit || budgetTruncated,
       timeRange,
       timings,
+      rankerVersion: CONTEXT_RANKER_VERSION,
     },
     budget: { estimatedTokens: tokens, maxTokens },
     partial: failures.length > 0,
