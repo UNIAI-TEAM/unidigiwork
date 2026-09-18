@@ -18,6 +18,7 @@ import {
 import {
   getWorkContext, linkWorkEntities, unlinkWorkEntities, searchLinkableEntities,
 } from "@/lib/api/work-graph.functions";
+import { FreshnessBadge } from "@/components/work-graph/freshness-badge";
 import {
   entityTypeLabel, relationshipLabel, userCreatableFrom, linkableTargetTypes,
   type WorkEntityType,
@@ -150,9 +151,15 @@ export function RelatedWorkPanel({
                       <EntityIcon type={it.entity.type} />
                       <Link {...({ to: it.entity.href } as any)} className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium text-foreground">{it.entity.title}</p>
-                        <p className="truncate text-xs text-muted-foreground">
-                          {relationshipLabel(it.relationship, it.direction)}
-                          {it.entity.subtitle ? ` · ${it.entity.subtitle}` : ""}
+                        <p className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 truncate text-xs text-muted-foreground">
+                          <span className="truncate">
+                            {relationshipLabel(it.relationship, it.direction)}
+                            {it.entity.subtitle ? ` · ${it.entity.subtitle}` : ""}
+                          </span>
+                          <FreshnessBadge
+                            entityType={it.entity.type}
+                            updatedAt={it.entity.updatedAt}
+                          />
                         </p>
                       </Link>
                       {it.canUnlink ? (
