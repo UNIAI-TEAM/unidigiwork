@@ -207,9 +207,13 @@ export function detectActionIntent(query: string): ActionIntent {
   const q = query ?? "";
   if (SEND_INTENT.test(q)) return { kind: "BLOCKED", reason: "SEND_EMAIL" };
   if (DELETE_INTENT.test(q)) return { kind: "BLOCKED", reason: "DELETE" };
-  // Hỏi hiện trạng → chỉ trả lời, không đề xuất ghi.
-  if (RECENCY_PHRASE.test(q) || QUESTION_INTENT.test(q)) return { kind: "NONE" };
-  for (const h of ACTION_VERB_HINTS) if (h.re.test(q)) return { kind: "PROPOSE", actionType: h.type };
+  const asking = RECENCY_PHRASE.test(q) || QUESTION_INTENT.test(q);
+  for (const h of ACTION_VERB_HINTS) {
+    if (!h.re.test(q)) continue;
+    // "cập nhật" trong câu hỏi hiện trạng → chỉ trả lời, không đề xuất sửa việc.
+    if (h.type === "UPDATE_TASK_FIELDS" && asking) return { kind: "NONE" };
+    return { kind: "PROPOSE", actionType: h.type };
+  }
   return { kind: "NONE" };
 }
 
