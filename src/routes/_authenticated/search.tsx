@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { getSearchFacets } from "@/lib/api/search.functions";
 import { universalSearch } from "@/lib/api/search-universal.functions";
 import { readSearchScope, writeSearchScope } from "@/lib/search-scope";
+import { FreshnessBadge } from "@/components/work-graph/freshness-badge";
 import type { SearchKind, UniversalSearchItem } from "@/lib/api/search-universal.server";
 
 type SearchParams = {
@@ -462,6 +463,11 @@ function SearchPage() {
                             <span className="flex items-center gap-1.5">
                               <CalendarIcon className="h-3.5 w-3.5" /> {fmtDate(r.occurredAt)}
                             </span>
+                            <FreshnessBadge
+                              entityType={r.entityType}
+                              updatedAt={r.occurredAt}
+                              showTime={false}
+                            />
                           </div>
                         </div>
                         <ArrowUpRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
