@@ -58,3 +58,46 @@ describe("context ranker", () => {
     expect(r!.score).toBeLessThanOrEqual(1);
   });
 });
+
+describe("unified ranker (graph + semantic)", () => {
+  it("gộp cùng một thực thể ở hai luồng thành BOTH và giữ tín hiệu mạnh nhất", () => {
+    const ranked = rankUnifiedContext({
+      semantic: [{ type: "TASK", id: "t1", updatedAt: daysAgo(1), lexical: 0.9 }],
+      graph: [
+        {
+          type: "TASK",
+          id: "t1",
+          updatedAt: daysAgo(1),
+          relationship: "BELONGS_TO",
+          graphDistance: 1,
+        },
+      ],
+      now,
+    });
+    expect(ranked).toHaveLength(1);
+    expect(ranked[0]!.channel).toBe("BOTH");
+    expect(ranked[0]!.breakdown.lexical).toBeCloseTo(0.9, 6);
+    expect(ranked[0]!.breakdown.proximity).toBeGreaterThan(0.25);
+  });
+
+  it("tự tính ưu tiên theo ý định khi consumer không truyền", () => {
+    const ranked = rankUnifiedContext({
+      graph: [
+        { type: "TASK", id: "a", updatedAt: daysAgo(1), relationship: "BELONGS_TO", graphDistance: 1 },
+        { type: "PERSON", id: "b", updatedAt: daysAgo(1), relationship: "BELONGS_TO", graphDistance: 1 },
+      ],
+      intent: {
+        entityHints: [],
+        timeRange: null,
+        wantsBlockers: true,
+        wantsCommunication: false,
+        wantsCounts: false,
+        wantsLatestMeeting: false,
+        wantsMeetingOutcome: false,
+      },
+      now,
+    });
+    expect(ranked[0]!.candidate.id).toBe("a");
+    expect(ranked[0]!.breakdown.priority).toBeGreaterThan(ranked[1]!.breakdown.priority);
+  });
+});
