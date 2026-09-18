@@ -125,6 +125,21 @@ function DecisionsPage() {
     onError: () => toast.error("Không thực hiện được. Vui lòng thử lại."),
   });
 
+  const createFn = useServerFn(createDecision);
+  const [newTitle, setNewTitle] = useState("");
+  const [newDetail, setNewDetail] = useState("");
+  const createMut = useMutation({
+    mutationFn: () => createFn({ data: { title: newTitle.trim(), detail: newDetail.trim() || null } }),
+    onSuccess: () => {
+      toast.success("Đã thêm quyết định vào danh sách chờ xác nhận");
+      setNewTitle("");
+      setNewDetail("");
+      setStatus("CANDIDATE");
+      invalidate();
+    },
+    onError: () => toast.error("Không thêm được quyết định. Vui lòng thử lại."),
+  });
+
   return (
     <div className="flex min-h-screen w-full bg-background">
       <AppSidebar open={open} onClose={() => setOpen(false)} />
@@ -140,6 +155,38 @@ function DecisionsPage() {
               Chỉ quyết định và liên kết đã được người dùng xác nhận mới xuất hiện trên sơ đồ công việc. AI chỉ đề xuất.
             </p>
           </header>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Thêm quyết định</CardTitle>
+              <CardDescription>Nhập quyết định thật của tổ chức; sau khi xác nhận sẽ lên sơ đồ và tìm kiếm.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Input
+                className="min-h-11"
+                placeholder="Nội dung quyết định"
+                value={newTitle}
+                maxLength={200}
+                onChange={(e) => setNewTitle(e.target.value)}
+              />
+              <Input
+                className="min-h-11"
+                placeholder="Diễn giải, bối cảnh (không bắt buộc)"
+                value={newDetail}
+                maxLength={4000}
+                onChange={(e) => setNewDetail(e.target.value)}
+              />
+              <Button
+                className="min-h-11"
+                disabled={!newTitle.trim() || createMut.isPending}
+                onClick={() => createMut.mutate()}
+              >
+                {createMut.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Thêm quyết định
+              </Button>
+            </CardContent>
+          </Card>
+
 
           <Tabs value={status} onValueChange={(v) => setStatus(v as typeof status)}>
             <TabsList>
