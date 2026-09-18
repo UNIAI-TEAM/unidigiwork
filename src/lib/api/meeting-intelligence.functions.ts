@@ -452,3 +452,21 @@ export const dismissMeetingActionItem = createServerFn({ method: "POST" })
     if (error) mapPgError(error, "MEETING_NOT_FOUND");
     return mapStateRow(row as unknown as Record<string, unknown>);
   });
+/* ------------------- Trích xuất Quyết định từ biên bản (PROPOSE) ------------------- */
+
+/** Ghi các quyết định trong tóm tắt cuộc họp vào danh mục Quyết định ở trạng thái chờ xác nhận. */
+export const extractMeetingDecisions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => meetingIdSchema.parse(i))
+  .handler(async ({ data, context }): Promise<{ created: number; skipped: number; total: number }> => {
+    const { data: row, error } = await context.supabase.rpc("extract_decisions_from_meeting", {
+      _meeting_id: data.meetingId,
+    });
+    if (error) mapPgError(error, "MEETING_NOT_FOUND");
+    const r = (Array.isArray(row) ? row[0] : row) as Record<string, unknown> | null;
+    return {
+      created: Number(r?.created ?? 0),
+      skipped: Number(r?.skipped ?? 0),
+      total: Number(r?.total ?? 0),
+    };
+  });

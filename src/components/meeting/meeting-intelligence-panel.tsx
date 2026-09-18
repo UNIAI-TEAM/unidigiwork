@@ -156,6 +156,7 @@ function TranscriptImportStatusCard({
 import {
   confirmMeetingActionItem,
   dismissMeetingActionItem,
+  extractMeetingDecisions,
   generateMeetingSummary,
   getMeetingSummary,
   getMeetingSummaryProgress,
