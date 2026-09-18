@@ -310,6 +310,16 @@ export const NAV_ITEMS: NavItem[] = [
     order: 3,
   },
   {
+    id: "decisions",
+    labelKey: "nav.decisions",
+    icon: Gavel,
+    href: "/decisions",
+    group: "automation",
+    match: ["/decisions"],
+    visibility: "everyone",
+    order: 3.5,
+  },
+  {
     id: "ai-market",
     labelKey: "nav.aiMarket",
     icon: Store,
