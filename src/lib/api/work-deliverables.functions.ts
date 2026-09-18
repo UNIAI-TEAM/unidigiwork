@@ -1722,3 +1722,118 @@ export const toggleWorkDeliverableFollow = createServerFn({ method: "POST" })
     }
     return { following: data.follow };
   });
+
+/* --------------------------------------------- hàng đợi phê duyệt chính thức */
+
+export type WorkApprovalRow = {
+  reviewId: string;
+  status: string;
+  version: number | null;
+  dueAt: string | null;
+  decidedAt: string | null;
+  note: string | null;
+  createdAt: string;
+  reviewerId: string;
+  reviewerName: string | null;
+  requestedByName: string | null;
+  isMine: boolean;
+  productId: string;
+  productTitle: string;
+  productStatus: string;
+  businessType: string;
+  currentVersion: number;
+  stale: boolean;
+  workspaceId: string | null;
+  workspaceName: string | null;
+  productUpdatedAt: string;
+};
+
+/** Danh sách yêu cầu phê duyệt kết quả công việc trong tổ chức hiện tại. */
+export const listWorkApprovals = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        scope: z.enum(["PENDING", "MINE", "DECIDED"]).default("PENDING"),
+        limit: z.number().int().min(1).max(100).default(50),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }): Promise<WorkApprovalRow[]> => {
+    let q = context.supabase
+      .from("work_product_reviews")
+      .select(
+        "id, work_product_id, reviewer_id, requested_by, status, version, due_at, decision_note, decided_at, created_at",
+      )
+      .order("created_at", { ascending: false })
+      .limit(data.limit);
+    if (data.scope === "DECIDED") q = q.neq("status", "PENDING");
+    else q = q.eq("status", "PENDING");
+    if (data.scope === "MINE") q = q.eq("reviewer_id", context.userId);
+
+    const { data: reviews, error } = await q;
+    if (error) mapPgError(error);
+    const rows = (reviews ?? []) as any[];
+    if (!rows.length) return [];
+
+    const productIds = [...new Set(rows.map((r) => r.work_product_id))];
+    const people = [
+      ...new Set(rows.flatMap((r) => [r.reviewer_id, r.requested_by]).filter(Boolean)),
+    ];
+    const [productsRes, profilesRes] = await Promise.all([
+      context.supabase
+        .from("work_products")
+        .select("id, title, status, business_type, current_version, workspace_id, updated_at")
+        .in("id", productIds)
+        .is("deleted_at", null),
+      people.length
+        ? context.supabase.from("profiles").select("id, display_name, email").in("id", people)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+
+    const products = new Map(((productsRes as any).data ?? []).map((p: any) => [p.id, p]));
+    const workspaceIds = [
+      ...new Set(
+        [...products.values()].map((p: any) => p.workspace_id).filter(Boolean) as string[],
+      ),
+    ];
+    const { data: workspaces } = workspaceIds.length
+      ? await context.supabase.from("workspaces").select("id, name").in("id", workspaceIds)
+      : { data: [] as any[] };
+    const wmap = new Map(((workspaces ?? []) as any[]).map((w) => [w.id, w.name]));
+    const pmap = new Map(
+      (((profilesRes as any).data ?? []) as any[]).map((p) => [
+        p.id,
+        p.display_name ?? p.email ?? null,
+      ]),
+    );
+
+    return rows
+      .filter((r) => products.has(r.work_product_id))
+      .map((r) => {
+        const p: any = products.get(r.work_product_id);
+        const current = (p.current_version as number) ?? 0;
+        return {
+          reviewId: r.id,
+          status: r.status,
+          version: r.version,
+          dueAt: r.due_at,
+          decidedAt: r.decided_at,
+          note: r.decision_note,
+          createdAt: r.created_at,
+          reviewerId: r.reviewer_id,
+          reviewerName: pmap.get(r.reviewer_id) ?? null,
+          requestedByName: r.requested_by ? (pmap.get(r.requested_by) ?? null) : null,
+          isMine: r.reviewer_id === context.userId,
+          productId: p.id,
+          productTitle: p.title ?? "Kết quả công việc",
+          productStatus: p.status,
+          businessType: p.business_type,
+          currentVersion: current,
+          stale: (r.version ?? 0) !== current,
+          workspaceId: p.workspace_id ?? null,
+          workspaceName: p.workspace_id ? (wmap.get(p.workspace_id) ?? null) : null,
+          productUpdatedAt: p.updated_at,
+        };
+      });
+  });
