@@ -31,6 +31,8 @@ export interface ContextEntity {
   updatedAt?: string | null;
   href: string;
   sourceRank: number;
+  freshness?: ContextFreshness | null;
+  rankBreakdown?: Record<string, number> | null;
 }
 
 export interface ContextRelationship {
