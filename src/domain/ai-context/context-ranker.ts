@@ -36,8 +36,10 @@ export interface GraphContextCandidate extends Omit<RankInput, "lexical" | "chan
 }
 
 /** Ứng viên đến từ tìm kiếm ngữ nghĩa / từ khoá. */
-export interface SemanticContextCandidate
-  extends Omit<RankInput, "relationship" | "graphDistance" | "channel"> {
+export interface SemanticContextCandidate extends Omit<
+  RankInput,
+  "relationship" | "graphDistance" | "channel"
+> {
   relationship?: RankRelationship;
   graphDistance?: 0 | 1 | 2;
 }
@@ -229,13 +231,13 @@ export function rankUnifiedContext<M = unknown>(
       },
       "SEMANTIC",
     );
-  for (const c of request.graph ?? [])
-    add({ ...c, lexical: clamp01(c.lexical ?? 0) }, "GRAPH");
+  for (const c of request.graph ?? []) add({ ...c, lexical: clamp01(c.lexical ?? 0) }, "GRAPH");
 
   const normalized = [...merged.values()].map((c) => ({
     ...c,
     intentPriority:
-      c.intentPriority ?? computeIntentPriority(c, request.intent ?? null, request.rootType ?? null),
+      c.intentPriority ??
+      computeIntentPriority(c, request.intent ?? null, request.rootType ?? null),
   }));
 
   return normalized.map((c) => rankCandidate(c, now)).sort(byScore);

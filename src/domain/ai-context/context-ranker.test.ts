@@ -83,8 +83,20 @@ describe("unified ranker (graph + semantic)", () => {
   it("tự tính ưu tiên theo ý định khi consumer không truyền", () => {
     const ranked = rankUnifiedContext({
       graph: [
-        { type: "TASK", id: "a", updatedAt: daysAgo(1), relationship: "BELONGS_TO", graphDistance: 1 },
-        { type: "PERSON", id: "b", updatedAt: daysAgo(1), relationship: "BELONGS_TO", graphDistance: 1 },
+        {
+          type: "TASK",
+          id: "a",
+          updatedAt: daysAgo(1),
+          relationship: "BELONGS_TO",
+          graphDistance: 1,
+        },
+        {
+          type: "PERSON",
+          id: "b",
+          updatedAt: daysAgo(1),
+          relationship: "BELONGS_TO",
+          graphDistance: 1,
+        },
       ],
       intent: {
         entityHints: [],

@@ -181,7 +181,6 @@ type Candidate = {
   graphDistance: 0 | 1 | 2;
 };
 
-
 export const MEETING_ARTIFACT_LABEL: Record<string, string> = {
   SUMMARY: "Tóm tắt cuộc họp",
   KEY_POINT: "Ý chính",
