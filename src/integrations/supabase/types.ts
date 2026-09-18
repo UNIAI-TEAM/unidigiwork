@@ -10183,6 +10183,7 @@ export type Database = {
         Args: { _meeting_id: string }
         Returns: {
           created: number
+          decision_ids: string[]
           skipped: number
           total: number
         }[]

@@ -458,15 +458,22 @@ export const dismissMeetingActionItem = createServerFn({ method: "POST" })
 export const extractMeetingDecisions = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => meetingIdSchema.parse(i))
-  .handler(async ({ data, context }): Promise<{ created: number; skipped: number; total: number }> => {
-    const { data: row, error } = await context.supabase.rpc("extract_decisions_from_meeting", {
-      _meeting_id: data.meetingId,
-    });
-    if (error) mapPgError(error, "MEETING_NOT_FOUND");
-    const r = (Array.isArray(row) ? row[0] : row) as Record<string, unknown> | null;
-    return {
-      created: Number(r?.created ?? 0),
-      skipped: Number(r?.skipped ?? 0),
-      total: Number(r?.total ?? 0),
-    };
-  });
+  .handler(
+    async ({
+      data,
+      context,
+    }): Promise<{ created: number; skipped: number; total: number; decisionIds: string[] }> => {
+      const { data: row, error } = await context.supabase.rpc("extract_decisions_from_meeting", {
+        _meeting_id: data.meetingId,
+      });
+      if (error) mapPgError(error, "MEETING_NOT_FOUND");
+      const r = (Array.isArray(row) ? row[0] : row) as Record<string, unknown> | null;
+      return {
+        created: Number(r?.created ?? 0),
+        skipped: Number(r?.skipped ?? 0),
+        total: Number(r?.total ?? 0),
+        decisionIds: (Array.isArray(r?.decision_ids) ? (r?.decision_ids as string[]) : []) ?? [],
+      };
+    },
+  );
+

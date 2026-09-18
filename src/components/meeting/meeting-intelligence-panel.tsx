@@ -1,5 +1,6 @@
 // Meeting Intelligence V1 — biên bản trực tiếp + tóm tắt AI có nguồn trích dẫn.
 import { useMemo, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { usePanelCollapse } from "@/hooks/use-panel-collapse";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -332,9 +333,11 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
     },
   });
 
+  const [extractResult, setExtractResult] = useState<{ created: number; total: number } | null>(null);
   const extractDecisions = useMutation({
     mutationFn: () => extractMeetingDecisions({ data: { meetingId } }),
-    onSuccess: (r: { created: number; skipped: number; total: number }) => {
+    onSuccess: (r: { created: number; skipped: number; total: number; decisionIds: string[] }) => {
+      setExtractResult({ created: r.created, total: r.total });
       toast.success(
         r.created > 0
           ? `Đã ghi ${r.created} quyết định vào danh mục chờ xác nhận.`
@@ -345,6 +348,7 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
       toast.error(err instanceof Error ? err.message : "Không ghi được quyết định.");
     },
   });
+
 
 
 
@@ -625,6 +629,23 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
                   Ghi vào danh mục Quyết định
                 </Button>
               </div>
+
+              {extractResult ? (
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-primary/30 bg-primary/5 p-2 text-[11px]">
+                  <span className="text-muted-foreground">
+                    {extractResult.created > 0
+                      ? `Đã ghi ${extractResult.created}/${extractResult.total} quyết định. Chúng đã xuất hiện trong tìm kiếm toàn cục; xác nhận để lên sơ đồ công việc.`
+                      : "Các quyết định này đã có trong danh mục. Xác nhận để lên sơ đồ công việc."}
+                  </span>
+                  <Button size="sm" variant="secondary" className="h-6 text-[10px]" asChild>
+                    <Link to="/decisions" search={{ id: undefined, meeting: meetingId }}>
+                      Mở trang Duyệt quyết định
+                    </Link>
+                  </Button>
+                </div>
+              ) : null}
+
+
 
               {summary.decisions.map((d, i) => (
                 <div key={i} className="rounded-md border border-border bg-background p-2">

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -25,6 +25,10 @@ import {
 } from "@/lib/api/decisions.functions";
 
 export const Route = createFileRoute("/_authenticated/decisions")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    id: typeof s.id === "string" ? s.id : undefined,
+    meeting: typeof s.meeting === "string" ? s.meeting : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Duyệt quyết định — UNIWORK" },
@@ -43,6 +47,7 @@ export const Route = createFileRoute("/_authenticated/decisions")({
   }),
   component: DecisionsPage,
 });
+
 
 const STATUS_LABEL: Record<string, string> = {
   CANDIDATE: "Chờ xác nhận",
@@ -87,7 +92,9 @@ function DecisionsPage() {
   const [open, setOpen] = useSidebarState();
   const { t } = useI18n();
   const qc = useQueryClient();
-  const [status, setStatus] = useState<"CANDIDATE" | "CONFIRMED" | "ALL">("CANDIDATE");
+  const { id: focusId, meeting: focusMeeting } = Route.useSearch();
+  const focused = Boolean(focusId || focusMeeting);
+  const [status, setStatus] = useState<"CANDIDATE" | "CONFIRMED" | "ALL">(focused ? "ALL" : "CANDIDATE");
   const [selected, setSelected] = useState<DecisionRow | null>(null);
 
   const fetchDecisions = useServerFn(listDecisions);
@@ -95,7 +102,13 @@ function DecisionsPage() {
     queryKey: ["decisions", status],
     queryFn: () => fetchDecisions({ data: { status, limit: 100 } }),
   });
-  const rows = useMemo(() => data ?? [], [data]);
+  const rows = useMemo(() => {
+    const all = data ?? [];
+    if (focusId) return all.filter((d) => d.id === focusId);
+    if (focusMeeting) return all.filter((d) => d.sourceId === focusMeeting);
+    return all;
+  }, [data, focusId, focusMeeting]);
+
 
   const confirmFn = useServerFn(setDecisionConfirmation);
   const supersedeFn = useServerFn(supersedeDecision);
@@ -186,6 +199,22 @@ function DecisionsPage() {
               </Button>
             </CardContent>
           </Card>
+
+          {focused ? (
+            <Card className="border-primary/30 bg-primary/5">
+              <CardContent className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
+                <span className="text-muted-foreground">
+                  Đang lọc theo {focusMeeting ? "quyết định trích xuất từ một cuộc họp" : "một quyết định cụ thể"}.
+                  Xác nhận để đưa lên sơ đồ công việc.
+                </span>
+                <Button size="sm" variant="outline" className="min-h-11" asChild>
+                  <Link to="/decisions" search={{ id: undefined, meeting: undefined }}>
+                    Bỏ lọc
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ) : null}
 
 
           <Tabs value={status} onValueChange={(v) => setStatus(v as typeof status)}>
