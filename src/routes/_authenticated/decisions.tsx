@@ -208,7 +208,9 @@ function DecisionsPage() {
                   Xác nhận để đưa lên sơ đồ công việc.
                 </span>
                 <Button size="sm" variant="outline" className="min-h-11" asChild>
-                  <Link to="/decisions">Bỏ lọc</Link>
+                  <Link to="/decisions" search={{ id: undefined, meeting: undefined }}>
+                    Bỏ lọc
+                  </Link>
                 </Button>
               </CardContent>
             </Card>
