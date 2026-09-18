@@ -707,37 +707,23 @@ export async function buildAiContextPack(
 
   /* --- PHASE H: ranking (module riêng, giải thích được) + per-type limits + budget --- */
   const rankNow = new Date();
-  const scored = rankContextCandidates(
-    candidates
-      .filter((c) => c.type !== "TENANT")
-      .filter((c) => {
-        if (!timeRange || !c.updatedAt) return true;
-        const ts = new Date(c.updatedAt).getTime();
-        return ts >= new Date(timeRange.from).getTime() && ts <= new Date(timeRange.to).getTime();
-      })
-      .map((c) => {
-        let priority = ENTITY_PRIORITY_BASE[c.type];
-        if (
-          intent.wantsBlockers &&
-          (c.type === "TASK" || c.relationship === "BLOCKS" || c.relationship === "DEPENDS_ON")
-        )
-          priority += 0.2;
-        if (
-          intent.wantsCommunication &&
-          (c.type === "EMAIL" || c.type === "CHAT_CHANNEL" || c.type === "MEETING")
-        )
-          priority += 0.2;
-        if (intent.wantsLatestMeeting && c.type === "MEETING") priority += 0.25;
-        if (
-          c.type === "MEETING_ARTIFACT" &&
-          (intent.wantsMeetingOutcome || root?.entityType === "MEETING")
-        )
-          priority += 0.3;
-        return { ...c, intentPriority: Math.min(1, priority) };
-      }),
-    rankNow,
-  ).map((r) => ({
-    ...r.candidate,
+  const eligible = candidates
+    .filter((c) => c.type !== "TENANT")
+    .filter((c) => {
+      if (!timeRange || !c.updatedAt) return true;
+      const ts = new Date(c.updatedAt).getTime();
+      return ts >= new Date(timeRange.from).getTime() && ts <= new Date(timeRange.to).getTime();
+    })
+    .map((c) => ({ ...c, meta: c }));
+
+  const scored = rankUnifiedContext<Candidate>({
+    semantic: eligible.filter((c) => c.relationship === "SEARCH_MATCH"),
+    graph: eligible.filter((c) => c.relationship !== "SEARCH_MATCH"),
+    intent,
+    rootType: root?.entityType ?? null,
+    now: rankNow,
+  }).map((r) => ({
+    ...(r.candidate.meta as Candidate),
     rank: r.score,
     freshness: r.freshness,
     rankBreakdown: r.breakdown as unknown as Record<string, number>,
