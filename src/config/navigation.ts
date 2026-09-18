@@ -30,6 +30,7 @@ import {
   BadgeCheck,
   ClipboardList,
   Gavel,
+  History,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { Key } from "@/lib/i18n";
@@ -330,6 +331,16 @@ export const NAV_ITEMS: NavItem[] = [
     match: ["/decisions"],
     visibility: "everyone",
     order: 3.5,
+  },
+  {
+    id: "decision-history",
+    labelKey: "nav.decisionHistory",
+    icon: History,
+    href: "/decision-history",
+    group: "automation",
+    match: ["/decision-history"],
+    visibility: "everyone",
+    order: 3.6,
   },
   {
     id: "ai-market",
