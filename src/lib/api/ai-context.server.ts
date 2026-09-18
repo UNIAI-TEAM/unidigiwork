@@ -191,6 +191,13 @@ export const MEETING_ARTIFACT_LABEL: Record<string, string> = {
   FOLLOW_UP: "Thư theo dõi",
 };
 
+export const DECISION_STATUS_LABEL: Record<string, string> = {
+  CANDIDATE: "Chờ xác nhận",
+  CONFIRMED: "Đã xác nhận",
+  REJECTED: "Đã từ chối",
+  SUPERSEDED: "Đã bị thay thế",
+};
+
 export async function resolveTenantForActor(
   supabase: Db,
   userId: string,
