@@ -636,7 +636,7 @@ export async function buildAiContextPack(
 
   const perType = new Map<AiContextEntityType, number>();
   const seen = new Set<string>();
-  const selected: (Candidate & { rank: number })[] = [];
+  const selected: ScoredCandidate[] = [];
   for (const c of scored) {
     const k = `${c.type}:${c.id}`;
     if (seen.has(k)) continue; // §74 dedupe
@@ -665,7 +665,17 @@ export async function buildAiContextPack(
   let tokens = 0;
   let budgetTruncated = false;
 
-  const pushSource = (c: { type: AiContextEntityType; id: string; title: string; updatedAt: string | null; snippet?: string; relationship?: Candidate["relationship"]; rank: number }) => {
+  const pushSource = (c: {
+    type: AiContextEntityType;
+    id: string;
+    title: string;
+    updatedAt: string | null;
+    snippet?: string;
+    relationship?: Candidate["relationship"];
+    rank: number;
+    freshness?: TemporalFreshness;
+    rankBreakdown?: Record<string, number>;
+  }) => {
     const excerpt = excerpts.get(`${c.type}:${c.id}`) ?? cleanExcerpt(c.snippet ?? "");
     const sourceId = `S${sources.length + 1}`;
     const cost = estimateTokens(`${c.title}${excerpt}`) + 20;
@@ -675,7 +685,8 @@ export async function buildAiContextPack(
     }
     tokens += cost;
     const href = workEntityHref(c.type, c.id);
-    sources.push({ sourceId, entityType: c.type, entityId: c.id, title: c.title, href, excerpt, updatedAt: c.updatedAt });
+    const freshness = c.freshness ?? computeTemporalFreshness(c.type, c.updatedAt, rankNow);
+    sources.push({ sourceId, entityType: c.type, entityId: c.id, title: c.title, href, excerpt, updatedAt: c.updatedAt, freshness });
     entities.push({
       entityType: c.type,
       entityId: c.id,
@@ -686,13 +697,15 @@ export async function buildAiContextPack(
       updatedAt: c.updatedAt,
       href,
       sourceRank: c.rank,
+      freshness,
+      rankBreakdown: c.rankBreakdown ?? null,
     });
     return true;
   };
 
   if (root) pushSource({ type: root.entityType, id: root.entityId, title: root.title, updatedAt: root.updatedAt ?? null, relationship: "ROOT", rank: 1 });
   for (const c of selected) {
-    if (!pushSource({ type: c.type, id: c.id, title: c.title, updatedAt: c.updatedAt, snippet: c.snippet, relationship: c.relationship, rank: c.rank })) break;
+    if (!pushSource({ type: c.type, id: c.id, title: c.title, updatedAt: c.updatedAt, snippet: c.snippet, relationship: c.relationship, rank: c.rank, freshness: c.freshness, rankBreakdown: c.rankBreakdown })) break;
   }
 
   const facts = await buildFacts(
