@@ -29,6 +29,7 @@ import {
   CreditCard,
   Briefcase,
   Loader2,
+  Gavel,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";

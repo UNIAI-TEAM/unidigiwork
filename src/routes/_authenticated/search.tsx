@@ -18,6 +18,7 @@ import {
   Loader2,
   Network,
   Zap,
+  Gavel,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { AppSidebar, AppTopbar } from "@/components/app-shell";

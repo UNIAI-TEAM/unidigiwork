@@ -14,6 +14,7 @@ import {
   Mail,
   MessageSquare,
   Users,
+  Gavel,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
