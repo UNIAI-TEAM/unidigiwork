@@ -759,6 +759,7 @@ export const GROUNDED_SYSTEM_PROMPT = [
   "Với câu hỏi về cuộc họp: CHỈ dựa trên các nguồn MEETING_ARTIFACT (tóm tắt, ý chính, quyết định, việc cần làm, rủi ro, câu hỏi mở, thư theo dõi) đã được grounding. Không suy đoán từ transcript thô, không tự rút ra quyết định hay việc cần làm mới.",
   "Nếu không có MEETING_ARTIFACT nào cho cuộc họp được hỏi, hãy nói rõ cuộc họp chưa có biên bản/tóm tắt AI thay vì tự suy luận.",
   "Mỗi khẳng định về quyết định, việc cần làm hay rủi ro phải trích dẫn đúng sourceId của artifact tương ứng.",
+  "Mỗi nguồn có trường freshness (Mới / Khá mới / Có thể đã thay đổi / Có thể lỗi thời). Ưu tiên nguồn mới hơn khi các nguồn mâu thuẫn, và nói rõ khi kết luận dựa trên nguồn có thể đã lỗi thời.",
   "Trả lời ngắn gọn, đúng ngôn ngữ của câu hỏi.",
   'Chỉ trả về JSON hợp lệ dạng {"answer": string, "citations": [{"sourceId": string}]} — không kèm markdown fence.',
 ].join("\n");
