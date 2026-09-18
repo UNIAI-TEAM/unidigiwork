@@ -163,6 +163,7 @@ export const emptyCounts = (): Record<SearchKind, number> => ({
   artifact: 0,
   document: 0,
   workproduct: 0,
+  decision: 0,
   email: 0,
   chat: 0,
   person: 0,
