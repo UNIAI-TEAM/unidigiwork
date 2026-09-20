@@ -438,6 +438,85 @@ export const confirmMeetingActionItem = createServerFn({ method: "POST" })
     return mapStateRow(row as unknown as Record<string, unknown>);
   });
 
+/** Tạo hàng loạt công việc từ các việc cần làm của biên bản, tự gán theo tên người phụ trách nếu khớp thành viên. */
+export const confirmMeetingActionItemsBulk = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    meetingIdSchema
+      .extend({
+        workspaceId: z.string().uuid(),
+        items: z
+          .array(
+            z.object({
+              itemKey: z.string().min(1).max(200),
+              title: z.string().min(1).max(200),
+              owner: z.string().max(200).nullish(),
+              dueAt: z.string().datetime().nullish(),
+            }),
+          )
+          .min(1)
+          .max(50),
+      })
+      .parse(i),
+  )
+  .handler(
+    async ({
+      data,
+      context,
+    }): Promise<{ created: number; failed: number; assigned: number; states: ActionItemState[] }> => {
+      // Thành viên workspace để tự gán theo tên/email người phụ trách do AI đề xuất.
+      const { data: members } = await context.supabase
+        .from("workspace_members")
+        .select("user_id")
+        .eq("workspace_id", data.workspaceId);
+      const memberIds = ((members ?? []) as Array<{ user_id: string }>).map((m) => m.user_id);
+      const { data: profiles } = memberIds.length
+        ? await context.supabase.from("profiles").select("id, display_name, email").in("id", memberIds)
+        : { data: [] as Array<{ id: string; display_name: string | null; email: string | null }> };
+      const people = ((profiles ?? []) as Array<{ id: string; display_name: string | null; email: string | null }>).map(
+        (p) => ({
+          id: p.id,
+          keys: [p.display_name ?? "", p.email ?? "", (p.email ?? "").split("@")[0] ?? ""]
+            .map((s) => s.trim().toLowerCase())
+            .filter(Boolean),
+        }),
+      );
+      const matchAssignee = (owner?: string | null): string | undefined => {
+        const q = (owner ?? "").trim().toLowerCase();
+        if (q.length < 2) return undefined;
+        const hit = people.find((p) => p.keys.some((k) => k === q || k.includes(q) || q.includes(k)));
+        return hit?.id;
+      };
+
+      const states: ActionItemState[] = [];
+      let created = 0;
+      let failed = 0;
+      let assigned = 0;
+      for (const item of data.items) {
+        const assigneeId = matchAssignee(item.owner);
+        const { data: row, error } = await context.supabase.rpc("confirm_meeting_action_item", {
+          _meeting_id: data.meetingId,
+          _item_key: item.itemKey,
+          _workspace_id: data.workspaceId,
+          _title: item.title,
+          _due_at: item.dueAt ?? undefined,
+          _assignee_id: assigneeId ?? undefined,
+        });
+        if (error) {
+          failed += 1;
+          continue;
+        }
+        created += 1;
+        if (assigneeId) assigned += 1;
+        states.push(mapStateRow(row as unknown as Record<string, unknown>));
+      }
+      if (created === 0) {
+        throw new ApiError({ code: "VALIDATION_FAILED", message: "Không tạo được công việc nào từ biên bản." });
+      }
+      return { created, failed, assigned, states };
+    },
+  );
+
 export const dismissMeetingActionItem = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
