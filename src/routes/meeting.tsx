@@ -19,6 +19,7 @@ import {
   Circle,
   Clock,
   Copy,
+  Globe,
   Link2,
   Loader2,
   Mail,
@@ -28,6 +29,7 @@ import {
   Plus,
   Search,
   Send,
+  TriangleAlert,
   Users,
   Video as VideoIcon,
   X,
@@ -51,7 +53,14 @@ import {
   scheduleMeeting,
   updateMeeting,
 } from "@/lib/api/meetings.functions";
-import { pinnedRoomsForView, withoutPinned, type PinnableMeeting } from "@/lib/meeting-pinned";
+import {
+  matchesRoomFilters,
+  pinnedRoomsForView,
+  withoutPinned,
+  type PinnableMeeting,
+  type RoomFilters,
+} from "@/lib/meeting-pinned";
+import { INSTANT_MEETING_CLOCK_SKEW_MS, resolveInstantMeetingWindow } from "@/lib/meeting-instant";
 import {
   Dialog,
   DialogContent,
@@ -447,8 +456,25 @@ function MeetingPage() {
   // Ghim cuộc họp vừa tạo lên đầu trang 1 cho tới khi rời trang: danh sách vẫn
   // sắp theo giờ bắt đầu nên cuộc họp mới thường nằm ở cuối hoặc sang trang sau.
   const [pinnedIds, setPinnedIds] = useState<string[]>([]);
-  const pinMeeting = (id: string) => {
-    setPinnedIds((prev) => (prev.includes(id) ? prev : [id, ...prev]));
+  const roomFilters: RoomFilters = {
+    workspaceId: activeWs,
+    search: roomQuery,
+    state: roomState,
+    from: dateFrom,
+    to: dateTo,
+    page: currentPage,
+  };
+  const pinMeeting = (m: PinnableMeeting) => {
+    setPinnedIds((prev) => (prev.includes(m.id) ? prev : [m.id, ...prev]));
+    // Bộ lọc đang bật có thể loại đúng cuộc họp vừa tạo — phòng họp nhanh có
+    // start_at ở quá khứ nên bộ lọc "Sắp diễn ra" gạt nó khỏi cả truy vấn
+    // server lẫn dòng ghim, và người dùng lại tưởng tạo hỏng. Gỡ bộ lọc để
+    // người dùng thấy được kết quả thao tác vừa rồi.
+    if (!matchesRoomFilters(m, roomFilters)) {
+      clearFilters();
+      toast.info(t("mtg.pin.filterCleared"));
+      return;
+    }
     // Dòng ghim chỉ nằm ở trang 1, nên đang xem trang sau thì đưa về trang 1.
     if (currentPage !== 1) setRoomFilter({ page: 1 });
   };
@@ -462,14 +488,7 @@ function MeetingPage() {
   });
   const pinnedRooms = pinnedRoomsForView(
     pinnedQueries.map((q) => q.data as PinnableMeeting | undefined),
-    {
-      workspaceId: activeWs,
-      search: roomQuery,
-      state: roomState,
-      from: dateFrom,
-      to: dateTo,
-      page: currentPage,
-    },
+    roomFilters,
   ) as ListRoom[];
   const listItems = withoutPinned(serverItems, pinnedRooms);
   const listLoading = activeListQuery.isLoading || (!activeWs && workspaces.isLoading);
@@ -570,21 +589,22 @@ function MeetingPage() {
   };
 
   const createRoom = useMutation({
-    mutationFn: (vars?: { title?: string; startAt?: string; durationMinutes?: number }) =>
+    mutationFn: (vars: QuickRoomSubmit) =>
       createInstantMeeting({
         data: {
+          idempotencyKey: vars.idempotencyKey,
           ...(activeWs ? { workspaceId: activeWs } : {}),
-          ...(vars?.title ? { title: vars.title } : {}),
-          ...(vars?.startAt ? { startAt: vars.startAt } : {}),
-          ...(vars?.durationMinutes ? { durationMinutes: vars.durationMinutes } : {}),
+          ...(vars.title ? { title: vars.title } : {}),
+          ...(vars.startAt ? { startAt: vars.startAt } : {}),
+          ...(vars.durationMinutes ? { durationMinutes: vars.durationMinutes } : {}),
         },
       }),
     onSuccess: (m) => {
       void queryClient.invalidateQueries({ queryKey: ["meeting-rooms"] });
-      pinMeeting(m.id);
+      pinMeeting(m as PinnableMeeting);
       setCreated({ id: m.id, title: m.title });
     },
-    onError: () => toast.error(t("mtg.create.error")),
+    onError: (err: unknown) => toast.error(t(createRoomErrorKey(err))),
   });
 
   const updateRoom = useMutation({
@@ -624,7 +644,7 @@ function MeetingPage() {
     onSuccess: (m) => {
       void queryClient.invalidateQueries({ queryKey: ["meeting-rooms"] });
       void queryClient.invalidateQueries({ queryKey: ["meetings-range"] });
-      pinMeeting(m.id);
+      pinMeeting(m as PinnableMeeting);
       setScheduleOpen(false);
       setSchTitle("");
       setSchStart("");
@@ -732,7 +752,10 @@ function MeetingPage() {
                   <p className="mt-1 text-sm text-muted-foreground">{t("mtg.home.desc")}</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <Button onClick={() => setCreateOpen(true)} disabled={createRoom.isPending}>
+                  <Button
+                    onClick={() => setCreateOpen(true)}
+                    disabled={createRoom.isPending || !activeWs}
+                  >
                     {createRoom.isPending ? <Loader2 className="animate-spin" /> : <VideoIcon />}
                     {t("mtg.home.startNow")}
                   </Button>
@@ -964,7 +987,7 @@ function MeetingPage() {
                       </Button>
                     ) : (
                       <>
-                        <Button onClick={() => setCreateOpen(true)}>
+                        <Button onClick={() => setCreateOpen(true)} disabled={!activeWs}>
                           <VideoIcon /> {t("mtg.home.startNow")}
                         </Button>
                         <Button variant="outline" onClick={openSchedule} disabled={!activeWs}>
@@ -1525,6 +1548,28 @@ type InvitedParticipant = {
 };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
+/** Tham số một lần bấm "Tạo phòng" — khóa chống trùng đi kèm ngay từ form. */
+type QuickRoomSubmit = {
+  idempotencyKey: string;
+  title?: string;
+  startAt?: string;
+  durationMinutes?: number;
+};
+
+// Mỗi nguyên nhân hỏng cần một lối thoát khác nhau (nâng gói, chọn workspace,
+// sửa giờ), nên gộp tất cả vào một câu "không tạo được phòng" là bỏ mặc người
+// dùng. Mã lỗi ổn định do RPC ném ra đi nguyên vẹn trong message.
+function createRoomErrorKey(err: unknown): Key {
+  const msg = String((err as { message?: string })?.message ?? "");
+  if (/QUOTA_EXCEEDED/.test(msg)) return "mtg.create.quota";
+  if (/ENTITLEMENT_DENIED/.test(msg)) return "mtg.create.entitlement";
+  if (/MEETING_TIME_INVALID|START_IN_PAST/.test(msg)) return "mtg.create.pastStart";
+  if (/TENANT_ACCESS_DENIED|NO_WORKSPACE|WORKSPACE_FORBIDDEN/.test(msg))
+    return "mtg.create.noWorkspace";
+  if (/PERMISSION_DENIED/.test(msg)) return "mtg.perm.denyManage";
+  return "mtg.create.error";
+}
+
 const DURATIONS = [15, 30, 45, 60, 90, 120];
 const EXPIRY_OPTIONS: { value: string; label: Key }[] = [
   { value: "60", label: "mtg.qr.exp.1h" },
@@ -1559,13 +1604,22 @@ function QuickRoomDialog({
   created: { id: string; title: string } | null;
   onClose: () => void;
   onEnter: () => void;
-  onSubmit: (v: { title?: string; startAt?: string; durationMinutes?: number }) => void;
+  onSubmit: (v: QuickRoomSubmit) => void;
 }) {
   const { t, lang } = useI18n();
   const locale = localeTag(lang);
   const [title, setTitle] = useState("");
   const [startNow, setStartNow] = useState(true);
   const [startAt, setStartAt] = useState(() => toLocalInput(new Date(Date.now() + 15 * 60_000)));
+  // Một khóa cho một lần mở hộp thoại: bấm lại sau khi lỗi mạng sẽ gửi đúng
+  // khóa cũ, nên RPC trả về cuộc họp đã tạo thay vì tạo thêm một phòng nữa.
+  // Hộp thoại bị unmount khi đóng, nên lần mở sau là một ý định mới, khóa mới.
+  const [idempotencyKey] = useState(() => crypto.randomUUID());
+  // Chốt một lần lúc mở: `min` đổi theo từng lần render thì trạng thái hợp lệ
+  // của ô nhập nhấp nháy ngay dưới tay người dùng.
+  const [minStartAt] = useState(() =>
+    toLocalInput(new Date(Date.now() - INSTANT_MEETING_CLOCK_SKEW_MS)),
+  );
   const [duration, setDuration] = useState(60);
   const [invitees, setInvitees] = useState("");
   const [inviteResults, setInviteResults] = useState<InviteResult[] | null>(null);
@@ -1638,10 +1692,13 @@ function QuickRoomDialog({
   // Link mời có kiểm soát: thời hạn + số lượt sử dụng.
   const [linkExpiry, setLinkExpiry] = useState<string>("1440");
   const [linkUses, setLinkUses] = useState<string>("unlimited");
+  // Mặc định tắt: bật lên là mở phòng cho bất kỳ ai cầm được URL.
+  const [allowGuests, setAllowGuests] = useState(false);
   const [controlledLink, setControlledLink] = useState<{
     url: string;
     expiresAt: string | null;
     maxUses: number | null;
+    allowGuests: boolean;
   } | null>(null);
   const [creatingLink, setCreatingLink] = useState(false);
   const shareLink = controlledLink?.url ?? inviteLink;
@@ -1655,12 +1712,18 @@ function QuickRoomDialog({
           meetingId: created.id,
           expiresInMinutes: linkExpiry === "never" ? null : Number(linkExpiry),
           maxUses: linkUses === "unlimited" ? null : Number(linkUses),
+          allowGuests,
         },
       });
       setControlledLink({
-        url: `${window.location.origin}/meeting/${created.id}?invite=${res.token}`,
+        // Link khách trỏ thẳng vào route khách: người ngoài mở link nội bộ sẽ
+        // bị đá về /auth, còn mở link khách thì vào được ngay.
+        url: res.allowGuests
+          ? `${window.location.origin}/meeting/${created.id}/guest?invite=${res.token}`
+          : `${window.location.origin}/meeting/${created.id}?invite=${res.token}`,
         expiresAt: res.expiresAt,
         maxUses: res.maxUses,
+        allowGuests: res.allowGuests,
       });
       toast.success(t("mtg.qr.linkCreated"));
     } catch {
@@ -1741,9 +1804,28 @@ function QuickRoomDialog({
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
+    const picked = startNow ? null : new Date(startAt);
+    if (picked && Number.isNaN(picked.getTime())) {
+      toast.error(t("mtg.qr.errStartInvalid"));
+      return;
+    }
+    const startIso = picked ? picked.toISOString() : undefined;
+    // Cùng luật với server: báo ngay tại form thay vì gửi một lệnh chắc chắn bị
+    // từ chối rồi mới hiện toast lỗi.
+    const win = resolveInstantMeetingWindow({
+      ...(startIso ? { startAt: startIso } : {}),
+      durationMinutes: duration,
+    });
+    if (!win.ok) {
+      toast.error(
+        t(win.error === "START_IN_PAST" ? "mtg.qr.errPastStart" : "mtg.qr.errStartInvalid"),
+      );
+      return;
+    }
     onSubmit({
+      idempotencyKey,
       title: title.trim() || undefined,
-      startAt: startNow ? undefined : new Date(startAt).toISOString(),
+      ...(startIso ? { startAt: startIso } : {}),
       durationMinutes: duration,
     });
   };
@@ -1846,6 +1928,38 @@ function QuickRoomDialog({
                     </Select>
                   </div>
                 </div>
+                {/* Bật link khách là một quyết định có hậu quả, không phải một
+                    tuỳ chọn phụ: cho nó khung riêng và cảnh báo hiện ngay khi
+                    bật. Màu cảnh báo nằm ở icon, chữ giữ nguyên `foreground`
+                    để luôn đạt tương phản AA trên nền sáng lẫn nền tối. */}
+                <div className="space-y-2 rounded-lg border border-border bg-surface-2/50 p-3">
+                  <div className="flex items-start gap-2.5">
+                    <Checkbox
+                      id="qr-allow-guests"
+                      checked={allowGuests}
+                      onCheckedChange={(v) => setAllowGuests(v === true)}
+                      className="mt-0.5"
+                    />
+                    <Label
+                      htmlFor="qr-allow-guests"
+                      className="text-xs font-medium leading-snug text-foreground"
+                    >
+                      {t("mtg.qr.allowGuests")}
+                    </Label>
+                  </div>
+                  {allowGuests && (
+                    <p
+                      role="status"
+                      className="flex items-start gap-2 text-xs leading-relaxed text-foreground"
+                    >
+                      <TriangleAlert
+                        className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning"
+                        aria-hidden="true"
+                      />
+                      {t("mtg.qr.allowGuestsHint")}
+                    </p>
+                  )}
+                </div>
                 <Button
                   type="button"
                   variant="outline"
@@ -1855,6 +1969,12 @@ function QuickRoomDialog({
                 >
                   {creatingLink ? t("mtg.qr.linkCreating") : t("mtg.qr.linkCreate")}
                 </Button>
+                {controlledLink?.allowGuests && (
+                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-surface-3 px-2 py-1 text-xs font-medium text-foreground">
+                    <Globe className="h-3.5 w-3.5 text-warning" aria-hidden="true" />
+                    {t("mtg.qr.guestLinkBadge")}
+                  </span>
+                )}
                 {controlledLink && (
                   <p className="text-xs text-muted-foreground" aria-live="polite">
                     {fmt(t("mtg.qr.currentLink"), {
@@ -2055,6 +2175,7 @@ function QuickRoomDialog({
                   id="qr-start"
                   type="datetime-local"
                   value={startAt}
+                  min={minStartAt}
                   onChange={(e) => setStartAt(e.target.value)}
                   required
                 />

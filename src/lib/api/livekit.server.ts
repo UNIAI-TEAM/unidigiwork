@@ -32,10 +32,13 @@ function b64urlDecode(input: string): Uint8Array {
 }
 
 async function hmacKey(secret: string): Promise<CryptoKey> {
-  return crypto.subtle.importKey("raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, [
-    "sign",
-    "verify",
-  ]);
+  return crypto.subtle.importKey(
+    "raw",
+    enc.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign", "verify"],
+  );
 }
 
 export type LiveKitRole = "host" | "moderator" | "participant" | "viewer";
@@ -80,7 +83,11 @@ export async function signJoinToken(input: {
   };
   const signingInput = `${b64url(enc.encode(JSON.stringify(header)))}.${b64url(enc.encode(JSON.stringify(payload)))}`;
   const sig = new Uint8Array(
-    await crypto.subtle.sign("HMAC", await hmacKey(input.config.apiSecret), enc.encode(signingInput)),
+    await crypto.subtle.sign(
+      "HMAC",
+      await hmacKey(input.config.apiSecret),
+      enc.encode(signingInput),
+    ),
   );
   return { token: `${signingInput}.${b64url(sig)}`, expiresAt: new Date(exp * 1000) };
 }
@@ -172,7 +179,10 @@ async function signAdminToken(config: LiveKitConfig, ttlSeconds = 60): Promise<s
 }
 
 function httpBase(url: string): string {
-  return url.replace(/^wss:\/\//i, "https://").replace(/^ws:\/\//i, "http://").replace(/\/+$/, "");
+  return url
+    .replace(/^wss:\/\//i, "https://")
+    .replace(/^ws:\/\//i, "http://")
+    .replace(/\/+$/, "");
 }
 
 export interface LiveKitRoom {
@@ -197,9 +207,35 @@ export async function listRooms(config: LiveKitConfig): Promise<LiveKitRoom[]> {
   return data.rooms ?? [];
 }
 
+/**
+ * Đá một participant ra khỏi phòng đang mở. Thu hồi ở DB chỉ chặn xin vé mới,
+ * nên nếu không gọi hàm này thì người bị mời ra vẫn ngồi trong phòng tới khi vé
+ * hiện tại hết hạn — tới 15 phút.
+ */
+export async function removeParticipant(
+  config: LiveKitConfig,
+  room: string,
+  identity: string,
+): Promise<void> {
+  const token = await signAdminToken(config);
+  const res = await fetch(`${httpBase(config.url)}/twirp/livekit.RoomService/RemoveParticipant`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ room, identity }),
+  });
+  // 404 = người đó không có trong phòng (đã tự thoát). Không phải lỗi.
+  if (!res.ok && res.status !== 404) {
+    throw new Error(`LiveKit RemoveParticipant failed [${res.status}]: ${await res.text()}`);
+  }
+}
+
 // ============ Egress (ghi hình thật) ============
 
-async function signEgressToken(config: LiveKitConfig, room: string, ttlSeconds = 60): Promise<string> {
+async function signEgressToken(
+  config: LiveKitConfig,
+  room: string,
+  ttlSeconds = 60,
+): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   const header = { alg: "HS256", typ: "JWT" };
   const payload = {
@@ -217,7 +253,12 @@ async function signEgressToken(config: LiveKitConfig, room: string, ttlSeconds =
   return `${signingInput}.${b64url(sig)}`;
 }
 
-async function egressRpc<T>(config: LiveKitConfig, method: string, room: string, body: unknown): Promise<T> {
+async function egressRpc<T>(
+  config: LiveKitConfig,
+  method: string,
+  room: string,
+  body: unknown,
+): Promise<T> {
   const token = await signEgressToken(config, room);
   const res = await fetch(`${httpBase(config.url)}/twirp/livekit.Egress/${method}`, {
     method: "POST",
@@ -244,9 +285,24 @@ export interface EgressInfo {
   egressId?: string;
   status?: string;
   error?: string;
-  file?: { filename?: string; size?: string | number; duration?: string | number; location?: string };
-  file_results?: Array<{ filename?: string; size?: string | number; duration?: string | number; location?: string }>;
-  fileResults?: Array<{ filename?: string; size?: string | number; duration?: string | number; location?: string }>;
+  file?: {
+    filename?: string;
+    size?: string | number;
+    duration?: string | number;
+    location?: string;
+  };
+  file_results?: Array<{
+    filename?: string;
+    size?: string | number;
+    duration?: string | number;
+    location?: string;
+  }>;
+  fileResults?: Array<{
+    filename?: string;
+    size?: string | number;
+    duration?: string | number;
+    location?: string;
+  }>;
 }
 
 export function egressIdOf(info: EgressInfo | undefined): string | null {
@@ -283,6 +339,10 @@ export async function startRoomCompositeEgress(input: {
   });
 }
 
-export async function stopEgress(config: LiveKitConfig, room: string, egressId: string): Promise<EgressInfo> {
+export async function stopEgress(
+  config: LiveKitConfig,
+  room: string,
+  egressId: string,
+): Promise<EgressInfo> {
   return egressRpc<EgressInfo>(config, "StopEgress", room, { egress_id: egressId });
 }

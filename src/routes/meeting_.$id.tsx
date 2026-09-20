@@ -2,7 +2,7 @@
 // `requestJoinToken` on the server, and the page only ever holds the result.
 import { RelatedWorkPanel } from "@/components/work-graph/related-work-panel";
 import { AskUniPanel } from "@/components/ai/ask-uni-panel";
-import { createFileRoute, Link, ClientOnly } from "@tanstack/react-router";
+import { createFileRoute, Link, ClientOnly, redirect } from "@tanstack/react-router";
 import {
   Suspense,
   lazy,
@@ -102,6 +102,7 @@ import {
 import { MeetingContentPanel } from "@/components/meeting/meeting-content-panel";
 import { MeetingStatusHistoryPanel } from "@/components/meeting/meeting-status-history-panel";
 import { MeetingParticipantsManagerPanel } from "@/components/meeting/participants-manager-panel";
+import { MeetingGuestsPanel } from "@/components/meeting/guests-panel";
 import { MeetingRecordingPanel } from "@/components/meeting/recording-panel";
 import { ParticipantAvatar } from "@/components/meeting/participant-avatar";
 import {
@@ -240,6 +241,22 @@ export const Route = createFileRoute("/meeting_/$id")({
   validateSearch: (search: Record<string, unknown>): { invite?: string } => ({
     invite: typeof search["invite"] === "string" ? (search["invite"] as string) : undefined,
   }),
+  // Trang này không nằm dưới /_authenticated nên tự canh cửa. Người chưa đăng
+  // nhập cầm link mời được đưa sang phòng khách thay vì đá về /auth — RPC bên
+  // đó mới là nơi quyết định link ấy có cho khách vào hay không.
+  beforeLoad: async ({ params, search }) => {
+    if (typeof window === "undefined") return;
+    const { data } = await supabase.auth.getUser();
+    if (data.user) return;
+    if (search.invite) {
+      throw redirect({
+        to: "/meeting/$id/guest",
+        params: { id: params.id },
+        search: { invite: search.invite },
+      });
+    }
+    throw redirect({ to: "/auth" });
+  },
   head: () => ({
     meta: [{ title: "Phòng họp · UNIWORK" }],
   }),
@@ -1302,6 +1319,12 @@ function MeetingDetailPage() {
             </li>
           ))}
         </ul>
+      )}
+
+      {isRealRoom && (
+        <div className="border-t border-border pt-4">
+          <MeetingGuestsPanel meetingId={id} canManage={isHost} />
+        </div>
       )}
 
       {isRealRoom && (

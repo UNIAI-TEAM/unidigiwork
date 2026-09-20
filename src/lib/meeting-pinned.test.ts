@@ -63,6 +63,20 @@ describe("matchesRoomFilters", () => {
     expect(matchesRoomFilters(past, filters({ state: "upcoming" }), NOW)).toBe(false);
   });
 
+  // Phòng họp nhanh được tạo với start_at lùi về quá khứ để vào được ngay, nên
+  // nó rơi ra ngoài mọi bộ lọc trừ "tất cả" và "đang diễn ra". Trang /meeting
+  // dựa vào đúng kết quả false này để gỡ bộ lọc, nếu không người dùng vừa bấm
+  // tạo đã thấy danh sách trống và tưởng tạo hỏng.
+  it("phòng họp nhanh vừa tạo không khớp bộ lọc 'sắp diễn ra'", () => {
+    const instant = meeting({
+      status: "scheduled",
+      start_at: new Date(NOW - 60_000).toISOString(),
+      end_at: new Date(NOW + 59 * 60_000).toISOString(),
+    });
+    expect(matchesRoomFilters(instant, filters({ state: "upcoming" }), NOW)).toBe(false);
+    expect(matchesRoomFilters(instant, filters({ state: "all" }), NOW)).toBe(true);
+  });
+
   it("bộ lọc 'đã kết thúc' chỉ nhận cuộc họp đã kết thúc hoặc bị hủy", () => {
     expect(
       matchesRoomFilters(meeting({ status: "canceled" }), filters({ state: "ended" }), NOW),

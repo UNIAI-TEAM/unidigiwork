@@ -70,6 +70,7 @@ import { Route as AuthenticatedWorkspaceIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedAiMarketIndexRouteImport } from './routes/_authenticated/ai-market.index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as ShareWorkGraphTokenRouteImport } from './routes/share.work-graph.$token'
+import { Route as MeetingIdGuestRouteImport } from './routes/meeting_.$id_.guest'
 import { Route as BlogCategoryCategoryRouteImport } from './routes/blog.category.$category'
 import { Route as ApiOfficeSessionsRouteImport } from './routes/api/office/sessions'
 import { Route as ApiOfficeDownloadRouteImport } from './routes/api/office/download'
@@ -461,6 +462,11 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
 const ShareWorkGraphTokenRoute = ShareWorkGraphTokenRouteImport.update({
   id: '/share/work-graph/$token',
   path: '/share/work-graph/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MeetingIdGuestRoute = MeetingIdGuestRouteImport.update({
+  id: '/meeting_/$id_/guest',
+  path: '/meeting/$id/guest',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BlogCategoryCategoryRoute = BlogCategoryCategoryRouteImport.update({
@@ -1019,6 +1025,7 @@ export interface FileRoutesByFullPath {
   '/api/office/download': typeof ApiOfficeDownloadRoute
   '/api/office/sessions': typeof ApiOfficeSessionsRouteWithChildren
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
+  '/meeting/$id/guest': typeof MeetingIdGuestRoute
   '/share/work-graph/$token': typeof ShareWorkGraphTokenRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/ai-market/': typeof AuthenticatedAiMarketIndexRoute
@@ -1158,6 +1165,7 @@ export interface FileRoutesByTo {
   '/api/office/download': typeof ApiOfficeDownloadRoute
   '/api/office/sessions': typeof ApiOfficeSessionsRouteWithChildren
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
+  '/meeting/$id/guest': typeof MeetingIdGuestRoute
   '/share/work-graph/$token': typeof ShareWorkGraphTokenRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/ai-market': typeof AuthenticatedAiMarketIndexRoute
@@ -1301,6 +1309,7 @@ export interface FileRoutesById {
   '/api/office/download': typeof ApiOfficeDownloadRoute
   '/api/office/sessions': typeof ApiOfficeSessionsRouteWithChildren
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
+  '/meeting_/$id_/guest': typeof MeetingIdGuestRoute
   '/share/work-graph/$token': typeof ShareWorkGraphTokenRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/ai-market/': typeof AuthenticatedAiMarketIndexRoute
@@ -1444,6 +1453,7 @@ export interface FileRouteTypes {
     | '/api/office/download'
     | '/api/office/sessions'
     | '/blog/category/$category'
+    | '/meeting/$id/guest'
     | '/share/work-graph/$token'
     | '/admin/'
     | '/ai-market/'
@@ -1583,6 +1593,7 @@ export interface FileRouteTypes {
     | '/api/office/download'
     | '/api/office/sessions'
     | '/blog/category/$category'
+    | '/meeting/$id/guest'
     | '/share/work-graph/$token'
     | '/admin'
     | '/ai-market'
@@ -1725,6 +1736,7 @@ export interface FileRouteTypes {
     | '/api/office/download'
     | '/api/office/sessions'
     | '/blog/category/$category'
+    | '/meeting_/$id_/guest'
     | '/share/work-graph/$token'
     | '/_authenticated/admin/'
     | '/_authenticated/ai-market/'
@@ -1785,6 +1797,7 @@ export interface RootRouteChildren {
   ApiAdminWorkProductGraphBackfillRoute: typeof ApiAdminWorkProductGraphBackfillRoute
   ApiOfficeDownloadRoute: typeof ApiOfficeDownloadRoute
   ApiOfficeSessionsRoute: typeof ApiOfficeSessionsRouteWithChildren
+  MeetingIdGuestRoute: typeof MeetingIdGuestRoute
   ShareWorkGraphTokenRoute: typeof ShareWorkGraphTokenRoute
   ApiAdminTraceCorrelationIdRoute: typeof ApiAdminTraceCorrelationIdRoute
   ApiOfficeSaveCompleteRoute: typeof ApiOfficeSaveCompleteRoute
@@ -2228,6 +2241,13 @@ declare module '@tanstack/react-router' {
       path: '/share/work-graph/$token'
       fullPath: '/share/work-graph/$token'
       preLoaderRoute: typeof ShareWorkGraphTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/meeting_/$id_/guest': {
+      id: '/meeting_/$id_/guest'
+      path: '/meeting/$id/guest'
+      fullPath: '/meeting/$id/guest'
+      preLoaderRoute: typeof MeetingIdGuestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/blog/category/$category': {
@@ -3124,6 +3144,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminWorkProductGraphBackfillRoute: ApiAdminWorkProductGraphBackfillRoute,
   ApiOfficeDownloadRoute: ApiOfficeDownloadRoute,
   ApiOfficeSessionsRoute: ApiOfficeSessionsRouteWithChildren,
+  MeetingIdGuestRoute: MeetingIdGuestRoute,
   ShareWorkGraphTokenRoute: ShareWorkGraphTokenRoute,
   ApiAdminTraceCorrelationIdRoute: ApiAdminTraceCorrelationIdRoute,
   ApiOfficeSaveCompleteRoute: ApiOfficeSaveCompleteRoute,

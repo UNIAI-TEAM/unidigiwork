@@ -4,6 +4,9 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { ensureOk, mapPgError } from "./business.server";
 import { ApiError } from "@/contracts/errors";
+import { correlationIdSchema, idempotencyKeySchema } from "@/contracts/common/base";
+import { resolveInstantMeetingWindow } from "@/lib/meeting-instant";
+import { callPendingRpc } from "./pending-rpc.server";
 
 // Danh sách workspace mà người dùng thấy được (RLS lọc theo tenant/thành viên).
 export const listMyWorkspaces = createServerFn({ method: "GET" })
@@ -155,6 +158,12 @@ export const createInstantMeeting = createServerFn({ method: "POST" })
   .inputValidator((i) =>
     z
       .object({
+        // Khóa do client sinh một lần cho một ý định tạo phòng và giữ nguyên
+        // qua mọi lần thử lại. Trước đây khóa được sinh tại server theo
+        // Date.now() nên mỗi lần gửi lại là một khóa mới — tức là không chống
+        // trùng được gì cả.
+        idempotencyKey: idempotencyKeySchema,
+        correlationId: correlationIdSchema,
         title: z.string().min(1).max(200).optional(),
         workspaceId: z.string().uuid().optional(),
         startAt: z.string().datetime().optional(),
@@ -163,29 +172,62 @@ export const createInstantMeeting = createServerFn({ method: "POST" })
       .parse(i ?? {}),
   )
   .handler(async ({ data, context }) => {
-    let wsQuery = context.supabase
+    // Chỉ workspace mà người dùng thực sự là thành viên. RLS cho đọc cả
+    // workspace khác trong tenant, nên nếu chỉ dựa vào RLS thì lúc client chưa
+    // kịp chọn workspace, phòng họp rơi vào một workspace tùy ý của tổ chức.
+    const { data: memberships, error: memErr } = await context.supabase
+      .from("workspace_members")
+      .select("workspace_id")
+      .eq("user_id", context.userId)
+      .limit(200);
+    if (memErr) mapPgError(memErr);
+    const memberWorkspaceIds = (memberships ?? []).map(
+      (m) => (m as { workspace_id: string }).workspace_id,
+    );
+    if (memberWorkspaceIds.length === 0)
+      throw new ApiError({ code: "TENANT_ACCESS_DENIED", message: "NO_WORKSPACE" });
+    if (data.workspaceId && !memberWorkspaceIds.includes(data.workspaceId))
+      throw new ApiError({ code: "TENANT_ACCESS_DENIED", message: "WORKSPACE_FORBIDDEN" });
+
+    const { data: ws, error: wsErr } = await context.supabase
       .from("workspaces")
       .select("id")
+      .in("id", data.workspaceId ? [data.workspaceId] : memberWorkspaceIds)
       .is("deleted_at", null)
       .order("created_at", { ascending: true })
-      .limit(1);
-    if (data.workspaceId) wsQuery = wsQuery.eq("id", data.workspaceId);
-    const { data: ws, error: wsErr } = await wsQuery.maybeSingle();
+      .limit(1)
+      .maybeSingle();
     if (wsErr) mapPgError(wsErr);
     if (!ws) throw new ApiError({ code: "TENANT_ACCESS_DENIED", message: "NO_WORKSPACE" });
 
-    const now = Date.now();
-    const start = data.startAt ? new Date(data.startAt).getTime() : now - 60_000;
-    const duration = (data.durationMinutes ?? 60) * 60_000;
+    const win = resolveInstantMeetingWindow({
+      ...(data.startAt ? { startAt: data.startAt } : {}),
+      ...(data.durationMinutes ? { durationMinutes: data.durationMinutes } : {}),
+    });
+    if (!win.ok)
+      throw new ApiError({
+        code: win.error === "START_IN_PAST" ? "MEETING_TIME_INVALID" : "VALIDATION_FAILED",
+        message: win.error,
+      });
+
     const res = await context.supabase.rpc("schedule_meeting", {
       _workspace_id: (ws as { id: string }).id,
       _title: data.title ?? "Phòng họp nhanh",
-      _start_at: new Date(start).toISOString(),
-      _end_at: new Date(start + duration).toISOString(),
+      _start_at: win.startAt,
+      _end_at: win.endAt,
       _timezone: "Asia/Ho_Chi_Minh",
-      _idempotency_key: `instant:${now}:${context.userId.slice(0, 8)}`,
+      _idempotency_key: data.idempotencyKey,
+      _correlation_id: data.correlationId ?? undefined,
     });
-    return ensureOk(res, "MEETING_NOT_FOUND") as unknown as { id: string; title: string };
+    return ensureOk(res, "MEETING_NOT_FOUND") as unknown as {
+      id: string;
+      title: string;
+      status: string;
+      start_at: string;
+      end_at: string;
+      workspace_id: string;
+      deleted_at: string | null;
+    };
   });
 
 // Lịch sử cuộc họp — chỉ các phòng đã kết thúc/hủy.
@@ -260,29 +302,35 @@ export const createMeetingInviteLink = createServerFn({ method: "POST" })
           .optional(),
         maxUses: z.number().int().min(1).max(1000).nullable().optional(),
         label: z.string().max(120).optional(),
+        // Mặc định false, và cố ý không để `.optional()` tự suy ra: người gọi
+        // quên truyền thì link phải là link nội bộ, không phải link mở.
+        allowGuests: z.boolean().default(false),
       })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
-    const res = await context.supabase.rpc("create_meeting_invite_link", {
-      _meeting_id: data.meetingId,
-      _expires_in_minutes: data.expiresInMinutes ?? undefined,
-      _max_uses: data.maxUses ?? undefined,
-      _label: data.label ?? undefined,
-    });
-    const out = ensureOk(res, "MEETING_ACCESS_DENIED") as unknown as {
+    const res = await callPendingRpc<{
       id: string;
       token: string;
       expires_at: string | null;
       max_uses: number | null;
       used_count: number;
-    };
+      allow_guests: boolean;
+    }>(context.supabase, "create_meeting_invite_link", {
+      _meeting_id: data.meetingId,
+      _expires_in_minutes: data.expiresInMinutes ?? undefined,
+      _max_uses: data.maxUses ?? undefined,
+      _label: data.label ?? undefined,
+      _allow_guests: data.allowGuests,
+    });
+    const out = ensureOk(res, "MEETING_ACCESS_DENIED");
     return {
       id: out.id,
       token: out.token,
       expiresAt: out.expires_at,
       maxUses: out.max_uses,
       usedCount: out.used_count,
+      allowGuests: out.allow_guests ?? false,
     };
   });
 
@@ -349,6 +397,84 @@ export const listMeetingParticipants = createServerFn({ method: "POST" })
         email: people[row.user_id]?.email ?? null,
       };
     });
+  });
+
+// ----- Khách ngoài (link chia sẻ có allow_guests) -----
+// Khách không nằm trong `meeting_participants` nên không hiện ở
+// listMeetingParticipants; chủ toạ xem họ qua hàm riêng này.
+
+export interface MeetingGuestDTO {
+  guestId: string;
+  displayName: string;
+  joinedAt: string | null;
+  lastSeenAt: string | null;
+  revokedAt: string | null;
+}
+
+export const listMeetingGuests = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ meetingId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }): Promise<MeetingGuestDTO[]> => {
+    const res = await callPendingRpc<
+      Array<{
+        guest_id: string;
+        display_name: string;
+        joined_at: string | null;
+        last_seen_at: string | null;
+        revoked_at: string | null;
+      }>
+    >(context.supabase, "list_meeting_guests", { _meeting_id: data.meetingId });
+    if (res.error) mapPgError(res.error, "MEETING_ACCESS_DENIED");
+    return (res.data ?? []).map((g) => ({
+      guestId: g.guest_id,
+      displayName: g.display_name,
+      joinedAt: g.joined_at,
+      lastSeenAt: g.last_seen_at,
+      revokedAt: g.revoked_at,
+    }));
+  });
+
+/**
+ * Mời khách ra khỏi phòng. Thu hồi ở DB chặn khách xin vé mới; đá khỏi phòng
+ * đang mở là việc của LiveKit RemoveParticipant, gọi ngay sau đó.
+ */
+export const revokeMeetingGuest = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        guestId: z.string().uuid(),
+        correlationId: z.string().max(120).optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const res = await callPendingRpc<{
+      status: string;
+      guest_id: string;
+      identity: string;
+      room_name: string | null;
+    }>(context.supabase, "revoke_meeting_guest", {
+      _guest_id: data.guestId,
+      _correlation_id: data.correlationId ?? undefined,
+    });
+    if (res.error) mapPgError(res.error, "MEETING_ACCESS_DENIED");
+    const out = res.data;
+
+    // Thu hồi ở DB mới chỉ chặn khách xin vé mới. Vé đang cầm còn sống tới 15
+    // phút, nên phải đá khỏi phòng đang mở thì "mời ra" mới có nghĩa ngay.
+    if (out?.identity && out.room_name) {
+      try {
+        const { readLiveKitConfig, removeParticipant } = await import("./livekit.server");
+        const config = readLiveKitConfig();
+        if (config) await removeParticipant(config, out.room_name, out.identity);
+      } catch (err) {
+        // Quyền đã thu hồi trong DB rồi — lỗi ở đây chỉ làm chậm việc đá ra,
+        // không được biến thao tác thành thất bại trước mắt chủ toạ.
+        console.error("[meetings] removeParticipant failed", err);
+      }
+    }
+    return out ?? { status: "revoked", guest_id: data.guestId, identity: "", room_name: null };
   });
 
 // Chính sách vào phòng (ADR-1E-001).
