@@ -510,6 +510,13 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
     () => new Map((statesQuery.data ?? []).map((s) => [s.itemKey, s])),
     [statesQuery.data],
   );
+  const pendingItems = useMemo(
+    () =>
+      (summary?.actionItems ?? [])
+        .map((a) => ({ itemKey: actionItemKey(a), title: a.title, owner: a.owner ?? null }))
+        .filter((a) => !stateByKey.get(a.itemKey)),
+    [summary, stateByKey],
+  );
   const isStale = useMemo(() => {
     if (!summary?.transcriptChecksum || segments.length === 0) return false;
     return summary.transcriptChecksum !== transcriptChecksum(segments);
