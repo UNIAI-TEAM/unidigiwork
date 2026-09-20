@@ -673,8 +673,41 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
 
           {summary.actionItems.length > 0 && (
             <div className="space-y-2">
-              <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                <ListTodo className="h-3 w-3" /> Việc cần làm
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                  <ListTodo className="h-3 w-3" /> Việc cần làm
+                </div>
+                {pendingItems.length > 0 && workspaces.length > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <Select value={bulkWs || workspaces[0]?.id || ""} onValueChange={setBulkWs}>
+                      <SelectTrigger className="h-7 w-[160px] text-[11px]">
+                        <SelectValue placeholder="Không gian làm việc" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {workspaces.map((w) => (
+                          <SelectItem key={w.id} value={w.id}>
+                            {w.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-[10px]"
+                      disabled={bulkConfirm.isPending}
+                      onClick={() =>
+                        bulkConfirm.mutate({
+                          workspaceId: bulkWs || workspaces[0]!.id,
+                          items: pendingItems,
+                        })
+                      }
+                    >
+                      {bulkConfirm.isPending && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
+                      Tạo tất cả ({pendingItems.length})
+                    </Button>
+                  </div>
+                )}
               </div>
               {summary.actionItems.map((a, i) => {
                 const key = actionItemKey(a);
