@@ -388,3 +388,38 @@ export const toggleTaskFollow = createServerFn({ method: "POST" })
     }
     return { following: data.follow };
   });
+
+// ---- Tab "Tệp": liệt kê toàn bộ tệp đính kèm của công việc trong một workspace ----
+
+export const listWorkspaceTaskAttachments = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        workspaceId: z.string().uuid(),
+        limit: z.number().int().min(1).max(200).default(100),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase
+      .from("task_attachments")
+      .select("id, file_name, storage_path, mime_type, size_bytes, created_at, task_id, tasks!inner(id, title, workspace_id)")
+      .eq("tasks.workspace_id", data.workspaceId)
+      .order("created_at", { ascending: false })
+      .limit(data.limit);
+    if (error) mapPgError(error);
+    return (rows ?? []).map((r) => {
+      const task = (r as unknown as { tasks: { id: string; title: string } }).tasks;
+      return {
+        id: r.id as string,
+        fileName: r.file_name as string,
+        storagePath: r.storage_path as string,
+        mimeType: (r.mime_type as string | null) ?? null,
+        sizeBytes: (r.size_bytes as number | null) ?? null,
+        createdAt: r.created_at as string,
+        taskId: task?.id ?? (r.task_id as string),
+        taskTitle: task?.title ?? "",
+      };
+    });
+  });

@@ -1,9 +1,9 @@
 import { useStickySearch } from "@/lib/sticky-search";
 import { FilterPageHeader } from "@/components/filter-page-header";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import type { Key } from "@/lib/i18n";
 import type { LucideIcon } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -49,7 +49,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useI18n } from "@/lib/i18n";
 import { isOverdueTask } from "@/lib/metrics";
-import { notifyComingSoon } from "@/lib/coming-soon";
+import {
+  TaskListView,
+  TaskTimelineView,
+  TaskCalendarView,
+  TaskReportsView,
+  TaskFilesView,
+} from "@/components/tasks/task-views";
 
 type TasksSearch = { filter?: "overdue"; range?: number; ws?: string };
 
@@ -306,12 +312,88 @@ function TasksPage() {
   ).length;
   const progress = total ? Math.round((counts.done / total) * 100) : 0;
 
+  // Nhập công việc từ tệp CSV (cột: title, priority, due_at) — tạo việc thật qua RPC.
+  const importInputRef = useRef<HTMLInputElement>(null);
+  const [importing, setImporting] = useState(false);
+  const handleImportFile = async (file: File) => {
+    if (!activeWs) return;
+    setImporting(true);
+    try {
+      const text = await file.text();
+      const lines = text
+        .replace(/^\uFEFF/, "")
+        .split(/\r?\n/)
+        .filter((l) => l.trim());
+      const parseLine = (line: string) =>
+        (line.match(/("([^"]|"")*"|[^,]*)(,|$)/g) ?? [])
+          .map((c) => c.replace(/,$/, "").trim())
+          .map((c) => (c.startsWith('"') ? c.slice(1, -1).replace(/""/g, '"') : c));
+      const header = parseLine(lines[0] ?? "").map((h) => h.toLowerCase());
+      const hasHeader = header.includes("title");
+      const idx = {
+        title: hasHeader ? header.indexOf("title") : 0,
+        priority: hasHeader ? header.indexOf("priority") : 1,
+        due: hasHeader ? header.indexOf("due_at") : 2,
+      };
+      const rows = (hasHeader ? lines.slice(1) : lines).map(parseLine);
+      let ok = 0;
+      let failed = 0;
+      for (const cols of rows) {
+        const title = (cols[idx.title] ?? "").trim();
+        if (!title) continue;
+        const rawPriority = (cols[idx.priority] ?? "").trim().toLowerCase();
+        const priority = (["low", "normal", "high", "urgent"] as const).includes(
+          rawPriority as Priority,
+        )
+          ? (rawPriority as Priority)
+          : ("normal" as Priority);
+        const rawDue = idx.due >= 0 ? (cols[idx.due] ?? "").trim() : "";
+        const dueDate = rawDue ? new Date(rawDue) : null;
+        try {
+          await createTask({
+            data: {
+              workspaceId: activeWs,
+              title: title.slice(0, 500),
+              priority,
+              idempotencyKey: crypto.randomUUID(),
+              ...(dueDate && !Number.isNaN(dueDate.getTime())
+                ? { dueAt: dueDate.toISOString() }
+                : {}),
+            },
+          });
+          ok += 1;
+        } catch {
+          failed += 1;
+        }
+      }
+      await queryClient.invalidateQueries({ queryKey: ["tasks", activeWs] });
+      if (ok > 0) toast.success(`Đã nhập ${ok} công việc${failed ? `, lỗi ${failed}` : ""}`);
+      else toast.error("Không nhập được công việc nào từ tệp này");
+    } catch (e) {
+      toast.error((e as Error).message || "Không đọc được tệp CSV");
+    } finally {
+      setImporting(false);
+    }
+  };
+
   return (
     <div className="flex h-screen overflow-hidden bg-bg text-foreground">
       <AppSidebar active="tasks" open={open} onClose={() => setOpen(false)} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <TasksTopbar onOpenSidebar={() => setOpen(true)} onNew={() => setQuickCreate("task")} />
         <QuickCreateDialog kind={quickCreate} onOpenChange={(o) => !o && setQuickCreate(null)} />
+        <input
+          ref={importInputRef}
+          type="file"
+          accept=".csv,text/csv"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            e.target.value = "";
+            if (f) void handleImportFile(f);
+          }}
+        />
+
 
         <div className="flex flex-1 overflow-hidden">
           <main className="flex-1 overflow-y-auto px-4 py-5 sm:px-6 lg:px-8">
@@ -721,49 +803,70 @@ function TasksPage() {
               </div>
             ) : (
               <div
-                className={`grid grid-cols-1 gap-4 transition-opacity duration-200 md:grid-cols-2 xl:grid-cols-5 ${
+                className={`transition-opacity duration-200 ${
                   tasksQuery.isFetching ? "opacity-70" : "opacity-100"
                 }`}
               >
-                {columns.map((col) => (
-                  <BoardColumn
-                    key={col.status}
-                    col={col}
-                    count={counts[col.status]}
-                    tasks={tasks.filter((tk) => tk.status === col.status)}
-                    disabled={!activeWs || createMutation.isPending}
-                    onAdd={(payload) =>
-                      createMutation.mutate(
-                        { status: col.status, ...payload },
-                        {
-                          onSuccess: (res: unknown) => {
-                            const id = (res as { task_id?: string } | null)?.task_id;
-                            if (id && col.status !== "todo") {
-                              transitionMutation.mutate({ taskId: id, toStatus: col.status });
-                            }
-                          },
-                        },
-                      )
-                    }
+                {tab === "board" && (
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+                    {columns.map((col) => (
+                      <BoardColumn
+                        key={col.status}
+                        col={col}
+                        count={counts[col.status]}
+                        tasks={tasks.filter((tk) => tk.status === col.status)}
+                        disabled={!activeWs || createMutation.isPending}
+                        onAdd={(payload) =>
+                          createMutation.mutate(
+                            { status: col.status, ...payload },
+                            {
+                              onSuccess: (res: unknown) => {
+                                const id = (res as { task_id?: string } | null)?.task_id;
+                                if (id && col.status !== "todo") {
+                                  transitionMutation.mutate({ taskId: id, toStatus: col.status });
+                                }
+                              },
+                            },
+                          )
+                        }
+                        onMove={(taskId, toStatus) =>
+                          transitionMutation.mutate({ taskId, toStatus })
+                        }
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {tab === "list" && (
+                  <TaskListView
+                    tasks={tasks}
+                    statuses={columns.map((c) => c.status)}
                     onMove={(taskId, toStatus) => transitionMutation.mutate({ taskId, toStatus })}
                   />
-                ))}
+                )}
+
+                {tab === "timeline" && <TaskTimelineView tasks={tasks} />}
+                {tab === "calendar" && <TaskCalendarView tasks={tasks} />}
+                {tab === "reports" && <TaskReportsView tasks={tasks} />}
+                {tab === "files" && <TaskFilesView workspaceId={activeWs} />}
               </div>
             )}
 
             {/* Bottom panels */}
-            <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
-              <ProjectOverview
-                counts={counts}
-                total={total}
-                rangeDays={rangeDays}
-                onRangeChange={(d) =>
-                  navigateTasks({ to: "/tasks", search: { ...tasksSearch, range: d } })
-                }
-              />
-              <BurndownChart tasks={allTasks} />
-              <MyTasks tasks={tasks} onViewAll={() => setTab("list")} />
-            </div>
+            {(tab === "overview" || tab === "board") && (
+              <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+                <ProjectOverview
+                  counts={counts}
+                  total={total}
+                  rangeDays={rangeDays}
+                  onRangeChange={(d) =>
+                    navigateTasks({ to: "/tasks", search: { ...tasksSearch, range: d } })
+                  }
+                />
+                <BurndownChart tasks={allTasks} />
+                <MyTasks tasks={tasks} onViewAll={() => setTab("list")} />
+              </div>
+            )}
           </main>
 
           <CopilotPanel
@@ -774,7 +877,14 @@ function TasksPage() {
             onGantt={() => setTab("timeline")}
             onResource={() => navigateTasks({ to: "/people" })}
             onExport={() => exportTasksCsv(tasks)}
-            onImport={() => navigateTasks({ to: "/documents" })}
+            onImport={() => {
+              if (!activeWs) {
+                toast.error("Hãy chọn workspace trước khi nhập");
+                return;
+              }
+              if (importing) return;
+              importInputRef.current?.click();
+            }}
             onNewTask={() => setQuickCreate("task")}
             onViewActivity={() => navigateTasks({ to: "/workspace/audit" })}
           />
@@ -975,7 +1085,13 @@ function TaskCard({
         <span className="font-mono">{task.id.slice(0, 8)}</span>
         {task.status === "done" && <CheckCircle2 className="h-3.5 w-3.5 text-success" />}
       </div>
-      <div className="mt-1 text-sm font-medium leading-snug">{task.title}</div>
+      <Link
+        to="/tasks/$id"
+        params={{ id: task.id }}
+        className="mt-1 block text-sm font-medium leading-snug hover:text-primary hover:underline"
+      >
+        {task.title}
+      </Link>
       {task.description && (
         <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{task.description}</p>
       )}
