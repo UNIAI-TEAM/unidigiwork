@@ -36,6 +36,10 @@
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
   --color-surface-3: var(--surface-3);
+  --color-stage: var(--stage);
+  --color-stage-foreground: var(--stage-foreground);
+  --color-overlay: var(--overlay);
+  --color-overlay-foreground: var(--overlay-foreground);
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-card: var(--card);
@@ -103,6 +107,13 @@
   --surface: oklch(0.982 0.003 265);
   --surface-2: oklch(0.958 0.012 285);
   --surface-3: oklch(0.93 0.016 285);
+  /* Bề mặt media: khung video và lớp phủ đè lên video. Cố tình tối ở CẢ light lẫn dark
+     vì hình ảnh video cần nền tối để không chói — đây là bề mặt media giống lightbox ảnh,
+     không phải đảo theme trang. Vì vậy chỉ khai báo ở :root, các theme khác kế thừa. */
+  --stage: oklch(0.19 0.008 265);
+  --stage-foreground: oklch(0.95 0.003 265);
+  --overlay: oklch(0.15 0.006 265 / 76%);
+  --overlay-foreground: oklch(0.97 0.002 265);
   --foreground: oklch(0.235 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.235 0 0);
@@ -812,4 +823,40 @@ html[data-font-family="mono"] body {
   --accent: oklch(0.86 0.14 335);
   --accent-foreground: oklch(0.14 0.02 335);
   --ring: oklch(0.94 0.05 305 / 90%);
+}
+
+/*
+ * Phòng họp: `<VideoConference />` của LiveKit tự kèm một ControlBar riêng, trùng hoàn toàn
+ * với thanh điều khiển của UNIWORK neo dưới sân khấu (micro, camera, chia sẻ, rời phòng).
+ * Giữ thanh của UNIWORK làm bề mặt điều khiển duy nhất và ẩn các nút trùng của LiveKit.
+ *
+ * Nút "Rời phòng" bắt buộc phải đi qua handler của UNIWORK: handler đó bật cờ rời chủ động,
+ * nếu người dùng bấm nút disconnect của LiveKit thì hệ thống hiểu nhầm là rớt mạng và tự
+ * vào lại phòng.
+ *
+ * Nút Chat được GIỮ vì trò chuyện trong cuộc họp hiện chỉ có ở ControlBar của LiveKit.
+ * Đây là CSS bám vào class nội bộ của thư viện: nếu LiveKit đổi tên class thì các nút trùng
+ * sẽ hiện lại (chỉ thừa nút, không vỡ chức năng).
+ */
+[data-meeting-stage] .lk-control-bar .lk-button-group:has([data-lk-source="microphone"]),
+[data-meeting-stage] .lk-control-bar .lk-button-group:has([data-lk-source="camera"]),
+[data-meeting-stage] .lk-control-bar .lk-button-group:has([data-lk-source="screen_share"]),
+[data-meeting-stage] .lk-control-bar .lk-button[data-lk-source="microphone"],
+[data-meeting-stage] .lk-control-bar .lk-button[data-lk-source="camera"],
+[data-meeting-stage] .lk-control-bar .lk-button[data-lk-source="screen_share"],
+[data-meeting-stage] .lk-disconnect-button {
+  display: none;
+}
+
+/* Khi chưa kết nối, ControlBar của LiveKit không có nút Chat nên chỉ còn là một dải rỗng. */
+[data-meeting-stage] .lk-control-bar:not(:has(.lk-chat-toggle)) {
+  display: none;
+}
+
+/* LiveKit tính chiều cao lưới video theo chiều cao ControlBar mặc định. Khi thanh đó bị ẩn,
+   lưới để hở một dải trống ở đáy sân khấu — cho lưới co giãn theo flex để luôn lấp đầy. */
+[data-meeting-stage] .lk-video-conference-inner > .lk-grid-layout-wrapper {
+  height: auto;
+  min-height: 0;
+  flex: 1 1 auto;
 }

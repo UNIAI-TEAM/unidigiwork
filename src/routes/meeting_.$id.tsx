@@ -1068,40 +1068,46 @@ function MeetingDetailPage() {
         ? t("mtg.room.rsvp.lockedCanceled")
         : null;
 
-  const participantsTab = (
-    <div className="space-y-3">
-      {isRealRoom && (
-        <div className="rounded-lg border border-border bg-surface-2 p-2.5">
-          <p className="mb-2 text-xs text-muted-foreground">
-            {t("mtg.room.rsvp.yours")}
-            {myRsvp ? ` · ${t(RSVP_STATUS_KEY[myRsvp] ?? "mtg.rsvp.pending")}` : ""}
-          </p>
-          <div className="flex gap-1.5" role="group" aria-label={t("mtg.room.rsvp.yours")}>
-            {(["accepted", "tentative", "declined"] as const).map((v) => (
-              <button
-                key={v}
-                type="button"
-                disabled={rsvpSaving !== null || meetingClosed}
-                aria-pressed={myRsvp === v}
-                onClick={() => void handleRsvp(v)}
-                className={`h-8 flex-1 rounded-md border px-2 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60 ${
-                  myRsvp === v
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border bg-surface hover:bg-surface-3"
-                }`}
-              >
-                {rsvpSaving === v ? t("mtg.saving") : t(RSVP_ACTION_KEY[v])}
-              </button>
-            ))}
-          </div>
-          {rsvpLockReason && (
-            <p className="mt-2 flex items-start gap-1.5 text-xs text-muted-foreground">
-              <Lock className="mt-0.5 h-3 w-3 shrink-0" />
-              <span>{rsvpLockReason}</span>
-            </p>
-          )}
-        </div>
+  // Phản hồi tham dự là quyết định TRƯỚC khi vào phòng nên chỉ sống ở màn tiền sảnh,
+  // không lặp lại trong rail (trước đây có hai chỗ sửa RSVP).
+  const rsvpControl = isRealRoom ? (
+    <div className="rounded-xl border border-border bg-surface p-4">
+      <p className="text-sm font-medium text-foreground">{t("mtg.room.rsvp.yours")}</p>
+      {myRsvp && (
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          {t(RSVP_STATUS_KEY[myRsvp] ?? "mtg.rsvp.pending")}
+        </p>
       )}
+      <div className="mt-3 flex gap-2" role="group" aria-label={t("mtg.room.rsvp.yours")}>
+        {(["accepted", "tentative", "declined"] as const).map((v) => (
+          <button
+            key={v}
+            type="button"
+            disabled={rsvpSaving !== null || meetingClosed}
+            aria-pressed={myRsvp === v}
+            onClick={() => void handleRsvp(v)}
+            className={`h-9 flex-1 rounded-lg border px-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60 ${
+              myRsvp === v
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-card text-foreground hover:bg-surface-2"
+            }`}
+          >
+            {rsvpSaving === v ? t("mtg.saving") : t(RSVP_ACTION_KEY[v])}
+          </button>
+        ))}
+      </div>
+      {rsvpLockReason && (
+        <p className="mt-2 flex items-start gap-1.5 text-xs text-muted-foreground">
+          <Lock className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+          <span>{rsvpLockReason}</span>
+        </p>
+      )}
+    </div>
+  ) : null;
+
+  // Rail "Người": roster + quản trị người tham dự + nhật ký chủ trì gom về một chỗ.
+  const participantsTab = (
+    <div className="space-y-5">
       {participantsQuery.isLoading ? (
         <div className="space-y-2" aria-busy="true">
           {[0, 1, 2].map((i) => (
@@ -1150,9 +1156,6 @@ function MeetingDetailPage() {
                 />
                 {t(PRESENCE_KEY[p.presence])}
               </span>
-              <span className="hidden text-[11px] text-muted-foreground sm:inline">
-                {t(RSVP_STATUS_KEY[p.rsvp] ?? "mtg.rsvp.pending")}
-              </span>
               {isHost && p.userId !== myUserId && !meetingClosed && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
@@ -1190,8 +1193,15 @@ function MeetingDetailPage() {
           ))}
         </ul>
       )}
+
       {isRealRoom && (
-        <div className="mt-5 border-t border-border pt-3">
+        <div className="border-t border-border pt-4">
+          <MeetingParticipantsManagerPanel meetingId={id} />
+        </div>
+      )}
+
+      {isRealRoom && (
+        <div className="border-t border-border pt-4">
           <h3 className="mb-2 text-xs font-semibold">{t("mtg.room.hostLog")}</h3>
           {hostLogQuery.isLoading ? (
             <p className="text-xs text-muted-foreground">{t("mtg.loading")}</p>
@@ -1244,251 +1254,454 @@ function MeetingDetailPage() {
       }) + (shareQualityLabel ? ` · ${shareQualityLabel}` : "")
     : fmt(t("mtg.room.share.idle"), { source: t(SHARE_SOURCE_KEY[shareSource]) });
 
-  return (
-    <div className="flex h-dvh overflow-hidden bg-background text-foreground">
-      <AppSidebar active="meetings" open={open} onClose={() => setOpen(false)} />
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <AppTopbar variant="documents" onOpenSidebar={() => setOpen(true)} />
+  const onlineCount = participants.filter((p) => p.presence === "online").length;
 
-        <div className="flex min-h-0 flex-1 overflow-hidden">
-          <main className="flex min-w-0 flex-1 flex-col overflow-y-auto p-4 lg:p-6">
-            <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0 flex-1 basis-64">
-                <Link
-                  to="/meeting"
-                  className="inline-flex min-h-8 items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-                >
-                  <ArrowLeft className="h-3.5 w-3.5" /> {t("mtg.room.all")}
-                </Link>
-                {isRealRoom && meetingQuery.isLoading ? (
-                  <Skeleton className="mt-1 h-7 w-64 max-w-full" />
-                ) : (
-                  <h1 className="mt-1 line-clamp-2 break-words text-lg font-semibold">
-                    {meetingTitle}
-                  </h1>
-                )}
-                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted-foreground">
-                  <span
-                    className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-medium ${statusMeta.className}`}
-                  >
-                    <span
-                      aria-hidden="true"
-                      className={`h-1.5 w-1.5 rounded-full ${statusMeta.dotClassName}`}
-                    />
-                    {t(statusMeta.label)}
-                  </span>
-                  {isRealRoom && (plannedStart || plannedEnd) && (
-                    <span className="inline-flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      {plannedStart
-                        ? plannedStart.toLocaleString(locale, {
-                            day: "2-digit",
-                            month: "2-digit",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })
-                        : "—"}
-                      {plannedEnd
-                        ? ` → ${plannedEnd.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}`
-                        : ""}
-                    </span>
-                  )}
-                  {isRealRoom && (
-                    <MeetingTimers
-                      status={meetingStatus}
-                      plannedStart={meetingRow?.start_at ?? null}
-                      plannedEnd={meetingRow?.end_at ?? null}
-                      actualStartAt={actualStartAt}
-                      actualEndAt={actualEndAt}
-                    />
-                  )}
-                  <span className="inline-flex items-center gap-1">
-                    <Users className="h-3 w-3" />{" "}
+  // ==== Mảnh dùng chung cho cả tiền sảnh lẫn phòng họp ====
+
+  const statusChip = (
+    <span
+      className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${statusMeta.className}`}
+    >
+      <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${statusMeta.dotClassName}`} />
+      {t(statusMeta.label)}
+    </span>
+  );
+
+  const scheduleLabel =
+    isRealRoom && plannedStart
+      ? plannedStart.toLocaleString(locale, {
+          day: "2-digit",
+          month: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        }) +
+        (plannedEnd
+          ? ` → ${plannedEnd.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}`
+          : "")
+      : null;
+
+  const timersNode = isRealRoom ? (
+    <MeetingTimers
+      status={meetingStatus}
+      plannedStart={meetingRow?.start_at ?? null}
+      plannedEnd={meetingRow?.end_at ?? null}
+      actualStartAt={actualStartAt}
+      actualEndAt={actualEndAt}
+    />
+  ) : null;
+
+  const peopleCountNode = (
+    <span className="inline-flex shrink-0 items-center gap-1">
+      <Users className="h-3 w-3" aria-hidden="true" />
+      {fmt(t("mtg.room.peopleCount"), { n: participants.length })}
+    </span>
+  );
+
+  const startButton = isRealRoom && isHost && meetingStatus !== "live" && !meetingClosed && (
+    <Button
+      size="sm"
+      disabled={lifecycleBusy !== null}
+      onClick={() => void handleLifecycle("start")}
+    >
+      {lifecycleBusy === "start" ? t("mtg.room.starting") : t("mtg.room.startMeeting")}
+    </Button>
+  );
+
+  const endButton = isRealRoom && isHost && meetingStatus === "live" && (
+    <AlertDialog open={confirmEndOpen} onOpenChange={setConfirmEndOpen}>
+      <AlertDialogTrigger asChild>
+        <Button size="sm" variant="destructive" disabled={lifecycleBusy !== null}>
+          {lifecycleBusy === "end" ? t("mtg.room.ending") : t("mtg.room.endMeeting")}
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{t("mtg.room.endConfirm.title")}</AlertDialogTitle>
+          <AlertDialogDescription>{t("mtg.room.endConfirm.desc")}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={lifecycleBusy === "end"}>
+            {t("mtg.cancelAction")}
+          </AlertDialogCancel>
+          <AlertDialogAction
+            onClick={(e) => {
+              e.preventDefault();
+              void handleLifecycle("end");
+            }}
+            disabled={lifecycleBusy === "end"}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            {lifecycleBusy === "end" ? t("mtg.room.ending") : t("mtg.room.endConfirm.confirm")}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+
+  // Dưới sm nhãn bị ẩn nên nút thành icon-only: cần tên trợ năng và tap target 44px.
+  const openPanelButton = (
+    <Button
+      variant="outline"
+      size="sm"
+      aria-label={t("mtg.room.panel.open")}
+      title={t("mtg.room.panel.open")}
+      className="h-11 w-11 shrink-0 p-0 sm:h-9 sm:w-auto sm:px-3 lg:hidden"
+      onClick={() => setPanelOpen(true)}
+    >
+      <PanelRight /> <span className="hidden sm:inline">{t("mtg.room.panel.open")}</span>
+    </Button>
+  );
+
+  const deviceMenu = (
+    <DeviceMenu
+      devices={devices}
+      micId={micId}
+      camId={camId}
+      onPickMic={(deviceId) => {
+        setMicId(deviceId);
+        setMuted(false);
+      }}
+      onPickCam={(deviceId) => {
+        setCamId(deviceId);
+        setCamOff(false);
+      }}
+      onRefresh={() => {
+        void refreshDevices();
+        toast.success(t("mtg.room.menu.refreshed"));
+      }}
+      captionsEnabled={captions.enabled}
+      captionsSupported={captions.supported}
+      onToggleCaptions={toggleCaptions}
+      shareSource={shareSource}
+      onShareSource={changeShareSource}
+      shareQuality={shareQuality}
+      onShareQuality={changeShareQuality}
+      shareQualityLabel={shareQualityLabel}
+    />
+  );
+
+  const micButton = (
+    <CtrlBtn
+      label={t("mtg.room.ctrl.mute")}
+      pressed={muted}
+      tone="danger"
+      onClick={() => setMuted(!muted)}
+      icon={muted ? MicOff : Mic}
+    />
+  );
+
+  const camButton = (
+    <CtrlBtn
+      label={t("mtg.room.ctrl.camOff")}
+      pressed={camOff}
+      tone="danger"
+      onClick={() => setCamOff(!camOff)}
+      icon={camOff ? VideoOff : Video}
+    />
+  );
+
+  const shareButton = (
+    <CtrlBtn
+      label={t("mtg.room.ctrl.share")}
+      pressed={sharing}
+      tone="primary"
+      onClick={() => void toggleShare()}
+      icon={sharing ? ScreenShareOff : ScreenShare}
+    />
+  );
+
+  // ==== Khung phòng họp: sân khấu chiếm trọn chiều cao, thanh điều khiển neo đáy ====
+
+  const roomFrame = (
+    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden px-3 pb-3 lg:px-4 lg:pb-4">
+      <div className="flex h-14 shrink-0 items-center gap-2 sm:gap-3">
+        <Link
+          to="/meeting"
+          aria-label={t("mtg.room.back")}
+          title={t("mtg.room.back")}
+          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:h-9 sm:w-9"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Link>
+        <h1 className="min-w-0 truncate text-sm font-semibold sm:text-base">{meetingTitle}</h1>
+        {statusChip}
+        <div className="hidden min-w-0 items-center gap-x-3 text-xs text-muted-foreground md:flex">
+          {timersNode}
+          {peopleCountNode}
+        </div>
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          {endButton}
+          {openPanelButton}
+        </div>
+      </div>
+
+      <div
+        data-meeting-stage=""
+        aria-label={t("mtg.room.stage")}
+        className="relative min-h-0 flex-1 overflow-hidden rounded-xl bg-stage"
+      >
+        <ClientOnly fallback={<StageFallback />}>
+          <Suspense fallback={<StageFallback />}>
+            <LiveKitStage
+              serverUrl={session?.serverUrl ?? ""}
+              token={session?.token ?? ""}
+              onDisconnected={handleStageDisconnected}
+              micEnabled={!muted}
+              camEnabled={!camOff}
+              micDeviceId={micId || undefined}
+              camDeviceId={camId || undefined}
+              shareQuality={shareQuality}
+              onShareQualityResolved={handleShareQualityResolved}
+              screenShareEnabled={sharing}
+              shareSource={shareSource}
+              onShareSourceResolved={setActiveSurface}
+              onScreenShareStateChange={handleScreenShareStateChange}
+              onMediaStateChange={handleMediaStateChange}
+              onConnectionStateChange={handleConnectionStateChange}
+            />
+          </Suspense>
+        </ClientOnly>
+
+        {sharing && (
+          <span
+            role="status"
+            className="absolute left-3 top-3 hidden max-w-[22rem] items-center gap-1.5 rounded-full bg-overlay px-3 py-1 text-xs font-medium text-overlay-foreground sm:inline-flex"
+          >
+            <ScreenShare className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            <span className="truncate">{shareStatus}</span>
+          </span>
+        )}
+
+        {autoStatus && (
+          <p
+            role="status"
+            className="absolute right-3 top-3 inline-flex items-center gap-2 rounded-full bg-overlay px-3 py-1 text-xs text-overlay-foreground"
+          >
+            <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+            {autoStatus === "refreshing"
+              ? t("mtg.room.auto.refreshing")
+              : t("mtg.room.auto.rejoining")}
+          </p>
+        )}
+
+        {captions.enabled && (
+          <div className="pointer-events-none absolute inset-x-3 bottom-3 flex justify-center">
+            <p className="max-w-2xl rounded-lg bg-overlay px-3 py-2 text-center text-sm text-overlay-foreground">
+              <span className="mr-2 rounded bg-overlay-foreground/20 px-1.5 py-0.5 text-[11px] font-medium">
+                {t("mtg.room.captions.label")}
+              </span>
+              {captions.text || t("mtg.room.captions.listening")}
+            </p>
+          </div>
+        )}
+      </div>
+
+      <HandsQueue
+        raisedHands={raisedHands}
+        speakers={speakers}
+        isHost={isHost}
+        myUserId={myUserId}
+        canSpeak={canSpeak}
+        onSetSpeakPermission={setSpeakPermission}
+      />
+
+      <div
+        role="group"
+        aria-label={t("mtg.room.controls")}
+        className="flex shrink-0 flex-wrap items-center justify-center gap-2 rounded-xl border border-border bg-surface px-3 py-2.5"
+      >
+        {micButton}
+        {camButton}
+        {shareButton}
+        <CtrlBtn
+          label={t("mtg.room.ctrl.hand")}
+          pressed={handRaised}
+          tone="primary"
+          onClick={() => void toggleHand()}
+          icon={Hand}
+        />
+        {deviceMenu}
+        <span aria-hidden="true" className="mx-1 hidden h-6 w-px bg-border sm:block" />
+        <Button
+          variant="destructive"
+          className="h-11 rounded-full px-4"
+          onClick={leaveRoom}
+          aria-label={t("mtg.room.leave")}
+        >
+          <PhoneOff />
+          <span className="hidden sm:inline">{t("mtg.room.leave")}</span>
+        </Button>
+      </div>
+    </div>
+  );
+
+  // ==== Tiền sảnh: xem trước thiết bị, phản hồi tham dự, rồi mới vào phòng ====
+
+  const lobbyFrame = (
+    <main className="min-w-0 flex-1 overflow-y-auto">
+      <div className="mx-auto w-full max-w-5xl px-4 py-6 lg:px-6 lg:py-10">
+        <Link
+          to="/meeting"
+          className="inline-flex min-h-8 items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" /> {t("mtg.room.all")}
+        </Link>
+
+        {isRealRoom && meetingQuery.isLoading ? (
+          <Skeleton className="mt-2 h-9 w-80 max-w-full" />
+        ) : (
+          <h1 className="mt-2 break-words text-2xl font-semibold tracking-tight lg:text-3xl">
+            {meetingTitle}
+          </h1>
+        )}
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted-foreground">
+          {statusChip}
+          {scheduleLabel && (
+            <span className="inline-flex items-center gap-1">
+              <Clock className="h-3 w-3" aria-hidden="true" />
+              {scheduleLabel}
+            </span>
+          )}
+          {timersNode}
+          {peopleCountNode}
+          <span className="ml-auto lg:hidden">{openPanelButton}</span>
+        </div>
+
+        <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_19rem]">
+          <div className="overflow-hidden rounded-xl border border-border bg-card">
+            <div className="relative aspect-video bg-stage">
+              {camOff && !sharing ? (
+                <div className="flex h-full flex-col items-center justify-center gap-2 text-stage-foreground/70">
+                  <VideoOff className="h-8 w-8" aria-hidden="true" />
+                  <span className="text-xs">{t("mtg.room.lobby.camOff")}</span>
+                </div>
+              ) : (
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  aria-label={t("mtg.room.lobby.preview")}
+                  className={`h-full w-full ${sharing ? "object-contain" : "object-cover"}`}
+                />
+              )}
+              <span className="absolute bottom-3 left-3 max-w-[calc(100%-1.5rem)] truncate rounded-md bg-overlay px-2 py-1 text-xs text-overlay-foreground">
+                {sharing
+                  ? shareQualityLabel
+                    ? fmt(t("mtg.room.sharingSelfQuality"), { quality: shareQualityLabel })
+                    : t("mtg.room.sharingSelf")
+                  : t("mtg.room.previewSelf")}
+              </span>
+            </div>
+            <div
+              role="group"
+              aria-label={t("mtg.room.controls")}
+              className="flex flex-wrap items-center justify-center gap-2 border-t border-border p-3"
+            >
+              {micButton}
+              {camButton}
+              {shareButton}
+              {deviceMenu}
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-base font-semibold text-foreground">
+                {t("mtg.room.lobby.heading")}
+              </h2>
+              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                {t("mtg.room.lobby.desc")}
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Button
+                className="h-11 w-full rounded-lg"
+                onClick={() => void handleJoin()}
+                disabled={joining || redeeming || meetingClosed}
+              >
+                {joining || redeeming ? <Loader2 className="animate-spin" /> : <Video />}
+                {redeeming ? t("mtg.room.redeeming") : t("mtg.room.join")}
+              </Button>
+              {startButton && (
+                <div className="[&>button]:h-10 [&>button]:w-full">{startButton}</div>
+              )}
+              {endButton && <div className="[&>button]:h-10 [&>button]:w-full">{endButton}</div>}
+            </div>
+
+            {rsvpControl}
+
+            {participants.length > 0 && (
+              <div className="rounded-xl border border-border bg-surface p-4">
+                <div className="flex items-baseline justify-between gap-2">
+                  <h3 className="text-sm font-medium text-foreground">
+                    {t("mtg.room.lobby.roster")}
+                  </h3>
+                  <span className="text-xs text-muted-foreground">
                     {fmt(t("mtg.room.peopleCount"), { n: participants.length })}
                   </span>
                 </div>
-              </div>
-              <div className="flex shrink-0 flex-wrap items-center gap-2">
-                {isRealRoom && isHost && meetingStatus !== "live" && !meetingClosed && (
-                  <Button
-                    size="sm"
-                    disabled={lifecycleBusy !== null}
-                    onClick={() => void handleLifecycle("start")}
-                  >
-                    {lifecycleBusy === "start"
-                      ? t("mtg.room.starting")
-                      : t("mtg.room.startMeeting")}
-                  </Button>
-                )}
-                {isRealRoom && isHost && meetingStatus === "live" && (
-                  <AlertDialog open={confirmEndOpen} onOpenChange={setConfirmEndOpen}>
-                    <AlertDialogTrigger asChild>
-                      <Button size="sm" variant="destructive" disabled={lifecycleBusy !== null}>
-                        {lifecycleBusy === "end" ? t("mtg.room.ending") : t("mtg.room.endMeeting")}
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>{t("mtg.room.endConfirm.title")}</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          {t("mtg.room.endConfirm.desc")}
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel disabled={lifecycleBusy === "end"}>
-                          {t("mtg.cancelAction")}
-                        </AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={(e) => {
-                            e.preventDefault();
-                            void handleLifecycle("end");
-                          }}
-                          disabled={lifecycleBusy === "end"}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                          {lifecycleBusy === "end"
-                            ? t("mtg.room.ending")
-                            : t("mtg.room.endConfirm.confirm")}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="lg:hidden"
-                  onClick={() => setPanelOpen(true)}
-                >
-                  <PanelRight /> {t("mtg.room.panel.open")}
-                </Button>
-              </div>
-            </div>
-
-            {session ? (
-              <div className="relative min-h-[18rem] flex-1 overflow-hidden rounded-xl bg-surface-2 sm:min-h-[24rem]">
-                <ClientOnly fallback={<StageFallback />}>
-                  <Suspense fallback={<StageFallback />}>
-                    <LiveKitStage
-                      serverUrl={session.serverUrl}
-                      token={session.token}
-                      onDisconnected={handleStageDisconnected}
-                      micEnabled={!muted}
-                      camEnabled={!camOff}
-                      micDeviceId={micId || undefined}
-                      camDeviceId={camId || undefined}
-                      shareQuality={shareQuality}
-                      onShareQualityResolved={handleShareQualityResolved}
-                      screenShareEnabled={sharing}
-                      shareSource={shareSource}
-                      onShareSourceResolved={setActiveSurface}
-                      onScreenShareStateChange={handleScreenShareStateChange}
-                      onMediaStateChange={handleMediaStateChange}
-                      onConnectionStateChange={handleConnectionStateChange}
-                    />
-                  </Suspense>
-                </ClientOnly>
-              </div>
-            ) : (
-              <div
-                className={`grid content-start gap-2 ${
-                  participants.length === 0 ? "grid-cols-1" : "grid-cols-2 lg:grid-cols-3"
-                }`}
-              >
-                <div
-                  className={`relative flex aspect-video items-center justify-center overflow-hidden rounded-xl bg-surface-2 ${
-                    participants.length === 0 ? "mx-auto w-full max-w-3xl" : ""
-                  }`}
-                >
-                  {camOff && !sharing ? (
-                    <VideoOff className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
-                  ) : (
-                    <video
-                      ref={videoRef}
-                      autoPlay
-                      playsInline
-                      muted
-                      className={`h-full w-full ${sharing ? "bg-black object-contain" : "object-cover"}`}
-                    />
+                <ul className="mt-3 flex flex-wrap items-center gap-1.5">
+                  {participants.slice(0, 8).map((p) => (
+                    <li key={p.userId} title={p.name}>
+                      <ParticipantAvatar name={p.name} className="h-8 w-8 text-[11px]" />
+                      <span className="sr-only">{p.name}</span>
+                    </li>
+                  ))}
+                  {participants.length > 8 && (
+                    <li className="inline-flex h-8 items-center rounded-full bg-surface-2 px-2 text-[11px] font-medium text-muted-foreground">
+                      {fmt(t("mtg.room.lobby.moreCount"), { n: participants.length - 8 })}
+                    </li>
                   )}
-                  <div className="absolute bottom-2 left-2 right-2 truncate rounded-md bg-black/60 px-2 py-1 text-xs text-white">
-                    {sharing
-                      ? shareQualityLabel
-                        ? fmt(t("mtg.room.sharingSelfQuality"), { quality: shareQualityLabel })
-                        : t("mtg.room.sharingSelf")
-                      : t("mtg.room.previewSelf")}
-                  </div>
-                </div>
-                {participants.map((p) => (
-                  <div
-                    key={p.userId}
-                    className="relative flex aspect-video items-center justify-center rounded-xl bg-surface-2"
-                  >
-                    <ParticipantAvatar name={p.name} className="h-16 w-16 text-lg" />
-                    <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between gap-2 rounded-md bg-black/60 px-2 py-1 text-xs text-white">
-                      <span className="flex min-w-0 items-center gap-1.5">
-                        <span
-                          title={t(PRESENCE_KEY[p.presence])}
-                          className={`h-1.5 w-1.5 shrink-0 rounded-full ${
-                            p.presence === "online"
-                              ? "bg-success"
-                              : p.presence === "left"
-                                ? "bg-white/50"
-                                : "bg-white/25"
-                          }`}
-                        />
-                        <span className="truncate">{p.name}</span>
-                        <span className="sr-only">{t(PRESENCE_KEY[p.presence])}</span>
-                      </span>
-                      {raisedSet.has(p.userId) && (
-                        <Hand className="h-3 w-3 shrink-0" aria-label={t("mtg.room.raisedHand")} />
-                      )}
-                    </div>
-                  </div>
-                ))}
+                </ul>
+                {onlineCount > 0 && (
+                  <p className="mt-3 inline-flex items-center gap-1.5 text-xs text-success">
+                    <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-success" />
+                    {fmt(t("mtg.room.lobby.onlineCount"), { n: onlineCount })}
+                  </p>
+                )}
               </div>
             )}
+          </div>
+        </div>
 
-            {isRealRoom && meetingQuery.isError && !joinErrorCode && (
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-surface px-4 py-3">
-                <p className="text-sm text-foreground">{t("mtg.room.loadMeetingError")}</p>
+        {/* Mọi cảnh báo của phòng họp gom về một vùng, thay vì chồng card rời rạc. */}
+        <div role="region" aria-label={t("mtg.room.alerts")} className="mt-6 space-y-3 empty:mt-0">
+          {isRealRoom && meetingQuery.isError && !joinErrorCode && (
+            <RoomNotice
+              tone="error"
+              title={t("mtg.room.loadMeetingError")}
+              actions={
                 <Button variant="outline" size="sm" onClick={() => void meetingQuery.refetch()}>
                   {t("mtg.retry")}
                 </Button>
-              </div>
-            )}
+              }
+            />
+          )}
 
-            {!session && isRealRoom && meetingClosed && (
-              <div className="mt-3 rounded-lg border border-border bg-surface px-4 py-3">
-                <p className="text-sm font-medium text-foreground">
-                  {t("mtg.room.err.notJoinable")}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {t("mtg.room.hint.notJoinable")}
-                </p>
-                <Button asChild variant="outline" size="sm" className="mt-3">
+          {isRealRoom && meetingClosed && (
+            <RoomNotice
+              title={t("mtg.room.err.notJoinable")}
+              description={t("mtg.room.hint.notJoinable")}
+              actions={
+                <Button asChild variant="outline" size="sm">
                   <Link to="/meeting/history">{t("mtg.home.history")}</Link>
                 </Button>
-              </div>
-            )}
+              }
+            />
+          )}
 
-            {!session && joinErrorCode && (
-              <div
-                className="mt-3 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3"
-                role="alert"
-              >
-                <p className="text-sm font-medium text-destructive">
-                  {t(JOIN_ERROR_KEY[joinErrorCode] ?? "mtg.room.err.generic")}
-                </p>
-                {JOIN_ERROR_HINT_KEY[joinErrorCode] && (
-                  <p className="mt-1 text-xs text-foreground">
-                    {t(JOIN_ERROR_HINT_KEY[joinErrorCode]!)}
-                  </p>
-                )}
-                <p className="mt-1 font-mono text-[11px] text-muted-foreground">
-                  {fmt(t("mtg.room.err.code"), { code: joinErrorCode })}
-                </p>
-                <div className="mt-3 flex flex-wrap items-center gap-2">
+          {joinErrorCode && (
+            <RoomNotice
+              tone="error"
+              title={t(JOIN_ERROR_KEY[joinErrorCode] ?? "mtg.room.err.generic")}
+              description={
+                JOIN_ERROR_HINT_KEY[joinErrorCode] ? t(JOIN_ERROR_HINT_KEY[joinErrorCode]!) : null
+              }
+              code={fmt(t("mtg.room.err.code"), { code: joinErrorCode })}
+              actions={
+                <>
                   <Button
                     variant="outline"
                     size="sm"
@@ -1500,221 +1713,53 @@ function MeetingDetailPage() {
                   <Button asChild variant="outline" size="sm">
                     <Link to="/meeting">{t("mtg.room.backToList")}</Link>
                   </Button>
-                </div>
-                {isRealRoom &&
-                  (joinErrorCode === "MEETING_ACCESS_DENIED" ||
-                    joinErrorCode === "TENANT_ACCESS_DENIED") && (
-                    <JoinRequestPanel meetingId={id} onApproved={() => void handleJoin()} />
-                  )}
-              </div>
-            )}
-
-            {!session && isRealRoom && <JoinRequestInbox meetingId={id} />}
-
-            {autoStatus && (
-              <p
-                role="status"
-                className="mt-3 inline-flex items-center gap-2 self-start rounded-lg border border-border bg-surface px-3 py-2 text-xs text-muted-foreground"
-              >
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                {autoStatus === "refreshing"
-                  ? t("mtg.room.auto.refreshing")
-                  : t("mtg.room.auto.rejoining")}
-              </p>
-            )}
-
-            {!session && !isRealRoom && (
-              <p className="mt-3 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-muted-foreground">
-                {t("mtg.room.demoNotice")}{" "}
-                <Link to="/meeting" className="text-primary hover:underline">
-                  {t("mtg.room.demoCreate")}
-                </Link>
-              </p>
-            )}
-
-            {(session || raisedHands.length > 0 || speakers.length > 0) && (
-              <section
-                aria-label={fmt(t("mtg.room.hands.title"), { n: raisedHands.length })}
-                className="mt-4 space-y-2 rounded-lg border border-border bg-surface px-3 py-2.5 text-xs"
-              >
-                <div className="flex items-center gap-2">
-                  <Hand className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
-                  <span className="font-medium text-foreground">
-                    {fmt(t("mtg.room.hands.title"), { n: raisedHands.length })}
-                  </span>
-                  <span className="ml-auto inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-                    <span
-                      className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary"
-                      aria-hidden="true"
-                    />
-                    {t("mtg.room.hands.live")}
-                  </span>
-                </div>
-                {raisedHands.length === 0 && (
-                  <p className="text-muted-foreground">{t("mtg.room.hands.empty")}</p>
-                )}
-                {raisedHands.length > 0 && (
-                  <ol className="space-y-1">
-                    {raisedHands.map((h, i) => (
-                      <li
-                        key={h.userId}
-                        className={`flex items-center justify-between gap-2 rounded-md px-1.5 py-1 ${
-                          h.userId === myUserId ? "bg-primary/10" : ""
-                        }`}
-                      >
-                        <span className="flex min-w-0 items-center gap-2">
-                          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[11px] font-semibold text-primary">
-                            {i + 1}
-                          </span>
-                          <span className="min-w-0 truncate text-foreground">
-                            {h.userId === myUserId ? t("mtg.room.you") : h.name}
-                          </span>
-                          <WaitingTime at={h.at} />
-                        </span>
-                        {isHost && (
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={() => void setSpeakPermission(h.userId, h.name, true)}
-                          >
-                            <Mic /> {t("mtg.room.hands.allow")}
-                          </Button>
-                        )}
-                      </li>
-                    ))}
-                  </ol>
-                )}
-                {speakers.length > 0 && (
-                  <div className="space-y-1 border-t border-border pt-2">
-                    <p className="font-medium text-foreground">{t("mtg.room.hands.speaking")}</p>
-                    {speakers.map((s) => (
-                      <div key={s.userId} className="flex items-center justify-between gap-2">
-                        <span className="min-w-0 truncate text-muted-foreground">
-                          {s.userId === myUserId ? t("mtg.room.you") : s.name}
-                        </span>
-                        {isHost && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => void setSpeakPermission(s.userId, s.name, false)}
-                          >
-                            <MicOff /> {t("mtg.room.hands.revoke")}
-                          </Button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {canSpeak && (
-                  <p className="text-muted-foreground">{t("mtg.room.hands.canSpeak")}</p>
-                )}
-              </section>
-            )}
-
-            {captions.enabled && (
-              <div className="mt-4 rounded-lg bg-foreground/90 px-4 py-3 text-center text-sm text-background">
-                <span className="mr-2 rounded bg-background/20 px-1.5 py-0.5 text-[11px] font-medium">
-                  {t("mtg.room.captions.label")}
-                </span>
-                {captions.text || t("mtg.room.captions.listening")}
-              </div>
-            )}
-
-            <div
-              role="group"
-              aria-label={t("mtg.room.controls")}
-              className="mt-4 flex flex-wrap items-center justify-center gap-2"
+                </>
+              }
             >
-              {sharing && (
-                <span
-                  role="status"
-                  className="mr-1 hidden max-w-[22rem] items-center gap-1.5 truncate rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary md:inline-flex"
-                >
-                  <ScreenShare className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                  <span className="truncate">{shareStatus}</span>
-                </span>
-              )}
-              <CtrlBtn
-                label={t("mtg.room.ctrl.mute")}
-                pressed={muted}
-                tone="danger"
-                onClick={() => setMuted(!muted)}
-                icon={muted ? MicOff : Mic}
-              />
-              <CtrlBtn
-                label={t("mtg.room.ctrl.camOff")}
-                pressed={camOff}
-                tone="danger"
-                onClick={() => setCamOff(!camOff)}
-                icon={camOff ? VideoOff : Video}
-              />
-              <CtrlBtn
-                label={t("mtg.room.ctrl.share")}
-                pressed={sharing}
-                tone="primary"
-                onClick={() => void toggleShare()}
-                icon={sharing ? ScreenShareOff : ScreenShare}
-              />
-              <CtrlBtn
-                label={t("mtg.room.ctrl.hand")}
-                pressed={handRaised}
-                tone="primary"
-                onClick={() => void toggleHand()}
-                icon={Hand}
-              />
-              <DeviceMenu
-                devices={devices}
-                micId={micId}
-                camId={camId}
-                onPickMic={(deviceId) => {
-                  setMicId(deviceId);
-                  setMuted(false);
-                }}
-                onPickCam={(deviceId) => {
-                  setCamId(deviceId);
-                  setCamOff(false);
-                }}
-                onRefresh={() => {
-                  void refreshDevices();
-                  toast.success(t("mtg.room.menu.refreshed"));
-                }}
-                captionsEnabled={captions.enabled}
-                captionsSupported={captions.supported}
-                onToggleCaptions={toggleCaptions}
-                shareSource={shareSource}
-                onShareSource={changeShareSource}
-                shareQuality={shareQuality}
-                onShareQuality={changeShareQuality}
-                shareQualityLabel={shareQualityLabel}
-              />
-              {session ? (
-                <Button
-                  variant="destructive"
-                  className="h-11 rounded-full px-4"
-                  onClick={leaveRoom}
-                  aria-label={t("mtg.room.leave")}
-                >
-                  <PhoneOff />
-                  <span className="hidden sm:inline">{t("mtg.room.leave")}</span>
-                </Button>
-              ) : (
-                <Button
-                  className="h-11 rounded-full px-5"
-                  onClick={() => void handleJoin()}
-                  disabled={joining || redeeming || meetingClosed}
-                >
-                  {joining || redeeming ? <Loader2 className="animate-spin" /> : <Video />}
-                  {redeeming ? t("mtg.room.redeeming") : t("mtg.room.join")}
-                </Button>
-              )}
-            </div>
+              {isRealRoom &&
+                (joinErrorCode === "MEETING_ACCESS_DENIED" ||
+                  joinErrorCode === "TENANT_ACCESS_DENIED") && (
+                  <JoinRequestPanel meetingId={id} onApproved={() => void handleJoin()} />
+                )}
+            </RoomNotice>
+          )}
 
-            {isRealRoom && (
-              <div className="mt-6">
-                <MeetingParticipantsManagerPanel meetingId={id} />
-              </div>
-            )}
-          </main>
+          {autoStatus && (
+            <RoomNotice
+              tone="busy"
+              title={
+                autoStatus === "refreshing"
+                  ? t("mtg.room.auto.refreshing")
+                  : t("mtg.room.auto.rejoining")
+              }
+            />
+          )}
+
+          {!isRealRoom && (
+            <RoomNotice
+              title={t("mtg.room.demoNotice")}
+              actions={
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/meeting">{t("mtg.room.demoCreate")}</Link>
+                </Button>
+              }
+            />
+          )}
+
+          {isRealRoom && <JoinRequestInbox meetingId={id} />}
+        </div>
+      </div>
+    </main>
+  );
+
+  return (
+    <div className="flex h-dvh overflow-hidden bg-background text-foreground">
+      <AppSidebar active="meetings" open={open} onClose={() => setOpen(false)} />
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <AppTopbar variant="documents" onOpenSidebar={() => setOpen(true)} />
+
+        <div className="flex min-h-0 flex-1 overflow-hidden">
+          {session ? roomFrame : lobbyFrame}
 
           <aside className="hidden w-80 shrink-0 border-l border-border bg-surface lg:flex lg:flex-col">
             <MeetingSidePanel {...sidePanelProps} idPrefix="aside" />
@@ -1732,6 +1777,156 @@ function MeetingDetailPage() {
         </SheetContent>
       </Sheet>
     </div>
+  );
+}
+
+/** Một kiểu thông báo duy nhất cho cả màn — thay cho 6 khối card tự chế trước đây. */
+function RoomNotice({
+  tone = "info",
+  title,
+  description,
+  code,
+  actions,
+  children,
+}: {
+  tone?: "info" | "error" | "busy";
+  title: string;
+  description?: string | null;
+  code?: string;
+  actions?: ReactNode;
+  children?: ReactNode;
+}) {
+  return (
+    <div
+      role={tone === "error" ? "alert" : "status"}
+      className={`rounded-xl border px-4 py-3 ${
+        tone === "error" ? "border-destructive/40 bg-destructive/10" : "border-border bg-surface"
+      }`}
+    >
+      <p
+        className={`flex items-center gap-2 text-sm font-medium ${
+          tone === "error" ? "text-destructive" : "text-foreground"
+        }`}
+      >
+        {tone === "busy" && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />}
+        {title}
+      </p>
+      {description && <p className="mt-1 text-xs leading-relaxed text-foreground">{description}</p>}
+      {code && <p className="mt-1 font-mono text-[11px] text-muted-foreground">{code}</p>}
+      {actions && <div className="mt-3 flex flex-wrap items-center gap-2">{actions}</div>}
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Hàng đợi giơ tay — neo ngay trên thanh điều khiển nên không bao giờ bị cuộn mất,
+ * thu gọn về một dòng khi không cần thao tác.
+ */
+function HandsQueue({
+  raisedHands,
+  speakers,
+  isHost,
+  myUserId,
+  canSpeak,
+  onSetSpeakPermission,
+}: {
+  raisedHands: Array<{ userId: string; name: string; at: number }>;
+  speakers: Array<{ userId: string; name: string }>;
+  isHost: boolean;
+  myUserId: string | null;
+  canSpeak: boolean;
+  onSetSpeakPermission: (userId: string, name: string, allow: boolean) => Promise<void>;
+}) {
+  const { t } = useI18n();
+  const [expanded, setExpanded] = useState(true);
+  const hasDetail = raisedHands.length > 0 || speakers.length > 0;
+  if (!hasDetail && !canSpeak) return null;
+
+  return (
+    <section
+      aria-label={fmt(t("mtg.room.hands.title"), { n: raisedHands.length })}
+      className="shrink-0 rounded-xl border border-border bg-surface px-3 py-2 text-xs"
+    >
+      <div className="flex items-center gap-2">
+        <Hand className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
+        <span className="font-medium text-foreground">
+          {fmt(t("mtg.room.hands.title"), { n: raisedHands.length })}
+        </span>
+        {canSpeak && (
+          <span className="truncate text-muted-foreground">{t("mtg.room.hands.canSpeak")}</span>
+        )}
+        {hasDetail && (
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            aria-expanded={expanded}
+            aria-label={t(expanded ? "mtg.room.hands.collapse" : "mtg.room.hands.expand")}
+            title={t(expanded ? "mtg.room.hands.collapse" : "mtg.room.hands.expand")}
+            className="ml-auto inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            {expanded ? (
+              <ChevronDown className="h-3.5 w-3.5" />
+            ) : (
+              <ChevronUp className="h-3.5 w-3.5" />
+            )}
+          </button>
+        )}
+      </div>
+
+      {expanded && hasDetail && (
+        <div className="mt-2 max-h-28 space-y-1 overflow-y-auto">
+          {raisedHands.map((h, i) => (
+            <div
+              key={h.userId}
+              className={`flex items-center justify-between gap-2 rounded-md px-1.5 py-1 ${
+                h.userId === myUserId ? "bg-primary/10" : ""
+              }`}
+            >
+              <span className="flex min-w-0 items-center gap-2">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[11px] font-semibold text-primary">
+                  {i + 1}
+                </span>
+                <span className="min-w-0 truncate text-foreground">
+                  {h.userId === myUserId ? t("mtg.room.you") : h.name}
+                </span>
+                <WaitingTime at={h.at} />
+              </span>
+              {isHost && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => void onSetSpeakPermission(h.userId, h.name, true)}
+                >
+                  <Mic /> {t("mtg.room.hands.allow")}
+                </Button>
+              )}
+            </div>
+          ))}
+          {speakers.length > 0 && (
+            <div className="space-y-1 border-t border-border pt-1.5">
+              <p className="font-medium text-foreground">{t("mtg.room.hands.speaking")}</p>
+              {speakers.map((s) => (
+                <div key={s.userId} className="flex items-center justify-between gap-2">
+                  <span className="min-w-0 truncate text-muted-foreground">
+                    {s.userId === myUserId ? t("mtg.room.you") : s.name}
+                  </span>
+                  {isHost && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => void onSetSpeakPermission(s.userId, s.name, false)}
+                    >
+                      <MicOff /> {t("mtg.room.hands.revoke")}
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -2051,18 +2246,11 @@ function MeetingSidePanel({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div
-        className={`flex items-center justify-between gap-2 border-b border-border py-2 pl-3 ${inSheet ? "pr-12" : "pr-3"}`}
-      >
-        <span className="text-xs font-medium text-muted-foreground">
-          {t("mtg.room.panel.title")}
-        </span>
-        <ExpandCollapseAllButtons panelIds={MEETING_AI_PANEL_IDS} />
-      </div>
+      {/* Một hàng tab biểu tượng (trước đây 6 tab xếp 2 hàng, ăn hết chiều cao rail). */}
       <div
         role="tablist"
         aria-label={t("mtg.room.panel.title")}
-        className="grid grid-cols-3 gap-1 border-b border-border p-2 text-xs"
+        className={`flex items-center gap-1 border-b border-border py-2 pl-2 ${inSheet ? "pr-12" : "pr-2"}`}
       >
         {SIDE_TABS.map((it) => {
           const selected = tab === it.k;
@@ -2080,17 +2268,26 @@ function MeetingSidePanel({
               tabIndex={selected ? 0 : -1}
               onClick={() => onTabChange(it.k)}
               onKeyDown={onTabKeyDown}
-              className={`flex min-w-0 items-center justify-center gap-1.5 rounded-md px-2 py-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+              aria-label={t(it.label)}
+              title={t(it.label)}
+              className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                 selected
-                  ? "bg-primary/10 font-medium text-primary"
+                  ? "bg-primary/10 text-primary"
                   : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"
               }`}
             >
-              <it.icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              <span className="truncate">{t(it.label)}</span>
+              <it.icon className="h-4 w-4" aria-hidden="true" />
             </button>
           );
         })}
+      </div>
+
+      {/* Tab chỉ còn biểu tượng nên cần một dòng nhãn để biết đang đứng ở khu vực nào. */}
+      <div className="flex h-9 items-center justify-between gap-2 border-b border-border px-3">
+        <span className="truncate text-xs font-medium text-muted-foreground">
+          {t(SIDE_TABS.find((it) => it.k === tab)?.label ?? "mtg.room.panel.title")}
+        </span>
+        {tab === "ai" && <ExpandCollapseAllButtons panelIds={MEETING_AI_PANEL_IDS} />}
       </div>
 
       <div
@@ -2099,12 +2296,30 @@ function MeetingSidePanel({
         aria-labelledby={`${idPrefix}-meeting-tab-${tab}`}
         className="min-h-0 flex-1 overflow-y-auto p-4 text-sm"
       >
-        {tab === "ai" && <AICopilotPanel meetingId={meetingId} isRealRoom={isRealRoom} />}
+        {tab === "ai" && (
+          <div className="space-y-5">
+            <AICopilotPanel meetingId={meetingId} isRealRoom={isRealRoom} />
+            <div className="border-t border-border pt-4">
+              <AskUniPanel
+                rootEntity={{ type: "MEETING", id: meetingId }}
+                label={t("mtg.room.askUni")}
+                suggestions={[
+                  t("mtg.room.askUni.s1"),
+                  t("mtg.room.askUni.s2"),
+                  t("mtg.room.askUni.s3"),
+                ]}
+              />
+            </div>
+          </div>
+        )}
         {tab === "content" &&
           (isRealRoom ? (
             <div className="space-y-5">
               <MeetingContentPanel meetingId={meetingId} />
               <MeetingStatusHistoryPanel meetingId={meetingId} />
+              <div className="border-t border-border pt-4">
+                <RelatedWorkPanel entityType="MEETING" entityId={meetingId} />
+              </div>
             </div>
           ) : (
             <p className="text-xs text-muted-foreground">{t("mtg.room.demoContent")}</p>
@@ -2123,16 +2338,6 @@ function MeetingSidePanel({
           ) : (
             <p className="text-xs text-muted-foreground">{t("mtg.room.demoTranscript")}</p>
           ))}
-      </div>
-      <div className="border-t border-border p-4">
-        <AskUniPanel
-          rootEntity={{ type: "MEETING", id: meetingId }}
-          label={t("mtg.room.askUni")}
-          suggestions={[t("mtg.room.askUni.s1"), t("mtg.room.askUni.s2"), t("mtg.room.askUni.s3")]}
-        />
-      </div>
-      <div className="border-t border-border p-4">
-        <RelatedWorkPanel entityType="MEETING" entityId={meetingId} />
       </div>
     </div>
   );
