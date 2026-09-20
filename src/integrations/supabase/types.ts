@@ -3808,6 +3808,7 @@ export type Database = {
       }
       meetings: {
         Row: {
+          access_policy: string
           agenda: string | null
           conference_provider: string | null
           conference_ref: Json | null
@@ -3831,6 +3832,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          access_policy?: string
           agenda?: string | null
           conference_provider?: string | null
           conference_ref?: Json | null
@@ -3854,6 +3856,7 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          access_policy?: string
           agenda?: string | null
           conference_provider?: string | null
           conference_ref?: Json | null
@@ -8836,6 +8839,7 @@ export type Database = {
       _meeting_host_guard: {
         Args: { _meeting_id: string }
         Returns: {
+          access_policy: string
           agenda: string | null
           conference_provider: string | null
           conference_ref: Json | null
@@ -9364,6 +9368,7 @@ export type Database = {
           _reason?: string
         }
         Returns: {
+          access_policy: string
           agenda: string | null
           conference_provider: string | null
           conference_ref: Json | null
@@ -10103,6 +10108,7 @@ export type Database = {
           _meeting_id: string
         }
         Returns: {
+          access_policy: string
           agenda: string | null
           conference_provider: string | null
           conference_ref: Json | null
@@ -10394,6 +10400,10 @@ export type Database = {
         Returns: Json
       }
       get_home_summary: { Args: never; Returns: Json }
+      get_meeting_access_policy: {
+        Args: { _meeting_id: string }
+        Returns: Json
+      }
       get_meeting_stats: { Args: { _meeting_id: string }; Returns: Json }
       get_my_workflow_permissions: {
         Args: { _workspace_id: string }
@@ -11300,6 +11310,7 @@ export type Database = {
               _workspace_id: string
             }
             Returns: {
+              access_policy: string
               agenda: string | null
               conference_provider: string | null
               conference_ref: Json | null
@@ -11344,6 +11355,7 @@ export type Database = {
               _workspace_id: string
             }
             Returns: {
+              access_policy: string
               agenda: string | null
               conference_provider: string | null
               conference_ref: Json | null
@@ -11404,6 +11416,16 @@ export type Database = {
       set_chat_message_pin: {
         Args: { _message_id: string; _pinned: boolean }
         Returns: boolean
+      }
+      set_meeting_access_policy: {
+        Args: {
+          _access_policy: string
+          _correlation_id?: string
+          _expected_row_version?: number
+          _idempotency_key?: string
+          _meeting_id: string
+        }
+        Returns: Json
       }
       set_meeting_rsvp: {
         Args: {
@@ -11681,6 +11703,7 @@ export type Database = {
           _meeting_id: string
         }
         Returns: {
+          access_policy: string
           agenda: string | null
           conference_provider: string | null
           conference_ref: Json | null
@@ -11918,6 +11941,7 @@ export type Database = {
           _title?: string
         }
         Returns: {
+          access_policy: string
           agenda: string | null
           conference_provider: string | null
           conference_ref: Json | null
