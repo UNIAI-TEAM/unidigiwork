@@ -351,8 +351,7 @@ export const listMeetingParticipants = createServerFn({ method: "POST" })
     });
   });
 
-// Chính sách vào phòng (ADR-1E-001). `as never` là vì `types.ts` được sinh tự
-// động và chưa có hai RPC này; bỏ được sau lần regenerate kế tiếp.
+// Chính sách vào phòng (ADR-1E-001).
 export type MeetingAccessPolicy = "tenant_open" | "invite_only";
 
 export interface MeetingAccessPolicyDTO {
@@ -366,10 +365,9 @@ export const getMeetingAccessPolicy = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ meetingId: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }): Promise<MeetingAccessPolicyDTO> => {
-    const res = await context.supabase.rpc(
-      "get_meeting_access_policy" as never,
-      { _meeting_id: data.meetingId } as never,
-    );
+    const res = await context.supabase.rpc("get_meeting_access_policy", {
+      _meeting_id: data.meetingId,
+    });
     const out = ensureOk(res, "MEETING_NOT_FOUND") as unknown as {
       access_policy: MeetingAccessPolicy;
       row_version: number;
@@ -396,16 +394,13 @@ export const setMeetingAccessPolicy = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
-    const res = await context.supabase.rpc(
-      "set_meeting_access_policy" as never,
-      {
-        _meeting_id: data.meetingId,
-        _access_policy: data.accessPolicy,
-        _expected_row_version: data.expectedRowVersion ?? undefined,
-        _idempotency_key: data.idempotencyKey ?? undefined,
-        _correlation_id: data.correlationId ?? undefined,
-      } as never,
-    );
+    const res = await context.supabase.rpc("set_meeting_access_policy", {
+      _meeting_id: data.meetingId,
+      _access_policy: data.accessPolicy,
+      _expected_row_version: data.expectedRowVersion ?? undefined,
+      _idempotency_key: data.idempotencyKey ?? undefined,
+      _correlation_id: data.correlationId ?? undefined,
+    });
     const out = ensureOk(res, "MEETING_ACCESS_DENIED") as unknown as {
       access_policy: MeetingAccessPolicy;
       row_version: number;
@@ -418,16 +413,15 @@ export const getWorkspaceMeetingStats = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ workspaceId: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
-    const { data: rows, error } = await context.supabase.rpc(
-      "get_workspace_meeting_stats" as never,
-      { _workspace_id: data.workspaceId } as never,
-    );
+    const { data: rows, error } = await context.supabase.rpc("get_workspace_meeting_stats", {
+      _workspace_id: data.workspaceId,
+    });
     if (error) mapPgError(error);
-    const r = (rows as unknown as Array<Record<string, number>> | null)?.[0];
+    const r = rows?.[0];
     return {
-      today: Number(r?.["today_count"] ?? 0),
-      live: Number(r?.["live_count"] ?? 0),
-      recordings: Number(r?.["recording_count"] ?? 0),
-      summaries: Number(r?.["summary_count"] ?? 0),
+      today: Number(r?.today_count ?? 0),
+      live: Number(r?.live_count ?? 0),
+      recordings: Number(r?.recording_count ?? 0),
+      summaries: Number(r?.summary_count ?? 0),
     };
   });
