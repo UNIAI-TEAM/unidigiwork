@@ -1,6 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   ArrowUpDown,
@@ -39,11 +45,13 @@ import {
 } from "@/lib/api/meeting-rooms.functions";
 import {
   cancelMeeting,
+  getMeeting,
   getMeetingManagePermissions,
   listMeetings,
   scheduleMeeting,
   updateMeeting,
 } from "@/lib/api/meetings.functions";
+import { pinnedRoomsForView, withoutPinned, type PinnableMeeting } from "@/lib/meeting-pinned";
 import {
   Dialog,
   DialogContent,
@@ -431,10 +439,39 @@ function MeetingPage() {
   }, [rangeActive, rangeQuery.data, roomQuery, roomState]);
 
   const activeListQuery = rangeActive ? rangeQuery : rooms;
-  const listItems: ListRoom[] = rangeActive
+  const serverItems: ListRoom[] = rangeActive
     ? rangeFiltered.slice((currentPage - 1) * ROOM_PAGE_SIZE, currentPage * ROOM_PAGE_SIZE)
     : ((rooms.data?.items ?? []) as ListRoom[]);
   const listTotal = rangeActive ? rangeFiltered.length : (rooms.data?.total ?? 0);
+
+  // Ghim cuộc họp vừa tạo lên đầu trang 1 cho tới khi rời trang: danh sách vẫn
+  // sắp theo giờ bắt đầu nên cuộc họp mới thường nằm ở cuối hoặc sang trang sau.
+  const [pinnedIds, setPinnedIds] = useState<string[]>([]);
+  const pinMeeting = (id: string) => {
+    setPinnedIds((prev) => (prev.includes(id) ? prev : [id, ...prev]));
+    // Dòng ghim chỉ nằm ở trang 1, nên đang xem trang sau thì đưa về trang 1.
+    if (currentPage !== 1) setRoomFilter({ page: 1 });
+  };
+  // Lấy lại từ server thay vì dùng bản trả về lúc tạo, để dòng ghim vẫn đúng khi
+  // cuộc họp được sửa, bị hủy hoặc chuyển sang đang diễn ra.
+  const pinnedQueries = useQueries({
+    queries: pinnedIds.map((id) => ({
+      queryKey: ["meeting", "pinned", id],
+      queryFn: () => getMeeting({ data: { meetingId: id } }),
+    })),
+  });
+  const pinnedRooms = pinnedRoomsForView(
+    pinnedQueries.map((q) => q.data as PinnableMeeting | undefined),
+    {
+      workspaceId: activeWs,
+      search: roomQuery,
+      state: roomState,
+      from: dateFrom,
+      to: dateTo,
+      page: currentPage,
+    },
+  ) as ListRoom[];
+  const listItems = withoutPinned(serverItems, pinnedRooms);
   const listLoading = activeListQuery.isLoading || (!activeWs && workspaces.isLoading);
   const listFetching = activeListQuery.isFetching;
   const listError = activeListQuery.isError;
@@ -468,7 +505,7 @@ function MeetingPage() {
   const statValue = (n: number | undefined) => (n === undefined ? "–" : String(n));
 
   // Phân quyền: chỉ chủ trì / quản trị tổ chức mới được sửa hoặc hủy buổi họp.
-  const idsKey = listItems.map((r) => r.id).join(",");
+  const idsKey = [...pinnedRooms, ...listItems].map((r) => r.id).join(",");
   const permIds = useMemo(
     () =>
       Array.from(new Set(idsKey ? idsKey.split(",") : []))
@@ -544,6 +581,7 @@ function MeetingPage() {
       }),
     onSuccess: (m) => {
       void queryClient.invalidateQueries({ queryKey: ["meeting-rooms"] });
+      pinMeeting(m.id);
       setCreated({ id: m.id, title: m.title });
     },
     onError: () => toast.error(t("mtg.create.error")),
@@ -563,6 +601,7 @@ function MeetingPage() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["meeting-rooms"] });
       void queryClient.invalidateQueries({ queryKey: ["meetings-range"] });
+      void queryClient.invalidateQueries({ queryKey: ["meeting", "pinned"] });
       setEditRoom(null);
       toast.success(t("mtg.edit.success"));
     },
@@ -582,9 +621,10 @@ function MeetingPage() {
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
         },
       }),
-    onSuccess: () => {
+    onSuccess: (m) => {
       void queryClient.invalidateQueries({ queryKey: ["meeting-rooms"] });
       void queryClient.invalidateQueries({ queryKey: ["meetings-range"] });
+      pinMeeting(m.id);
       setScheduleOpen(false);
       setSchTitle("");
       setSchStart("");
@@ -635,6 +675,7 @@ function MeetingPage() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["meeting-rooms"] });
       void queryClient.invalidateQueries({ queryKey: ["meetings-range"] });
+      void queryClient.invalidateQueries({ queryKey: ["meeting", "pinned"] });
       closeCancel();
       toast.success(t("mtg.cancel.success"));
     },
@@ -913,7 +954,7 @@ function MeetingPage() {
                     {t("mtg.retry")}
                   </Button>
                 </div>
-              ) : listItems.length === 0 ? (
+              ) : listItems.length === 0 && pinnedRooms.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-border p-10 text-center">
                   <p className="mx-auto max-w-md text-sm text-muted-foreground">{emptyMessage}</p>
                   <div className="mt-4 flex flex-wrap justify-center gap-2">
@@ -936,6 +977,17 @@ function MeetingPage() {
               ) : (
                 <>
                   <ul className="space-y-2">
+                    {pinnedRooms.map((m) => (
+                      <MeetingRow
+                        key={m.id}
+                        meeting={m}
+                        pinned
+                        canManage={canManageMeeting(m.id)}
+                        permsLoading={permsQuery.isLoading}
+                        onEdit={() => openEdit(m)}
+                        onCancel={() => openCancel(m)}
+                      />
+                    ))}
                     {listItems.map((m) => (
                       <MeetingRow
                         key={m.id}
@@ -1342,12 +1394,15 @@ function MeetingRow({
   meeting: m,
   canManage,
   permsLoading,
+  pinned = false,
   onEdit,
   onCancel,
 }: {
   meeting: ListRoom;
   canManage: boolean;
   permsLoading: boolean;
+  /** Cuộc họp vừa tạo trong phiên này — ghim lên đầu và làm nổi bật. */
+  pinned?: boolean;
   onEdit: () => void;
   onCancel: () => void;
 }) {
@@ -1360,7 +1415,7 @@ function MeetingRow({
   return (
     <li
       className={`flex flex-col gap-3 rounded-xl border bg-surface p-4 transition-colors hover:border-primary/40 sm:flex-row sm:items-center ${
-        isLive ? "border-destructive/40" : "border-border"
+        isLive ? "border-destructive/40" : pinned ? "border-primary/50" : "border-border"
       }`}
     >
       <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -1394,6 +1449,11 @@ function MeetingRow({
               {m.title}
             </Link>
             <RoomStatusChip state={state} />
+            {pinned && (
+              <span className="rounded-full bg-primary/12 px-2 py-0.5 text-[11px] font-medium text-primary">
+                {t("mtg.row.justCreated")}
+              </span>
+            )}
           </div>
           <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
             <Clock className="h-3 w-3 shrink-0" />
