@@ -13,21 +13,23 @@ import { useEffect, useMemo, useRef } from "react";
 import {
   applyPresetToTrack,
   degrade,
-  describeDisplayMediaError,
   readTrackSurface,
   resolvePreset,
   upgrade,
   type ShareQualityKey,
   type ShareSourceKey,
 } from "@/lib/screen-share-quality";
-import { toast } from "sonner";
+import { useI18n } from "@/lib/i18n";
+import { toastDisplayMediaError } from "@/components/meeting/share-messages";
 
 export interface LiveKitStageProps {
   serverUrl: string;
   token: string;
   onDisconnected: () => void;
   /** Báo trạng thái kết nối ra ngoài để trang chủ động rejoin. */
-  onConnectionStateChange?: (state: "connected" | "reconnecting" | "disconnected" | "connecting") => void;
+  onConnectionStateChange?: (
+    state: "connected" | "reconnecting" | "disconnected" | "connecting",
+  ) => void;
   /** Bật/tắt micro thật của người dùng trong phòng. */
   micEnabled?: boolean;
   /** Bật/tắt camera thật của người dùng trong phòng. */
@@ -39,8 +41,8 @@ export interface LiveKitStageProps {
   onMediaStateChange?: (state: { mic: boolean; cam: boolean }) => void;
   /** Chất lượng chia sẻ màn hình; "auto" sẽ tự điều chỉnh khi mạng yếu. */
   shareQuality?: ShareQualityKey;
-  /** Báo bậc chất lượng thực tế đang dùng. */
-  onShareQualityResolved?: (label: string) => void;
+  /** Báo bậc chất lượng thực tế đang dùng (key của preset, UI tự dịch nhãn). */
+  onShareQualityResolved?: (key: Exclude<ShareQualityKey, "auto">) => void;
   /** Yêu cầu publish/ngừng publish track chia sẻ màn hình vào phòng. */
   screenShareEnabled?: boolean;
   /** Báo ngược trạng thái chia sẻ màn hình thật trong phòng. */
@@ -60,9 +62,16 @@ function ScreenShareSync({
   onShareSourceResolved,
 }: Pick<
   LiveKitStageProps,
-  "screenShareEnabled" | "shareQuality" | "shareSource" | "onScreenShareStateChange" | "onShareSourceResolved"
+  | "screenShareEnabled"
+  | "shareQuality"
+  | "shareSource"
+  | "onScreenShareStateChange"
+  | "onShareSourceResolved"
 >) {
   const { localParticipant, isScreenShareEnabled } = useLocalParticipant();
+  const { t } = useI18n();
+  const tRef = useRef(t);
+  tRef.current = t;
 
   useEffect(() => {
     if (!localParticipant || screenShareEnabled === undefined) return;
@@ -81,14 +90,13 @@ function ScreenShareSync({
       })
       .then(() => {
         if (!screenShareEnabled) return;
-        const track = localParticipant.getTrackPublication(Track.Source.ScreenShare)?.track?.mediaStreamTrack;
+        const track = localParticipant.getTrackPublication(Track.Source.ScreenShare)?.track
+          ?.mediaStreamTrack;
         onShareSourceResolved?.(readTrackSurface(track));
       })
       .catch((err: unknown) => {
         // Người dùng hủy/từ chối hộp thoại chọn màn hình -> trả nút về trạng thái tắt + hướng dẫn.
-        const info = describeDisplayMediaError(err);
-        if (info.cancelled) toast.info(info.title, { description: info.hint });
-        else toast.error(info.title, { description: info.hint, duration: 8000 });
+        toastDisplayMediaError(err, tRef.current);
         onScreenShareStateChange?.(false);
       });
   }, [
@@ -140,7 +148,7 @@ function ScreenShareQuality({
       if (next !== levelRef.current || !pub?.isMuted) {
         levelRef.current = next;
         await applyPresetToTrack(track, preset);
-        onShareQualityResolved?.(preset.label);
+        onShareQualityResolved?.(preset.key);
       }
     };
 
@@ -161,7 +169,10 @@ function MediaSync({
   micDeviceId,
   camDeviceId,
   onMediaStateChange,
-}: Pick<LiveKitStageProps, "micEnabled" | "camEnabled" | "micDeviceId" | "camDeviceId" | "onMediaStateChange">) {
+}: Pick<
+  LiveKitStageProps,
+  "micEnabled" | "camEnabled" | "micDeviceId" | "camDeviceId" | "onMediaStateChange"
+>) {
   const { localParticipant, isMicrophoneEnabled, isCameraEnabled } = useLocalParticipant();
   // Áp trạng thái nút bên ngoài vào track thật.
   useEffect(() => {
@@ -181,12 +192,16 @@ function MediaSync({
   // Áp thiết bị đã chọn.
   useEffect(() => {
     if (!micDeviceId || !localParticipant) return;
-    void localParticipant.setMicrophoneEnabled(micEnabled ?? true, { deviceId: micDeviceId }).catch(() => {});
+    void localParticipant
+      .setMicrophoneEnabled(micEnabled ?? true, { deviceId: micDeviceId })
+      .catch(() => {});
   }, [micDeviceId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!camDeviceId || !localParticipant) return;
-    void localParticipant.setCameraEnabled(camEnabled ?? true, { deviceId: camDeviceId }).catch(() => {});
+    void localParticipant
+      .setCameraEnabled(camEnabled ?? true, { deviceId: camDeviceId })
+      .catch(() => {});
   }, [camDeviceId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Báo ngược ra ngoài khi người dùng đổi bằng nút của LiveKit.
@@ -203,6 +218,7 @@ function ConnectionMonitor({
   onConnectionStateChange?: LiveKitStageProps["onConnectionStateChange"];
 }) {
   const state = useConnectionState();
+  const { t } = useI18n();
   useEffect(() => {
     const mapped =
       state === ConnectionState.Connected
@@ -218,8 +234,11 @@ function ConnectionMonitor({
   if (state !== ConnectionState.Reconnecting) return null;
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex justify-center p-2">
-      <span className="rounded-full bg-surface/90 px-3 py-1 text-xs font-medium text-muted-foreground shadow">
-        Mất kết nối tạm thời — đang tự động kết nối lại…
+      <span
+        role="status"
+        className="rounded-full bg-surface px-3 py-1 text-xs font-medium text-foreground shadow"
+      >
+        {t("mtg.room.reconnecting")}
       </span>
     </div>
   );
@@ -245,48 +264,51 @@ export default function LiveKitStage({
   const preset = useMemo(() => resolvePreset(shareQuality), [shareQuality]);
   return (
     <div className="relative h-full w-full">
-    <LiveKitRoom
-      serverUrl={serverUrl}
-      token={token}
-      connect
-      video={camEnabled ?? true}
-      audio={micEnabled ?? true}
-      onDisconnected={onDisconnected}
-      options={{
-        // Chỉ gửi/nhận đúng độ phân giải đang hiển thị -> đỡ giật khi mạng yếu.
-        adaptiveStream: true,
-        dynacast: true,
-        publishDefaults: {
-          screenShareEncoding: {
-            maxBitrate: preset.maxBitrate,
-            maxFramerate: preset.frameRate,
+      <LiveKitRoom
+        serverUrl={serverUrl}
+        token={token}
+        connect
+        video={camEnabled ?? true}
+        audio={micEnabled ?? true}
+        onDisconnected={onDisconnected}
+        options={{
+          // Chỉ gửi/nhận đúng độ phân giải đang hiển thị -> đỡ giật khi mạng yếu.
+          adaptiveStream: true,
+          dynacast: true,
+          publishDefaults: {
+            screenShareEncoding: {
+              maxBitrate: preset.maxBitrate,
+              maxFramerate: preset.frameRate,
+            },
+            simulcast: true,
+            degradationPreference: "maintain-resolution",
           },
-          simulcast: true,
-          degradationPreference: "maintain-resolution",
-        },
-      }}
-      data-lk-theme="default"
-      style={{ height: "100%", width: "100%", borderRadius: "0.75rem", overflow: "hidden" }}
-    >
-      <VideoConference />
-      <RoomAudioRenderer />
-      <ConnectionMonitor onConnectionStateChange={onConnectionStateChange} />
-      <ScreenShareQuality shareQuality={shareQuality} onShareQualityResolved={onShareQualityResolved} />
-      <ScreenShareSync
-        screenShareEnabled={screenShareEnabled}
-        shareQuality={shareQuality}
-        shareSource={shareSource}
-        onScreenShareStateChange={onScreenShareStateChange}
-        onShareSourceResolved={onShareSourceResolved}
-      />
-      <MediaSync
-        micEnabled={micEnabled}
-        camEnabled={camEnabled}
-        micDeviceId={micDeviceId}
-        camDeviceId={camDeviceId}
-        onMediaStateChange={onMediaStateChange}
-      />
-    </LiveKitRoom>
+        }}
+        data-lk-theme="default"
+        style={{ height: "100%", width: "100%", borderRadius: "0.75rem", overflow: "hidden" }}
+      >
+        <VideoConference />
+        <RoomAudioRenderer />
+        <ConnectionMonitor onConnectionStateChange={onConnectionStateChange} />
+        <ScreenShareQuality
+          shareQuality={shareQuality}
+          onShareQualityResolved={onShareQualityResolved}
+        />
+        <ScreenShareSync
+          screenShareEnabled={screenShareEnabled}
+          shareQuality={shareQuality}
+          shareSource={shareSource}
+          onScreenShareStateChange={onScreenShareStateChange}
+          onShareSourceResolved={onShareSourceResolved}
+        />
+        <MediaSync
+          micEnabled={micEnabled}
+          camEnabled={camEnabled}
+          micDeviceId={micDeviceId}
+          camDeviceId={camDeviceId}
+          onMediaStateChange={onMediaStateChange}
+        />
+      </LiveKitRoom>
     </div>
   );
 }

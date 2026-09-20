@@ -30,9 +30,16 @@
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
   --color-background: var(--background);
+  /* Alias lịch sử: nhiều màn dùng `bg-bg` — trỏ về cùng token nền. */
+  --color-bg: var(--background);
   --color-foreground: var(--foreground);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-stage: var(--stage);
+  --color-stage-foreground: var(--stage-foreground);
+  --color-overlay: var(--overlay);
+  --color-overlay-foreground: var(--overlay-foreground);
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-card: var(--card);
@@ -99,6 +106,14 @@
   --background: oklch(1 0 0);
   --surface: oklch(0.982 0.003 265);
   --surface-2: oklch(0.958 0.012 285);
+  --surface-3: oklch(0.93 0.016 285);
+  /* Bề mặt media: khung video và lớp phủ đè lên video. Cố tình tối ở CẢ light lẫn dark
+     vì hình ảnh video cần nền tối để không chói — đây là bề mặt media giống lightbox ảnh,
+     không phải đảo theme trang. Vì vậy chỉ khai báo ở :root, các theme khác kế thừa. */
+  --stage: oklch(0.19 0.008 265);
+  --stage-foreground: oklch(0.95 0.003 265);
+  --overlay: oklch(0.15 0.006 265 / 76%);
+  --overlay-foreground: oklch(0.97 0.002 265);
   --foreground: oklch(0.235 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.235 0 0);
@@ -115,10 +130,10 @@
   --muted-foreground: oklch(0.49 0 0);
   --accent: oklch(0.5 0.285 295);
   --accent-foreground: oklch(1 0 0);
-  --destructive: oklch(0.58 0.18 25);
+  --destructive: oklch(0.5 0.19 25);
   --destructive-foreground: oklch(0.985 0.004 260);
-  --success: oklch(0.6 0.14 150);
-  --warning: oklch(0.72 0.15 75);
+  --success: oklch(0.47 0.15 150);
+  --warning: oklch(0.5 0.16 75);
   --border: oklch(0.84 0 0);
   --border-strong: oklch(0.75 0 0);
   --input: oklch(0.84 0 0);
@@ -164,6 +179,7 @@
   --background: oklch(0.145 0.005 265);
   --surface: oklch(0.19 0.008 265);
   --surface-2: oklch(0.235 0.012 285);
+  --surface-3: oklch(0.28 0.016 285);
   --foreground: oklch(0.95 0.003 265);
   --card: oklch(0.19 0.008 265);
   --card-foreground: oklch(0.94 0.006 260);
@@ -180,7 +196,7 @@
   --muted-foreground: oklch(0.66 0.012 260);
   --accent: oklch(0.66 0.16 285);
   --accent-foreground: oklch(0.175 0.014 260);
-  --destructive: oklch(0.64 0.17 25);
+  --destructive: oklch(0.66 0.17 25);
   --destructive-foreground: oklch(0.98 0.004 260);
   --success: oklch(0.7 0.14 150);
   --warning: oklch(0.78 0.14 75);
@@ -262,14 +278,24 @@
   text-transform: uppercase;
 }
 
+/* ---------------------------------------------------------------------------
+ * Giảm chuyển động (prefers-reduced-motion): rút ngắn mọi chuyển động và tắt
+ * hẳn các hiệu ứng lặp mang tính trang trí (pulse/ping/bounce). Spinner tải
+ * (.animate-spin) vẫn giữ vì nó truyền tải trạng thái đang xử lý.
+ * ------------------------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
-  *,
+  *:not(.animate-spin),
   *::before,
   *::after {
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+  }
+  .animate-pulse,
+  .animate-ping,
+  .animate-bounce {
+    animation: none !important;
   }
 }
 
@@ -379,9 +405,12 @@
 :root[data-tone="violet"] {
   --tone-h: 285;
   --primary: oklch(0.56 0.17 285);
+  --primary-foreground: oklch(1 0 0);
   --accent: oklch(0.56 0.17 285);
+  --accent-foreground: oklch(1 0 0);
   --ring: oklch(0.56 0.17 285 / 55%);
   --sidebar-primary: oklch(0.52 0.16 285);
+  --sidebar-primary-foreground: oklch(1 0 0);
   --sidebar-ring: oklch(0.56 0.17 285 / 55%);
 }
 
@@ -389,32 +418,43 @@
 .dark :root[data-tone="violet"],
 .dark:root[data-tone="violet"] {
   --primary: oklch(0.68 0.15 285);
+  --primary-foreground: oklch(0.2 0.03 285);
   --accent: oklch(0.68 0.15 285);
+  --accent-foreground: oklch(0.2 0.03 285);
   --ring: oklch(0.68 0.15 285 / 55%);
   --sidebar-primary: oklch(0.68 0.15 285);
+  --sidebar-primary-foreground: oklch(0.2 0.03 285);
   --sidebar-ring: oklch(0.68 0.15 285 / 55%);
 }
 
 :root[data-tone="violet"][data-contrast="high"] {
   --primary: oklch(0.44 0.19 285);
+  --primary-foreground: oklch(1 0 0);
   --accent: oklch(0.44 0.19 285);
+  --accent-foreground: oklch(1 0 0);
   --ring: oklch(0.3 0.05 285 / 90%);
   --sidebar-primary: oklch(0.4 0.18 285);
+  --sidebar-primary-foreground: oklch(1 0 0);
 }
 
 :root[data-tone="violet"][data-contrast="high"].dark,
 .dark:root[data-tone="violet"][data-contrast="high"] {
   --primary: oklch(0.82 0.14 285);
+  --primary-foreground: oklch(0.14 0.02 285);
   --accent: oklch(0.82 0.14 285);
+  --accent-foreground: oklch(0.14 0.02 285);
   --ring: oklch(0.92 0.05 285 / 90%);
 }
 
 :root[data-tone="blue"] {
   --tone-h: 255;
   --primary: oklch(0.56 0.17 255);
+  --primary-foreground: oklch(1 0 0);
   --accent: oklch(0.56 0.17 255);
+  --accent-foreground: oklch(1 0 0);
   --ring: oklch(0.56 0.17 255 / 55%);
   --sidebar-primary: oklch(0.52 0.16 255);
+  --sidebar-primary-foreground: oklch(1 0 0);
   --sidebar-ring: oklch(0.56 0.17 255 / 55%);
 }
 
@@ -422,32 +462,43 @@
 .dark :root[data-tone="blue"],
 .dark:root[data-tone="blue"] {
   --primary: oklch(0.68 0.15 255);
+  --primary-foreground: oklch(0.2 0.03 255);
   --accent: oklch(0.68 0.15 255);
+  --accent-foreground: oklch(0.2 0.03 255);
   --ring: oklch(0.68 0.15 255 / 55%);
   --sidebar-primary: oklch(0.68 0.15 255);
+  --sidebar-primary-foreground: oklch(0.2 0.03 255);
   --sidebar-ring: oklch(0.68 0.15 255 / 55%);
 }
 
 :root[data-tone="blue"][data-contrast="high"] {
   --primary: oklch(0.44 0.19 255);
+  --primary-foreground: oklch(1 0 0);
   --accent: oklch(0.44 0.19 255);
+  --accent-foreground: oklch(1 0 0);
   --ring: oklch(0.3 0.05 255 / 90%);
   --sidebar-primary: oklch(0.4 0.18 255);
+  --sidebar-primary-foreground: oklch(1 0 0);
 }
 
 :root[data-tone="blue"][data-contrast="high"].dark,
 .dark:root[data-tone="blue"][data-contrast="high"] {
   --primary: oklch(0.82 0.14 255);
+  --primary-foreground: oklch(0.14 0.02 255);
   --accent: oklch(0.82 0.14 255);
+  --accent-foreground: oklch(0.14 0.02 255);
   --ring: oklch(0.92 0.05 255 / 90%);
 }
 
 :root[data-tone="teal"] {
   --tone-h: 195;
   --primary: oklch(0.56 0.17 195);
+  --primary-foreground: oklch(0.16 0.03 195);
   --accent: oklch(0.56 0.17 195);
+  --accent-foreground: oklch(0.16 0.03 195);
   --ring: oklch(0.56 0.17 195 / 55%);
   --sidebar-primary: oklch(0.52 0.16 195);
+  --sidebar-primary-foreground: oklch(1 0 0);
   --sidebar-ring: oklch(0.56 0.17 195 / 55%);
 }
 
@@ -455,32 +506,43 @@
 .dark :root[data-tone="teal"],
 .dark:root[data-tone="teal"] {
   --primary: oklch(0.68 0.15 195);
+  --primary-foreground: oklch(0.2 0.03 195);
   --accent: oklch(0.68 0.15 195);
+  --accent-foreground: oklch(0.2 0.03 195);
   --ring: oklch(0.68 0.15 195 / 55%);
   --sidebar-primary: oklch(0.68 0.15 195);
+  --sidebar-primary-foreground: oklch(0.2 0.03 195);
   --sidebar-ring: oklch(0.68 0.15 195 / 55%);
 }
 
 :root[data-tone="teal"][data-contrast="high"] {
   --primary: oklch(0.44 0.19 195);
+  --primary-foreground: oklch(1 0 0);
   --accent: oklch(0.44 0.19 195);
+  --accent-foreground: oklch(1 0 0);
   --ring: oklch(0.3 0.05 195 / 90%);
   --sidebar-primary: oklch(0.4 0.18 195);
+  --sidebar-primary-foreground: oklch(1 0 0);
 }
 
 :root[data-tone="teal"][data-contrast="high"].dark,
 .dark:root[data-tone="teal"][data-contrast="high"] {
   --primary: oklch(0.82 0.14 195);
+  --primary-foreground: oklch(0.14 0.02 195);
   --accent: oklch(0.82 0.14 195);
+  --accent-foreground: oklch(0.14 0.02 195);
   --ring: oklch(0.92 0.05 195 / 90%);
 }
 
 :root[data-tone="emerald"] {
   --tone-h: 155;
   --primary: oklch(0.56 0.17 155);
+  --primary-foreground: oklch(0.14 0.02 155);
   --accent: oklch(0.56 0.17 155);
+  --accent-foreground: oklch(0.14 0.02 155);
   --ring: oklch(0.56 0.17 155 / 55%);
   --sidebar-primary: oklch(0.52 0.16 155);
+  --sidebar-primary-foreground: oklch(1 0 0);
   --sidebar-ring: oklch(0.56 0.17 155 / 55%);
 }
 
@@ -488,32 +550,43 @@
 .dark :root[data-tone="emerald"],
 .dark:root[data-tone="emerald"] {
   --primary: oklch(0.68 0.15 155);
+  --primary-foreground: oklch(0.2 0.03 155);
   --accent: oklch(0.68 0.15 155);
+  --accent-foreground: oklch(0.2 0.03 155);
   --ring: oklch(0.68 0.15 155 / 55%);
   --sidebar-primary: oklch(0.68 0.15 155);
+  --sidebar-primary-foreground: oklch(0.2 0.03 155);
   --sidebar-ring: oklch(0.68 0.15 155 / 55%);
 }
 
 :root[data-tone="emerald"][data-contrast="high"] {
   --primary: oklch(0.44 0.19 155);
+  --primary-foreground: oklch(1 0 0);
   --accent: oklch(0.44 0.19 155);
+  --accent-foreground: oklch(1 0 0);
   --ring: oklch(0.3 0.05 155 / 90%);
   --sidebar-primary: oklch(0.4 0.18 155);
+  --sidebar-primary-foreground: oklch(1 0 0);
 }
 
 :root[data-tone="emerald"][data-contrast="high"].dark,
 .dark:root[data-tone="emerald"][data-contrast="high"] {
   --primary: oklch(0.82 0.14 155);
+  --primary-foreground: oklch(0.14 0.02 155);
   --accent: oklch(0.82 0.14 155);
+  --accent-foreground: oklch(0.14 0.02 155);
   --ring: oklch(0.92 0.05 155 / 90%);
 }
 
 :root[data-tone="amber"] {
   --tone-h: 75;
   --primary: oklch(0.56 0.17 75);
+  --primary-foreground: oklch(1 0 0);
   --accent: oklch(0.56 0.17 75);
+  --accent-foreground: oklch(1 0 0);
   --ring: oklch(0.56 0.17 75 / 55%);
   --sidebar-primary: oklch(0.52 0.16 75);
+  --sidebar-primary-foreground: oklch(1 0 0);
   --sidebar-ring: oklch(0.56 0.17 75 / 55%);
 }
 
@@ -521,32 +594,43 @@
 .dark :root[data-tone="amber"],
 .dark:root[data-tone="amber"] {
   --primary: oklch(0.68 0.15 75);
+  --primary-foreground: oklch(0.2 0.03 75);
   --accent: oklch(0.68 0.15 75);
+  --accent-foreground: oklch(0.2 0.03 75);
   --ring: oklch(0.68 0.15 75 / 55%);
   --sidebar-primary: oklch(0.68 0.15 75);
+  --sidebar-primary-foreground: oklch(0.2 0.03 75);
   --sidebar-ring: oklch(0.68 0.15 75 / 55%);
 }
 
 :root[data-tone="amber"][data-contrast="high"] {
   --primary: oklch(0.44 0.19 75);
+  --primary-foreground: oklch(1 0 0);
   --accent: oklch(0.44 0.19 75);
+  --accent-foreground: oklch(1 0 0);
   --ring: oklch(0.3 0.05 75 / 90%);
   --sidebar-primary: oklch(0.4 0.18 75);
+  --sidebar-primary-foreground: oklch(1 0 0);
 }
 
 :root[data-tone="amber"][data-contrast="high"].dark,
 .dark:root[data-tone="amber"][data-contrast="high"] {
   --primary: oklch(0.82 0.14 75);
+  --primary-foreground: oklch(0.14 0.02 75);
   --accent: oklch(0.82 0.14 75);
+  --accent-foreground: oklch(0.14 0.02 75);
   --ring: oklch(0.92 0.05 75 / 90%);
 }
 
 :root[data-tone="rose"] {
   --tone-h: 15;
   --primary: oklch(0.56 0.17 15);
+  --primary-foreground: oklch(1 0 0);
   --accent: oklch(0.56 0.17 15);
+  --accent-foreground: oklch(1 0 0);
   --ring: oklch(0.56 0.17 15 / 55%);
   --sidebar-primary: oklch(0.52 0.16 15);
+  --sidebar-primary-foreground: oklch(1 0 0);
   --sidebar-ring: oklch(0.56 0.17 15 / 55%);
 }
 
@@ -554,23 +638,31 @@
 .dark :root[data-tone="rose"],
 .dark:root[data-tone="rose"] {
   --primary: oklch(0.68 0.15 15);
+  --primary-foreground: oklch(0.2 0.03 15);
   --accent: oklch(0.68 0.15 15);
+  --accent-foreground: oklch(0.2 0.03 15);
   --ring: oklch(0.68 0.15 15 / 55%);
   --sidebar-primary: oklch(0.68 0.15 15);
+  --sidebar-primary-foreground: oklch(0.2 0.03 15);
   --sidebar-ring: oklch(0.68 0.15 15 / 55%);
 }
 
 :root[data-tone="rose"][data-contrast="high"] {
   --primary: oklch(0.44 0.19 15);
+  --primary-foreground: oklch(1 0 0);
   --accent: oklch(0.44 0.19 15);
+  --accent-foreground: oklch(1 0 0);
   --ring: oklch(0.3 0.05 15 / 90%);
   --sidebar-primary: oklch(0.4 0.18 15);
+  --sidebar-primary-foreground: oklch(1 0 0);
 }
 
 :root[data-tone="rose"][data-contrast="high"].dark,
 .dark:root[data-tone="rose"][data-contrast="high"] {
   --primary: oklch(0.82 0.14 15);
+  --primary-foreground: oklch(0.14 0.02 15);
   --accent: oklch(0.82 0.14 15);
+  --accent-foreground: oklch(0.14 0.02 15);
   --ring: oklch(0.92 0.05 15 / 90%);
 }
 
@@ -582,6 +674,7 @@
   --background: oklch(1 0 0);
   --surface: oklch(0.985 0.003 260);
   --surface-2: oklch(0.965 0.004 260);
+  --surface-3: oklch(0.935 0.006 260);
   --foreground: oklch(0.14 0.02 260);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.14 0.02 260);
@@ -607,6 +700,7 @@
   --background: oklch(0.12 0.01 260);
   --surface: oklch(0.16 0.012 260);
   --surface-2: oklch(0.21 0.012 260);
+  --surface-3: oklch(0.26 0.012 260);
   --foreground: oklch(0.99 0 0);
   --card: oklch(0.16 0.012 260);
   --card-foreground: oklch(0.99 0 0);
@@ -678,9 +772,12 @@ html[data-font-family="mono"] body {
 :root[data-tone="gradient"] {
   --tone-h: 300;
   --primary: oklch(0.56 0.19 300);
-  --accent: oklch(0.6 0.19 330);
+  --primary-foreground: oklch(1 0 0);
+  --accent: oklch(0.57 0.19 330);
+  --accent-foreground: oklch(1 0 0);
   --ring: oklch(0.56 0.19 300 / 55%);
   --sidebar-primary: oklch(0.52 0.18 300);
+  --sidebar-primary-foreground: oklch(1 0 0);
   --sidebar-ring: oklch(0.56 0.19 300 / 55%);
   --gradient-primary: linear-gradient(
     135deg,
@@ -694,9 +791,12 @@ html[data-font-family="mono"] body {
 .dark :root[data-tone="gradient"],
 .dark:root[data-tone="gradient"] {
   --primary: oklch(0.72 0.16 305);
+  --primary-foreground: oklch(0.2 0.03 305);
   --accent: oklch(0.74 0.16 335);
+  --accent-foreground: oklch(0.2 0.03 335);
   --ring: oklch(0.72 0.16 305 / 55%);
   --sidebar-primary: oklch(0.72 0.16 305);
+  --sidebar-primary-foreground: oklch(0.2 0.03 305);
   --sidebar-ring: oklch(0.72 0.16 305 / 55%);
   --gradient-primary: linear-gradient(
     135deg,
@@ -708,14 +808,55 @@ html[data-font-family="mono"] body {
 
 :root[data-tone="gradient"][data-contrast="high"] {
   --primary: oklch(0.42 0.21 300);
+  --primary-foreground: oklch(1 0 0);
   --accent: oklch(0.44 0.21 330);
+  --accent-foreground: oklch(1 0 0);
   --ring: oklch(0.3 0.05 300 / 90%);
   --sidebar-primary: oklch(0.38 0.2 300);
+  --sidebar-primary-foreground: oklch(1 0 0);
 }
 
 :root[data-tone="gradient"][data-contrast="high"].dark,
 .dark:root[data-tone="gradient"][data-contrast="high"] {
   --primary: oklch(0.86 0.14 305);
+  --primary-foreground: oklch(0.14 0.02 305);
   --accent: oklch(0.86 0.14 335);
+  --accent-foreground: oklch(0.14 0.02 335);
   --ring: oklch(0.94 0.05 305 / 90%);
+}
+
+/*
+ * Phòng họp: `<VideoConference />` của LiveKit tự kèm một ControlBar riêng, trùng hoàn toàn
+ * với thanh điều khiển của UNIWORK neo dưới sân khấu (micro, camera, chia sẻ, rời phòng).
+ * Giữ thanh của UNIWORK làm bề mặt điều khiển duy nhất và ẩn các nút trùng của LiveKit.
+ *
+ * Nút "Rời phòng" bắt buộc phải đi qua handler của UNIWORK: handler đó bật cờ rời chủ động,
+ * nếu người dùng bấm nút disconnect của LiveKit thì hệ thống hiểu nhầm là rớt mạng và tự
+ * vào lại phòng.
+ *
+ * Nút Chat được GIỮ vì trò chuyện trong cuộc họp hiện chỉ có ở ControlBar của LiveKit.
+ * Đây là CSS bám vào class nội bộ của thư viện: nếu LiveKit đổi tên class thì các nút trùng
+ * sẽ hiện lại (chỉ thừa nút, không vỡ chức năng).
+ */
+[data-meeting-stage] .lk-control-bar .lk-button-group:has([data-lk-source="microphone"]),
+[data-meeting-stage] .lk-control-bar .lk-button-group:has([data-lk-source="camera"]),
+[data-meeting-stage] .lk-control-bar .lk-button-group:has([data-lk-source="screen_share"]),
+[data-meeting-stage] .lk-control-bar .lk-button[data-lk-source="microphone"],
+[data-meeting-stage] .lk-control-bar .lk-button[data-lk-source="camera"],
+[data-meeting-stage] .lk-control-bar .lk-button[data-lk-source="screen_share"],
+[data-meeting-stage] .lk-disconnect-button {
+  display: none;
+}
+
+/* Khi chưa kết nối, ControlBar của LiveKit không có nút Chat nên chỉ còn là một dải rỗng. */
+[data-meeting-stage] .lk-control-bar:not(:has(.lk-chat-toggle)) {
+  display: none;
+}
+
+/* LiveKit tính chiều cao lưới video theo chiều cao ControlBar mặc định. Khi thanh đó bị ẩn,
+   lưới để hở một dải trống ở đáy sân khấu — cho lưới co giãn theo flex để luôn lấp đầy. */
+[data-meeting-stage] .lk-video-conference-inner > .lk-grid-layout-wrapper {
+  height: auto;
+  min-height: 0;
+  flex: 1 1 auto;
 }
