@@ -17,7 +17,11 @@
 
 ## Điểm nghẽn phía UniWork (không phải media)
 1. **Token issuance burst** — 500 người vào phòng trong 60s = 500 lệnh gọi server function + insert
-   `meeting_join_tokens`. Cần rate limit + cache token theo (meeting, user).
+   `meeting_join_tokens`. Rate limit **đã có** (10 vé/phút mỗi (user, meeting), ép trong
+   `issue_meeting_join_token`); nó chặn client lặp vô hạn nhưng **không** làm giảm tải của một
+   join-storm thật gồm 500 người khác nhau — chỗ đó là bài toán công suất. Vòng tự gia hạn vé
+   13 phút phía client đã bị bỏ (livekit-client tự làm mới token qua signal), nên tải nền khi
+   đang họp giờ bằng 0.
 2. **Presence fanout** — presence `meeting-hands` gửi tới mọi participant; ở 200+ người, mỗi lần
    giơ tay = 200 message. Cần throttle client-side (hiện chưa có).
 3. **Attendance polling** — mỗi client poll; ở phòng lớn nên chuyển sang webhook-only reconcile.
@@ -27,4 +31,6 @@
 - Phòng: ≤ 25 người có video, ≤ 100 người audio-only.
 - Đồng thời: ≤ 20 phòng / tenant, ≤ 200 phòng toàn hệ thống — cần verify với LiveKit plan thực tế.
 
-Trạng thái: **NOT_BENCHMARKED** — cần chạy `tests/performance/k6/*` mục join-storm với LiveKit staging.
+Trạng thái: **NOT_BENCHMARKED** — kịch bản đã có tại
+`tests/performance/k6/meeting-join-storm.js` (đo cửa cấp vé, không đo media); còn thiếu một lần
+chạy thật với LiveKit staging và một bộ user test riêng cho mỗi VU.

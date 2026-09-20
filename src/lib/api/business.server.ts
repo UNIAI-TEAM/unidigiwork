@@ -53,6 +53,16 @@ const KNOWN_CODES: readonly StableErrorCode[] = [
   "WORK_GRAPH_EDGE_PROTECTED",
 );
 
+// Cửa vào phòng họp (ADR-1E-001). Thiếu ba mã này thì mọi lý do từ chối đều rơi
+// về `fallback` của caller, nên người bị rate limit lại đọc thấy "không có quyền".
+// `RATE_LIMITED` phải đứng sau để không nuốt mất `AI_RATE_LIMITED`.
+(KNOWN_CODES as StableErrorCode[]).push(
+  "MEETING_ACCESS_DENIED",
+  "MEETING_NOT_JOINABLE",
+  "AI_RATE_LIMITED",
+  "RATE_LIMITED",
+);
+
 export function mapPgError(err: PostgrestError | Error | null, fallback: StableErrorCode = "INTERNAL_ERROR"): never {
   const raw = (err && "message" in err ? err.message : "") ?? "";
   const match = KNOWN_CODES.find((c) => raw.includes(c));

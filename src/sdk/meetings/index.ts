@@ -67,11 +67,11 @@ const lovableMeetingApi: MeetingApi = {
   async schedule() {
     return notImplemented();
   },
-  async requestJoinToken(meetingId, input) {
+  async requestJoinToken(meetingId) {
     // Never fabricate LiveKit tokens client-side — the server signs them.
-    return (await requestJoinTokenFn({
-      data: { meetingId, displayName: input.participantIdentity },
-    })) as JoinMeetingTokenResponse;
+    // Không gửi tên hiển thị lên: server lấy từ hồ sơ người dùng, nếu tin client
+    // thì ai cũng đặt tên người khác cho mình ngay trong phòng họp.
+    return (await requestJoinTokenFn({ data: { meetingId } })) as JoinMeetingTokenResponse;
   },
   async requestJoin(meetingId, message) {
     return await requestMeetingJoinFn({ data: { meetingId, message } });
