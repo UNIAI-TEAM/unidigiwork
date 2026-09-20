@@ -118,6 +118,14 @@ export const meetingsRoomVi = {
     "Không gia hạn được vé phòng họp — sẽ thử kết nối lại nếu mất kết nối.",
   "mtg.room.rejoin.failed": "Không thể tự kết nối lại. Bấm “Vào phòng họp” để thử lại.",
   "mtg.room.rejoin.success": "Đã tự động vào lại phòng họp.",
+  "mtg.room.auto.rejoiningCount": "Mất kết nối — đang thử vào lại ({n}/{max})…",
+  "mtg.room.disconnect.duplicate":
+    "Bạn đã vào phòng này ở tab hoặc thiết bị khác, nên phiên ở đây bị ngắt.",
+  "mtg.room.disconnect.removed": "Bạn đã bị đưa ra khỏi phòng họp.",
+  "mtg.room.disconnect.roomClosed": "Phòng họp đã đóng.",
+  "mtg.room.disconnect.serverDown":
+    "Không kết nối được máy chủ họp. Hãy báo quản trị viên kiểm tra dịch vụ hội nghị.",
+  "mtg.room.disconnect.unknown": "Mất kết nối tới phòng họp.",
 
   "mtg.room.hands.title": "Đang giơ tay ({n})",
   "mtg.room.hands.live": "Trực tiếp",
@@ -373,6 +381,14 @@ export const meetingsRoomEn: Partial<Record<keyof typeof meetingsRoomVi, string>
     "Couldn't renew your room pass — we'll reconnect if the connection drops.",
   "mtg.room.rejoin.failed": "Couldn't reconnect automatically. Select “Join meeting” to try again.",
   "mtg.room.rejoin.success": "Rejoined the meeting.",
+  "mtg.room.auto.rejoiningCount": "Connection lost — retrying ({n}/{max})…",
+  "mtg.room.disconnect.duplicate":
+    "You joined this room from another tab or device, so this session was dropped.",
+  "mtg.room.disconnect.removed": "You were removed from the meeting.",
+  "mtg.room.disconnect.roomClosed": "The meeting room has closed.",
+  "mtg.room.disconnect.serverDown":
+    "Can't reach the meeting server. Ask an administrator to check the conferencing service.",
+  "mtg.room.disconnect.unknown": "Lost connection to the meeting room.",
 
   "mtg.room.hands.title": "Raised hands ({n})",
   "mtg.room.hands.live": "Live",

@@ -8,8 +8,8 @@ import {
   useConnectionState,
   useLocalParticipant,
 } from "@livekit/components-react";
-import { ConnectionState, ConnectionQuality, Track } from "livekit-client";
-import { useEffect, useMemo, useRef } from "react";
+import { ConnectionState, ConnectionQuality, Track, type DisconnectReason } from "livekit-client";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
   applyPresetToTrack,
   degrade,
@@ -25,7 +25,10 @@ import { toastDisplayMediaError } from "@/components/meeting/share-messages";
 export interface LiveKitStageProps {
   serverUrl: string;
   token: string;
-  onDisconnected: () => void;
+  /** LiveKit báo rớt phòng. `reason` là `livekit.DisconnectReason`, có thể thiếu. */
+  onDisconnected: (reason?: DisconnectReason) => void;
+  /** Không mở được kết nối tới máy chủ họp (WebSocket hỏng, URL sai, token bị từ chối). */
+  onConnectError?: (error: Error) => void;
   /** Báo trạng thái kết nối ra ngoài để trang chủ động rejoin. */
   onConnectionStateChange?: (
     state: "connected" | "reconnecting" | "disconnected" | "connecting",
@@ -248,6 +251,7 @@ export default function LiveKitStage({
   serverUrl,
   token,
   onDisconnected,
+  onConnectError,
   onConnectionStateChange,
   micEnabled,
   camEnabled,
@@ -262,15 +266,32 @@ export default function LiveKitStage({
   onShareSourceResolved,
 }: LiveKitStageProps) {
   const preset = useMemo(() => resolvePreset(shareQuality), [shareQuality]);
+
+  // `useLiveKitRoom` đưa onError/onDisconnected vào mảng phụ thuộc của effect gọi
+  // `room.connect()`. Nếu callback đổi định danh mỗi lần render thì effect chạy
+  // lại và mở kết nối chồng lên nhau, nên phải ghim qua ref cho ổn định.
+  const onDisconnectedRef = useRef(onDisconnected);
+  onDisconnectedRef.current = onDisconnected;
+  const onConnectErrorRef = useRef(onConnectError);
+  onConnectErrorRef.current = onConnectError;
+  const handleDisconnected = useCallback(
+    (reason?: DisconnectReason) => onDisconnectedRef.current(reason),
+    [],
+  );
+  const handleError = useCallback((error: Error) => onConnectErrorRef.current?.(error), []);
+
   return (
     <div className="relative h-full w-full">
       <LiveKitRoom
         serverUrl={serverUrl}
         token={token}
-        connect
+        // Chưa có vé thì không kết nối; bỏ vé đi là ngắt kết nối thật sự
+        // (trước đây rời phòng chỉ xoá token nên track vẫn tiếp tục publish).
+        connect={Boolean(token)}
         video={camEnabled ?? true}
         audio={micEnabled ?? true}
-        onDisconnected={onDisconnected}
+        onDisconnected={handleDisconnected}
+        onError={handleError}
         options={{
           // Chỉ gửi/nhận đúng độ phân giải đang hiển thị -> đỡ giật khi mạng yếu.
           adaptiveStream: true,
