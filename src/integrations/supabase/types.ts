@@ -10877,6 +10877,10 @@ export type Database = {
         Args: { _execution_id: string; _kind: string; _reason: string }
         Returns: Json
       }
+      record_meeting_join_token_fingerprint: {
+        Args: { _meeting_id: string; _token_fingerprint: string }
+        Returns: Json
+      }
       record_meeting_usage: {
         Args: {
           _correlation_id?: string
