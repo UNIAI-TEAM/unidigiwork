@@ -975,7 +975,13 @@ function TaskCard({
         <span className="font-mono">{task.id.slice(0, 8)}</span>
         {task.status === "done" && <CheckCircle2 className="h-3.5 w-3.5 text-success" />}
       </div>
-      <div className="mt-1 text-sm font-medium leading-snug">{task.title}</div>
+      <Link
+        to="/tasks/$id"
+        params={{ id: task.id }}
+        className="mt-1 block text-sm font-medium leading-snug hover:text-primary hover:underline"
+      >
+        {task.title}
+      </Link>
       {task.description && (
         <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{task.description}</p>
       )}
