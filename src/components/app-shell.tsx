@@ -2,9 +2,10 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { BrandMark, BrandWordmark } from "@/components/brand-logo";
 import type { LucideIcon } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { listMyWorkspaces } from "@/lib/api/workspace-overview.functions";
 import { useUnreadNotifications } from "@/lib/use-unread-notifications";
+import { performSignOut } from "@/lib/auth/sign-out";
 import {
   LayoutDashboard,
   MessageSquare,
@@ -1463,6 +1464,30 @@ export function AppTopbar({
   const identity = useCurrentIdentity();
 
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [signingOut, setSigningOut] = useState(false);
+
+  const handleSignOut = useCallback(async () => {
+    if (signingOut) return;
+    setSigningOut(true);
+    setUserOpen(false);
+    await performSignOut(queryClient);
+    await navigate({ to: "/auth", replace: true });
+    setSigningOut(false);
+  }, [navigate, queryClient, signingOut]);
+
+  // ⇧⌘Q / ⇧Ctrl+Q — phím tắt được hiển thị ngay cạnh nút Đăng xuất.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!e.shiftKey || !(e.metaKey || e.ctrlKey)) return;
+      if (e.key.toLowerCase() !== "q") return;
+      e.preventDefault();
+      void handleSignOut();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [handleSignOut]);
+
   const { unreadCount: topbarUnread } = useUnreadNotifications();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [searchValue, setSearchValue] = useState("");
@@ -1769,8 +1794,10 @@ export function AppTopbar({
             {/* Logout */}
             <div className="border-t border-border p-1.5">
               <button
-                onClick={() => setUserOpen(false)}
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-destructive transition-colors hover:bg-destructive/10"
+                type="button"
+                onClick={handleSignOut}
+                disabled={signingOut}
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-60"
               >
                 <LogOut className="h-4 w-4" />
                 <span className="flex-1 text-left font-medium">{t("sh.user.logout")}</span>

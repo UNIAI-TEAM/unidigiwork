@@ -61,6 +61,7 @@ import {
   listDocumentVersions,
 } from "@/lib/api/documents.functions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { performSignOut } from "@/lib/auth/sign-out";
 import { uploadDocumentFile } from "@/lib/documents-storage";
 import { notifyComingSoon } from "@/lib/coming-soon";
 import {
@@ -613,8 +614,8 @@ function DocumentsPage() {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    navigate({ to: "/auth" });
+    await performSignOut(queryClient);
+    navigate({ to: "/auth", replace: true });
   };
 
   const insertAtCursor = (before: string, after = "") => {
