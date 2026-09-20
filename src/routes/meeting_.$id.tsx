@@ -123,6 +123,15 @@ import type { MeetingId } from "@/contracts";
 import { usePanelCollapse, usePanelCollapseControls } from "@/hooks/use-panel-collapse";
 import { playMeetingCue } from "@/lib/meeting-cues";
 import { localeTag, useI18n, type Key } from "@/lib/i18n";
+import {
+  DISCONNECT_REASON,
+  MAX_REJOIN_ATTEMPTS,
+  REJOIN_CONNECT_TIMEOUT_MS,
+  canRetry,
+  disconnectReasonKey,
+  isFatalDisconnect,
+  rejoinDelayMs,
+} from "@/lib/meeting-rejoin";
 import { fmt } from "@/lib/i18n-interpolate";
 
 type Translate = (k: Key) => string;
@@ -307,6 +316,13 @@ function MeetingDetailPage() {
   } | null>(null);
   const [joining, setJoining] = useState(false);
   const [autoStatus, setAutoStatus] = useState<null | "refreshing" | "rejoining">(null);
+  /** Lần thử vào lại hiện tại — chỉ để hiển thị tiến độ cho người dùng. */
+  const [rejoinAttempt, setRejoinAttempt] = useState(0);
+  /**
+   * True khi LiveKit thật sự báo `connected`. Không được suy ra từ việc có vé:
+   * xin được token chỉ là ký JWT phía server, chưa hề chạm tới máy chủ họp.
+   */
+  const [inRoom, setInRoom] = useState(false);
   const [joinErrorCode, setJoinErrorCode] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -375,6 +391,8 @@ function MeetingDetailPage() {
   const attemptsRef = useRef(0);
   const rejoinTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Canh chừng: có vé rồi mà LiveKit không báo `connected` thì coi như hỏng. */
+  const connectWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Xem trước camera trước khi vào phòng — giúp phát hiện sớm lỗi quyền thiết bị.
   // Không phụ thuộc `sharing`: bật/tắt chia sẻ không được khởi động lại camera.
@@ -569,8 +587,12 @@ function MeetingDetailPage() {
     setJoinErrorCode(null);
     manualLeaveRef.current = false;
     attemptsRef.current = 0;
+    setRejoinAttempt(0);
     try {
       setSession(await fetchSession());
+      // Có vé chưa chắc vào được phòng — canh chừng để báo lỗi thật nếu máy chủ
+      // họp không phản hồi, thay vì treo ở màn hình "đang kết nối".
+      armConnectWatchdog();
     } catch (e) {
       const code = e instanceof ApiError ? e.code : "INTERNAL_ERROR";
       setJoinErrorCode(code);
@@ -582,7 +604,15 @@ function MeetingDetailPage() {
 
   function leaveRoom() {
     manualLeaveRef.current = true;
+    if (rejoinTimerRef.current) clearTimeout(rejoinTimerRef.current);
+    rejoinTimerRef.current = null;
+    clearConnectWatchdog();
+    attemptsRef.current = 0;
+    setRejoinAttempt(0);
     setAutoStatus(null);
+    setInRoom(false);
+    inRoomRef.current = false;
+    // Bỏ vé -> `connect` của LiveKitRoom thành false -> ngắt kết nối thật.
     setSession(null);
   }
 
@@ -626,35 +656,109 @@ function MeetingDetailPage() {
     };
   }, [session, fetchSession]);
 
-  // Tự động vào lại phòng khi rớt kết nối ngoài ý muốn (backoff tối đa 5 lần).
-  const scheduleRejoin = useCallback(() => {
-    if (manualLeaveRef.current) return;
-    if (attemptsRef.current >= 5) {
-      setAutoStatus(null);
-      toast.error(tRef.current("mtg.room.rejoin.failed"));
-      return;
-    }
-    const delay = Math.min(1000 * 2 ** attemptsRef.current, 15_000);
-    attemptsRef.current += 1;
-    setAutoStatus("rejoining");
-    rejoinTimerRef.current = setTimeout(async () => {
-      try {
-        const next = await fetchSession();
-        setSession(next);
-        setAutoStatus(null);
-        attemptsRef.current = 0;
-        toast.success(tRef.current("mtg.room.rejoin.success"));
-      } catch {
-        scheduleRejoin();
-      }
-    }, delay);
-  }, [fetchSession]);
+  const clearConnectWatchdog = useCallback(() => {
+    if (connectWatchdogRef.current) clearTimeout(connectWatchdogRef.current);
+    connectWatchdogRef.current = null;
+  }, []);
 
-  const handleStageDisconnected = useCallback(() => {
-    inRoomRef.current = false;
-    setSession(null);
-    if (!manualLeaveRef.current) scheduleRejoin();
-  }, [scheduleRejoin]);
+  // `scheduleRejoin` và watchdog gọi lẫn nhau; đi qua ref để không tạo vòng
+  // phụ thuộc giữa hai useCallback.
+  const scheduleRejoinRef = useRef<(reason?: number) => void>(() => {});
+  const armConnectWatchdog = useCallback(() => {
+    clearConnectWatchdog();
+    connectWatchdogRef.current = setTimeout(() => {
+      scheduleRejoinRef.current(DISCONNECT_REASON.CONNECTION_TIMEOUT);
+    }, REJOIN_CONNECT_TIMEOUT_MS);
+  }, [clearConnectWatchdog]);
+
+  /** Bỏ cuộc: trả người dùng về màn hình chờ kèm lý do thật, thay vì thử mãi. */
+  const abandonRejoin = useCallback(
+    (reason?: number) => {
+      clearConnectWatchdog();
+      if (rejoinTimerRef.current) clearTimeout(rejoinTimerRef.current);
+      rejoinTimerRef.current = null;
+      attemptsRef.current = 0;
+      setRejoinAttempt(0);
+      setAutoStatus(null);
+      setInRoom(false);
+      inRoomRef.current = false;
+      setSession(null);
+      toast.error(tRef.current("mtg.room.rejoin.failed"), {
+        description: tRef.current(disconnectReasonKey(reason)),
+        duration: 10_000,
+      });
+    },
+    [clearConnectWatchdog],
+  );
+
+  // Tự động vào lại phòng khi rớt kết nối ngoài ý muốn (backoff, tối đa
+  // MAX_REJOIN_ATTEMPTS lần). Quan trọng: xin được vé KHÔNG phải là vào lại
+  // thành công — chỉ `handleConnectionStateChange` với trạng thái `connected`
+  // mới được reset bộ đếm và báo thành công. Ngược lại thì mỗi vòng lại reset
+  // bộ đếm nên trần số lần thử không bao giờ chạm tới và vòng lặp chạy mãi.
+  const scheduleRejoin = useCallback(
+    (reason?: number) => {
+      if (manualLeaveRef.current) return;
+      // Một lần kết nối hỏng có thể bắn cả `onError` lẫn `Disconnected`; chỉ
+      // được xếp đúng một lượt thử, nếu không sẽ có hai chuỗi backoff song song.
+      if (rejoinTimerRef.current) return;
+      if (!canRetry(attemptsRef.current, reason)) {
+        abandonRejoin(reason);
+        return;
+      }
+      clearConnectWatchdog();
+      const delay = rejoinDelayMs(attemptsRef.current);
+      attemptsRef.current += 1;
+      setRejoinAttempt(attemptsRef.current);
+      setAutoStatus("rejoining");
+      rejoinTimerRef.current = setTimeout(async () => {
+        rejoinTimerRef.current = null;
+        let next: Awaited<ReturnType<typeof fetchSession>>;
+        try {
+          next = await fetchSession();
+        } catch {
+          scheduleRejoinRef.current(reason);
+          return;
+        }
+        if (manualLeaveRef.current) return;
+        // Mới có vé mới, chưa vào được phòng: giữ nguyên trạng thái "đang thử"
+        // và canh chừng cho tới khi LiveKit báo `connected`.
+        setSession(next);
+        armConnectWatchdog();
+      }, delay);
+    },
+    [fetchSession, abandonRejoin, armConnectWatchdog, clearConnectWatchdog],
+  );
+  scheduleRejoinRef.current = scheduleRejoin;
+
+  const handleStageDisconnected = useCallback(
+    (reason?: number) => {
+      inRoomRef.current = false;
+      setInRoom(false);
+      clearConnectWatchdog();
+      if (manualLeaveRef.current) return;
+      if (isFatalDisconnect(reason)) {
+        abandonRejoin(reason);
+        return;
+      }
+      // Không xoá session ở đây: giữ khung phòng họp kèm báo "đang vào lại",
+      // và lần thử sau sẽ thay bằng vé mới.
+      scheduleRejoin(reason);
+    },
+    [scheduleRejoin, abandonRejoin, clearConnectWatchdog],
+  );
+
+  /** Không mở nổi WebSocket tới máy chủ họp — cùng đường xử lý với rớt phòng. */
+  const handleConnectError = useCallback(
+    (error: Error) => {
+      console.error("[meeting] LiveKit error", error);
+      // `onError` còn bắn khi publish mic/cam hỏng (người dùng chặn quyền).
+      // Lúc đó ta đang ở trong phòng nên không được coi là lỗi kết nối.
+      if (manualLeaveRef.current || inRoomRef.current) return;
+      scheduleRejoin(DISCONNECT_REASON.JOIN_FAILURE);
+    },
+    [scheduleRejoin],
+  );
 
   // Callback ổn định cho LiveKit stage: tránh chạy lại effect đồng bộ ở mỗi lần render.
   const handleShareQualityResolved = useCallback(
@@ -669,23 +773,33 @@ function MeetingDetailPage() {
     setMuted((m) => (m === !mic ? m : !mic));
     setCamOff((c) => (c === !cam ? c : !cam));
   }, []);
+  // Đây là nơi DUY NHẤT được coi là "đã vào phòng": LiveKit báo `connected`.
   const handleConnectionStateChange = useCallback(
     (s: "connected" | "reconnecting" | "disconnected" | "connecting") => {
-      if (s === "connected") {
-        inRoomRef.current = true;
-        attemptsRef.current = 0;
-        setAutoStatus(null);
-      }
+      if (s !== "connected") return;
+      clearConnectWatchdog();
+      if (rejoinTimerRef.current) clearTimeout(rejoinTimerRef.current);
+      rejoinTimerRef.current = null;
+      const wasRejoining = attemptsRef.current > 0;
+      attemptsRef.current = 0;
+      setRejoinAttempt(0);
+      setAutoStatus(null);
+      setInRoom(true);
+      inRoomRef.current = true;
+      if (wasRejoining) toast.success(tRef.current("mtg.room.rejoin.success"));
     },
-    [],
+    [clearConnectWatchdog],
   );
 
   // Mạng trở lại: thử ngay thay vì chờ hết backoff.
   useEffect(() => {
     function onOnline() {
-      if (manualLeaveRef.current || session) return;
+      // Chỉ áp dụng cho người đã vào phòng rồi bị rớt, không tự kéo vào phòng
+      // người chưa bấm tham gia.
+      if (manualLeaveRef.current || inRoomRef.current || !session) return;
       if (rejoinTimerRef.current) clearTimeout(rejoinTimerRef.current);
       attemptsRef.current = 0;
+      setRejoinAttempt(0);
       scheduleRejoin();
     }
     window.addEventListener("online", onOnline);
@@ -695,19 +809,21 @@ function MeetingDetailPage() {
   useEffect(
     () => () => {
       if (rejoinTimerRef.current) clearTimeout(rejoinTimerRef.current);
+      if (connectWatchdogRef.current) clearTimeout(connectWatchdogRef.current);
     },
     [],
   );
 
-  // Ghi nhận phiên tham dự để tính phút họp (usage) — mở khi vào phòng, đóng khi rời.
+  // Ghi nhận phiên tham dự để tính phút họp (usage) — mở khi LiveKit đã kết nối
+  // thật, đóng khi rời. Bám theo `inRoom` chứ không theo `session`: nếu bám vào
+  // vé thì mỗi vòng thử vào lại lại mở/đóng một phiên tham dự rác.
   useEffect(() => {
-    if (!session || !isRealRoom) return;
+    if (!inRoom || !isRealRoom) return;
     void openMeetingAttendance({ data: { meetingId: id } }).catch(() => undefined);
-    inRoomRef.current = true;
     return () => {
       void closeMeetingAttendance({ data: { meetingId: id } }).catch(() => undefined);
     };
-  }, [session, id, isRealRoom]);
+  }, [inRoom, id, isRealRoom]);
 
   // Rời trang đột ngột vẫn chốt phiên tham dự.
   useEffect(() => {
@@ -1248,6 +1364,13 @@ function MeetingDetailPage() {
     participantsContent: participantsTab,
   };
 
+  // Cho người dùng thấy còn bao nhiêu lượt thử, thay vì một dòng "đang vào lại"
+  // lặp vô tận không biết bao giờ dừng.
+  const rejoinProgress = fmt(t("mtg.room.auto.rejoiningCount"), {
+    n: String(Math.max(1, rejoinAttempt)),
+    max: String(MAX_REJOIN_ATTEMPTS),
+  });
+
   const shareStatus = sharing
     ? fmt(t("mtg.room.share.status"), {
         source: activeSurface ? t(SHARE_SOURCE_KEY[activeSurface]) : t("mtg.room.share.screen"),
@@ -1446,6 +1569,7 @@ function MeetingDetailPage() {
               serverUrl={session?.serverUrl ?? ""}
               token={session?.token ?? ""}
               onDisconnected={handleStageDisconnected}
+              onConnectError={handleConnectError}
               micEnabled={!muted}
               camEnabled={!camOff}
               micDeviceId={micId || undefined}
@@ -1478,9 +1602,7 @@ function MeetingDetailPage() {
             className="absolute right-3 top-3 inline-flex items-center gap-2 rounded-full bg-overlay px-3 py-1 text-xs text-overlay-foreground"
           >
             <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-            {autoStatus === "refreshing"
-              ? t("mtg.room.auto.refreshing")
-              : t("mtg.room.auto.rejoining")}
+            {autoStatus === "refreshing" ? t("mtg.room.auto.refreshing") : rejoinProgress}
           </p>
         )}
 
@@ -1727,11 +1849,7 @@ function MeetingDetailPage() {
           {autoStatus && (
             <RoomNotice
               tone="busy"
-              title={
-                autoStatus === "refreshing"
-                  ? t("mtg.room.auto.refreshing")
-                  : t("mtg.room.auto.rejoining")
-              }
+              title={autoStatus === "refreshing" ? t("mtg.room.auto.refreshing") : rejoinProgress}
             />
           )}
 
