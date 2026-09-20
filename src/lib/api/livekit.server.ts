@@ -64,6 +64,10 @@ export async function signJoinToken(input: {
   const now = Math.floor(Date.now() / 1000);
   const exp = now + Math.min(Math.max(input.ttlSeconds, 60), 900); // TTL <= 15 min
   const header = { alg: "HS256", typ: "JWT" };
+  // Tên chỉ có khoảng trắng cũng coi như không có: claim `name` rỗng làm LiveKit
+  // hiển thị ô trống, còn thiếu claim thì prefab rơi về `identity` (UUID) — cả
+  // hai đều sai, nên caller phải gửi tên thật (xem `requestJoinToken`).
+  const name = input.name?.trim();
   const payload = {
     iss: input.config.apiKey,
     sub: input.identity,
@@ -71,7 +75,7 @@ export async function signJoinToken(input: {
     nbf: now - 5,
     iat: now,
     exp,
-    ...(input.name ? { name: input.name } : {}),
+    ...(name ? { name } : {}),
     video: grantsFor(input.role, input.room),
   };
   const signingInput = `${b64url(enc.encode(JSON.stringify(header)))}.${b64url(enc.encode(JSON.stringify(payload)))}`;

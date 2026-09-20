@@ -8,7 +8,13 @@ import {
   useConnectionState,
   useLocalParticipant,
 } from "@livekit/components-react";
-import { ConnectionState, ConnectionQuality, Track, type DisconnectReason } from "livekit-client";
+import {
+  ConnectionState,
+  ConnectionQuality,
+  Track,
+  type DisconnectReason,
+  type LocalVideoTrack,
+} from "livekit-client";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
   applyPresetToTrack,
@@ -19,6 +25,7 @@ import {
   type ShareQualityKey,
   type ShareSourceKey,
 } from "@/lib/screen-share-quality";
+import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { toastDisplayMediaError } from "@/components/meeting/share-messages";
 
@@ -54,6 +61,10 @@ export interface LiveKitStageProps {
   shareSource?: ShareSourceKey;
   /** Báo nguồn thật mà người dùng đã chọn trong hộp thoại. */
   onShareSourceResolved?: (surface: ShareSourceKey | null) => void;
+  /** Làm mờ phông nền camera. Bộ xử lý MediaPipe chỉ tải khi thật sự bật. */
+  backgroundBlur?: boolean;
+  /** Báo ngược trạng thái thật (tắt lại nếu trình duyệt không hỗ trợ / lỗi tải). */
+  onBackgroundBlurChange?: (enabled: boolean) => void;
 }
 
 /** Đồng bộ nút chia sẻ màn hình bên ngoài với track thật publish vào LiveKit. */
@@ -166,6 +177,84 @@ function ScreenShareQuality({
   return null;
 }
 
+/**
+ * Làm mờ phông nền camera bằng MediaPipe.
+ *
+ * Gói `@livekit/track-processors` kéo theo mô hình segmentation vài MB nên chỉ
+ * `import()` khi người dùng thật sự bật, không nằm trong bundle của phòng họp.
+ * Mặc định mô hình tải từ CDN của Google/jsDelivr; bản self-host kín mạng đặt
+ * `VITE_MEDIAPIPE_TASKS_URL` / `VITE_MEDIAPIPE_SEGMENTER_URL` để trỏ về nội bộ.
+ */
+function CameraEffects({
+  backgroundBlur = false,
+  onBackgroundBlurChange,
+}: Pick<LiveKitStageProps, "backgroundBlur" | "onBackgroundBlurChange">) {
+  const { localParticipant, isCameraEnabled } = useLocalParticipant();
+  const { t } = useI18n();
+  const tRef = useRef(t);
+  tRef.current = t;
+  /** Giữ processor để tắt đúng cái đã bật, và để không dựng lại mỗi lần render. */
+  const processorRef = useRef<LocalVideoTrack["processor"] | null>(null);
+
+  useEffect(() => {
+    if (!localParticipant) return;
+    let cancelled = false;
+
+    const track = localParticipant.getTrackPublication(Track.Source.Camera)?.track as
+      | LocalVideoTrack
+      | undefined;
+    if (!track) return;
+
+    void (async () => {
+      try {
+        if (backgroundBlur) {
+          if (track.getProcessor()) return; // đã gắn rồi, đừng dựng lại
+          const mod = await import("@livekit/track-processors");
+          if (cancelled) return;
+          if (!mod.supportsBackgroundProcessors()) {
+            toast.error(tRef.current("mtg.room.effects.unsupported"));
+            onBackgroundBlurChange?.(false);
+            return;
+          }
+          const assetPaths = {
+            ...(import.meta.env["VITE_MEDIAPIPE_TASKS_URL"]
+              ? { tasksVisionFileSet: import.meta.env["VITE_MEDIAPIPE_TASKS_URL"] as string }
+              : {}),
+            ...(import.meta.env["VITE_MEDIAPIPE_SEGMENTER_URL"]
+              ? { modelAssetPath: import.meta.env["VITE_MEDIAPIPE_SEGMENTER_URL"] as string }
+              : {}),
+          };
+          const processor = mod.BackgroundProcessor({
+            mode: "background-blur",
+            blurRadius: 12,
+            ...(Object.keys(assetPaths).length > 0 ? { assetPaths } : {}),
+          });
+          if (cancelled) return;
+          await track.setProcessor(processor);
+          processorRef.current = processor;
+        } else if (track.getProcessor()) {
+          await track.stopProcessor();
+          processorRef.current = null;
+        }
+      } catch {
+        if (cancelled) return;
+        // Máy yếu / WebGL bị chặn / tải mô hình hỏng: trả nút về tắt thay vì
+        // để người dùng nhìn một công tắc bật mà hình vẫn nguyên.
+        toast.error(tRef.current("mtg.room.effects.failed"));
+        onBackgroundBlurChange?.(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+    // `isCameraEnabled` nằm trong deps vì tắt/bật camera tạo track mới, và
+    // track mới thì không mang theo processor của track cũ.
+  }, [localParticipant, isCameraEnabled, backgroundBlur, onBackgroundBlurChange]);
+
+  return null;
+}
+
 function MediaSync({
   micEnabled,
   camEnabled,
@@ -264,6 +353,8 @@ export default function LiveKitStage({
   onScreenShareStateChange,
   shareSource,
   onShareSourceResolved,
+  backgroundBlur,
+  onBackgroundBlurChange,
 }: LiveKitStageProps) {
   const preset = useMemo(() => resolvePreset(shareQuality), [shareQuality]);
 
@@ -296,13 +387,25 @@ export default function LiveKitStage({
           // Chỉ gửi/nhận đúng độ phân giải đang hiển thị -> đỡ giật khi mạng yếu.
           adaptiveStream: true,
           dynacast: true,
+          // Khử ồn/vọng/chuẩn hoá âm lượng của trình duyệt. Mặc định của
+          // livekit-client đã bật, nhưng đặt tường minh để một lần đổi cấu hình
+          // ở đâu đó không lặng lẽ tắt mất — chất lượng tiếng là thứ người dùng
+          // phàn nàn đầu tiên.
+          audioCaptureDefaults: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          },
           publishDefaults: {
             screenShareEncoding: {
               maxBitrate: preset.maxBitrate,
               maxFramerate: preset.frameRate,
             },
             simulcast: true,
-            degradationPreference: "maintain-resolution",
+            // "balanced" là cho camera: mạng yếu thì hạ độ phân giải, giữ khuôn
+            // mặt mượt. Màn hình chia sẻ vẫn ưu tiên nét vì `contentHint` đặt
+            // riêng theo preset ('detail'/'text') trong screen-share-quality.
+            degradationPreference: "balanced",
           },
         }}
         data-lk-theme="default"
@@ -321,6 +424,10 @@ export default function LiveKitStage({
           shareSource={shareSource}
           onScreenShareStateChange={onScreenShareStateChange}
           onShareSourceResolved={onShareSourceResolved}
+        />
+        <CameraEffects
+          backgroundBlur={backgroundBlur}
+          onBackgroundBlurChange={onBackgroundBlurChange}
         />
         <MediaSync
           micEnabled={micEnabled}

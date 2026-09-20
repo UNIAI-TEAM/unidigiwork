@@ -106,7 +106,8 @@ export const listMyMeetingRooms = createServerFn({ method: "POST" })
       : memberWorkspaceIds;
     const orParts: string[] = [];
     if (allowedWs.length > 0) orParts.push(`workspace_id.in.(${allowedWs.join(",")})`);
-    if (participantMeetingIds.length > 0) orParts.push(`id.in.(${participantMeetingIds.join(",")})`);
+    if (participantMeetingIds.length > 0)
+      orParts.push(`id.in.(${participantMeetingIds.join(",")})`);
     q = q.or(orParts.join(","));
 
     const { data: rows, error, count } = await q;
@@ -243,7 +244,6 @@ export const listMeetingHistory = createServerFn({ method: "GET" })
     return { items, total: count ?? items.length };
   });
 
-
 // Link mời có kiểm soát: thời hạn + số lần sử dụng.
 export const createMeetingInviteLink = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -251,7 +251,13 @@ export const createMeetingInviteLink = createServerFn({ method: "POST" })
     z
       .object({
         meetingId: z.string().uuid(),
-        expiresInMinutes: z.number().int().min(1).max(60 * 24 * 30).nullable().optional(),
+        expiresInMinutes: z
+          .number()
+          .int()
+          .min(1)
+          .max(60 * 24 * 30)
+          .nullable()
+          .optional(),
         maxUses: z.number().int().min(1).max(1000).nullable().optional(),
         label: z.string().max(120).optional(),
       })
@@ -315,7 +321,11 @@ export const listMeetingParticipants = createServerFn({ method: "POST" })
       if (uErr) mapPgError(uErr);
       people = Object.fromEntries(
         (users ?? []).map((u) => {
-          const row = u as { id: string; display_name: string | null; primary_email: string | null };
+          const row = u as {
+            id: string;
+            display_name: string | null;
+            primary_email: string | null;
+          };
           return [row.id, { name: row.display_name, email: row.primary_email }];
         }),
       );
@@ -339,6 +349,68 @@ export const listMeetingParticipants = createServerFn({ method: "POST" })
         email: people[row.user_id]?.email ?? null,
       };
     });
+  });
+
+// Chính sách vào phòng (ADR-1E-001). `as never` là vì `types.ts` được sinh tự
+// động và chưa có hai RPC này; bỏ được sau lần regenerate kế tiếp.
+export type MeetingAccessPolicy = "tenant_open" | "invite_only";
+
+export interface MeetingAccessPolicyDTO {
+  accessPolicy: MeetingAccessPolicy;
+  rowVersion: number;
+  /** Người xem có được phép đổi chính sách không (chủ toạ/điều phối/người tạo). */
+  canManage: boolean;
+}
+
+export const getMeetingAccessPolicy = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ meetingId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }): Promise<MeetingAccessPolicyDTO> => {
+    const res = await context.supabase.rpc(
+      "get_meeting_access_policy" as never,
+      { _meeting_id: data.meetingId } as never,
+    );
+    const out = ensureOk(res, "MEETING_NOT_FOUND") as unknown as {
+      access_policy: MeetingAccessPolicy;
+      row_version: number;
+      can_manage: boolean;
+    };
+    return {
+      accessPolicy: out.access_policy,
+      rowVersion: Number(out.row_version ?? 0),
+      canManage: Boolean(out.can_manage),
+    };
+  });
+
+export const setMeetingAccessPolicy = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        meetingId: z.string().uuid(),
+        accessPolicy: z.enum(["tenant_open", "invite_only"]),
+        expectedRowVersion: z.number().int().min(0).optional(),
+        idempotencyKey: z.string().min(8).max(200).optional(),
+        correlationId: z.string().max(200).optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const res = await context.supabase.rpc(
+      "set_meeting_access_policy" as never,
+      {
+        _meeting_id: data.meetingId,
+        _access_policy: data.accessPolicy,
+        _expected_row_version: data.expectedRowVersion ?? undefined,
+        _idempotency_key: data.idempotencyKey ?? undefined,
+        _correlation_id: data.correlationId ?? undefined,
+      } as never,
+    );
+    const out = ensureOk(res, "MEETING_ACCESS_DENIED") as unknown as {
+      access_policy: MeetingAccessPolicy;
+      row_version: number;
+    };
+    return { accessPolicy: out.access_policy, rowVersion: Number(out.row_version ?? 0) };
   });
 
 // Thống kê thật cho dashboard /meeting (RPC SECURITY DEFINER kiểm tra thành viên).

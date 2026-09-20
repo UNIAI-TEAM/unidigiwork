@@ -207,3 +207,12 @@ Production chạy **LiveKit self-host**, không dùng LiveKit Cloud.
    (xem §2.5.1).
 3. Có bật recording ngay ở LK-API hay hoãn sang batch riêng.
 4. Hạn mức mặc định của `meeting_participant_minutes` cho từng plan.
+5. ~~Cuộc họp riêng tư trong nội bộ tenant~~ — **đã chốt**: cột `meetings.access_policy`
+   (`tenant_open` mặc định | `invite_only`), ép trong `issue_meeting_join_token`, đổi qua
+   `set_meeting_access_policy` (chỉ host/moderator/người tạo). `invite_only` đẩy người chưa
+   được mời sang luồng join-request sẵn có.
+6. Chế độ webinar (host-only publish) cho phòng 50–200 người: **chưa làm**, chỉ hỗ trợ dạng
+   nhóm. Khi làm thì ràng buộc phải nằm trong grant của token (`canPublish=false`), không phải
+   ở UI.
+7. Transcription phía server (gap G2): cần một tiến trình LiveKit Agents riêng, không nhét được
+   vào Nitro server. **Chưa làm.**

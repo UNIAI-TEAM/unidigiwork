@@ -22,10 +22,13 @@ export const meetingsRoomVi = {
   "mtg.room.err.provider": "Hệ thống hội nghị chưa được cấu hình.",
   "mtg.room.err.token": "Không cấp được vé vào phòng. Vui lòng thử lại.",
   "mtg.room.err.tenant": "Phòng họp này thuộc tổ chức khác với tổ chức bạn đang chọn.",
+  "mtg.room.err.rateLimited": "Bạn xin vé vào phòng quá nhanh. Chờ một lát rồi thử lại.",
   "mtg.room.err.generic": "Không thể vào phòng họp.",
   "mtg.room.err.code": "Mã lỗi: {code}",
   "mtg.room.hint.accessDenied":
     "Bạn chưa nằm trong danh sách người tham gia, hoặc phòng thuộc workspace khác. Hãy xin người tổ chức mời bạn, hoặc đổi sang đúng workspace rồi thử lại.",
+  "mtg.room.hint.rateLimited":
+    "Hệ thống giới hạn 10 lượt xin vé mỗi phút cho mỗi người ở mỗi phòng, để một trình duyệt bị lỗi không làm ngập máy chủ. Chờ khoảng một phút rồi bấm vào phòng lại.",
   "mtg.room.hint.tenant":
     "Dùng bộ chọn tổ chức ở thanh trên cùng để chuyển sang đúng tổ chức chứa phòng họp này, rồi thử lại.",
   "mtg.room.hint.notFound":
@@ -103,8 +106,16 @@ export const meetingsRoomVi = {
   "mtg.room.previewSelf": "Bạn (xem trước)",
   "mtg.room.sharingSelf": "Bạn · đang chia sẻ màn hình",
   "mtg.room.sharingSelfQuality": "Bạn · đang chia sẻ màn hình · {quality}",
-  "mtg.room.auto.refreshing": "Đang gia hạn vé phòng họp…",
   "mtg.room.auto.rejoining": "Mất kết nối — đang tự động vào lại phòng họp…",
+  "mtg.room.access.label": "Ai được vào phòng",
+  "mtg.room.access.open": "Mọi thành viên tổ chức",
+  "mtg.room.access.openDesc": "Bất kỳ ai trong tổ chức có link đều tự vào được.",
+  "mtg.room.access.inviteOnly": "Chỉ người được mời",
+  "mtg.room.access.inviteOnlyDesc":
+    "Chỉ người đã có trong danh sách tham gia mới vào được. Người khác phải xin tham gia và chờ bạn duyệt.",
+  "mtg.room.access.saved": "Đã cập nhật quyền vào phòng.",
+  "mtg.room.access.saveError": "Không đổi được quyền vào phòng.",
+  "mtg.room.err.inviteOnly": "Cuộc họp này chỉ dành cho người được mời.",
   "mtg.room.demoNotice": "Đây là phòng mẫu nên không kết nối được máy chủ họp.",
   "mtg.room.demoCreate": "Tạo phòng họp thật",
   "mtg.room.demoJoin": "Đây là phòng mẫu. Hãy tạo phòng họp thật từ trang Họp.",
@@ -114,8 +125,6 @@ export const meetingsRoomVi = {
   "mtg.room.invite.exhausted": "Link mời đã hết số lượt sử dụng.",
   "mtg.room.invite.revoked": "Link mời đã bị thu hồi.",
   "mtg.room.invite.invalid": "Link mời không hợp lệ.",
-  "mtg.room.token.refreshError":
-    "Không gia hạn được vé phòng họp — sẽ thử kết nối lại nếu mất kết nối.",
   "mtg.room.rejoin.failed": "Không thể tự kết nối lại. Bấm “Vào phòng họp” để thử lại.",
   "mtg.room.rejoin.success": "Đã tự động vào lại phòng họp.",
   "mtg.room.auto.rejoiningCount": "Mất kết nối — đang thử vào lại ({n}/{max})…",
@@ -186,6 +195,10 @@ export const meetingsRoomVi = {
   "mtg.room.menu.noCam": "Không có camera",
   "mtg.room.menu.camN": "Camera {n}",
   "mtg.room.menu.refresh": "Làm mới danh sách thiết bị",
+  "mtg.room.menu.blur": "Làm mờ phông nền",
+  "mtg.room.effects.unsupported": "Trình duyệt này không hỗ trợ làm mờ phông nền.",
+  "mtg.room.effects.failed":
+    "Không bật được làm mờ phông nền. Máy có thể không đủ mạnh hoặc bị chặn tải mô hình.",
   "mtg.room.menu.refreshed": "Đã làm mới danh sách thiết bị.",
   "mtg.room.menu.captions": "Phụ đề trực tiếp",
   "mtg.room.menu.unsupported": "Không hỗ trợ",
@@ -282,6 +295,8 @@ export const meetingsRoomEn: Partial<Record<keyof typeof meetingsRoomVi, string>
   "mtg.room.err.quota": "Your organization has used up its meeting minutes.",
   "mtg.room.err.provider": "The conferencing service isn't configured yet.",
   "mtg.room.err.token": "Couldn't issue a room pass. Please try again.",
+  "mtg.room.err.rateLimited":
+    "You're requesting room passes too quickly. Wait a moment and try again.",
   "mtg.room.err.tenant":
     "This meeting belongs to a different organization than the one you selected.",
   "mtg.room.err.generic": "Couldn't join the meeting.",
@@ -366,8 +381,18 @@ export const meetingsRoomEn: Partial<Record<keyof typeof meetingsRoomVi, string>
   "mtg.room.previewSelf": "You (preview)",
   "mtg.room.sharingSelf": "You · sharing your screen",
   "mtg.room.sharingSelfQuality": "You · sharing your screen · {quality}",
-  "mtg.room.auto.refreshing": "Renewing your room pass…",
   "mtg.room.auto.rejoining": "Connection lost — rejoining automatically…",
+  "mtg.room.access.label": "Who can join",
+  "mtg.room.access.open": "Anyone in the organization",
+  "mtg.room.access.openDesc": "Anyone in your organization with the link can join directly.",
+  "mtg.room.access.inviteOnly": "Invited people only",
+  "mtg.room.access.inviteOnlyDesc":
+    "Only people already on the participant list can join. Everyone else must request access and wait for your approval.",
+  "mtg.room.access.saved": "Join access updated.",
+  "mtg.room.access.saveError": "Couldn't change join access.",
+  "mtg.room.err.inviteOnly": "This meeting is for invited people only.",
+  "mtg.room.hint.rateLimited":
+    "We cap room-pass requests at 10 per minute per person per room so a misbehaving browser can't flood the server. Wait about a minute, then try joining again.",
   "mtg.room.demoNotice": "This is a sample room, so it can't connect to the meeting server.",
   "mtg.room.demoCreate": "Create a real meeting",
   "mtg.room.demoJoin": "This is a sample room. Create a real meeting from the Meetings page.",
@@ -377,8 +402,6 @@ export const meetingsRoomEn: Partial<Record<keyof typeof meetingsRoomVi, string>
   "mtg.room.invite.exhausted": "This invite link has no uses left.",
   "mtg.room.invite.revoked": "This invite link was revoked.",
   "mtg.room.invite.invalid": "This invite link isn't valid.",
-  "mtg.room.token.refreshError":
-    "Couldn't renew your room pass — we'll reconnect if the connection drops.",
   "mtg.room.rejoin.failed": "Couldn't reconnect automatically. Select “Join meeting” to try again.",
   "mtg.room.rejoin.success": "Rejoined the meeting.",
   "mtg.room.auto.rejoiningCount": "Connection lost — retrying ({n}/{max})…",
@@ -447,6 +470,10 @@ export const meetingsRoomEn: Partial<Record<keyof typeof meetingsRoomVi, string>
   "mtg.room.menu.noCam": "No camera",
   "mtg.room.menu.camN": "Camera {n}",
   "mtg.room.menu.refresh": "Refresh device list",
+  "mtg.room.menu.blur": "Blur my background",
+  "mtg.room.effects.unsupported": "This browser doesn't support background blur.",
+  "mtg.room.effects.failed":
+    "Couldn't turn on background blur. Your device may not be powerful enough, or the model failed to load.",
   "mtg.room.menu.refreshed": "Device list refreshed.",
   "mtg.room.menu.captions": "Live captions",
   "mtg.room.menu.unsupported": "Not supported",

@@ -109,8 +109,16 @@ export const SetMeetingRsvpCommandSchema = z.object({
   rsvp: z.enum(MEETING_RSVPS),
 });
 
+/**
+ * Blueprint §17 — client không quyết định danh tính lẫn quyền. Cả hai trường
+ * dưới đây **bị server bỏ qua**: `participantIdentity` lấy từ JWT, `role` lấy từ
+ * `meeting_participants`. Giữ lại để không phá hợp đồng đã phát hành; caller mới
+ * đừng dựa vào chúng.
+ */
 export interface JoinMeetingTokenRequest {
+  /** @deprecated Server lấy identity từ JWT. */
   participantIdentity: string;
+  /** @deprecated Server lấy role từ `meeting_participants`. */
   role: MeetingParticipantRole;
 }
 
@@ -122,6 +130,8 @@ export interface JoinMeetingTokenResponse {
   participantIdentity: string;
   role: string;
   expiresAt: string;
+  /** Tên hiển thị server đã nhúng vào token (từ hồ sơ người dùng). */
+  displayName?: string;
 }
 
 export const JoinMeetingTokenRequestSchema = z.object({

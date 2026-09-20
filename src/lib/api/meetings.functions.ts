@@ -442,6 +442,21 @@ export const requestJoinToken = createServerFn({ method: "POST" })
     const expiresAt = new Date(Date.now() + ttlSeconds * 1000);
     const identity = context.userId;
 
+    // Tên hiển thị do server quyết định, không lấy từ client: client tự khai thì
+    // ai cũng mạo danh được người khác ngay trong phòng họp. `displayName` gửi
+    // lên chỉ còn là phương án chót khi hồ sơ chưa có tên.
+    const { data: profile } = await context.supabase
+      .from("users")
+      .select("display_name, primary_email")
+      .eq("id", identity)
+      .maybeSingle();
+    const row = profile as { display_name: string | null; primary_email: string | null } | null;
+    const displayName =
+      row?.display_name?.trim() ||
+      row?.primary_email?.split("@")[0]?.trim() ||
+      data.displayName?.trim() ||
+      undefined;
+
     // 1. Authorization / entitlement / quota + audit row are all done in the RPC.
     const gate = await context.supabase.rpc("issue_meeting_join_token", {
       _meeting_id: data.meetingId,
@@ -462,7 +477,7 @@ export const requestJoinToken = createServerFn({ method: "POST" })
       signed = await signJoinToken({
         config,
         identity,
-        name: data.displayName ?? undefined,
+        name: displayName,
         room: info.room_name,
         role: info.role,
         ttlSeconds,
@@ -492,6 +507,7 @@ export const requestJoinToken = createServerFn({ method: "POST" })
       participantIdentity: identity,
       role: info.role,
       expiresAt: signed.expiresAt.toISOString(),
+      displayName,
     };
   });
 /**

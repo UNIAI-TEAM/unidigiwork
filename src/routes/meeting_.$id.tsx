@@ -1,3 +1,5 @@
+// Never fabricate LiveKit tokens in this route: every ticket is signed by
+// `requestJoinToken` on the server, and the page only ever holds the result.
 import { RelatedWorkPanel } from "@/components/work-graph/related-work-panel";
 import { AskUniPanel } from "@/components/ai/ask-uni-panel";
 import { createFileRoute, Link, ClientOnly } from "@tanstack/react-router";
@@ -108,6 +110,7 @@ import {
   listMeetingAttendance,
 } from "@/lib/api/meeting-recordings.functions";
 import { listMeetingParticipants } from "@/lib/api/meeting-rooms.functions";
+import { MeetingAccessControl } from "@/components/meeting/meeting-access-control";
 import {
   setMeetingRsvp,
   getMeeting,
@@ -151,6 +154,7 @@ const JOIN_ERROR_KEY: Record<string, Key> = {
   CONFERENCE_PROVIDER_UNAVAILABLE: "mtg.room.err.provider",
   MEETING_TOKEN_ISSUE_FAILED: "mtg.room.err.token",
   TENANT_ACCESS_DENIED: "mtg.room.err.tenant",
+  RATE_LIMITED: "mtg.room.err.rateLimited",
 };
 
 // Lý do chi tiết + gợi ý xử lý, hiển thị ngay trên trang thay vì chỉ toast.
@@ -161,6 +165,7 @@ const JOIN_ERROR_HINT_KEY: Record<string, Key> = {
   MEETING_NOT_JOINABLE: "mtg.room.hint.notJoinable",
   ENTITLEMENT_DENIED: "mtg.room.hint.entitlement",
   QUOTA_EXCEEDED: "mtg.room.hint.quota",
+  RATE_LIMITED: "mtg.room.hint.rateLimited",
 };
 
 const RSVP_ACTION_KEY: Record<"accepted" | "tentative" | "declined", Key> = {
@@ -312,12 +317,13 @@ function MeetingDetailPage() {
   const [session, setSession] = useState<{
     serverUrl: string;
     token: string;
-    expiresAt: string;
   } | null>(null);
   const [joining, setJoining] = useState(false);
-  const [autoStatus, setAutoStatus] = useState<null | "refreshing" | "rejoining">(null);
+  const [autoStatus, setAutoStatus] = useState<null | "rejoining">(null);
   /** Lần thử vào lại hiện tại — chỉ để hiển thị tiến độ cho người dùng. */
   const [rejoinAttempt, setRejoinAttempt] = useState(0);
+  /** Làm mờ phông nền camera — người dùng tự bật, không mặc định vì tốn CPU. */
+  const [backgroundBlur, setBackgroundBlur] = useState(false);
   /**
    * True khi LiveKit thật sự báo `connected`. Không được suy ra từ việc có vé:
    * xin được token chỉ là ký JWT phía server, chưa hề chạm tới máy chủ họp.
@@ -390,7 +396,6 @@ function MeetingDetailPage() {
   const inRoomRef = useRef(false);
   const attemptsRef = useRef(0);
   const rejoinTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** Canh chừng: có vé rồi mà LiveKit không báo `connected` thì coi như hỏng. */
   const connectWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -567,15 +572,13 @@ function MeetingDetailPage() {
   }, [invite]);
 
   const fetchSession = useCallback(async () => {
+    // Hai trường dưới đây bị server bỏ qua (Blueprint §17): identity lấy từ JWT,
+    // role lấy từ `meeting_participants`, tên hiển thị lấy từ hồ sơ người dùng.
     const res = await resolveMeetingApi().requestJoinToken(id as MeetingId, {
       participantIdentity: "",
       role: "participant",
     });
-    return {
-      serverUrl: res.serverUrl,
-      token: res.token,
-      expiresAt: res.expiresAt ?? new Date(Date.now() + 15 * 60_000).toISOString(),
-    };
+    return { serverUrl: res.serverUrl, token: res.token };
   }, [id]);
 
   async function handleJoin() {
@@ -636,25 +639,15 @@ function MeetingDetailPage() {
       });
   }
 
-  // Tự động xin token mới trước khi hết hạn (2 phút đệm) để không bị rớt phòng.
-  useEffect(() => {
-    if (!session) return;
-    const ms = Math.max(new Date(session.expiresAt).getTime() - Date.now() - 120_000, 5_000);
-    refreshTimerRef.current = setTimeout(async () => {
-      try {
-        setAutoStatus("refreshing");
-        const next = await fetchSession();
-        setSession(next);
-      } catch {
-        toast.error(tRef.current("mtg.room.token.refreshError"));
-      } finally {
-        setAutoStatus(null);
-      }
-    }, ms);
-    return () => {
-      if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
-    };
-  }, [session, fetchSession]);
+  // KHÔNG tự xin token mới trong lúc đang họp. Trước đây ở đây có một vòng lặp
+  // 13 phút, nhưng nó vô ích và tốn kém:
+  //  - `Room.connect()` của livekit-client return sớm khi đã `Connected`, nên
+  //    token mới không bao giờ tới được engine;
+  //  - máy chủ LiveKit vốn đã tự đẩy `refreshToken` qua signal và SDK tự cập
+  //    nhật token dùng cho reconnect.
+  // Đổi lại mỗi vòng sinh một row `meeting_join_tokens` + một outbox event +
+  // một lần check quota cho mỗi người, mỗi 13 phút. Token chỉ cần xin lại khi
+  // thật sự phải mở kết nối mới — việc đó đã nằm trong `scheduleRejoin`.
 
   const clearConnectWatchdog = useCallback(() => {
     if (connectWatchdogRef.current) clearTimeout(connectWatchdogRef.current);
@@ -1224,6 +1217,7 @@ function MeetingDetailPage() {
   // Rail "Người": roster + quản trị người tham dự + nhật ký chủ trì gom về một chỗ.
   const participantsTab = (
     <div className="space-y-5">
+      {isRealRoom && <MeetingAccessControl meetingId={id} />}
       {participantsQuery.isLoading ? (
         <div className="space-y-2" aria-busy="true">
           {[0, 1, 2].map((i) => (
@@ -1495,6 +1489,8 @@ function MeetingDetailPage() {
       captionsEnabled={captions.enabled}
       captionsSupported={captions.supported}
       onToggleCaptions={toggleCaptions}
+      backgroundBlur={backgroundBlur}
+      onToggleBackgroundBlur={() => setBackgroundBlur((v) => !v)}
       shareSource={shareSource}
       onShareSource={changeShareSource}
       shareQuality={shareQuality}
@@ -1582,6 +1578,8 @@ function MeetingDetailPage() {
               onScreenShareStateChange={handleScreenShareStateChange}
               onMediaStateChange={handleMediaStateChange}
               onConnectionStateChange={handleConnectionStateChange}
+              backgroundBlur={backgroundBlur}
+              onBackgroundBlurChange={setBackgroundBlur}
             />
           </Suspense>
         </ClientOnly>
@@ -1602,7 +1600,7 @@ function MeetingDetailPage() {
             className="absolute right-3 top-3 inline-flex items-center gap-2 rounded-full bg-overlay px-3 py-1 text-xs text-overlay-foreground"
           >
             <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-            {autoStatus === "refreshing" ? t("mtg.room.auto.refreshing") : rejoinProgress}
+            {rejoinProgress}
           </p>
         )}
 
@@ -1846,12 +1844,7 @@ function MeetingDetailPage() {
             </RoomNotice>
           )}
 
-          {autoStatus && (
-            <RoomNotice
-              tone="busy"
-              title={autoStatus === "refreshing" ? t("mtg.room.auto.refreshing") : rejoinProgress}
-            />
-          )}
+          {autoStatus && <RoomNotice tone="busy" title={rejoinProgress} />}
 
           {!isRealRoom && (
             <RoomNotice
@@ -2193,6 +2186,8 @@ function DeviceMenu({
   captionsEnabled,
   captionsSupported,
   onToggleCaptions,
+  backgroundBlur,
+  onToggleBackgroundBlur,
   shareSource,
   onShareSource,
   shareQuality,
@@ -2208,6 +2203,8 @@ function DeviceMenu({
   captionsEnabled: boolean;
   captionsSupported: boolean;
   onToggleCaptions: () => void;
+  backgroundBlur: boolean;
+  onToggleBackgroundBlur: () => void;
   shareSource: ShareSourceKey;
   onShareSource: (key: ShareSourceKey) => void;
   shareQuality: ShareQualityKey;
@@ -2267,6 +2264,12 @@ function DeviceMenu({
         >
           <RefreshCw className="mr-2 h-4 w-4" /> {t("mtg.room.menu.refresh")}
         </DropdownMenuItem>
+        <DropdownMenuCheckboxItem
+          checked={backgroundBlur}
+          onCheckedChange={() => onToggleBackgroundBlur()}
+        >
+          <span className="truncate">{t("mtg.room.menu.blur")}</span>
+        </DropdownMenuCheckboxItem>
         <DropdownMenuSeparator />
         <DropdownMenuCheckboxItem
           checked={captionsEnabled}
