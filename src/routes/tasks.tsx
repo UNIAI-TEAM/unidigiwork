@@ -312,12 +312,88 @@ function TasksPage() {
   ).length;
   const progress = total ? Math.round((counts.done / total) * 100) : 0;
 
+  // Nhập công việc từ tệp CSV (cột: title, priority, due_at) — tạo việc thật qua RPC.
+  const importInputRef = useRef<HTMLInputElement>(null);
+  const [importing, setImporting] = useState(false);
+  const handleImportFile = async (file: File) => {
+    if (!activeWs) return;
+    setImporting(true);
+    try {
+      const text = await file.text();
+      const lines = text
+        .replace(/^\uFEFF/, "")
+        .split(/\r?\n/)
+        .filter((l) => l.trim());
+      const parseLine = (line: string) =>
+        (line.match(/("([^"]|"")*"|[^,]*)(,|$)/g) ?? [])
+          .map((c) => c.replace(/,$/, "").trim())
+          .map((c) => (c.startsWith('"') ? c.slice(1, -1).replace(/""/g, '"') : c));
+      const header = parseLine(lines[0] ?? "").map((h) => h.toLowerCase());
+      const hasHeader = header.includes("title");
+      const idx = {
+        title: hasHeader ? header.indexOf("title") : 0,
+        priority: hasHeader ? header.indexOf("priority") : 1,
+        due: hasHeader ? header.indexOf("due_at") : 2,
+      };
+      const rows = (hasHeader ? lines.slice(1) : lines).map(parseLine);
+      let ok = 0;
+      let failed = 0;
+      for (const cols of rows) {
+        const title = (cols[idx.title] ?? "").trim();
+        if (!title) continue;
+        const rawPriority = (cols[idx.priority] ?? "").trim().toLowerCase();
+        const priority = (["low", "normal", "high", "urgent"] as const).includes(
+          rawPriority as Priority,
+        )
+          ? (rawPriority as Priority)
+          : ("normal" as Priority);
+        const rawDue = idx.due >= 0 ? (cols[idx.due] ?? "").trim() : "";
+        const dueDate = rawDue ? new Date(rawDue) : null;
+        try {
+          await createTask({
+            data: {
+              workspaceId: activeWs,
+              title: title.slice(0, 500),
+              priority,
+              idempotencyKey: crypto.randomUUID(),
+              ...(dueDate && !Number.isNaN(dueDate.getTime())
+                ? { dueAt: dueDate.toISOString() }
+                : {}),
+            },
+          });
+          ok += 1;
+        } catch {
+          failed += 1;
+        }
+      }
+      await queryClient.invalidateQueries({ queryKey: ["tasks", activeWs] });
+      if (ok > 0) toast.success(`Đã nhập ${ok} công việc${failed ? `, lỗi ${failed}` : ""}`);
+      else toast.error("Không nhập được công việc nào từ tệp này");
+    } catch (e) {
+      toast.error((e as Error).message || "Không đọc được tệp CSV");
+    } finally {
+      setImporting(false);
+    }
+  };
+
   return (
     <div className="flex h-screen overflow-hidden bg-bg text-foreground">
       <AppSidebar active="tasks" open={open} onClose={() => setOpen(false)} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <TasksTopbar onOpenSidebar={() => setOpen(true)} onNew={() => setQuickCreate("task")} />
         <QuickCreateDialog kind={quickCreate} onOpenChange={(o) => !o && setQuickCreate(null)} />
+        <input
+          ref={importInputRef}
+          type="file"
+          accept=".csv,text/csv"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            e.target.value = "";
+            if (f) void handleImportFile(f);
+          }}
+        />
+
 
         <div className="flex flex-1 overflow-hidden">
           <main className="flex-1 overflow-y-auto px-4 py-5 sm:px-6 lg:px-8">
