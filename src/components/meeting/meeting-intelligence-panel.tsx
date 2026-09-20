@@ -484,6 +484,24 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
     },
   });
 
+  const [bulkWs, setBulkWs] = useState("");
+  const bulkConfirm = useMutation({
+    mutationFn: (input: {
+      workspaceId: string;
+      items: Array<{ itemKey: string; title: string; owner?: string | null }>;
+    }) => confirmMeetingActionItemsBulk({ data: { meetingId, ...input } }),
+    onSuccess: (r) => {
+      void queryClient.invalidateQueries({ queryKey: ["meeting-action-item-states", meetingId] });
+      toast.success(
+        `Đã tạo ${r.created} công việc${r.assigned ? `, tự gán ${r.assigned} việc` : ""}${
+          r.failed ? `, ${r.failed} việc lỗi` : ""
+        }.`,
+      );
+    },
+    onError: (err: unknown) =>
+      toast.error(err instanceof Error ? err.message : "Không tạo được công việc hàng loạt."),
+  });
+
   const segments = transcriptQuery.data ?? [];
   const summary = summaryQuery.data ?? null;
   const hasTranscript = segments.length > 0;
