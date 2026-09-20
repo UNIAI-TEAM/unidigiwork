@@ -877,7 +877,14 @@ function TasksPage() {
             onGantt={() => setTab("timeline")}
             onResource={() => navigateTasks({ to: "/people" })}
             onExport={() => exportTasksCsv(tasks)}
-            onImport={() => navigateTasks({ to: "/documents" })}
+            onImport={() => {
+              if (!activeWs) {
+                toast.error("Hãy chọn workspace trước khi nhập");
+                return;
+              }
+              if (importing) return;
+              importInputRef.current?.click();
+            }}
             onNewTask={() => setQuickCreate("task")}
             onViewActivity={() => navigateTasks({ to: "/workspace/audit" })}
           />
