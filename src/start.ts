@@ -2,6 +2,7 @@ import { createStart, createMiddleware } from "@tanstack/react-start";
 
 import { renderErrorPage } from "./lib/error-page";
 import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
+import { serializationAdapters } from "./lib/serialization-adapters";
 
 const errorMiddleware = createMiddleware().server(async ({ next }) => {
   try {
@@ -21,4 +22,7 @@ const errorMiddleware = createMiddleware().server(async ({ next }) => {
 export const startInstance = createStart(() => ({
   functionMiddleware: [attachSupabaseAuth],
   requestMiddleware: [errorMiddleware],
+  // Nếu không có adapter này, ApiError về client chỉ còn `message` và UI
+  // hiển thị INTERNAL_ERROR thay cho mã lỗi thật.
+  serializationAdapters: [...serializationAdapters],
 }));
