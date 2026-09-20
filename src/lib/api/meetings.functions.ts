@@ -476,13 +476,10 @@ export const requestJoinToken = createServerFn({ method: "POST" })
     // cùng transaction, nên lỗi ở đây không được chặn người dùng vào phòng.
     try {
       const fp = await fingerprint(signed.token);
-      const res = await context.supabase.rpc(
-        "record_meeting_join_token_fingerprint" as never,
-        {
-          _meeting_id: data.meetingId,
-          _token_fingerprint: fp,
-        } as never,
-      );
+      const res = await context.supabase.rpc("record_meeting_join_token_fingerprint", {
+        _meeting_id: data.meetingId,
+        _token_fingerprint: fp,
+      });
       if (res.error) throw res.error;
     } catch (err) {
       console.error("[meetings] record_meeting_join_token_fingerprint failed", err);
