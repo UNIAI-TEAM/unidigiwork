@@ -77,6 +77,13 @@ import { useMeetingsRealtime } from "@/hooks/use-meetings-realtime";
 import { localeTag, useI18n, type Key } from "@/lib/i18n";
 import { fmt } from "@/lib/i18n-interpolate";
 
+/** Trang hợp lệ là số nguyên >= 1. Trả về undefined cho trang 1 (URL sạch). */
+function normalizePage(raw: unknown): number | undefined {
+  const n = typeof raw === "number" ? raw : typeof raw === "string" ? Number(raw) : NaN;
+  if (!Number.isInteger(n) || n < 1) return undefined;
+  return n === 1 ? undefined : n;
+}
+
 export const Route = createFileRoute("/meeting")({
   validateSearch: (
     search: {
@@ -106,10 +113,10 @@ export const Route = createFileRoute("/meeting")({
       search["state"] === "live" || search["state"] === "upcoming" || search["state"] === "ended"
         ? (search["state"] as "live" | "upcoming" | "ended")
         : undefined,
-    page:
-      typeof search["page"] === "string" && /^[1-9]\d*$/.test(search["page"] as string)
-        ? Number(search["page"])
-        : 1,
+    // Router mặc định JSON.parse mỗi giá trị search, nên `?page=2` về đây là
+    // number chứ không phải string — phải nhận cả hai kiểu. Trang 1 trả về
+    // undefined để không ghi `?page=1` thừa vào URL.
+    page: normalizePage(search["page"]),
     from:
       typeof search["from"] === "string" && /^\d{4}-\d{2}-\d{2}$/.test(search["from"] as string)
         ? (search["from"] as string)
@@ -138,6 +145,8 @@ type ListRoom = { id: string; title: string; status: string; start_at: string; e
 
 const ROOM_FILTER_KEY = "uniwork.meeting.roomFilter";
 const ROOM_PAGE_SIZE = 20;
+/** Trần server trả về cho truy vấn theo khoảng ngày và theo tháng. */
+const RANGE_QUERY_LIMIT = 200;
 
 const STATE_FILTERS: { key: RoomFilterState; label: Key }[] = [
   { key: "all", label: "mtg.filter.all" },
@@ -168,7 +177,7 @@ const ROOM_CHIP: Record<RoomChipState, { label: Key; className: string; dot: str
   },
   upcoming: {
     label: "mtg.status.scheduled",
-    className: "bg-primary/10 text-primary",
+    className: "bg-primary/12 text-foreground",
     dot: "bg-primary",
   },
   late: { label: "mtg.chip.late", className: "bg-warning/15 text-foreground", dot: "bg-warning" },
@@ -194,7 +203,7 @@ function RoomStatusChip({ state }: { state: RoomChipState }) {
   const chip = ROOM_CHIP[state];
   return (
     <span
-      className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium ${chip.className}`}
+      className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${chip.className}`}
     >
       <span className={`h-1.5 w-1.5 rounded-full ${chip.dot}`} aria-hidden="true" />
       {t(chip.label)}
@@ -401,7 +410,7 @@ function MeetingPage() {
           ...(dateFrom ? { from: new Date(`${dateFrom}T00:00:00`).toISOString() } : {}),
           ...(dateTo ? { to: new Date(`${dateTo}T23:59:59.999`).toISOString() } : {}),
           sort: sortStartAt,
-          limit: 200,
+          limit: RANGE_QUERY_LIMIT,
         },
       }),
   });
@@ -659,9 +668,12 @@ function MeetingPage() {
             : t("mtg.empty.none");
 
   const workspaceCount = workspaces.data?.length ?? 0;
+  // Server đã cắt ở RANGE_QUERY_LIMIT → phải nói cho người dùng biết.
+  const rangeCapped = rangeActive && (rangeQuery.data?.length ?? 0) >= RANGE_QUERY_LIMIT;
+  const noWorkspace = workspaces.isSuccess && workspaceCount === 0;
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground">
+    <div className="flex h-dvh overflow-hidden bg-background text-foreground">
       <AppSidebar active="meetings" open={open} onClose={() => setOpen(false)} />
       <main className="flex min-w-0 flex-1 flex-col">
         <AppTopbar
@@ -670,8 +682,8 @@ function MeetingPage() {
           onNew={() => setCreateOpen(true)}
         />
 
-        <div className="flex min-h-0 flex-1 flex-col xl:flex-row">
-          <section className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden xl:flex-row">
+          <section className="flex min-w-0 flex-1 flex-col overflow-y-auto">
             <div className="border-b border-border px-4 py-5 sm:px-6">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -711,7 +723,52 @@ function MeetingPage() {
                 <StatItem label={t("mtg.stats.recordings")} value={statValue(stats?.recordings)} />
                 <StatItem label={t("mtg.stats.summaries")} value={statValue(stats?.summaries)} />
               </dl>
+              {statsQuery.isError && (
+                <p className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                  {t("mtg.stats.error")}
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="h-auto p-0 text-xs"
+                    onClick={() => void statsQuery.refetch()}
+                  >
+                    {t("mtg.retry")}
+                  </Button>
+                </p>
+              )}
             </div>
+
+            {/* Dưới xl thanh bên bị ẩn — giữ lại lối vào "sắp diễn ra" và lịch. */}
+            {upcomingItems.length > 0 && (
+              <section
+                aria-label={t("mtg.upcoming.compactLabel")}
+                className="border-b border-border px-4 py-3 sm:px-6 xl:hidden"
+              >
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <h2 className="text-sm font-semibold">{t("mtg.upcoming.title")}</h2>
+                  <Link to="/calendar" className="text-xs text-link hover:underline">
+                    {t("mtg.upcoming.all")}
+                  </Link>
+                </div>
+                <ul className="flex gap-2 overflow-x-auto pb-1">
+                  {upcomingItems.slice(0, 3).map((m) => (
+                    <li key={m.id} className="min-w-[14rem] shrink-0">
+                      <Link
+                        to="/meeting/$id"
+                        params={{ id: m.id }}
+                        className="block rounded-lg border border-border bg-surface p-3 transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <div className="truncate text-sm font-medium">{m.title}</div>
+                        <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                          <Clock className="h-3 w-3 shrink-0" />
+                          {formatRange(m.start_at, m.end_at, locale, t)}
+                        </div>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
 
             {/* Một thanh công cụ duy nhất cho mọi bộ lọc */}
             <div className="sticky top-0 z-10 flex flex-wrap items-center gap-2 border-b border-border bg-background px-4 py-3 sm:px-6">
@@ -726,7 +783,7 @@ function MeetingPage() {
                     type="button"
                     aria-pressed={roomState === s.key}
                     onClick={() => setRoomFilter({ state: s.key, page: 1 })}
-                    className={`h-8 shrink-0 rounded-md px-3 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                    className={`h-9 shrink-0 rounded-lg px-3 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:h-8 ${
                       roomState === s.key
                         ? "bg-background font-medium text-foreground shadow-sm"
                         : "text-muted-foreground hover:text-foreground"
@@ -744,7 +801,7 @@ function MeetingPage() {
                   onChange={(e) => setQueryDraft(e.target.value)}
                   placeholder={t("mtg.filter.search")}
                   aria-label={t("mtg.filter.search")}
-                  className="h-9 pl-9"
+                  className="h-11 pl-9 sm:h-9"
                 />
               </div>
 
@@ -754,7 +811,7 @@ function MeetingPage() {
                   onValueChange={(v) => setRoomFilter({ ws: v, page: 1 })}
                 >
                   <SelectTrigger
-                    className="h-9 w-auto min-w-[10rem]"
+                    className="h-11 w-auto min-w-[10rem] sm:h-9"
                     aria-label={t("mtg.filter.workspace")}
                   >
                     <SelectValue />
@@ -769,16 +826,16 @@ function MeetingPage() {
                 </Select>
               )}
 
-              <div className="flex items-center gap-1.5">
+              <div className="flex w-full items-center gap-1.5 sm:w-auto">
                 <Input
                   type="date"
                   value={dateFrom ?? ""}
                   max={dateTo ?? undefined}
                   onChange={(e) => setRoomFilter({ from: e.target.value, page: 1 })}
                   aria-label={t("mtg.filter.from")}
-                  className="h-9 w-auto"
+                  className="h-11 min-w-0 flex-1 sm:h-9 sm:w-auto sm:flex-none"
                 />
-                <span className="text-muted-foreground" aria-hidden="true">
+                <span className="shrink-0 text-muted-foreground" aria-hidden="true">
                   –
                 </span>
                 <Input
@@ -787,14 +844,14 @@ function MeetingPage() {
                   min={dateFrom ?? undefined}
                   onChange={(e) => setRoomFilter({ to: e.target.value, page: 1 })}
                   aria-label={t("mtg.filter.to")}
-                  className="h-9 w-auto"
+                  className="h-11 min-w-0 flex-1 sm:h-9 sm:w-auto sm:flex-none"
                 />
               </div>
 
               <Button
                 variant="outline"
                 size="sm"
-                className="h-9"
+                className="h-11 sm:h-9"
                 title={t("mtg.filter.sortLabel")}
                 onClick={() =>
                   setRoomFilter({ sort: sortStartAt === "asc" ? "desc" : "asc", page: 1 })
@@ -805,13 +862,18 @@ function MeetingPage() {
               </Button>
 
               {filtersActive && (
-                <Button variant="ghost" size="sm" className="h-9" onClick={clearFilters}>
+                <Button variant="ghost" size="sm" className="h-11 sm:h-9" onClick={clearFilters}>
                   <X /> {t("mtg.filter.clear")}
                 </Button>
               )}
             </div>
 
-            <div className="px-4 py-5 sm:px-6">
+            <section aria-label={t("mtg.list.regionLabel")} className="px-4 py-5 sm:px-6">
+              {rangeCapped && (
+                <p className="mb-3 rounded-lg border border-border bg-surface-2 px-3 py-2 text-xs text-foreground">
+                  {fmt(t("mtg.list.capped"), { n: RANGE_QUERY_LIMIT })}
+                </p>
+              )}
               {listLoading ? (
                 <ul className="space-y-2" aria-busy="true">
                   {[0, 1, 2, 3].map((i) => (
@@ -820,6 +882,26 @@ function MeetingPage() {
                     </li>
                   ))}
                 </ul>
+              ) : workspaces.isError ? (
+                <div className="rounded-xl border border-border p-8 text-center">
+                  <p className="text-sm text-foreground">{t("mtg.ws.loadError")}</p>
+                  <Button
+                    variant="outline"
+                    className="mt-4"
+                    onClick={() => void workspaces.refetch()}
+                  >
+                    {t("mtg.retry")}
+                  </Button>
+                </div>
+              ) : noWorkspace ? (
+                <div className="rounded-xl border border-dashed border-border p-10 text-center">
+                  <p className="mx-auto max-w-md text-sm text-muted-foreground">
+                    {t("mtg.ws.none")}
+                  </p>
+                  <Button asChild className="mt-4">
+                    <Link to="/onboarding">{t("mtg.ws.setup")}</Link>
+                  </Button>
+                </div>
               ) : listError ? (
                 <div className="rounded-xl border border-border p-8 text-center">
                   <p className="text-sm text-foreground">{t("mtg.loadError")}</p>
@@ -897,15 +979,15 @@ function MeetingPage() {
                   )}
                 </>
               )}
-            </div>
+            </section>
           </section>
 
-          <aside className="hidden w-[340px] shrink-0 flex-col border-l border-border bg-surface xl:flex">
+          <aside className="hidden w-[340px] shrink-0 flex-col overflow-y-auto border-l border-border bg-surface xl:flex">
             <MiniCalendar workspaceId={activeWs} />
             <div className="border-t border-border p-4">
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="text-sm font-semibold">{t("mtg.upcoming.title")}</h2>
-                <Link to="/calendar" className="text-xs text-primary hover:underline">
+                <Link to="/calendar" className="text-xs text-link hover:underline">
                   {t("mtg.upcoming.all")}
                 </Link>
               </div>
@@ -1193,14 +1275,17 @@ function MeetingPage() {
                     "mtg.cancel.preset.notNeeded",
                   ] as const
                 ).map((preset) => (
-                  <button
+                  <Button
                     key={preset}
                     type="button"
+                    variant="outline"
+                    size="sm"
+                    className="font-normal"
+                    aria-pressed={cancelReason === t(preset)}
                     onClick={() => setCancelReason(t(preset))}
-                    className="h-8 rounded-full border border-border px-3 text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     {t(preset)}
-                  </button>
+                  </Button>
                 ))}
               </div>
               <p
@@ -1334,7 +1419,7 @@ function MeetingRow({
               <Button
                 variant="outline"
                 size="sm"
-                className="w-8 px-0"
+                className="h-11 w-11 px-0 sm:h-9 sm:w-9"
                 aria-label={fmt(t("mtg.row.more"), { title: m.title })}
               >
                 <MoreHorizontal />
@@ -1427,6 +1512,7 @@ function QuickRoomDialog({
   const [inviteRunning, setInviteRunning] = useState(false);
   const [participants, setParticipants] = useState<InvitedParticipant[] | null>(null);
   const [loadingParticipants, setLoadingParticipants] = useState(false);
+  const createdTitleRef = useRef<HTMLHeadingElement>(null);
 
   const refreshParticipants = useCallback(async () => {
     if (!created) return;
@@ -1442,7 +1528,11 @@ function QuickRoomDialog({
   }, [created, t]);
 
   useEffect(() => {
-    if (created) void refreshParticipants();
+    if (!created) return;
+    void refreshParticipants();
+    // Nội dung dialog bị thay hoàn toàn: dời focus sang tiêu đề mới để người
+    // dùng bàn phím / trình đọc màn hình không bị rơi focus về <body>.
+    createdTitleRef.current?.focus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [created]);
 
@@ -1633,7 +1723,9 @@ function QuickRoomDialog({
         {created ? (
           <>
             <DialogHeader>
-              <DialogTitle>{t("mtg.qr.createdTitle")}</DialogTitle>
+              <DialogTitle ref={createdTitleRef} tabIndex={-1} className="outline-none">
+                {t("mtg.qr.createdTitle")}
+              </DialogTitle>
               <DialogDescription className="truncate">{created.title}</DialogDescription>
             </DialogHeader>
 
@@ -1962,7 +2054,7 @@ function MiniCalendar({ workspaceId }: { workspaceId?: string }) {
           from: monthStart.toISOString(),
           to: monthEnd.toISOString(),
           sort: "asc",
-          limit: 200,
+          limit: RANGE_QUERY_LIMIT,
         },
       }),
   });
@@ -2012,7 +2104,7 @@ function MiniCalendar({ workspaceId }: { workspaceId?: string }) {
           <Button
             variant="ghost"
             size="sm"
-            className="w-8 px-0"
+            className="h-9 w-9 px-0"
             aria-label={t("mtg.cal.prev")}
             onClick={() => shiftMonth(-1)}
           >
@@ -2021,7 +2113,7 @@ function MiniCalendar({ workspaceId }: { workspaceId?: string }) {
           <Button
             variant="ghost"
             size="sm"
-            className="w-8 px-0"
+            className="h-9 w-9 px-0"
             aria-label={t("mtg.cal.next")}
             onClick={() => shiftMonth(1)}
           >
@@ -2030,7 +2122,7 @@ function MiniCalendar({ workspaceId }: { workspaceId?: string }) {
         </div>
       </div>
       <div
-        className="grid grid-cols-7 gap-1 text-center text-[11px] text-muted-foreground"
+        className="grid grid-cols-7 gap-1 text-center text-xs text-muted-foreground"
         aria-hidden="true"
       >
         {weekdays.map((d, i) => (
@@ -2067,7 +2159,7 @@ function MiniCalendar({ workspaceId }: { workspaceId?: string }) {
                 isToday
                   ? "bg-primary font-semibold text-primary-foreground"
                   : isSelected
-                    ? "bg-primary/15 text-primary"
+                    ? "bg-primary/15 text-foreground"
                     : "text-foreground hover:bg-surface-2"
               }`}
             >

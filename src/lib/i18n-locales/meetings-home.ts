@@ -11,6 +11,18 @@ export const meetingsHomeVi = {
   "mtg.stats.live": "Đang diễn ra",
   "mtg.stats.recordings": "Bản ghi 7 ngày",
   "mtg.stats.summaries": "Tóm tắt AI tháng này",
+  "mtg.stats.error": "Không tải được thống kê.",
+
+  "mtg.list.regionLabel": "Danh sách cuộc họp",
+  "mtg.list.capped":
+    "Chỉ hiển thị {n} cuộc họp đầu tiên trong khoảng ngày này. Thu hẹp khoảng ngày để xem đầy đủ.",
+
+  "mtg.ws.none":
+    "Bạn chưa thuộc workspace nào. Tạo hoặc tham gia một workspace để bắt đầu lên lịch họp.",
+  "mtg.ws.setup": "Thiết lập workspace",
+  "mtg.ws.loadError": "Không tải được danh sách workspace.",
+
+  "mtg.upcoming.compactLabel": "Cuộc họp sắp diễn ra",
 
   "mtg.filter.stateLabel": "Lọc theo trạng thái",
   "mtg.filter.search": "Tìm cuộc họp…",
@@ -188,6 +200,18 @@ export const meetingsHomeEn: Partial<Record<keyof typeof meetingsHomeVi, string>
   "mtg.stats.live": "Live now",
   "mtg.stats.recordings": "Recordings (7 days)",
   "mtg.stats.summaries": "AI summaries this month",
+  "mtg.stats.error": "Could not load statistics.",
+
+  "mtg.list.regionLabel": "Meeting list",
+  "mtg.list.capped":
+    "Showing only the first {n} meetings in this date range. Narrow the range to see them all.",
+
+  "mtg.ws.none":
+    "You are not a member of any workspace yet. Create or join one to start scheduling meetings.",
+  "mtg.ws.setup": "Set up a workspace",
+  "mtg.ws.loadError": "Could not load your workspaces.",
+
+  "mtg.upcoming.compactLabel": "Upcoming meetings",
 
   "mtg.filter.stateLabel": "Filter by status",
   "mtg.filter.search": "Search meetings…",
