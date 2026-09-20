@@ -472,14 +472,21 @@ export const requestJoinToken = createServerFn({ method: "POST" })
     }
 
     // 3. Replace the placeholder fingerprint with the real one (never the token).
-    const fp = await fingerprint(signed.token);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await supabaseAdmin
-      .from("meeting_join_tokens")
-      .update({ token_fingerprint: fp })
-      .eq("meeting_id", data.meetingId)
-      .eq("user_id", identity)
-      .eq("token_fingerprint", "pending");
+    // Đây là bước hoàn thiện vết audit sau khi gate đã ghi outbox + audit trong
+    // cùng transaction, nên lỗi ở đây không được chặn người dùng vào phòng.
+    try {
+      const fp = await fingerprint(signed.token);
+      const res = await context.supabase.rpc(
+        "record_meeting_join_token_fingerprint" as never,
+        {
+          _meeting_id: data.meetingId,
+          _token_fingerprint: fp,
+        } as never,
+      );
+      if (res.error) throw res.error;
+    } catch (err) {
+      console.error("[meetings] record_meeting_join_token_fingerprint failed", err);
+    }
 
     return {
       serverUrl: config.url,
