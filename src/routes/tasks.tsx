@@ -1,6 +1,6 @@
 import { useStickySearch } from "@/lib/sticky-search";
 import { FilterPageHeader } from "@/components/filter-page-header";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import type { Key } from "@/lib/i18n";
 import type { LucideIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -49,7 +49,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useI18n } from "@/lib/i18n";
 import { isOverdueTask } from "@/lib/metrics";
-import { notifyComingSoon } from "@/lib/coming-soon";
+import {
+  TaskListView,
+  TaskTimelineView,
+  TaskCalendarView,
+  TaskReportsView,
+  TaskFilesView,
+} from "@/components/tasks/task-views";
 
 type TasksSearch = { filter?: "overdue"; range?: number; ws?: string };
 
@@ -721,49 +727,70 @@ function TasksPage() {
               </div>
             ) : (
               <div
-                className={`grid grid-cols-1 gap-4 transition-opacity duration-200 md:grid-cols-2 xl:grid-cols-5 ${
+                className={`transition-opacity duration-200 ${
                   tasksQuery.isFetching ? "opacity-70" : "opacity-100"
                 }`}
               >
-                {columns.map((col) => (
-                  <BoardColumn
-                    key={col.status}
-                    col={col}
-                    count={counts[col.status]}
-                    tasks={tasks.filter((tk) => tk.status === col.status)}
-                    disabled={!activeWs || createMutation.isPending}
-                    onAdd={(payload) =>
-                      createMutation.mutate(
-                        { status: col.status, ...payload },
-                        {
-                          onSuccess: (res: unknown) => {
-                            const id = (res as { task_id?: string } | null)?.task_id;
-                            if (id && col.status !== "todo") {
-                              transitionMutation.mutate({ taskId: id, toStatus: col.status });
-                            }
-                          },
-                        },
-                      )
-                    }
+                {tab === "board" && (
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+                    {columns.map((col) => (
+                      <BoardColumn
+                        key={col.status}
+                        col={col}
+                        count={counts[col.status]}
+                        tasks={tasks.filter((tk) => tk.status === col.status)}
+                        disabled={!activeWs || createMutation.isPending}
+                        onAdd={(payload) =>
+                          createMutation.mutate(
+                            { status: col.status, ...payload },
+                            {
+                              onSuccess: (res: unknown) => {
+                                const id = (res as { task_id?: string } | null)?.task_id;
+                                if (id && col.status !== "todo") {
+                                  transitionMutation.mutate({ taskId: id, toStatus: col.status });
+                                }
+                              },
+                            },
+                          )
+                        }
+                        onMove={(taskId, toStatus) =>
+                          transitionMutation.mutate({ taskId, toStatus })
+                        }
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {tab === "list" && (
+                  <TaskListView
+                    tasks={tasks}
+                    statuses={columns.map((c) => c.status)}
                     onMove={(taskId, toStatus) => transitionMutation.mutate({ taskId, toStatus })}
                   />
-                ))}
+                )}
+
+                {tab === "timeline" && <TaskTimelineView tasks={tasks} />}
+                {tab === "calendar" && <TaskCalendarView tasks={tasks} />}
+                {tab === "reports" && <TaskReportsView tasks={tasks} />}
+                {tab === "files" && <TaskFilesView workspaceId={activeWs} />}
               </div>
             )}
 
             {/* Bottom panels */}
-            <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
-              <ProjectOverview
-                counts={counts}
-                total={total}
-                rangeDays={rangeDays}
-                onRangeChange={(d) =>
-                  navigateTasks({ to: "/tasks", search: { ...tasksSearch, range: d } })
-                }
-              />
-              <BurndownChart tasks={allTasks} />
-              <MyTasks tasks={tasks} onViewAll={() => setTab("list")} />
-            </div>
+            {(tab === "overview" || tab === "board") && (
+              <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+                <ProjectOverview
+                  counts={counts}
+                  total={total}
+                  rangeDays={rangeDays}
+                  onRangeChange={(d) =>
+                    navigateTasks({ to: "/tasks", search: { ...tasksSearch, range: d } })
+                  }
+                />
+                <BurndownChart tasks={allTasks} />
+                <MyTasks tasks={tasks} onViewAll={() => setTab("list")} />
+              </div>
+            )}
           </main>
 
           <CopilotPanel
