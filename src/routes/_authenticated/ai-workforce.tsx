@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Bot, BriefcaseBusiness, Gauge, Plus, Sparkles, Users } from "lucide-react";
+import { Bot, BriefcaseBusiness, ClipboardList, Gauge, Plus, Sparkles, Users } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { listAiEmployments } from "@/lib/api/ai-market.functions";
@@ -11,7 +11,13 @@ import { Badge } from "@/components/ui/badge";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import {
   AiWorkerProfileBadges,
   AiWorkerProfileBody,
@@ -20,6 +26,8 @@ import {
 import { AiWorkerKpiSection } from "@/components/ai/ai-worker-kpi";
 import { AiSkillsManager } from "@/components/ai/ai-skills-manager";
 import { AiWorkforceEvaluation } from "@/components/ai/ai-workforce-evaluation";
+import { AiWorkforceAssignments } from "@/components/ai/ai-workforce-assignments";
+import { AiWorkforceImport } from "@/components/ai/ai-workforce-import";
 import { AI_WORKER_PROFILES } from "@/domain/ai-workforce/profiles";
 
 export const Route = createFileRoute("/_authenticated/ai-workforce")({
@@ -44,6 +52,7 @@ export const Route = createFileRoute("/_authenticated/ai-workforce")({
 
 const TABS = [
   { id: "workers", label: "Nhân sự AI", icon: Bot },
+  { id: "assign", label: "Giao việc", icon: ClipboardList },
   { id: "contracts", label: "Hợp đồng AI", icon: BriefcaseBusiness },
   { id: "evaluation", label: "Đánh giá hiệu quả", icon: Gauge },
   { id: "skills", label: "Kỹ năng AI", icon: Sparkles },
@@ -56,7 +65,10 @@ function AiWorkforcePage() {
   const [tab, setTab] = useState<(typeof TABS)[number]["id"]>("workers");
   const workers = useMemo(() => AI_WORKER_PROFILES, []);
   const [profileId, setProfileId] = useState<string | null>(null);
-  const profile = useMemo(() => workers.find((w) => w.id === profileId) ?? null, [workers, profileId]);
+  const profile = useMemo(
+    () => workers.find((w) => w.id === profileId) ?? null,
+    [workers, profileId],
+  );
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
@@ -80,14 +92,14 @@ function AiWorkforcePage() {
             </Link>
           </div>
 
-          <nav className="mt-5 flex gap-1 border-b border-border text-sm">
+          <nav className="mt-5 -mx-4 flex gap-1 overflow-x-auto border-b border-border px-4 text-sm sm:mx-0 sm:px-0 [scrollbar-width:none]">
             {TABS.map((item) => (
               <button
                 key={item.id}
                 type="button"
                 onClick={() => setTab(item.id)}
                 className={cn(
-                  "-mb-px inline-flex items-center gap-1.5 border-b-2 px-3 py-2.5 transition-colors",
+                  "-mb-px inline-flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-2.5 transition-colors",
                   tab === item.id
                     ? "border-primary font-medium text-primary"
                     : "border-transparent text-muted-foreground hover:text-foreground",
@@ -99,30 +111,39 @@ function AiWorkforcePage() {
           </nav>
 
           {tab === "workers" ? (
-            <ul className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {workers.map((w) => (
-                <li
-                  key={w.id}
-                  className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-surface p-5 text-center shadow-sm transition-shadow hover:shadow-md"
-                >
-                  <span className="grid h-20 w-20 place-items-center rounded-full bg-primary/10 text-primary">
-                    <Bot className="h-8 w-8" />
-                  </span>
-                  <span className="mt-1 text-sm font-semibold">{w.name}</span>
-                  <span className="text-xs text-muted-foreground">{w.domain}</span>
-                  <span className="inline-flex items-center gap-1.5 text-xs text-success">
-                    <span className="h-1.5 w-1.5 rounded-full bg-success" /> Đang hoạt động
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setProfileId(w.id)}
-                    className="mt-2 w-full rounded-lg border border-border px-3 py-2 text-xs font-medium text-primary transition-colors hover:bg-surface-2"
+            <>
+              <AiWorkforceImport />
+              <ul className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {workers.map((w) => (
+                  <li
+                    key={w.id}
+                    className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-surface p-5 text-center shadow-sm transition-shadow hover:shadow-md"
                   >
-                    Xem hồ sơ
-                  </button>
-                </li>
-              ))}
-            </ul>
+                    <img
+                      src={w.avatarUrl}
+                      alt={`Ảnh đại diện ${w.name}`}
+                      loading="lazy"
+                      className="h-20 w-20 rounded-full object-cover ring-2 ring-primary/15"
+                    />
+                    <span className="mt-1 text-sm font-semibold tracking-wide">{w.name}</span>
+                    <span className="text-xs font-medium text-primary">{w.title}</span>
+                    <span className="text-xs text-muted-foreground">{w.tagline}</span>
+                    <span className="inline-flex items-center gap-1.5 text-xs text-success">
+                      <span className="h-1.5 w-1.5 rounded-full bg-success" /> Đang hoạt động
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setProfileId(w.id)}
+                      className="mt-2 w-full rounded-lg border border-border px-3 py-2 text-xs font-medium text-primary transition-colors hover:bg-surface-2"
+                    >
+                      Xem hồ sơ
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : tab === "assign" ? (
+            <AiWorkforceAssignments />
           ) : tab === "contracts" ? (
             <AiContractsTab />
           ) : tab === "evaluation" ? (
@@ -138,7 +159,10 @@ function AiWorkforcePage() {
       </main>
 
       <Sheet open={!!profile} onOpenChange={(o) => !o && setProfileId(null)}>
-        <SheetContent side="right" className="flex w-full flex-col gap-0 overflow-y-auto sm:max-w-md">
+        <SheetContent
+          side="right"
+          className="flex w-full flex-col gap-0 overflow-y-auto sm:max-w-md"
+        >
           {profile && (
             <>
               <SheetHeader className="space-y-3 text-left">
@@ -185,7 +209,11 @@ function AiContractsTab() {
     <ul className="mt-6 grid gap-3">
       {data.map((e: any) => (
         <li key={e.id} className="rounded-xl border border-border bg-surface p-4">
-          <Link to="/ai-market/$id" params={{ id: e.market_agent_id }} className="flex flex-wrap items-center gap-3">
+          <Link
+            to="/ai-market/$id"
+            params={{ id: e.market_agent_id }}
+            className="flex flex-wrap items-center gap-3"
+          >
             <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-muted text-xs font-semibold text-muted-foreground">
               {e.rank}
             </span>
@@ -193,17 +221,23 @@ function AiContractsTab() {
               <Bot className="h-5 w-5" />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-medium">{e.agent?.name ?? "Nhân sự AI"}</span>
+              <span className="block truncate text-sm font-medium">
+                {e.agent?.name ?? "Nhân sự AI"}
+              </span>
               <span className="block truncate text-xs text-muted-foreground">{e.agent?.title}</span>
               <span className="mt-1 block truncate text-xs text-muted-foreground">
-                {e.kpi?.proposals ?? 0} đề xuất · duyệt {formatApproved(e.kpi?.approved ?? 0, e.kpi?.proposals ?? 0)} ·{" "}
+                {e.kpi?.proposals ?? 0} đề xuất · duyệt{" "}
+                {formatApproved(e.kpi?.approved ?? 0, e.kpi?.proposals ?? 0)} ·{" "}
                 {e.kpi?.completed ?? 0} việc hoàn thành
               </span>
             </span>
             <Badge variant="outline" className="font-semibold">
               KPI {formatKpiScore(e.kpi?.score)}
             </Badge>
-            <Badge variant="secondary">{AI_EMPLOYMENT_STATUS_LABELS[e.status as keyof typeof AI_EMPLOYMENT_STATUS_LABELS] ?? e.status}</Badge>
+            <Badge variant="secondary">
+              {AI_EMPLOYMENT_STATUS_LABELS[e.status as keyof typeof AI_EMPLOYMENT_STATUS_LABELS] ??
+                e.status}
+            </Badge>
             <span className="text-sm font-medium">
               {formatMoney(Number(e.salary_amount ?? 0), e.currency)}/tháng
             </span>

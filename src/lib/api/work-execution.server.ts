@@ -19,7 +19,11 @@ import {
   type WorkValidationResult,
 } from "@/domain/work-execution/contracts";
 import { AI_ACTION_TOOLS } from "@/domain/ai-actions/contracts";
-import type { AiWorkerRuntimePolicy, GovernanceEvaluation, GovernanceExecutionScope } from "@/domain/ai-governance/contracts";
+import type {
+  AiWorkerRuntimePolicy,
+  GovernanceEvaluation,
+  GovernanceExecutionScope,
+} from "@/domain/ai-governance/contracts";
 import {
   checkAiWorkerAction,
   logGovernanceDecision,
@@ -58,14 +62,34 @@ export interface OrchestratedRun extends AiTaskRunResult {
 /* ------------------------------ Step writer ------------------------------ */
 
 /**
- * Sổ ghi các lần ghi bước THẤT BẠI trong tiến trình hiện tại.
- * HARDEN-SELLWORK-1: quan sát không chặn công việc, nhưng cũng KHÔNG được biến mất
- * âm thầm — mọi thất bại được log có cấu trúc và đánh dấu bằng chứng PARTIAL.
+ * Process-local cache of step-write failures in this runtime only.
+ * NOT Sell Work evidence. Durable authority is ai_task_executions.step_write_failure_count
+ * via record_execution_step_write_failure.
  */
-const stepWriteFailures = new Map<string, number>();
+const processStepWriteFailures = new Map<string, number>();
 
 export function stepTelemetryGap(executionId: string): number {
-  return stepWriteFailures.get(executionId) ?? 0;
+  return processStepWriteFailures.get(executionId) ?? 0;
+}
+
+async function persistStepWriteFailure(
+  supabase: Supa,
+  executionId: string,
+  kind: WorkStepKind,
+  reason: string,
+): Promise<void> {
+  try {
+    await (supabase as never as { rpc: (n: string, a: unknown) => Promise<unknown> }).rpc(
+      "record_execution_step_write_failure",
+      { _execution_id: executionId, _kind: kind, _reason: reason },
+    );
+  } catch {
+    console.error("[work-execution] durable step-write failure persist failed", {
+      executionId,
+      kind,
+      reason,
+    });
+  }
 }
 
 /** Ghi một bước qua RPC tin cậy. Lỗi ghi bước KHÔNG được làm hỏng lượt chạy. */
@@ -74,15 +98,22 @@ async function recordStep(
   executionId: string,
   kind: WorkStepKind,
   status: WorkStepStatus,
-  input: { detail?: string | null; output?: Record<string, unknown>; errorCode?: string | null } = {},
+  input: {
+    detail?: string | null;
+    output?: Record<string, unknown>;
+    errorCode?: string | null;
+  } = {},
 ): Promise<void> {
   const markFailure = (reason: string) => {
-    stepWriteFailures.set(executionId, (stepWriteFailures.get(executionId) ?? 0) + 1);
+    processStepWriteFailures.set(executionId, (processStepWriteFailures.get(executionId) ?? 0) + 1);
     console.error("[work-execution] ghi bước thất bại", { executionId, kind, status, reason });
+    void persistStepWriteFailure(supabase, executionId, kind, reason);
   };
   try {
     const res = (await (
-      supabase as never as { rpc: (n: string, a: unknown) => Promise<{ error?: unknown } | unknown> }
+      supabase as never as {
+        rpc: (n: string, a: unknown) => Promise<{ error?: unknown } | unknown>;
+      }
     ).rpc("record_work_execution_step", {
       _execution_id: executionId,
       _seq: seqOf(kind),
@@ -104,7 +135,7 @@ async function recordStep(
  * chữa để đánh dấu bằng chứng PARTIAL. Không bịa ra bước không chứng minh được.
  */
 async function reconcileSteps(supabase: Supa, executionId: string): Promise<void> {
-  if (!stepWriteFailures.get(executionId)) return;
+  if (!processStepWriteFailures.get(executionId)) return;
   try {
     await (supabase as never as { rpc: (n: string, a: unknown) => Promise<unknown> }).rpc(
       "reconcile_work_execution_steps",
@@ -113,7 +144,7 @@ async function reconcileSteps(supabase: Supa, executionId: string): Promise<void
   } catch {
     console.error("[work-execution] đối soát nhật ký bước thất bại", { executionId });
   } finally {
-    stepWriteFailures.delete(executionId);
+    processStepWriteFailures.delete(executionId);
   }
 }
 
@@ -128,7 +159,6 @@ const PLAN_SYSTEM = [
   'Nếu bước cần ghi dữ liệu, đặt actionIntent = {"actionType":"CREATE_TASK","objective":"...","targetType":"TASK","rationale":"..."}. Tuyệt đối không sinh payload database.',
 ].join("\n");
 
-
 async function planExecution(
   spec: AiTaskSpec,
   pack: AiContextPack,
@@ -140,11 +170,12 @@ async function planExecution(
     { order: 3, summary: "Đối chiếu với tiêu chí nghiệm thu", needsAction: false },
   ];
   try {
-    const { createLovableResponsesProvider } = await import("@/lib/ai-gateway.server");
-    const provider = createLovableResponsesProvider(apiKey);
-    const res = await generateText({
-      model: provider.responses(ORCHESTRATOR_MODEL),
+    const { callAiConsumer } = await import("./ai-consumer.server");
+    const res = await callAiConsumer({
+      consumer: "EXECUTIVE",
+      modelOverride: ORCHESTRATOR_MODEL,
       system: PLAN_SYSTEM,
+      apiKey,
       prompt: [
         `CÔNG VIỆC: ${spec.title}`,
         spec.description ? `MÔ TẢ: ${spec.description}` : "",
@@ -157,7 +188,6 @@ async function planExecution(
       ]
         .filter(Boolean)
         .join("\n"),
-      providerOptions: { openai: { store: false } },
     });
     // Gate 9: hợp đồng kế hoạch nghiêm ngặt — output dị dạng bị từ chối an toàn.
     const result = parseExecutionPlan(res.text ?? "");
@@ -166,7 +196,6 @@ async function planExecution(
       return fallback;
     }
     return result.items.length ? result.items : fallback;
-
   } catch {
     return fallback;
   }
@@ -188,7 +217,11 @@ async function proposeFollowUpActions(
   plan: WorkPlanItem[],
   sourceRefs: AiTaskRunResult["sourceRefs"],
   governance: { worker: AiWorkerRuntimePolicy | null; execution: GovernanceExecutionScope },
-): Promise<{ ids: string[]; titles: string[]; blocked: { title: string; reason: string; code: string }[] }> {
+): Promise<{
+  ids: string[];
+  titles: string[];
+  blocked: { title: string; reason: string; code: string }[];
+}> {
   const needing = plan.filter((p) => p.needsAction).slice(0, MAX_PROPOSALS_PER_RUN);
   const blocked: { title: string; reason: string; code: string }[] = [];
   if (needing.length === 0) return { ids: [], titles: [], blocked };
@@ -198,13 +231,22 @@ async function proposeFollowUpActions(
   const titles: string[] = [];
   const sb = supabase as never as {
     from: (t: string) => {
-      insert: (v: unknown) => { select: (c: string) => { single: () => Promise<{ data: { id: string } | null }> } };
+      insert: (v: unknown) => {
+        select: (c: string) => { single: () => Promise<{ data: { id: string } | null }> };
+      };
     };
   };
 
   for (const item of needing) {
     const title = item.summary.slice(0, 400);
-    const payload = { workspaceId, title, description: null, priority: "normal", dueAt: null, assigneeId: null };
+    const payload = {
+      workspaceId,
+      title,
+      description: null,
+      priority: "normal",
+      dueAt: null,
+      assigneeId: null,
+    };
 
     // WEE-2: mọi đề xuất phải qua cổng governance trước khi được lưu (fail closed).
     const verdict: GovernanceEvaluation = await checkAiWorkerAction({
@@ -271,7 +313,6 @@ async function proposeFollowUpActions(
   return { ids, titles, blocked };
 }
 
-
 /* ------------------------------ Orchestrator ----------------------------- */
 
 export interface OrchestrateInput {
@@ -304,7 +345,9 @@ export async function orchestrateWorkExecution(i: OrchestrateInput): Promise<Orc
   const spec: AiTaskSpec = mandatory.length
     ? {
         ...i.spec,
-        acceptanceCriteria: [i.spec.acceptanceCriteria, ...mandatory.map((c) => `- ${c}`)].join("\n"),
+        acceptanceCriteria: [i.spec.acceptanceCriteria, ...mandatory.map((c) => `- ${c}`)].join(
+          "\n",
+        ),
       }
     : i.spec;
 
@@ -333,7 +376,10 @@ export async function orchestrateWorkExecution(i: OrchestrateInput): Promise<Orc
   await recordStep(supabase, executionId, "PLAN", "RUNNING");
   const plan = await planExecution(spec, pack, apiKey);
   await recordStep(supabase, executionId, "PLAN", "SUCCEEDED", {
-    detail: plan.map((p) => `${p.order}. ${p.summary}`).join("\n").slice(0, 2000),
+    detail: plan
+      .map((p) => `${p.order}. ${p.summary}`)
+      .join("\n")
+      .slice(0, 2000),
     output: { steps: plan as never },
   });
 
@@ -373,7 +419,7 @@ export async function orchestrateWorkExecution(i: OrchestrateInput): Promise<Orc
   }
 
   // 4. ACTION — chỉ đề xuất, luôn qua cổng governance WEE-2 ----------------
-  
+
   const workerPolicy = toWorkerRuntimePolicy(i.workerRow ?? null);
   const executionScope: GovernanceExecutionScope = {
     executionId,
@@ -385,7 +431,8 @@ export async function orchestrateWorkExecution(i: OrchestrateInput): Promise<Orc
     workerId: workerPolicy?.workerId ?? "",
   };
   // WE-2: hợp đồng có thể cấm hoàn toàn hành động ghi cho sản phẩm này.
-  const contractAllowsCreateTask = !i.contract || i.contract.action.allowedActions.includes("CREATE_TASK");
+  const contractAllowsCreateTask =
+    !i.contract || i.contract.action.allowedActions.includes("CREATE_TASK");
   const proposals = contractAllowsCreateTask
     ? await proposeFollowUpActions(
         supabase,
@@ -442,23 +489,30 @@ export async function orchestrateWorkExecution(i: OrchestrateInput): Promise<Orc
   }
 
   // 5. VALIDATE — WEE-3 Quality, Evidence & Outcome Engine ------------------
-  const { validation, quality } = await runValidateAndReview(supabase, executionId, spec, run.deliverableContent, apiKey, {
-    tenantId: i.tenantId,
-    revision: i.revision ?? 1,
-    workspaceId: spec.workspaceId,
-    pack,
-    plan,
-    proposalIds: proposals.ids,
-    deliverableType: run.deliverableType,
-    deliverableTitle: run.deliverableTitle,
-    sourceRefs: run.sourceRefs,
-    aiWorkerId: workerPolicy?.workerId ?? null,
-    aiWorkerName: spec.workerName,
-    generatorModel: run.evidence.model ?? null,
-    generatorInputTokens: run.evidence.inputTokens ?? 0,
-    generatorOutputTokens: run.evidence.outputTokens ?? 0,
-    startedAt: null,
-  });
+  const { validation, quality } = await runValidateAndReview(
+    supabase,
+    executionId,
+    spec,
+    run.deliverableContent,
+    apiKey,
+    {
+      tenantId: i.tenantId,
+      revision: i.revision ?? 1,
+      workspaceId: spec.workspaceId,
+      pack,
+      plan,
+      proposalIds: proposals.ids,
+      deliverableType: run.deliverableType,
+      deliverableTitle: run.deliverableTitle,
+      sourceRefs: run.sourceRefs,
+      aiWorkerId: workerPolicy?.workerId ?? null,
+      aiWorkerName: spec.workerName,
+      generatorModel: run.evidence.model ?? null,
+      generatorInputTokens: run.evidence.inputTokens ?? 0,
+      generatorOutputTokens: run.evidence.outputTokens ?? 0,
+      startedAt: null,
+    },
+  );
 
   // HARDEN-SELLWORK-1 — telemetry lượt gọi model chấm chất lượng (có thể khác model sinh).
   {
@@ -603,7 +657,8 @@ async function runValidateAndReview(
     // Cơ chế chấm hỏng → bước FAILED, và KHÔNG có bất kỳ kết luận "đạt" nào.
     await recordStep(supabase, executionId, "VALIDATE", "FAILED", {
       errorCode: "QUALITY_EVALUATION_ERROR",
-      detail: "Bộ kiểm định chất lượng không trả kết quả hợp lệ. Không có kết luận chất lượng cho bản này.",
+      detail:
+        "Bộ kiểm định chất lượng không trả kết quả hợp lệ. Không có kết luận chất lượng cho bản này.",
       output: { qualityStatus: a.status },
     });
   } else {
@@ -661,7 +716,12 @@ export async function resumeWorkExecutionAfterAction(i: ResumeInput): Promise<Re
 
   const sb = supabase as never as {
     from: (t: string) => {
-      select: (c: string) => { in: (col: string, v: string[]) => Promise<{ data: { id: string; status: string }[] | null }> };
+      select: (c: string) => {
+        in: (
+          col: string,
+          v: string[],
+        ) => Promise<{ data: { id: string; status: string }[] | null }>;
+      };
     };
   };
   const { data } = await sb.from("ai_action_proposals").select("id, status").in("id", actionIds);
@@ -707,9 +767,13 @@ export interface RetryStepInput {
  * KHÔNG sinh lại bản bàn giao và KHÔNG thực thi đề xuất nào — chỉ chạy lại phần
  * kiểm chất lượng + chuyển duyệt trên đúng nội dung đã có.
  */
-export async function retryWorkExecutionStepInPlace(i: RetryStepInput): Promise<ValidateReviewResult> {
+export async function retryWorkExecutionStepInPlace(
+  i: RetryStepInput,
+): Promise<ValidateReviewResult> {
   const { supabase, executionId, kind, spec, deliverableContent, apiKey } = i;
-  await recordStep(supabase, executionId, kind, "RUNNING", { detail: "Bạn đã yêu cầu chạy lại bước này." });
+  await recordStep(supabase, executionId, kind, "RUNNING", {
+    detail: "Bạn đã yêu cầu chạy lại bước này.",
+  });
   if (kind === "ACTION") {
     await recordStep(supabase, executionId, "ACTION", "SKIPPED", {
       detail: "Chạy lại: bỏ qua đề xuất hành động để pipeline tiếp tục an toàn.",

@@ -1,0 +1,391 @@
+// GIAO BAN THỰC TẾ — CEO ghi nhận kết quả từng công việc trong cuộc họp.
+// Chỉ dùng lại các lệnh hiện có (transition_task, comment_task, cập nhật tiến độ)
+// nên KPI của Command Center và nhật ký hoạt động tự cập nhật theo dữ liệu thật.
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { mapPgError } from "./business.server";
+import { resolveTenantId } from "./ceo.server";
+
+export type StandupMeeting = {
+  id: string;
+  title: string;
+  startAt: string | null;
+  endAt: string | null;
+  status: string | null;
+  location: string | null;
+};
+
+export type StandupTask = {
+  id: string;
+  title: string;
+  status: string;
+  progressPct: number | null;
+  dueAt: string | null;
+  projectId: string | null;
+  projectName: string | null;
+  overdue: boolean;
+  lastNote: string | null;
+  lastNoteAt: string | null;
+};
+
+export type StandupBoard = {
+  meetings: StandupMeeting[];
+  tasks: StandupTask[];
+  summary: {
+    total: number;
+    done: number;
+    inProgress: number;
+    overdue: number;
+    avgProgress: number;
+  };
+};
+
+/** Danh sách cuộc họp gần đây và công việc cần điểm danh trong buổi giao ban. */
+export const getStandupBoard = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        workspaceId: z.string().uuid().nullable().optional(),
+        projectId: z.string().uuid().nullable().optional(),
+        limit: z.number().int().min(1).max(100).default(40),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }): Promise<StandupBoard> => {
+    const now = Date.now();
+    const from = new Date(now - 7 * 86400000).toISOString();
+    const to = new Date(now + 7 * 86400000).toISOString();
+
+    let meetingQuery = context.supabase
+      .from("meetings")
+      .select("id, title, start_at, end_at, status, location")
+      .is("deleted_at", null)
+      .gte("start_at", from)
+      .lte("start_at", to)
+      .order("start_at", { ascending: false })
+      .limit(20);
+    if (data.workspaceId) meetingQuery = meetingQuery.eq("workspace_id", data.workspaceId);
+    const meetingsRes = await meetingQuery;
+    if (meetingsRes.error) mapPgError(meetingsRes.error);
+
+    let taskQuery = context.supabase
+      .from("tasks")
+      .select("id, title, status, progress_pct, due_at, project_id, updated_at")
+      .is("deleted_at", null)
+      .not("status", "in", "(canceled)")
+      .order("due_at", { ascending: true, nullsFirst: false })
+      .limit(data.limit);
+    if (data.workspaceId) taskQuery = taskQuery.eq("workspace_id", data.workspaceId);
+    if (data.projectId) taskQuery = taskQuery.eq("project_id", data.projectId);
+    const tasksRes = await taskQuery;
+    if (tasksRes.error) mapPgError(tasksRes.error);
+
+    const rawTasks = (tasksRes.data ?? []) as unknown as Array<{
+      id: string;
+      title: string;
+      status: string;
+      progress_pct: number | null;
+      due_at: string | null;
+      project_id: string | null;
+    }>;
+
+    const projectIds = [...new Set(rawTasks.map((t) => t.project_id).filter(Boolean))] as string[];
+    const projectNames = new Map<string, string>();
+    if (projectIds.length) {
+      const pr = await context.supabase.from("projects").select("id, name").in("id", projectIds);
+      for (const p of (pr.data ?? []) as Array<{ id: string; name: string }>) {
+        projectNames.set(p.id, p.name);
+      }
+    }
+
+    const lastNotes = new Map<string, { body: string; at: string }>();
+    if (rawTasks.length) {
+      const cr = await context.supabase
+        .from("task_comments")
+        .select("task_id, body, created_at")
+        .in(
+          "task_id",
+          rawTasks.map((t) => t.id),
+        )
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .limit(200);
+      for (const c of (cr.data ?? []) as Array<{
+        task_id: string;
+        body: string;
+        created_at: string;
+      }>) {
+        if (!lastNotes.has(c.task_id)) lastNotes.set(c.task_id, { body: c.body, at: c.created_at });
+      }
+    }
+
+    const tasks: StandupTask[] = rawTasks.map((t) => {
+      const note = lastNotes.get(t.id);
+      return {
+        id: t.id,
+        title: t.title,
+        status: t.status,
+        progressPct: t.progress_pct,
+        dueAt: t.due_at,
+        projectId: t.project_id,
+        projectName: t.project_id ? (projectNames.get(t.project_id) ?? null) : null,
+        overdue: Boolean(t.due_at && new Date(t.due_at).getTime() < now && t.status !== "done"),
+        lastNote: note?.body ?? null,
+        lastNoteAt: note?.at ?? null,
+      };
+    });
+
+    const done = tasks.filter((t) => t.status === "done").length;
+    const inProgress = tasks.filter((t) => t.status === "in_progress").length;
+    const overdue = tasks.filter((t) => t.overdue).length;
+    const progressValues = tasks.map((t) => t.progressPct ?? (t.status === "done" ? 100 : 0));
+    const avgProgress = progressValues.length
+      ? Math.round(progressValues.reduce((a, b) => a + b, 0) / progressValues.length)
+      : 0;
+
+    return {
+      meetings: ((meetingsRes.data ?? []) as unknown as Array<Record<string, unknown>>).map(
+        (m) => ({
+          id: m["id"] as string,
+          title: (m["title"] as string) ?? "Cuộc họp",
+          startAt: (m["start_at"] as string) ?? null,
+          endAt: (m["end_at"] as string) ?? null,
+          status: (m["status"] as string) ?? null,
+          location: (m["location"] as string) ?? null,
+        }),
+      ),
+      tasks,
+      summary: { total: tasks.length, done, inProgress, overdue, avgProgress },
+    };
+  });
+
+/**
+ * Ghi nhận kết quả một công việc trong buổi giao ban:
+ * đổi trạng thái, cập nhật tiến độ và lưu ghi chú vào nhật ký công việc.
+ */
+export const recordStandupOutcome = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        taskId: z.string().uuid(),
+        meetingTitle: z.string().max(300).nullable().optional(),
+        status: z.enum(["todo", "in_progress", "blocked", "done"]).nullable().optional(),
+        progressPct: z.number().int().min(0).max(100).nullable().optional(),
+        note: z.string().max(4000).nullable().optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: task, error: readErr } = await context.supabase
+      .from("tasks")
+      .select("id, status, progress_pct")
+      .eq("id", data.taskId)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (readErr) mapPgError(readErr);
+    if (!task) throw new Error("TASK_NOT_FOUND");
+    const current = task as unknown as { status: string; progress_pct: number | null };
+
+    const changes: string[] = [];
+
+    if (data.status && data.status !== current.status) {
+      const res = await context.supabase.rpc("transition_task", {
+        _task_id: data.taskId,
+        _to_status: data.status,
+        _idempotency_key: crypto.randomUUID(),
+      } as never);
+      if (res.error) mapPgError(res.error);
+      changes.push(`trạng thái: ${current.status} → ${data.status}`);
+    }
+
+    const nextPct = data.progressPct;
+    if (nextPct !== undefined && nextPct !== null && nextPct !== current.progress_pct) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { error: upErr } = await supabaseAdmin
+        .from("tasks")
+        .update({ progress_pct: nextPct, updated_by: context.userId } as never)
+        .eq("id", data.taskId)
+        .is("deleted_at", null);
+      if (upErr) mapPgError(upErr);
+      changes.push(`tiến độ: ${current.progress_pct ?? 0}% → ${nextPct}%`);
+    }
+
+    const noteText = data.note?.trim();
+    if (noteText || changes.length) {
+      const header = data.meetingTitle?.trim()
+        ? `[Giao ban · ${data.meetingTitle.trim()}]`
+        : "[Giao ban]";
+      const body = [header, noteText, changes.length ? `(${changes.join("; ")})` : ""]
+        .filter(Boolean)
+        .join(" ")
+        .slice(0, 9000);
+      const res = await context.supabase.rpc("comment_task", {
+        _task_id: data.taskId,
+        _body: body,
+        _idempotency_key: crypto.randomUUID(),
+      } as never);
+      if (res.error) mapPgError(res.error);
+    }
+
+    return { ok: true as const, changes };
+  });
+
+export type AutoStandupSettings = {
+  enabled: boolean;
+  lastRunAt: string | null;
+  hourVn: number;
+  snapshot: {
+    tasksTouched?: number;
+    done?: number;
+    blocked?: number;
+    overdue?: number;
+    notes?: number;
+  } | null;
+};
+
+const WS_INPUT = { workspaceId: z.string().uuid().nullable().optional() };
+
+/** Tổ chức đang xem (theo workspace đang chọn) — mỗi tổ chức có cài đặt riêng. */
+async function settingsTenantId(
+  supabase: Parameters<typeof resolveTenantId>[0],
+  userId: string,
+  workspaceId?: string | null,
+): Promise<string> {
+  const tenantId = await resolveTenantId(supabase, userId, workspaceId);
+  if (!tenantId) throw new Error("WORKSPACE_NOT_FOUND");
+  return tenantId;
+}
+
+/** Ghi cài đặt của đúng tổ chức đang xem; tạo dòng cài đặt nếu tổ chức chưa có. */
+async function upsertSettings(
+  supabase: Parameters<typeof resolveTenantId>[0],
+  tenantId: string,
+  userId: string,
+  patch: Record<string, unknown>,
+): Promise<void> {
+  const { error } = await supabase
+    .from("ceo_kpi_settings")
+    .upsert(
+      {
+        tenant_id: tenantId,
+        ...patch,
+        updated_by: userId,
+        updated_at: new Date().toISOString(),
+      } as never,
+      { onConflict: "tenant_id" },
+    );
+  if (error) mapPgError(error);
+}
+
+/** Trạng thái lịch ghi nhận giao ban tự động mỗi sáng của tổ chức đang xem. */
+export const getAutoStandupSettings = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object(WS_INPUT).parse(i ?? {}))
+  .handler(async ({ data, context }): Promise<AutoStandupSettings> => {
+    const tenantId = await settingsTenantId(context.supabase, context.userId, data.workspaceId);
+    const { data: row, error } = await context.supabase
+      .from("ceo_kpi_settings")
+      .select("auto_standup, auto_standup_at, standup_hour_vn, standup_snapshot")
+      .eq("tenant_id", tenantId)
+      .maybeSingle();
+    if (error) mapPgError(error);
+    const r = row as unknown as {
+      auto_standup?: boolean;
+      auto_standup_at?: string | null;
+      standup_hour_vn?: number | null;
+      standup_snapshot?: AutoStandupSettings["snapshot"];
+    } | null;
+    return {
+      enabled: r ? Boolean(r.auto_standup) : true,
+      lastRunAt: r?.auto_standup_at ?? null,
+      hourVn: r?.standup_hour_vn ?? 6,
+      snapshot: r?.standup_snapshot ?? null,
+    };
+  });
+
+/** Chọn giờ chạy giao ban tự động mỗi sáng cho tổ chức đang xem (giờ Việt Nam, 0-23). */
+export const setAutoStandupHour = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({ ...WS_INPUT, hourVn: z.number().int().min(0).max(23) }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const tenantId = await settingsTenantId(context.supabase, context.userId, data.workspaceId);
+    await upsertSettings(context.supabase, tenantId, context.userId, {
+      standup_hour_vn: data.hourVn,
+    });
+    return { ok: true as const, hourVn: data.hourVn };
+  });
+
+/** Bật/tắt lịch ghi nhận giao ban tự động của tổ chức đang xem. */
+export const setAutoStandupEnabled = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ ...WS_INPUT, enabled: z.boolean() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const tenantId = await settingsTenantId(context.supabase, context.userId, data.workspaceId);
+    await upsertSettings(context.supabase, tenantId, context.userId, {
+      auto_standup: data.enabled,
+    });
+    return { ok: true as const, enabled: data.enabled };
+  });
+
+export type WeeklyMeetingSettings = {
+  dow: number;
+  hourVn: number;
+  location: string;
+  lastCreatedAt: string | null;
+};
+
+/** Cài đặt buổi họp tuần tự động của tổ chức đang xem (thứ, giờ Việt Nam, địa điểm). */
+export const getWeeklyMeetingSettings = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object(WS_INPUT).parse(i ?? {}))
+  .handler(async ({ data, context }): Promise<WeeklyMeetingSettings> => {
+    const tenantId = await settingsTenantId(context.supabase, context.userId, data.workspaceId);
+    const { data: row, error } = await context.supabase
+      .from("ceo_kpi_settings")
+      .select(
+        "weekly_meeting_dow, weekly_meeting_hour_vn, weekly_meeting_location, weekly_meeting_at",
+      )
+      .eq("tenant_id", tenantId)
+      .maybeSingle();
+    if (error) mapPgError(error);
+    const r = row as unknown as {
+      weekly_meeting_dow?: number | null;
+      weekly_meeting_hour_vn?: number | null;
+      weekly_meeting_location?: string | null;
+      weekly_meeting_at?: string | null;
+    } | null;
+    return {
+      dow: r?.weekly_meeting_dow ?? 1,
+      hourVn: r?.weekly_meeting_hour_vn ?? 9,
+      location: r?.weekly_meeting_location ?? "Phòng họp trực tuyến UniWork",
+      lastCreatedAt: r?.weekly_meeting_at ?? null,
+    };
+  });
+
+/** Đặt thứ, giờ và địa điểm họp tuần cho tổ chức đang xem. */
+export const setWeeklyMeetingSettings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        ...WS_INPUT,
+        dow: z.number().int().min(0).max(6),
+        hourVn: z.number().int().min(0).max(23),
+        location: z.string().trim().min(1).max(200),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const tenantId = await settingsTenantId(context.supabase, context.userId, data.workspaceId);
+    await upsertSettings(context.supabase, tenantId, context.userId, {
+      weekly_meeting_dow: data.dow,
+      weekly_meeting_hour_vn: data.hourVn,
+      weekly_meeting_location: data.location,
+    });
+    return { ok: true as const, dow: data.dow, hourVn: data.hourVn, location: data.location };
+  });

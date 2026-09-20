@@ -18,8 +18,11 @@ export function FilterPageHeader({
   chips?: { label: string; onClear?: () => void }[];
 }) {
   return (
-    <div className="mb-4">
-      <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+    <div className="mb-6">
+      <nav
+        aria-label="Breadcrumb"
+        className="module-label flex flex-wrap items-center gap-1 text-muted-foreground"
+      >
         {crumbs.map((c, i) => (
           <span key={`${c.label}-${i}`} className="flex items-center gap-1">
             {i > 0 && <ChevronRight className="h-3 w-3 opacity-60" />}
@@ -35,20 +38,24 @@ export function FilterPageHeader({
           </span>
         ))}
       </nav>
-      <h1 className="mt-1 text-xl font-semibold tracking-tight sm:text-2xl">{title}</h1>
-      {description && <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>}
+      <h1 className="mt-2 font-heading text-2xl font-bold sm:text-3xl">{title}</h1>
+      {description && <p className="mt-1 max-w-3xl text-sm text-muted-foreground">{description}</p>}
       {chips && chips.length > 0 && (
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <Filter className="h-3.5 w-3.5 text-muted-foreground" />
           {chips.map((c) => (
             <span
               key={c.label}
-              className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2.5 py-1 text-xs text-primary"
+              className="inline-flex min-h-11 items-center gap-1 rounded-full bg-primary/15 py-1 pl-3 pr-1 text-xs text-primary"
             >
               {c.label}
               {c.onClear && (
-                <button onClick={c.onClear} aria-label={`Bỏ lọc ${c.label}`} className="hover:opacity-70">
-                  <X className="h-3 w-3" />
+                <button
+                  onClick={c.onClear}
+                  aria-label={`Bỏ lọc ${c.label}`}
+                  className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-primary/10"
+                >
+                  <X className="h-4 w-4" />
                 </button>
               )}
             </span>

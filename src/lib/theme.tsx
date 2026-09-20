@@ -1,5 +1,15 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { Check, CaseSensitive, Contrast, Minus, Moon, Palette, Plus, Sun, Type } from "lucide-react";
+import {
+  Check,
+  CaseSensitive,
+  Contrast,
+  Minus,
+  Moon,
+  Palette,
+  Plus,
+  Sun,
+  Type,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getUiPrefs, saveUiPrefs } from "@/lib/api/user-ui-prefs.functions";
 import {
@@ -12,7 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 type Theme = "light" | "dark";
-export type Tone = "violet" | "blue" | "teal" | "emerald" | "amber" | "rose";
+export type Tone = "violet" | "blue" | "teal" | "emerald" | "amber" | "rose" | "gradient";
 export type Contrast = "normal" | "high";
 export type FontScale = "sm" | "md" | "lg" | "xl";
 export type FontFamily = "sans" | "serif" | "mono";
@@ -37,6 +47,12 @@ export const TONES: { id: Tone; label: string; swatch: string }[] = [
   { id: "emerald", label: "Xanh lá", swatch: "oklch(0.62 0.15 155)" },
   { id: "amber", label: "Hổ phách", swatch: "oklch(0.72 0.15 75)" },
   { id: "rose", label: "Hồng đỏ", swatch: "oklch(0.62 0.18 15)" },
+  {
+    id: "gradient",
+    label: "Gradient (ClickUp)",
+    swatch:
+      "linear-gradient(135deg, oklch(0.66 0.20 340), oklch(0.58 0.20 300), oklch(0.62 0.17 250))",
+  },
 ];
 
 const TONE_KEY = "uniwork-tone";
@@ -109,8 +125,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         if (prefs) {
           setTheme(prefs.theme);
           if (TONES.some((t) => t.id === prefs.tone)) setTone(prefs.tone);
-          if (prefs.contrast === "high" || prefs.contrast === "normal")
-            setContrast(prefs.contrast);
+          if (prefs.contrast === "high" || prefs.contrast === "normal") setContrast(prefs.contrast);
           if (prefs.fontScale && FONT_SCALES.some((f) => f.id === prefs.fontScale))
             setFontScale(prefs.fontScale);
           if (prefs.fontFamily && FONT_FAMILIES.some((f) => f.id === prefs.fontFamily))
@@ -238,7 +253,7 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
       onClick={toggle}
       aria-label="Toggle theme"
       title={theme === "dark" ? "Light mode" : "Dark mode"}
-      className={`rounded-lg p-2 hover:bg-surface-2 ${className}`}
+      className={`inline-flex h-11 w-11 items-center justify-center rounded-lg hover:bg-surface-2 ${className}`}
     >
       {theme === "dark" ? (
         <Sun className="h-5 w-5 text-muted-foreground" />
@@ -250,8 +265,16 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
 }
 
 export function ToneToggle({ className = "" }: { className?: string }) {
-  const { tone, setTone, contrast, setContrast, fontScale, setFontScale, fontFamily, setFontFamily } =
-    useTheme();
+  const {
+    tone,
+    setTone,
+    contrast,
+    setContrast,
+    fontScale,
+    setFontScale,
+    fontFamily,
+    setFontFamily,
+  } = useTheme();
   const active = TONES.find((t) => t.id === tone) ?? TONES[0];
   const scaleIndex = FONT_SCALES.findIndex((f) => f.id === fontScale);
   const step = (delta: number) => {
@@ -264,7 +287,7 @@ export function ToneToggle({ className = "" }: { className?: string }) {
         <button
           aria-label="Chọn tone màu giao diện"
           title={`Tone màu: ${active.label}`}
-          className={`relative rounded-lg p-2 hover:bg-surface-2 ${className}`}
+          className={`relative inline-flex h-11 w-11 items-center justify-center rounded-lg hover:bg-surface-2 ${className}`}
         >
           <Palette className="h-5 w-5 text-muted-foreground" />
           <span

@@ -10,6 +10,7 @@ import { getMyIsAdmin } from "@/lib/api/admin.functions";
 import {
   visibleNavigation,
   isNavItemActive,
+  findActiveNavItem,
   NAV_ICON_CLASS,
   NAV_ICON_STROKE,
   NAV_ICON_STROKE_ACTIVE,
@@ -20,12 +21,20 @@ import {
 const STORE_KEY = "uniwork:nav-collapsed-groups";
 
 function useCollapsedGroups(activeGroup: NavGroupId | null) {
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({
+    automation: true,
+    organization: true,
+  });
 
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORE_KEY);
-      if (raw) setCollapsed(JSON.parse(raw) as Record<string, boolean>);
+      if (raw) {
+        setCollapsed((defaults) => ({
+          ...defaults,
+          ...(JSON.parse(raw) as Record<string, boolean>),
+        }));
+      }
     } catch {
       /* preference only */
     }
@@ -66,6 +75,8 @@ export function DesktopNavigation({ collapsed }: { collapsed?: boolean }) {
   const activeGroup =
     groups.find((g) => g.items.some((i) => isNavItemActive(i, pathname)))?.group.id ?? null;
   const { isCollapsed, toggle } = useCollapsedGroups(activeGroup);
+  // Chỉ 1 mục sáng: ưu tiên đường dẫn khớp dài nhất (/ai-brain/skills thắng /ai-brain).
+  const activeItemId = findActiveNavItem(pathname, { isAdmin })?.id ?? null;
 
   const badgeFor = (item: NavItem) => {
     if (collapsed) return null;
@@ -85,18 +96,18 @@ export function DesktopNavigation({ collapsed }: { collapsed?: boolean }) {
   };
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-2">
       {groups.map(({ group, items }) => {
         const groupCollapsed = group.collapsible && isCollapsed(group.id);
         return (
-          <div key={group.id} className={cn(!collapsed && "pb-1")}>
+          <div key={group.id} className={cn(!collapsed && "pb-2")}>
             {!collapsed ? (
               group.collapsible ? (
                 <button
                   type="button"
                   onClick={() => toggle(group.id)}
                   aria-expanded={!groupCollapsed}
-                  className="flex w-full items-center justify-between rounded-lg px-3 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground"
+                  className="module-label flex min-h-9 w-full items-center justify-between rounded-lg px-3 pb-1 pt-4 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
                 >
                   <span>{t(group.labelKey)}</span>
                   <ChevronDown
@@ -107,9 +118,7 @@ export function DesktopNavigation({ collapsed }: { collapsed?: boolean }) {
                   />
                 </button>
               ) : (
-                <div className="px-3 pb-1 pt-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  {t(group.labelKey)}
-                </div>
+                <div className="sr-only">{t(group.labelKey)}</div>
               )
             ) : (
               <div className="my-2 h-px bg-border" />
@@ -117,16 +126,16 @@ export function DesktopNavigation({ collapsed }: { collapsed?: boolean }) {
 
             {!groupCollapsed &&
               items.map((item) => {
-                const active = isNavItemActive(item, pathname);
+                const active = item.id === activeItemId;
                 const Icon = item.icon;
                 const label = t(item.labelKey);
                 const cls = cn(
                   "relative flex items-center rounded-lg transition-colors",
                   collapsed
                     ? "w-full justify-center px-2 py-2.5"
-                    : "w-full gap-3 px-3 py-2 text-sm",
+                    : "min-h-11 w-full gap-3 px-3 py-2.5 text-sm",
                   active
-                    ? "bg-primary/15 font-medium text-foreground"
+                    ? "bg-command-accent/10 font-semibold text-command-accent shadow-sm"
                     : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
                 );
                 const link = (
@@ -146,7 +155,10 @@ export function DesktopNavigation({ collapsed }: { collapsed?: boolean }) {
                       />
                     )}
                     <Icon
-                      className={cn(NAV_ICON_CLASS, active ? "text-primary" : "text-current")}
+                      className={cn(
+                        NAV_ICON_CLASS,
+                        active ? "text-command-accent" : "text-current",
+                      )}
                       strokeWidth={active ? NAV_ICON_STROKE_ACTIVE : NAV_ICON_STROKE}
                     />
                     {!collapsed && (

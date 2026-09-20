@@ -1,4 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  isDocumentVersionGraphEvent,
+  isWorkProductGraphEvent,
+} from "@/domain/work-graph/go3-mapping";
+import { isExecutionGraphEvent } from "@/domain/work-graph/go4-mapping";
 
 export type OutboxEvent = {
   id: string;
@@ -16,7 +21,7 @@ type DeliveryLog = {
   event_id: string;
   tenant_id: string | null;
   event_type: string;
-  channel: "email" | "push" | "webhook" | "noop";
+  channel: "email" | "push" | "webhook" | "noop" | "graph";
   target: string | null;
   status: "sent" | "skipped" | "failed";
   http_status?: number | null;
@@ -132,16 +137,23 @@ async function deliverEmail(ev: OutboxEvent): Promise<DeliveryLog[]> {
 /** ---------- Channel: webhooks ---------- */
 async function hmacSha256Hex(secret: string, message: string): Promise<string> {
   const enc = new TextEncoder();
-  const key = await crypto.subtle.importKey("raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, [
-    "sign",
-  ]);
+  const key = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
   const sig = await crypto.subtle.sign("HMAC", key, enc.encode(message));
   return [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 function matchesEventType(patterns: string[], eventType: string): boolean {
   if (patterns.length === 0) return true;
-  return patterns.some((p) => p === "*" || p === eventType || (p.endsWith("*") && eventType.startsWith(p.slice(0, -1))));
+  return patterns.some(
+    (p) =>
+      p === "*" || p === eventType || (p.endsWith("*") && eventType.startsWith(p.slice(0, -1))),
+  );
 }
 
 async function deliverWebhooks(admin: SupabaseClient, ev: OutboxEvent): Promise<DeliveryLog[]> {
@@ -151,7 +163,12 @@ async function deliverWebhooks(admin: SupabaseClient, ev: OutboxEvent): Promise<
     .select("id, url, secret, event_types")
     .eq("tenant_id", ev.tenant_id)
     .eq("enabled", true);
-  const endpoints = (data ?? []) as Array<{ id: string; url: string; secret: string; event_types: string[] }>;
+  const endpoints = (data ?? []) as Array<{
+    id: string;
+    url: string;
+    secret: string;
+    event_types: string[];
+  }>;
   const targets = endpoints.filter((e) => matchesEventType(e.event_types ?? [], ev.event_type));
   if (targets.length === 0) return [];
 
@@ -200,7 +217,10 @@ async function deliverWebhooks(admin: SupabaseClient, ev: OutboxEvent): Promise<
           last_delivered_at: new Date().toISOString(),
         };
         if (res.ok) patch["failure_count"] = 0;
-        await admin.from("webhook_endpoints").update(patch as never).eq("id", ep.id);
+        await admin
+          .from("webhook_endpoints")
+          .update(patch as never)
+          .eq("id", ep.id);
         return {
           ...base,
           status: res.ok ? ("sent" as const) : ("failed" as const),
@@ -211,18 +231,61 @@ async function deliverWebhooks(admin: SupabaseClient, ev: OutboxEvent): Promise<
       } catch (e) {
         const message = e instanceof Error ? e.message : String(e);
         await admin.from("webhook_endpoints").update({ last_error: message }).eq("id", ep.id);
-        return { ...base, status: "failed" as const, error: message, duration_ms: Date.now() - started };
+        return {
+          ...base,
+          status: "failed" as const,
+          error: message,
+          duration_ms: Date.now() - started,
+        };
       }
     }),
   );
 }
 
-/** Xử lý 1 event: fan-out qua các kênh nền thật. */
-export async function handleOutboxEvent(admin: SupabaseClient, ev: OutboxEvent): Promise<DeliveryLog[]> {
-  const results = await Promise.all([deliverPush(ev), deliverEmail(ev), deliverWebhooks(admin, ev)]);
-  const flat = results.flat();
-  if (flat.length === 0) {
-    flat.push({
+/** Xử lý 1 event: Work Graph projection (if applicable) then fan-out. */
+export async function handleOutboxEvent(
+  admin: SupabaseClient,
+  ev: OutboxEvent,
+): Promise<DeliveryLog[]> {
+  const logs: DeliveryLog[] = [];
+  if (
+    isDocumentVersionGraphEvent(ev.event_type) ||
+    isWorkProductGraphEvent(ev.event_type) ||
+    isExecutionGraphEvent(ev.event_type)
+  ) {
+    const started = Date.now();
+    const {
+      projectDocumentVersionUploaded,
+      projectWorkProductUpserted,
+      projectExecutionGraphEvent,
+    } = await import("./work-graph-projector.server");
+    const projected = isDocumentVersionGraphEvent(ev.event_type)
+      ? await projectDocumentVersionUploaded(admin, ev.tenant_id, ev.payload)
+      : isWorkProductGraphEvent(ev.event_type)
+        ? await projectWorkProductUpserted(admin, ev.tenant_id, ev.payload)
+        : await projectExecutionGraphEvent(admin, ev.tenant_id, ev.event_type, ev.payload);
+    logs.push({
+      event_id: ev.id,
+      tenant_id: ev.tenant_id,
+      event_type: ev.event_type,
+      channel: "graph",
+      target: "work_graph",
+      status: projected.ok ? "sent" : projected.skipped ? "skipped" : "failed",
+      error: projected.ok ? null : (projected.error ?? "projection_failed"),
+      duration_ms: Date.now() - started,
+    });
+    if (!projected.ok && !projected.skipped) {
+      throw new Error(projected.error ?? "work_graph_projection_failed");
+    }
+  }
+  const results = await Promise.all([
+    deliverPush(ev),
+    deliverEmail(ev),
+    deliverWebhooks(admin, ev),
+  ]);
+  logs.push(...results.flat());
+  if (logs.length === 0) {
+    logs.push({
       event_id: ev.id,
       tenant_id: ev.tenant_id,
       event_type: ev.event_type,
@@ -232,7 +295,7 @@ export async function handleOutboxEvent(admin: SupabaseClient, ev: OutboxEvent):
       error: "Không có kênh nhận",
     });
   }
-  return flat;
+  return logs;
 }
 
 export type DrainResult = {
@@ -273,7 +336,8 @@ export async function drainOutbox(
       deliveries += logs.length;
       await admin.from("outbox_deliveries").insert(logs as never);
     }
-    const hardFail = fatal ?? (logs.some((l) => l.status === "failed") ? "Có kênh gửi thất bại" : null);
+    const hardFail =
+      fatal ?? (logs.some((l) => l.status === "failed") ? "Có kênh gửi thất bại" : null);
     if (hardFail) {
       failed += 1;
       const backoff = Math.min(60 * 2 ** Math.max(ev.attempt_count - 1, 0), 3600);

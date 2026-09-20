@@ -126,6 +126,15 @@ export const meetingsPanelsVi = {
   "mtg.mi.summary.full": "Tóm tắt",
   "mtg.mi.stale": "Biên bản đã thay đổi sau lần tổng hợp này. Hãy tạo lại tóm tắt để cập nhật.",
   "mtg.mi.decisions": "Quyết định",
+  "mtg.mi.dec.extract": "Ghi vào danh mục Quyết định",
+  "mtg.mi.dec.extractedToast": "Đã ghi {n} quyết định vào danh mục chờ xác nhận.",
+  "mtg.mi.dec.allExistToast": "Tất cả quyết định trong biên bản đã có trong danh mục.",
+  "mtg.mi.dec.extractError": "Không ghi được quyết định.",
+  "mtg.mi.dec.result":
+    "Đã ghi {n}/{total} quyết định. Chúng đã xuất hiện trong tìm kiếm toàn cục; xác nhận để lên sơ đồ công việc.",
+  "mtg.mi.dec.resultExisting":
+    "Các quyết định này đã có trong danh mục. Xác nhận để lên sơ đồ công việc.",
+  "mtg.mi.dec.openReview": "Mở trang Duyệt quyết định",
   "mtg.mi.conf.explicit": "Đã chốt",
   "mtg.mi.conf.likely": "Có thể",
   "mtg.mi.conf.unclear": "Chưa rõ",
@@ -354,6 +363,15 @@ export const meetingsPanelsEn: Partial<Record<keyof typeof meetingsPanelsVi, str
   "mtg.mi.summary.full": "Summary",
   "mtg.mi.stale": "The transcript changed after this summary. Regenerate to update it.",
   "mtg.mi.decisions": "Decisions",
+  "mtg.mi.dec.extract": "Save to decision register",
+  "mtg.mi.dec.extractedToast": "Saved {n} decisions to the register, awaiting confirmation.",
+  "mtg.mi.dec.allExistToast": "Every decision in the transcript is already in the register.",
+  "mtg.mi.dec.extractError": "Couldn't save the decisions.",
+  "mtg.mi.dec.result":
+    "Saved {n}/{total} decisions. They already show up in global search; confirm them to add them to the work graph.",
+  "mtg.mi.dec.resultExisting":
+    "These decisions are already in the register. Confirm them to add them to the work graph.",
+  "mtg.mi.dec.openReview": "Open decision review",
   "mtg.mi.conf.explicit": "Confirmed",
   "mtg.mi.conf.likely": "Likely",
   "mtg.mi.conf.unclear": "Unclear",

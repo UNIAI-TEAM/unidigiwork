@@ -65,7 +65,14 @@ const SCHEMA = parseSchema();
  * Quét mã nguồn
  * ------------------------------------------------------------------ */
 
-const SCAN_DIRS = ["src/lib", "src/routes", "src/components", "src/features", "src/hooks", "src/domain"];
+const SCAN_DIRS = [
+  "src/lib",
+  "src/routes",
+  "src/components",
+  "src/features",
+  "src/hooks",
+  "src/domain",
+];
 const EXT = /\.(ts|tsx)$/;
 
 function walk(dir: string, out: string[] = []): string[] {
@@ -139,7 +146,8 @@ function scanSchemaDrift(): { drifts: Drift[]; checked: number } {
   const drifts: Drift[] = [];
   let checked = 0;
   // `.from("table")` … `.select("cols")` trong cùng một biểu thức chuỗi.
-  const re = /\.from\(\s*["'`](\w+)["'`]\s*(?:as\s+\w+\s*)?\)\s*(?:as\s+\w+\s*)?\.select\(\s*["'`]([^"'`]*)["'`]/g;
+  const re =
+    /\.from\(\s*["'`](\w+)["'`]\s*(?:as\s+\w+\s*)?\)\s*(?:as\s+\w+\s*)?\.select\(\s*["'`]([^"'`]*)["'`]/g;
 
   for (const file of FILES) {
     const src = readFileSync(file, "utf8");
@@ -192,14 +200,27 @@ describe("CI GATE A — schema drift trên truy vấn Supabase", () => {
         if (/\bstarts_at\b/.test(code)) acc.push(i + 1);
         return acc;
       }, []);
-      expect(bad, `${relative(ROOT, f)} dùng cột không tồn tại 'starts_at' ở dòng ${bad.join(", ")}`).toEqual([]);
+      expect(
+        bad,
+        `${relative(ROOT, f)} dùng cột không tồn tại 'starts_at' ở dòng ${bad.join(", ")}`,
+      ).toEqual([]);
     }
   });
 
   it("route-resolver của Work Graph phủ hết loại thực thể điều hướng được", () => {
     const resolver = readFileSync(join(ROOT, "src/domain/work-graph/route-resolver.ts"), "utf8");
     // TENANT không có route chi tiết riêng — cố ý nằm ngoài danh sách.
-    const NAVIGABLE = ["TASK", "MEETING", "DOCUMENT", "EMAIL", "CHAT_CHANNEL", "PERSON", "WORKSPACE"];
+    const NAVIGABLE = [
+      "TASK",
+      "MEETING",
+      "DOCUMENT",
+      "EMAIL",
+      "CHAT_CHANNEL",
+      "PERSON",
+      "WORKSPACE",
+      "WORK_PRODUCT",
+      "EXECUTION",
+    ];
     for (const t of NAVIGABLE) {
       expect(resolver.includes(t), `route-resolver thiếu loại thực thể ${t}`).toBe(true);
     }

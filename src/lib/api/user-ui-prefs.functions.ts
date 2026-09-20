@@ -5,7 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { ApiError } from "@/contracts/errors";
 
 const themeSchema = z.enum(["light", "dark"]);
-const toneSchema = z.enum(["violet", "blue", "teal", "emerald", "amber", "rose"]);
+const toneSchema = z.enum(["violet", "blue", "teal", "emerald", "amber", "rose", "gradient"]);
 const contrastSchema = z.enum(["normal", "high"]);
 const fontScaleSchema = z.enum(["sm", "md", "lg", "xl"]);
 const fontFamilySchema = z.enum(["sans", "serif", "mono"]);
@@ -32,8 +32,7 @@ export const getUiPrefs = createServerFn({ method: "POST" })
           theme: data.theme as UiPrefs["theme"],
           tone: data.tone as UiPrefs["tone"],
           contrast: (data.contrast as UiPrefs["contrast"]) ?? "normal",
-          fontScale: ((data as { font_scale?: string }).font_scale ??
-            "md") as UiPrefs["fontScale"],
+          fontScale: ((data as { font_scale?: string }).font_scale ?? "md") as UiPrefs["fontScale"],
           fontFamily: ((data as { font_family?: string }).font_family ??
             "sans") as UiPrefs["fontFamily"],
         }
@@ -55,17 +54,15 @@ export const saveUiPrefs = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { fontScale, fontFamily, ...rest } = data;
-    const { error } = await context.supabase
-      .from("user_ui_prefs")
-      .upsert(
-        {
-          user_id: context.userId,
-          ...rest,
-          ...(fontScale ? { font_scale: fontScale } : {}),
-          ...(fontFamily ? { font_family: fontFamily } : {}),
-        },
-        { onConflict: "user_id" },
-      );
+    const { error } = await context.supabase.from("user_ui_prefs").upsert(
+      {
+        user_id: context.userId,
+        ...rest,
+        ...(fontScale ? { font_scale: fontScale } : {}),
+        ...(fontFamily ? { font_family: fontFamily } : {}),
+      },
+      { onConflict: "user_id" },
+    );
     if (error) throw new ApiError({ code: "INTERNAL_ERROR", message: error.message });
     return { ok: true as const };
   });

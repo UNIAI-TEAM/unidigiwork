@@ -15,7 +15,20 @@ import {
 import { cn } from "@/lib/utils";
 import { useHomePrefs } from "@/components/home/use-home-prefs";
 import { HomeCustomizePanel } from "@/components/home/home-customize";
-import type { HomeLayout, HomeSectionKey } from "@/lib/home-prefs";
+import { HOME_SECTION_META } from "@/lib/home-prefs";
+import type { HomeLayout, HomeSectionKey, HomeSize } from "@/lib/home-prefs";
+import { DraggableGridCard } from "@/components/layout/draggable-grid-card";
+
+function reorderKeys(
+  order: HomeSectionKey[],
+  from: HomeSectionKey,
+  to: HomeSectionKey,
+): HomeSectionKey[] {
+  if (from === to) return order;
+  const next = order.filter((k) => k !== from);
+  next.splice(next.indexOf(to), 0, from);
+  return next;
+}
 
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import {
@@ -46,13 +59,12 @@ import {
 export const Route = createFileRoute("/_authenticated/home")({
   head: () => ({
     meta: [
-      { title: "Trang chủ · Công việc của tôi — UNIWORK" },
+      { title: "Không gian của tôi — UNIWORK" },
       {
         name: "description",
-        content:
-          "Trang chủ UNIWORK: việc cần xử lý hôm nay, việc quá hạn, cuộc họp sắp tới và hộp việc cần chú ý.",
+        content: "Không gian hợp nhất cho công việc, hộp việc và lịch cần chú ý trên UNIWORK.",
       },
-      { property: "og:title", content: "Trang chủ · Công việc của tôi — UNIWORK" },
+      { property: "og:title", content: "Không gian của tôi — UNIWORK" },
       {
         property: "og:description",
         content: "Bắt đầu ngày làm việc với việc cần chú ý, cuộc họp sắp tới và hộp việc hợp nhất.",
@@ -126,9 +138,7 @@ function HomePage() {
       if (previous) {
         qc.setQueryData<HomeSummary>(homeKey, {
           ...previous,
-          myWork: previous.myWork.map((x) =>
-            x.id === t.id ? { ...x, status: "done" } : x,
-          ),
+          myWork: previous.myWork.map((x) => (x.id === t.id ? { ...x, status: "done" } : x)),
           counts: {
             ...previous.counts,
             attention: Math.max(0, (previous.counts.attention ?? 0) - 1),
@@ -201,13 +211,12 @@ function HomePage() {
   // Chọn nhiều dòng để hoàn thành hàng loạt qua command transitionTask.
   const [checkedIds, setCheckedIds] = useState<string[]>([]);
   const [bulkRunning, setBulkRunning] = useState(false);
-  const openTasks = useMemo(
-    () => (data?.myWork ?? []).filter((t) => t.status !== "done"),
-    [data],
-  );
+  const openTasks = useMemo(() => (data?.myWork ?? []).filter((t) => t.status !== "done"), [data]);
   const checkedSet = useMemo(() => new Set(checkedIds), [checkedIds]);
   const toggleChecked = (t: HomeTask, next: boolean) =>
-    setCheckedIds((prev) => (next ? [...new Set([...prev, t.id])] : prev.filter((x) => x !== t.id)));
+    setCheckedIds((prev) =>
+      next ? [...new Set([...prev, t.id])] : prev.filter((x) => x !== t.id),
+    );
   const allChecked = openTasks.length > 0 && checkedIds.length === openTasks.length;
 
   const bulkComplete = async () => {
@@ -289,9 +298,7 @@ function HomePage() {
   }, [complete, router]);
 
   useEffect(() => {
-    document
-      .querySelector("[data-mywork-row='selected']")
-      ?.scrollIntoView({ block: "nearest" });
+    document.querySelector("[data-mywork-row='selected']")?.scrollIntoView({ block: "nearest" });
   }, [selectedIdx]);
 
   const { prefs, saving, update, reset } = useHomePrefs();
@@ -299,7 +306,7 @@ function HomePage() {
 
   const blocks: Record<HomeSectionKey, ReactNode> = {
     stats: failed ? (
-      <div className="rounded-xl border border-border bg-surface p-6 text-sm text-muted-foreground">
+      <div className="rounded-2xl border border-border bg-card p-6 text-sm text-muted-foreground shadow-card">
         Không tải được dữ liệu trang chủ.{" "}
         <button
           type="button"
@@ -316,6 +323,8 @@ function HomePage() {
     mywork: (
       <SectionCard
         title="Công việc của tôi"
+        collapsible
+        count={openTasks.length}
         action={
           <div className="flex items-center gap-3">
             <span className="hidden text-xs text-muted-foreground md:inline">
@@ -326,15 +335,13 @@ function HomePage() {
         }
       >
         {openTasks.length ? (
-          <div className="flex flex-wrap items-center gap-3 border-b border-border bg-surface-2/60 px-4 py-2">
-            <label className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex min-w-0 flex-wrap items-center gap-2 border-b border-border bg-surface-2/60 px-4 py-2">
+            <label className="flex min-h-11 items-center gap-2 text-xs text-muted-foreground">
               <input
                 type="checkbox"
                 className="h-4 w-4 cursor-pointer accent-primary"
                 checked={allChecked}
-                onChange={(e) =>
-                  setCheckedIds(e.target.checked ? openTasks.map((t) => t.id) : [])
-                }
+                onChange={(e) => setCheckedIds(e.target.checked ? openTasks.map((t) => t.id) : [])}
                 aria-label="Chọn tất cả công việc"
               />
               Chọn tất cả
@@ -342,12 +349,12 @@ function HomePage() {
             <span className="text-xs text-muted-foreground">
               Đã chọn {checkedIds.length}/{openTasks.length}
             </span>
-            <div className="ml-auto flex items-center gap-2">
+            <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-2">
               {checkedIds.length > 0 ? (
                 <button
                   type="button"
                   onClick={() => setCheckedIds([])}
-                  className="rounded-lg border border-border px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-surface-2"
+                  className="inline-flex min-h-11 items-center rounded-lg border border-border px-3 text-xs text-muted-foreground transition-colors hover:bg-surface-2"
                 >
                   Bỏ chọn
                 </button>
@@ -356,7 +363,7 @@ function HomePage() {
                 type="button"
                 onClick={bulkComplete}
                 disabled={!checkedIds.length || bulkRunning}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
               >
                 {bulkRunning ? "Đang xử lý…" : `Hoàn thành ${checkedIds.length || ""}`.trim()}
               </button>
@@ -399,7 +406,12 @@ function HomePage() {
     ),
 
     upcoming: (
-      <SectionCard title="Sắp tới" action={<ViewAll to="/calendar" />}>
+      <SectionCard
+        title="Sắp tới"
+        collapsible
+        count={data?.upcoming.length ?? 0}
+        action={<ViewAll to="/calendar" />}
+      >
         {partialSet.has("upcoming") ? (
           <PartialNotice
             label="Không tải được lịch họp/deadline."
@@ -426,7 +438,12 @@ function HomePage() {
     ),
 
     inbox: (
-      <SectionCard title="Hộp việc" action={<ViewAll to="/notifications" />}>
+      <SectionCard
+        title="Hộp việc"
+        collapsible
+        count={data?.inbox.length ?? 0}
+        action={<ViewAll to="/notifications" />}
+      >
         {partialSet.has("unread") ? (
           <PartialNotice
             label="Không lấy được số liệu chưa đọc (nhắc đến, email). Danh sách có thể chưa đầy đủ."
@@ -479,102 +496,128 @@ function HomePage() {
       <main className="flex min-w-0 flex-1 flex-col">
         <AppTopbar variant="documents" onOpenSidebar={() => setSidebarOpen(true)} />
 
-        <div className="w-full flex-1 space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-          <header className="flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight">{greeting()}</h1>
-              <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => setCustomizing((v) => !v)}
-                aria-expanded={customizing}
-                className={cn(
-                  "inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-border px-3 text-sm font-medium transition-colors hover:bg-surface-2",
-                  customizing ? "bg-surface-2 text-foreground" : "text-muted-foreground",
-                )}
-              >
-                <SlidersHorizontal className="h-4 w-4" /> Tuỳ chỉnh
-              </button>
-              <button
-                type="button"
-                onClick={refreshAll}
-                disabled={isRefreshing}
-                className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-border px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground disabled:opacity-50"
-                aria-label="Làm mới trang chủ"
-              >
-                <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} /> Làm mới
-              </button>
-              <Link
-                to="/tasks"
-                className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-              >
-                <Plus className="h-4 w-4" /> Công việc
-              </Link>
-              <Link
-                to="/meeting"
-                className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-border px-3 text-sm hover:bg-surface-2"
-              >
-                <Plus className="h-4 w-4" /> Cuộc họp
-              </Link>
-              <Link
-                to="/chat"
-                className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-border px-3 text-sm hover:bg-surface-2"
-              >
-                <Plus className="h-4 w-4" /> Tin nhắn
-              </Link>
-            </div>
-          </header>
+        <div className="w-full min-w-0 flex-1 bg-command-canvas px-4 py-6 sm:px-6 lg:px-8">
+          <div className="mx-auto w-full min-w-0 max-w-[1440px] space-y-6 overflow-x-hidden">
+            <header className="grid min-w-0 grid-cols-1 items-end gap-4 xl:grid-cols-[minmax(0,1fr)_auto]">
+              <div>
+                <p className="module-label text-command-accent">Bảng điều hành thống nhất</p>
+                <h1 className="mt-1 font-heading text-2xl font-bold sm:text-3xl">
+                  Không gian của tôi
+                </h1>
+                <p className="mt-1 text-sm font-medium text-foreground">{greeting()}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
+              </div>
+              <div className="flex min-w-0 flex-wrap gap-2 xl:justify-end">
+                <button
+                  type="button"
+                  onClick={() => setCustomizing((v) => !v)}
+                  aria-expanded={customizing}
+                  className={cn(
+                    "inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-border bg-background px-3 text-sm font-semibold shadow-card transition-colors hover:bg-surface-2",
+                    customizing ? "bg-surface-2 text-foreground" : "text-muted-foreground",
+                  )}
+                >
+                  <SlidersHorizontal className="h-4 w-4" /> Tuỳ chỉnh
+                </button>
+                <button
+                  type="button"
+                  onClick={refreshAll}
+                  disabled={isRefreshing}
+                  className="inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-border bg-background px-3 text-sm font-semibold text-muted-foreground shadow-card transition-colors hover:bg-surface-2 hover:text-foreground disabled:opacity-50"
+                  aria-label="Làm mới trang chủ"
+                >
+                  <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} /> Làm mới
+                </button>
+                <Link
+                  to="/tasks"
+                  className="inline-flex min-h-11 items-center gap-1.5 rounded-xl bg-action px-3 text-sm font-bold text-action-foreground shadow-card hover:bg-action/90"
+                >
+                  <Plus className="h-4 w-4" /> Công việc
+                </Link>
+                <Link
+                  to="/meeting"
+                  className="inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-border bg-background px-3 text-sm font-semibold shadow-card hover:bg-surface-2"
+                >
+                  <Plus className="h-4 w-4" /> Cuộc họp
+                </Link>
+                <Link
+                  to="/chat"
+                  className="inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-border bg-background px-3 text-sm font-semibold shadow-card hover:bg-surface-2"
+                >
+                  <Plus className="h-4 w-4" /> Tin nhắn
+                </Link>
+              </div>
+            </header>
 
-          {customizing ? (
-            <HomeCustomizePanel
-              prefs={prefs}
-              saving={saving}
-              onChange={update}
-              onReset={reset}
-              onClose={() => setCustomizing(false)}
-            />
-          ) : null}
+            {customizing ? (
+              <HomeCustomizePanel
+                prefs={prefs}
+                saving={saving}
+                onChange={update}
+                onReset={reset}
+                onClose={() => setCustomizing(false)}
+              />
+            ) : null}
 
-          {visible.length === 0 ? (
-            <div className="rounded-xl border border-border bg-surface p-6 text-sm text-muted-foreground">
-              Bạn đã ẩn toàn bộ khối trên trang chủ.{" "}
-              <button
-                type="button"
-                className="font-medium text-primary underline-offset-2 hover:underline"
-                onClick={() => setCustomizing(true)}
-              >
-                Mở tuỳ chỉnh
-              </button>
-            </div>
-          ) : (
-            <div className={cn("grid gap-5", gridClass(prefs.layout))}>
-              {visible.map((key) => (
-                <div key={key} className={spanClass(key, prefs.layout)}>
-                  {blocks[key]}
-                </div>
-              ))}
-            </div>
-          )}
+            {visible.length === 0 ? (
+              <div className="rounded-2xl border border-border bg-card p-6 text-sm text-muted-foreground shadow-card">
+                Bạn đã ẩn toàn bộ khối trên trang chủ.{" "}
+                <button
+                  type="button"
+                  className="font-medium text-primary underline-offset-2 hover:underline"
+                  onClick={() => setCustomizing(true)}
+                >
+                  Mở tuỳ chỉnh
+                </button>
+              </div>
+            ) : (
+              <div data-card-grid className={cn("grid min-w-0 gap-5", gridClass(prefs.layout))}>
+                {visible.map((key) => (
+                  <DraggableGridCard
+                    key={key}
+                    cardKey={key}
+                    size={prefs.sizes[key]}
+                    label={HOME_SECTION_META[key]?.label ?? key}
+                    resizable={prefs.layout !== "compact"}
+                    className={spanClass(prefs.sizes[key], prefs.layout)}
+                    onReorder={(from, to) =>
+                      update({
+                        ...prefs,
+                        order: reorderKeys(
+                          prefs.order,
+                          from as HomeSectionKey,
+                          to as HomeSectionKey,
+                        ),
+                      })
+                    }
+                    onResize={(k, size) =>
+                      update({ ...prefs, sizes: { ...prefs.sizes, [k]: size } })
+                    }
+                  >
+                    {blocks[key]}
+                  </DraggableGridCard>
+                ))}
+              </div>
+            )}
 
-          {data?.partial.length ? (
-            <p className="text-xs text-muted-foreground">
-              Một số nguồn tạm thời không khả dụng:{" "}
-              {data.partial
-                .map((p) =>
-                  p === "unread"
-                    ? "số liệu chưa đọc"
-                    : p === "tasks"
-                      ? "công việc"
-                      : p === "upcoming"
-                        ? "lịch sắp tới"
-                        : p,
-                )
-                .join(", ")}
-              . Dữ liệu còn lại vẫn hiển thị bình thường.
-            </p>
-          ) : null}
+            {data?.partial.length ? (
+              <p className="text-xs text-muted-foreground">
+                Một số nguồn tạm thời không khả dụng:{" "}
+                {data.partial
+                  .map((p) =>
+                    p === "unread"
+                      ? "số liệu chưa đọc"
+                      : p === "tasks"
+                        ? "công việc"
+                        : p === "upcoming"
+                          ? "lịch sắp tới"
+                          : p,
+                  )
+                  .join(", ")}
+                . Dữ liệu còn lại vẫn hiển thị bình thường.
+              </p>
+            ) : null}
+          </div>
         </div>
       </main>
     </div>
@@ -583,17 +626,17 @@ function HomePage() {
 
 function gridClass(layout: HomeLayout) {
   if (layout === "compact") return "grid-cols-1";
-  return "xl:grid-cols-3";
+  return "xl:grid-cols-12";
 }
 
-function spanClass(key: HomeSectionKey, layout: HomeLayout) {
+const SPAN_CLASS: Record<HomeSize, string> = {
+  sm: "xl:col-span-4",
+  md: "xl:col-span-6",
+  lg: "xl:col-span-8",
+  full: "xl:col-span-12",
+};
+
+function spanClass(size: HomeSize, layout: HomeLayout) {
   if (layout === "compact") return "col-span-1";
-  if (key === "stats" || key === "aibrief") return "xl:col-span-3";
-  if (layout === "balanced") {
-    if (key === "mywork") return "xl:col-span-2";
-    if (key === "inbox") return "xl:col-span-3";
-    return "xl:col-span-1";
-  }
-  return "xl:col-span-1";
+  return SPAN_CLASS[size] ?? SPAN_CLASS.md;
 }
-

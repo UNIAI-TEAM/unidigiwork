@@ -1,0 +1,311 @@
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { useActiveWorkspace } from "@/lib/active-workspace";
+import { supabase } from "@/integrations/supabase/client";
+import { listNotifications, markNotificationsRead } from "@/lib/api/notifications.functions";
+import { listWorkDeliverables } from "@/lib/api/work-deliverables.functions";
+import { MobileListItem } from "@/components/mobile/mobile-list-item";
+import { SwipeRow } from "@/components/mobile/swipe-row";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { Bell, CheckSquare, ExternalLink, FileText, Inbox, Share2 } from "lucide-react";
+import { toast } from "sonner";
+import coverImage from "@/assets/work-product-cover.jpg";
+
+const TABS = [
+  { id: "action", label: "Cần làm" },
+  { id: "review", label: "Chờ duyệt" },
+  { id: "fyi", label: "Để biết" },
+] as const;
+
+type TabId = (typeof TABS)[number]["id"];
+
+type BoxItem = {
+  key: string;
+  kind: "task" | "product" | "notification";
+  title: string;
+  subtitle?: string;
+  priority?: "low" | "normal" | "high" | "urgent" | null;
+  href: string;
+  onOpen: () => void;
+};
+
+export const Route = createFileRoute("/_authenticated/m/box")({
+  head: () => ({
+    meta: [
+      { title: "Không gian của tôi · UNIWORK" },
+      { name: "description", content: "Không gian hợp nhất: việc cần làm, chờ duyệt và để biết." },
+      { property: "og:title", content: "Không gian của tôi · UNIWORK" },
+      {
+        property: "og:description",
+        content: "Không gian hợp nhất: việc cần làm, chờ duyệt và để biết.",
+      },
+    ],
+  }),
+  component: MobileBoxPage,
+});
+
+function MobileBoxPage() {
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const { workspaceId } = useActiveWorkspace();
+  const [tab, setTab] = useState<TabId>("action");
+  const [hidden, setHidden] = useState<string[]>([]);
+
+  const tasks = useQuery({
+    queryKey: ["m-box-tasks", workspaceId],
+    queryFn: async () => {
+      if (!workspaceId) return [];
+      const { data } = await supabase
+        .from("tasks")
+        .select("id, title, status, priority, due_at")
+        .eq("workspace_id", workspaceId)
+        .is("deleted_at", null)
+        .in("status", ["todo", "in_progress", "blocked"])
+        .order("due_at", { ascending: true, nullsFirst: false })
+        .limit(50);
+      return data ?? [];
+    },
+  });
+
+  const products = useQuery({
+    queryKey: ["m-box-products", workspaceId],
+    queryFn: () =>
+      listWorkDeliverables({
+        data: { workspaceId: workspaceId ?? null, status: "IN_REVIEW", limit: 50 },
+      } as any),
+  });
+
+  const notifications = useQuery({
+    queryKey: ["m-box-notifications"],
+    queryFn: () => listNotifications(),
+  });
+
+  const readMut = useMutation({
+    mutationFn: (ids: string[]) => markNotificationsRead({ data: { ids } } as any),
+    onSuccess: () => {
+      toast.success("Đã đánh dấu đã đọc.");
+      void qc.invalidateQueries({ queryKey: ["m-box-notifications"] });
+    },
+  });
+
+  const doneMut = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("tasks").update({ status: "done" }).eq("id", id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success("Đã hoàn tất công việc.");
+      void qc.invalidateQueries({ queryKey: ["m-box-tasks", workspaceId] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Không cập nhật được."),
+  });
+
+  const snoozeMut = useMutation({
+    mutationFn: async (id: string) => {
+      const next = new Date();
+      next.setDate(next.getDate() + 1);
+      const { error } = await supabase
+        .from("tasks")
+        .update({ due_at: next.toISOString() })
+        .eq("id", id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success("Đã hoãn sang ngày mai.");
+      void qc.invalidateQueries({ queryKey: ["m-box-tasks", workspaceId] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Không hoãn được."),
+  });
+
+  const hide = (key: string) => {
+    setHidden((prev) => [...prev, key]);
+    toast.success("Đã ẩn khỏi hộp hôm nay.");
+  };
+
+  const items: BoxItem[] = useMemo(() => {
+    if (tab === "action")
+      return ((tasks.data as any[]) ?? []).map((t) => ({
+        key: t.id,
+        kind: "task" as const,
+        title: t.title,
+        subtitle: t.due_at ? `Hạn ${new Date(t.due_at).toLocaleDateString("vi-VN")}` : "Không hạn",
+        priority: t.priority ?? "normal",
+        href: "/m/tasks",
+        onOpen: () => void navigate({ to: "/m/tasks" }),
+      }));
+    if (tab === "review")
+      return ((products.data as any[]) ?? []).map((p) => ({
+        key: p.id,
+        kind: "product" as const,
+        title: p.title,
+        subtitle: `${p.business_type} · v${p.current_version ?? 1}`,
+        href: `/m/work-products/${p.id}`,
+        onOpen: () => void navigate({ to: "/m/work-products/$id", params: { id: p.id } }),
+      }));
+    return ((notifications.data as any[]) ?? [])
+      .filter((n) => !n.is_read)
+      .map((n) => ({
+        key: n.id,
+        kind: "notification" as const,
+        title: n.title ?? "Thông báo",
+        subtitle: n.body ?? undefined,
+        href: "/m/box",
+        onOpen: () => readMut.mutate([n.id]),
+      }));
+  }, [tab, tasks.data, products.data, notifications.data, navigate, readMut]);
+
+  const visibleItems = useMemo(
+    () => items.filter((it) => !hidden.includes(it.key)),
+    [items, hidden],
+  );
+
+  const counts = {
+    action: ((tasks.data as any[]) ?? []).length,
+    review: ((products.data as any[]) ?? []).length,
+    fyi: ((notifications.data as any[]) ?? []).filter((n) => !n.is_read).length,
+  };
+
+  const share = async (item: BoxItem) => {
+    const url = typeof window !== "undefined" ? `${window.location.origin}${item.href}` : item.href;
+    try {
+      if (typeof navigator !== "undefined" && "share" in navigator) {
+        await (navigator as any).share({ title: item.title, url });
+        return;
+      }
+      await (navigator as Navigator).clipboard.writeText(url);
+      toast.success("Đã sao chép liên kết.");
+    } catch {
+      /* người dùng huỷ chia sẻ */
+    }
+  };
+
+  const icon = (kind: BoxItem["kind"]) =>
+    kind === "task" ? (
+      <span className="grid h-9 w-9 place-items-center rounded-lg bg-primary/10 text-primary">
+        <CheckSquare className="h-4 w-4" />
+      </span>
+    ) : kind === "product" ? (
+      <span className="relative grid h-9 w-9 place-items-center overflow-hidden rounded-lg bg-warning/10 text-warning">
+        <img
+          src={coverImage}
+          alt=""
+          aria-hidden
+          className="absolute inset-0 h-full w-full object-cover opacity-70"
+        />
+        <FileText className="relative h-4 w-4 text-primary-foreground drop-shadow" />
+      </span>
+    ) : (
+      <span className="grid h-9 w-9 place-items-center rounded-lg bg-surface-2 text-muted-foreground">
+        <Bell className="h-4 w-4" />
+      </span>
+    );
+
+  return (
+    <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col gap-5 overflow-x-hidden p-4 pb-24 md:p-8">
+      <header>
+        <p className="module-label text-brand-blue">Bảng điều hành thống nhất</p>
+        <h1 className="mt-1 font-heading text-2xl font-bold">Không gian của tôi</h1>
+        <p className="text-sm text-muted-foreground">
+          Công việc và hộp việc của bạn ở cùng một nơi.
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Mẹo: vuốt phải để duyệt, vuốt trái để hoãn.
+        </p>
+        <Button
+          variant="outline"
+          className="mt-3 min-h-11 w-full"
+          onClick={() => navigate({ to: "/work-board" })}
+        >
+          <FileText className="mr-2 h-4 w-4" /> Gắn tài liệu vào công việc
+        </Button>
+      </header>
+
+      <div className="grid grid-cols-3 gap-1 rounded-xl border border-border bg-background p-1 shadow-card">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={cn(
+              "min-h-11 rounded-lg px-2 text-xs font-semibold transition-colors",
+              tab === t.id
+                ? "bg-action text-action-foreground"
+                : "text-muted-foreground hover:bg-surface-2",
+            )}
+          >
+            {t.label}
+            <Badge
+              variant={tab === t.id ? "secondary" : "outline"}
+              className="ml-1.5 px-1.5 text-[10px]"
+            >
+              {counts[t.id]}
+            </Badge>
+          </button>
+        ))}
+      </div>
+
+      {visibleItems.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-border p-8 text-center">
+          <Inbox className="mx-auto h-6 w-6 text-muted-foreground" />
+          <p className="mt-2 text-sm text-muted-foreground">Hộp này đang trống. Rất tốt!</p>
+        </div>
+      ) : (
+        <ul className="grid w-full min-w-0 max-w-full gap-2 overflow-hidden">
+          {visibleItems.map((it) => (
+            <li key={it.key} className="w-full min-w-0 max-w-full overflow-hidden">
+              <SwipeRow
+                className="w-full min-w-0 max-w-full"
+                rightLabel={it.kind === "notification" ? "Đã đọc" : "Duyệt"}
+                leftLabel="Hoãn"
+                onSwipeRight={() => {
+                  if (it.kind === "task") doneMut.mutate(it.key);
+                  else if (it.kind === "notification") readMut.mutate([it.key]);
+                  else it.onOpen();
+                }}
+                onSwipeLeft={() => {
+                  if (it.kind === "task") snoozeMut.mutate(it.key);
+                  else hide(it.key);
+                }}
+              >
+                <div className="grid w-full min-w-0 max-w-full grid-cols-[minmax(0,1fr)_auto] items-stretch gap-2 overflow-hidden bg-background">
+                  <MobileListItem
+                    title={it.title}
+                    subtitle={it.subtitle}
+                    icon={icon(it.kind)}
+                    priorityBar={it.priority ?? null}
+                    onClick={it.onOpen}
+                    className="min-h-16 min-w-0 max-w-full rounded-2xl"
+                  />
+                  <div className="flex shrink-0 flex-col gap-1 md:flex-row md:items-center md:gap-1.5">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-11 w-11 rounded-xl md:w-auto md:px-3.5"
+                      aria-label="Mở"
+                      onClick={it.onOpen}
+                    >
+                      <ExternalLink className="h-4 w-4 md:mr-1.5" />
+                      <span className="hidden text-sm md:inline">Mở</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-11 w-11 rounded-xl md:w-auto md:px-3.5"
+                      aria-label="Chia sẻ"
+                      onClick={() => void share(it)}
+                    >
+                      <Share2 className="h-4 w-4 md:mr-1.5" />
+                      <span className="hidden text-sm md:inline">Chia sẻ</span>
+                    </Button>
+                  </div>
+                </div>
+              </SwipeRow>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}

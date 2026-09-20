@@ -18,16 +18,17 @@ import {
   Loader2,
   Network,
   Zap,
+  Gavel,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { AppSidebar, AppTopbar } from "@/components/app-shell";
+import { FilterPageHeader } from "@/components/filter-page-header";
+import { Button } from "@/components/ui/button";
 import { getSearchFacets } from "@/lib/api/search.functions";
 import { universalSearch } from "@/lib/api/search-universal.functions";
 import { readSearchScope, writeSearchScope } from "@/lib/search-scope";
-import type {
-  SearchKind,
-  UniversalSearchItem,
-} from "@/lib/api/search-universal.server";
+import { FreshnessBadge } from "@/components/work-graph/freshness-badge";
+import type { SearchKind, UniversalSearchItem } from "@/lib/api/search-universal.server";
 
 type SearchParams = {
   q?: string;
@@ -41,6 +42,8 @@ const KINDS: SearchKind[] = [
   "meeting",
   "artifact",
   "document",
+  "workproduct",
+  "decision",
   "email",
   "chat",
   "person",
@@ -48,8 +51,7 @@ const KINDS: SearchKind[] = [
 
 export const Route = createFileRoute("/_authenticated/search")({
   validateSearch: (s: Record<string, unknown>): SearchParams => {
-    const str = (v: unknown) =>
-      typeof v === "string" && v.trim() ? v : undefined;
+    const str = (v: unknown) => (typeof v === "string" && v.trim() ? v : undefined);
     const t = s.type;
     return {
       q: str(s.q),
@@ -105,6 +107,18 @@ const TYPE_META: Record<
     icon: Sparkles,
     chip: "bg-sky-500/10 text-sky-600 border-sky-500/25",
     iconBg: "bg-sky-500/10 text-sky-600",
+  },
+  workproduct: {
+    label: "Kết quả công việc",
+    icon: FileText,
+    chip: "bg-violet-500/15 text-violet-500 border-violet-500/30",
+    iconBg: "bg-violet-500/15 text-violet-500",
+  },
+  decision: {
+    label: "Quyết định",
+    icon: Gavel,
+    chip: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30",
+    iconBg: "bg-emerald-500/15 text-emerald-600",
   },
   document: {
     label: "Tài liệu",
@@ -211,25 +225,24 @@ function SearchPage() {
   });
 
   const runSearch = useServerFn(universalSearch);
-  const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } =
-    useInfiniteQuery({
-      queryKey: ["universal-search", q, type, project],
-      initialPageParam: 0,
-      queryFn: ({ pageParam }) =>
-        runSearch({
-          data: {
-            q: q.trim(),
-            kinds: type === "all" ? undefined : [type],
-            workspaceId: project,
-            limit: PAGE_SIZE,
-            offset: pageParam as number,
-            expandGraph: (pageParam as number) === 0,
-          },
-        }),
-      getNextPageParam: (last) => (last.hasMore ? last.nextOffset : undefined),
-      enabled: q.trim().length >= 2,
-      staleTime: 30_000,
-    });
+  const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } = useInfiniteQuery({
+    queryKey: ["universal-search", q, type, project],
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) =>
+      runSearch({
+        data: {
+          q: q.trim(),
+          kinds: type === "all" ? undefined : [type],
+          workspaceId: project,
+          limit: PAGE_SIZE,
+          offset: pageParam as number,
+          expandGraph: (pageParam as number) === 0,
+        },
+      }),
+    getNextPageParam: (last) => (last.hasMore ? last.nextOffset : undefined),
+    enabled: q.trim().length >= 2,
+    staleTime: 30_000,
+  });
 
   const items = useMemo<UniversalSearchItem[]>(
     () => (data?.pages ?? []).flatMap((p) => p.items),
@@ -260,9 +273,7 @@ function SearchPage() {
     return () => io.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const totalCount = counts
-    ? KINDS.reduce((sum, k) => sum + (counts[k] ?? 0), 0)
-    : 0;
+  const totalCount = counts ? KINDS.reduce((sum, k) => sum + (counts[k] ?? 0), 0) : 0;
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
@@ -271,25 +282,11 @@ function SearchPage() {
         <AppTopbar variant="documents" onOpenSidebar={() => setSidebarOpen(true)} />
 
         <div className="mx-auto w-full max-w-[1100px] flex-1 px-4 py-8 sm:px-6">
-          <div className="mb-6">
-            <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              <SearchIcon className="h-3.5 w-3.5" />
-              Tìm kiếm hợp nhất
-            </div>
-            <h1 className="text-3xl font-semibold tracking-tight">
-              {q ? (
-                <>
-                  Kết quả cho <span className="text-primary">&ldquo;{q}&rdquo;</span>
-                </>
-              ) : (
-                "Tìm mọi thứ trong UNIWORK"
-              )}
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Dự án, công việc, cuộc họp, tài liệu, email, kênh chat và nhân sự — chỉ
-              hiển thị dữ liệu bạn có quyền xem.
-            </p>
-          </div>
+          <FilterPageHeader
+            crumbs={[{ label: "Trang chủ", to: "/tasks" }, { label: "Tìm kiếm" }]}
+            title={q ? `Kết quả cho “${q}”` : "Tìm mọi thứ trong UNIWORK"}
+            description="Dự án, công việc, cuộc họp, tài liệu, email, kênh chat và nhân sự — chỉ hiển thị dữ liệu bạn có quyền xem."
+          />
 
           <form
             role="search"
@@ -305,14 +302,14 @@ function SearchPage() {
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               placeholder="Nhập từ khoá (không dấu vẫn tìm được)…"
-              className="w-full rounded-2xl border border-border bg-surface py-4 pl-12 pr-28 text-base shadow-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+              className="h-12 w-full rounded-xl border border-border-strong bg-card pl-12 pr-28 text-base shadow-card placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
             />
-            <button
+            <Button
               type="submit"
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-action text-action-foreground hover:opacity-90"
             >
               Tìm
-            </button>
+            </Button>
           </form>
 
           <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -396,7 +393,7 @@ function SearchPage() {
           </div>
 
           {isLoading && q.trim().length >= 2 ? (
-            <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-surface">
+            <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card shadow-card">
               {Array.from({ length: 5 }).map((_, i) => (
                 <li key={i} className="flex items-start gap-4 px-5 py-4">
                   <div className="h-10 w-10 shrink-0 animate-pulse rounded-xl bg-surface-2" />
@@ -408,7 +405,7 @@ function SearchPage() {
               ))}
             </ul>
           ) : items.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-border bg-surface px-6 py-16 text-center">
+            <div className="rounded-xl border border-dashed border-border bg-card px-6 py-16 text-center">
               <SearchIcon className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
               <h2 className="text-base font-medium">
                 {q.trim().length < 2 ? "Bắt đầu tìm kiếm" : "Không tìm thấy kết quả nào"}
@@ -419,7 +416,7 @@ function SearchPage() {
             </div>
           ) : (
             <>
-              <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-surface">
+              <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card shadow-card">
                 {items.map((r) => {
                   const meta = TYPE_META[r.kind] ?? TYPE_META.document;
                   const Icon = meta.icon;
@@ -472,9 +469,13 @@ function SearchPage() {
                               </span>
                             )}
                             <span className="flex items-center gap-1.5">
-                              <CalendarIcon className="h-3.5 w-3.5" />{" "}
-                              {fmtDate(r.occurredAt)}
+                              <CalendarIcon className="h-3.5 w-3.5" /> {fmtDate(r.occurredAt)}
                             </span>
+                            <FreshnessBadge
+                              entityType={r.entityType === "PROJECT" ? "WORKSPACE" : r.entityType}
+                              updatedAt={r.occurredAt}
+                              showTime={false}
+                            />
                           </div>
                         </div>
                         <ArrowUpRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
@@ -485,7 +486,7 @@ function SearchPage() {
               </ul>
 
               {related.length > 0 && (
-                <section className="mt-6 rounded-2xl border border-border bg-surface p-4">
+                <section className="mt-6 rounded-xl border border-border bg-card p-4 shadow-card">
                   <h2 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     <Network className="h-3.5 w-3.5" />
                     Liên quan tới kết quả hàng đầu

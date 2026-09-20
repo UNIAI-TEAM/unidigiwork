@@ -19,8 +19,9 @@
  */
 
 @theme inline {
-  --font-sans: "DM Sans", sans-serif;
-  --font-heading: "Space Grotesk", sans-serif;
+  --font-sans: "Inter", sans-serif;
+  --font-heading: "Plus Jakarta Sans", "Inter", sans-serif;
+  --font-mono: "Sometype Mono", monospace;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -55,6 +56,16 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-ring-offset-background: var(--background);
+  --color-action: var(--action);
+  --color-action-foreground: var(--action-foreground);
+  --color-link: var(--link);
+  --color-border-strong: var(--border-strong);
+  --color-ai-pink: var(--ai-pink);
+  --color-ai-cyan: var(--ai-cyan);
+  --color-brand-blue: var(--brand-blue);
+  --color-brand-orange: var(--brand-orange);
+  --color-pale-purple: var(--pale-purple);
+  --color-pale-pink: var(--pale-pink);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -79,35 +90,49 @@
   --color-landing-dark: var(--landing-dark);
   --color-landing-on-accent: var(--landing-on-accent);
   --color-landing-on-dark: var(--landing-on-dark);
+  --color-command-canvas: var(--command-canvas);
+  --color-command-line: var(--command-line);
+  --color-command-ink: var(--command-ink);
+  --color-command-accent: var(--command-accent);
 }
 
 :root {
-  --radius: 0.625rem;
-  /* Light theme — harmonised on hue 260, soft step elevation */
-  --background: oklch(0.985 0.004 260);
-  --surface: oklch(0.97 0.005 260);
-  --surface-2: oklch(0.95 0.006 260);
-  --surface-3: oklch(0.925 0.008 260);
-  --foreground: oklch(0.24 0.018 260);
-  --card: oklch(0.978 0.004 260);
-  --card-foreground: oklch(0.24 0.018 260);
-  --popover: oklch(0.985 0.004 260);
-  --popover-foreground: oklch(0.24 0.018 260);
-  --primary: oklch(0.56 0.18 285);
-  --primary-foreground: oklch(0.985 0.004 260);
-  --secondary: oklch(0.95 0.006 260);
-  --secondary-foreground: oklch(0.24 0.018 260);
-  --muted: oklch(0.95 0.006 260);
-  --muted-foreground: oklch(0.5 0.012 260);
-  --accent: oklch(0.56 0.18 285);
-  --accent-foreground: oklch(0.985 0.004 260);
+  --radius: 0.5rem;
+  /* Productive-density system: ink actions, purple signals, quiet surfaces. */
+  --background: oklch(1 0 0);
+  --surface: oklch(0.982 0.003 265);
+  --surface-2: oklch(0.958 0.012 285);
+  --surface-3: oklch(0.93 0.016 285);
+  --foreground: oklch(0.235 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.235 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.235 0 0);
+  --primary: oklch(0.5 0.285 295);
+  --primary-foreground: oklch(1 0 0);
+  --action: oklch(0.235 0 0);
+  --action-foreground: oklch(1 0 0);
+  --link: oklch(0.62 0.2 250);
+  --secondary: oklch(0.958 0.012 285);
+  --secondary-foreground: oklch(0.5 0.285 295);
+  --muted: oklch(0.965 0.004 265);
+  --muted-foreground: oklch(0.49 0 0);
+  --accent: oklch(0.5 0.285 295);
+  --accent-foreground: oklch(1 0 0);
   --destructive: oklch(0.58 0.18 25);
   --destructive-foreground: oklch(0.985 0.004 260);
   --success: oklch(0.6 0.14 150);
   --warning: oklch(0.72 0.15 75);
-  --border: oklch(0.24 0.018 260 / 8%);
-  --input: oklch(0.24 0.018 260 / 10%);
-  --ring: oklch(0.56 0.18 285 / 55%);
+  --border: oklch(0.84 0 0);
+  --border-strong: oklch(0.75 0 0);
+  --input: oklch(0.84 0 0);
+  --ring: oklch(0.5 0.285 295 / 55%);
+  --ai-pink: oklch(0.66 0.3 330);
+  --ai-cyan: oklch(0.78 0.14 210);
+  --brand-blue: oklch(0.62 0.2 250);
+  --brand-orange: oklch(0.68 0.2 45);
+  --pale-purple: oklch(0.955 0.025 290);
+  --pale-pink: oklch(0.97 0.025 330);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -132,21 +157,28 @@
   --landing-dark: oklch(0.2 0.08 278);
   --landing-on-accent: oklch(1 0 0);
   --landing-on-dark: oklch(0.98 0.005 270);
+  /* My Space command center — Cloud White selection. */
+  --command-canvas: oklch(0.985 0.004 250);
+  --command-line: oklch(0.925 0.01 250);
+  --command-ink: oklch(0.235 0 0);
+  --command-accent: oklch(0.623 0.188 260);
 }
 
 .dark {
-  /* Dark theme — single hue 260, gentle elevation steps */
-  --background: oklch(0.175 0.014 260);
-  --surface: oklch(0.205 0.014 260);
-  --surface-2: oklch(0.235 0.014 260);
-  --surface-3: oklch(0.27 0.014 260);
-  --foreground: oklch(0.94 0.006 260);
-  --card: oklch(0.205 0.014 260);
+  --background: oklch(0.145 0.005 265);
+  --surface: oklch(0.19 0.008 265);
+  --surface-2: oklch(0.235 0.012 285);
+  --surface-3: oklch(0.28 0.016 285);
+  --foreground: oklch(0.95 0.003 265);
+  --card: oklch(0.19 0.008 265);
   --card-foreground: oklch(0.94 0.006 260);
   --popover: oklch(0.215 0.014 260);
   --popover-foreground: oklch(0.94 0.006 260);
-  --primary: oklch(0.66 0.16 285);
-  --primary-foreground: oklch(0.175 0.014 260);
+  --primary: oklch(0.7 0.2 295);
+  --primary-foreground: oklch(0.99 0 0);
+  --action: oklch(0.94 0.003 265);
+  --action-foreground: oklch(0.16 0.005 265);
+  --link: oklch(0.72 0.15 245);
   --secondary: oklch(0.255 0.014 260);
   --secondary-foreground: oklch(0.94 0.006 260);
   --muted: oklch(0.255 0.014 260);
@@ -157,9 +189,14 @@
   --destructive-foreground: oklch(0.98 0.004 260);
   --success: oklch(0.7 0.14 150);
   --warning: oklch(0.78 0.14 75);
-  --border: oklch(1 0 0 / 6%);
-  --input: oklch(1 0 0 / 8%);
+  --border: oklch(1 0 0 / 12%);
+  --border-strong: oklch(1 0 0 / 24%);
+  --input: oklch(1 0 0 / 18%);
   --ring: oklch(0.66 0.16 285 / 55%);
+  --command-canvas: oklch(0.16 0.01 260);
+  --command-line: oklch(1 0 0 / 12%);
+  --command-ink: oklch(0.95 0.003 265);
+  --command-accent: oklch(0.7 0.15 255);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
@@ -183,6 +220,71 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: var(--font-sans);
+    letter-spacing: 0;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-heading);
+    letter-spacing: 0;
+  }
+
+  button,
+  a,
+  input,
+  textarea,
+  select {
+    touch-action: manipulation;
+  }
+}
+
+@utility shadow-card {
+  box-shadow: 0 1px 3px color-mix(in oklab, var(--color-foreground) 10%, transparent);
+}
+
+@utility shadow-panel {
+  box-shadow: 0 10px 25px color-mix(in oklab, var(--color-primary) 10%, transparent);
+}
+
+@utility auth-bg {
+  background: linear-gradient(
+    160deg,
+    color-mix(in oklab, var(--color-primary) 16%, var(--color-background)),
+    var(--color-background) 45%,
+    color-mix(in oklab, var(--color-accent) 12%, var(--color-background))
+  );
+}
+
+@utility module-label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+/* ---------------------------------------------------------------------------
+ * Giảm chuyển động (prefers-reduced-motion): rút ngắn mọi chuyển động và tắt
+ * hẳn các hiệu ứng lặp mang tính trang trí (pulse/ping/bounce). Spinner tải
+ * (.animate-spin) vẫn giữ vì nó truyền tải trạng thái đang xử lý.
+ * ------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *:not(.animate-spin),
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+  .animate-pulse,
+  .animate-ping,
+  .animate-bounce {
+    animation: none !important;
   }
 }
 
@@ -541,25 +643,6 @@
   --sidebar-border: oklch(0.99 0 0 / 35%);
 }
 
-/* ---------------------------------------------------------------------------
- * Giảm chuyển động (prefers-reduced-motion): tắt các hiệu ứng lặp mang tính
- * trang trí (pulse/ping/bounce) và rút ngắn transition. Spinner tải vẫn giữ vì
- * nó truyền tải trạng thái đang xử lý.
- * ------------------------------------------------------------------------- */
-@media (prefers-reduced-motion: reduce) {
-  .animate-pulse,
-  .animate-ping,
-  .animate-bounce {
-    animation: none !important;
-  }
-  *,
-  *::before,
-  *::after {
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-}
-
 :root[data-contrast="high"] *:focus-visible {
   outline: 3px solid var(--ring);
   outline-offset: 2px;
@@ -602,4 +685,54 @@ html[data-font-family="serif"] body {
 html[data-font-family="mono"] body {
   font-family:
     ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+/* ---------------------------------------------------------------------------
+ * Tone "gradient" — dải hồng → tím → xanh kiểu ClickUp. Màu nhấn đặc là tím
+ * để giữ độ tương phản, kèm --gradient-primary cho nền chuyển sắc.
+ * ------------------------------------------------------------------------- */
+
+:root[data-tone="gradient"] {
+  --tone-h: 300;
+  --primary: oklch(0.56 0.19 300);
+  --accent: oklch(0.6 0.19 330);
+  --ring: oklch(0.56 0.19 300 / 55%);
+  --sidebar-primary: oklch(0.52 0.18 300);
+  --sidebar-ring: oklch(0.56 0.19 300 / 55%);
+  --gradient-primary: linear-gradient(
+    135deg,
+    oklch(0.66 0.2 340),
+    oklch(0.58 0.2 300),
+    oklch(0.62 0.17 250)
+  );
+}
+
+:root[data-tone="gradient"].dark,
+.dark :root[data-tone="gradient"],
+.dark:root[data-tone="gradient"] {
+  --primary: oklch(0.72 0.16 305);
+  --accent: oklch(0.74 0.16 335);
+  --ring: oklch(0.72 0.16 305 / 55%);
+  --sidebar-primary: oklch(0.72 0.16 305);
+  --sidebar-ring: oklch(0.72 0.16 305 / 55%);
+  --gradient-primary: linear-gradient(
+    135deg,
+    oklch(0.74 0.18 340),
+    oklch(0.68 0.18 300),
+    oklch(0.7 0.15 250)
+  );
+}
+
+:root[data-tone="gradient"][data-contrast="high"] {
+  --primary: oklch(0.42 0.21 300);
+  --accent: oklch(0.44 0.21 330);
+  --ring: oklch(0.3 0.05 300 / 90%);
+  --sidebar-primary: oklch(0.38 0.2 300);
+}
+
+:root[data-tone="gradient"][data-contrast="high"].dark,
+.dark:root[data-tone="gradient"][data-contrast="high"] {
+  --primary: oklch(0.86 0.14 305);
+  --accent: oklch(0.86 0.14 335);
+  --ring: oklch(0.94 0.05 305 / 90%);
 }

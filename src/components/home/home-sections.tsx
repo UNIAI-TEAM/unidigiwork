@@ -1,4 +1,5 @@
 // HOME V2 — các khối nhỏ của Trang chủ (My Work · Upcoming · Work Inbox · Brief).
+import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   AlertTriangle,
@@ -36,18 +37,54 @@ export function SectionCard({
   title,
   action,
   children,
+  collapsible,
+  count,
 }: {
   title: string;
   action?: React.ReactNode;
   children: React.ReactNode;
+  /** Bật co gọn trên mobile: header chạm để mở, desktop luôn mở. */
+  collapsible?: boolean;
+  count?: number;
 }) {
+  const [open, setOpen] = useState(false);
   return (
-    <section className="flex min-w-0 flex-col rounded-xl border border-border bg-surface">
-      <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
-        <h2 className="text-sm font-semibold tracking-tight">{title}</h2>
+    <section className="flex min-w-0 flex-col overflow-hidden rounded-xl border border-command-line bg-card shadow-card">
+      <header
+        className={cn(
+          "flex min-h-14 min-w-0 items-center justify-between gap-3 border-b border-command-line bg-command-canvas/60 px-4 py-3 sm:px-5",
+          collapsible && !open && "max-md:border-b-0",
+        )}
+      >
+        {collapsible ? (
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            aria-expanded={open}
+            className="flex min-h-11 min-w-0 flex-1 items-center gap-2 text-left md:pointer-events-none"
+          >
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 shrink-0 text-muted-foreground transition-transform md:hidden",
+                open && "rotate-180",
+              )}
+              strokeWidth={1.75}
+            />
+            <h2 className="truncate font-heading text-sm font-bold uppercase">{title}</h2>
+            {!open && typeof count === "number" ? (
+              <span className="shrink-0 rounded-md bg-surface-2 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground md:hidden">
+                {count}
+              </span>
+            ) : null}
+          </button>
+        ) : (
+          <h2 className="truncate font-heading text-sm font-bold uppercase">{title}</h2>
+        )}
         {action}
       </header>
-      <div className="flex-1">{children}</div>
+      <div className={cn("min-w-0 flex-1", collapsible && !open && "max-md:hidden")}>
+        {children}
+      </div>
     </section>
   );
 }
@@ -81,7 +118,7 @@ export function EmptyState({
             <Link
               key={a.to + a.label}
               to={a.to}
-              className="inline-flex min-h-[32px] items-center gap-1 rounded-lg border border-border px-2.5 text-xs font-medium hover:bg-surface-2"
+              className="inline-flex min-h-11 items-center gap-1 rounded-lg border border-border px-3 text-xs font-medium hover:bg-surface-2"
             >
               {a.label} <ArrowRight className="h-3.5 w-3.5" />
             </Link>
@@ -110,9 +147,10 @@ export function PartialNotice({
         type="button"
         onClick={onRetry}
         disabled={retrying}
-        className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 font-medium hover:bg-surface-2 disabled:opacity-50"
+        className="inline-flex min-h-11 items-center gap-1 rounded-md border border-border px-3 font-medium hover:bg-surface-2 disabled:opacity-50"
       >
-        <RefreshCw className={cn("h-3 w-3", retrying && "animate-spin")} strokeWidth={1.75} /> Thử lại
+        <RefreshCw className={cn("h-3 w-3", retrying && "animate-spin")} strokeWidth={1.75} /> Thử
+        lại
       </button>
     </div>
   );
@@ -128,13 +166,15 @@ export function SkeletonRows({ rows = 3 }: { rows?: number }) {
   );
 }
 
-export function TodaySummary({
-  counts,
-}: {
-  counts: HomeSummary["counts"] | undefined;
-}) {
+export function TodaySummary({ counts }: { counts: HomeSummary["counts"] | undefined }) {
   const items = [
-    { key: "today", label: "Hôm nay", value: counts?.dueToday ?? 0, icon: ListChecks, to: "/tasks" },
+    {
+      key: "today",
+      label: "Hôm nay",
+      value: counts?.dueToday ?? 0,
+      icon: ListChecks,
+      to: "/tasks",
+    },
     {
       key: "overdue",
       label: "Quá hạn",
@@ -143,9 +183,27 @@ export function TodaySummary({
       to: "/tasks",
       warn: true,
     },
-    { key: "mention", label: "Nhắc đến bạn", value: counts?.mentions ?? 0, icon: AtSign, to: "/notifications" },
-    { key: "approval", label: "Chờ duyệt", value: counts?.approvals ?? 0, icon: ShieldCheck, to: "/notifications" },
-    { key: "meeting", label: "Cuộc họp", value: counts?.meetings ?? 0, icon: Video, to: "/meeting" },
+    {
+      key: "mention",
+      label: "Nhắc đến bạn",
+      value: counts?.mentions ?? 0,
+      icon: AtSign,
+      to: "/notifications",
+    },
+    {
+      key: "approval",
+      label: "Chờ duyệt",
+      value: counts?.approvals ?? 0,
+      icon: ShieldCheck,
+      to: "/notifications",
+    },
+    {
+      key: "meeting",
+      label: "Cuộc họp",
+      value: counts?.meetings ?? 0,
+      icon: Video,
+      to: "/meeting",
+    },
   ] as const;
 
   return (
@@ -155,14 +213,14 @@ export function TodaySummary({
           key={it.key}
           to={it.to}
           className={cn(
-            "flex min-h-[64px] items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3 transition-colors hover:bg-surface-2",
+            "flex min-h-[76px] items-center gap-3 rounded-xl border border-command-line bg-card px-4 py-3 shadow-card transition-colors hover:border-command-accent/40 hover:bg-command-canvas",
             "warn" in it && it.warn && it.value > 0 && "border-destructive/40",
           )}
         >
           <it.icon
             className={cn(
               "h-[18px] w-[18px] shrink-0",
-              "warn" in it && it.warn && it.value > 0 ? "text-destructive" : "text-muted-foreground",
+              "warn" in it && it.warn && it.value > 0 ? "text-destructive" : "text-command-accent",
             )}
             strokeWidth={1.75}
           />
@@ -202,12 +260,20 @@ export function MyWorkRow({
   const meta = TASK_KIND_META[kind];
   const done = task.status === "done";
   const KindIcon =
-    kind === "email" ? Mail : kind === "meeting" ? Video : kind === "chat" ? MessageSquare : kind === "document" ? FileText : ListChecks;
+    kind === "email"
+      ? Mail
+      : kind === "meeting"
+        ? Video
+        : kind === "chat"
+          ? MessageSquare
+          : kind === "document"
+            ? FileText
+            : ListChecks;
   return (
     <div
       data-mywork-row={selected ? "selected" : undefined}
       className={cn(
-        "flex items-center gap-3 border-b border-border px-4 py-3 last:border-0 transition-opacity hover:bg-surface-2",
+        "flex min-w-0 items-center gap-2 border-b border-border px-4 py-2 last:border-0 transition-opacity hover:bg-surface-2 sm:gap-3",
         (done || completing) && "opacity-60",
         selected && "bg-surface-2 ring-1 ring-inset ring-ring",
       )}
@@ -221,7 +287,7 @@ export function MyWorkRow({
           disabled={done}
           onChange={(e) => onCheckedChange(task, e.target.checked)}
           aria-label={`Chọn: ${task.title}`}
-          className="h-4 w-4 shrink-0 cursor-pointer accent-primary disabled:opacity-40"
+          className="h-5 w-5 shrink-0 cursor-pointer accent-primary disabled:opacity-40"
         />
       ) : null}
       <button
@@ -240,7 +306,11 @@ export function MyWorkRow({
           <CheckCircle2 className="h-[18px] w-[18px]" strokeWidth={1.75} />
         )}
       </button>
-      <Link to="/tasks/$id" params={{ id: task.id }} className="min-w-0 flex-1">
+      <Link
+        to="/tasks/$id"
+        params={{ id: task.id }}
+        className="flex min-h-11 min-w-0 flex-1 flex-col justify-center overflow-hidden"
+      >
         <span
           className={cn(
             "block truncate text-sm font-medium",
@@ -249,7 +319,7 @@ export function MyWorkRow({
         >
           {task.title}
         </span>
-        <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
+        <span className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 overflow-hidden text-xs text-muted-foreground">
           {task.workspace_name && <span className="truncate">{task.workspace_name}</span>}
           <span className="inline-flex items-center gap-1 rounded-md bg-surface-2 px-1.5 py-0.5">
             <KindIcon className="h-3 w-3" strokeWidth={1.75} /> {meta.label}
@@ -269,7 +339,7 @@ export function MyWorkRow({
           onClick={() => onComplete(task)}
           disabled={completing || done}
           aria-label={`Hoàn thành: ${task.title}`}
-          className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-success/40 hover:bg-success/10 hover:text-success focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
+          className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-medium text-muted-foreground transition-colors hover:border-success/40 hover:bg-success/10 hover:text-success focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
         >
           {completing ? (
             <Loader2 className="h-[14px] w-[14px] animate-spin" strokeWidth={1.75} />
@@ -281,7 +351,7 @@ export function MyWorkRow({
         <DropdownMenu>
           <DropdownMenuTrigger
             aria-label={`Thao tác nhanh: ${task.title}`}
-            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground"
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground"
           >
             <ExternalLink className="h-[14px] w-[14px]" strokeWidth={1.75} />
             <span className="hidden sm:inline">Mở</span>
@@ -319,7 +389,7 @@ export function MyWorkRow({
 export function UpcomingRow({ item }: { item: HomeUpcoming }) {
   const Icon = item.kind === "meeting" ? Video : CalendarClock;
   return (
-    <div className="flex items-center gap-3 border-b border-border px-4 py-3 last:border-0">
+    <div className="flex min-w-0 items-center gap-3 border-b border-border px-4 py-2 last:border-0">
       <Icon className="h-[18px] w-[18px] shrink-0 text-muted-foreground" strokeWidth={1.75} />
       <div className="min-w-0 flex-1">
         <span className="block truncate text-sm font-medium">{item.title}</span>
@@ -333,7 +403,7 @@ export function UpcomingRow({ item }: { item: HomeUpcoming }) {
       <a
         href={item.href}
         className={cn(
-          "inline-flex min-h-[36px] shrink-0 items-center rounded-lg px-3 text-xs font-medium",
+          "inline-flex min-h-11 shrink-0 items-center rounded-lg px-3 text-xs font-medium",
           item.kind === "meeting" && item.joinable
             ? "bg-primary text-primary-foreground hover:bg-primary/90"
             : "border border-border text-muted-foreground hover:bg-surface-2 hover:text-foreground",
@@ -366,8 +436,11 @@ export function InboxRow({
 }) {
   const Icon = INBOX_ICON[item.type];
   return (
-    <div className="flex items-start gap-3 border-b border-border px-4 py-3 last:border-0 hover:bg-surface-2">
-      <Icon className="mt-0.5 h-[18px] w-[18px] shrink-0 text-muted-foreground" strokeWidth={1.75} />
+    <div className="flex min-w-0 items-center gap-3 border-b border-border px-4 py-2 last:border-0 hover:bg-surface-2">
+      <Icon
+        className="mt-0.5 h-[18px] w-[18px] shrink-0 text-muted-foreground"
+        strokeWidth={1.75}
+      />
       <a
         href={item.href}
         onClick={(e) => {
@@ -375,14 +448,18 @@ export function InboxRow({
           e.preventDefault();
           onOpen(item);
         }}
-        className="min-w-0 flex-1 text-left"
+        className="flex min-h-11 min-w-0 flex-1 flex-col justify-center overflow-hidden text-left"
       >
         <span className="flex items-center gap-2">
-          {!item.read && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" aria-hidden />}
+          {!item.read && (
+            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" aria-hidden />
+          )}
           <span className="block truncate text-sm font-medium">{item.title}</span>
         </span>
         {item.summary && (
-          <span className="mt-0.5 block truncate text-xs text-muted-foreground">{item.summary}</span>
+          <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+            {item.summary}
+          </span>
         )}
         <span className="mt-0.5 block text-xs text-muted-foreground">
           {new Date(item.timestamp).toLocaleString("vi-VN", {
@@ -397,7 +474,7 @@ export function InboxRow({
         <button
           type="button"
           onClick={() => onMarkRead(item)}
-          className="shrink-0 rounded-lg border border-border px-2.5 py-1.5 text-xs text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+          className="inline-flex min-h-11 shrink-0 items-center rounded-lg border border-border px-3 text-xs text-muted-foreground hover:bg-surface-2 hover:text-foreground"
         >
           Đã đọc
         </button>
@@ -441,9 +518,12 @@ export function AiBrief({
           type="button"
           onClick={onRefresh}
           disabled={loading}
-          className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-xs text-muted-foreground hover:bg-surface-2 hover:text-foreground disabled:opacity-50"
+          className="inline-flex min-h-11 items-center gap-1 rounded-lg border border-border px-3 text-xs text-muted-foreground hover:bg-surface-2 hover:text-foreground disabled:opacity-50"
         >
-          <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} strokeWidth={1.75} />
+          <RefreshCw
+            className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`}
+            strokeWidth={1.75}
+          />
           Làm mới
         </button>
       </div>
@@ -481,7 +561,7 @@ export function ViewAll({ to, label = "Xem tất cả" }: { to: string; label?: 
   return (
     <a
       href={to}
-      className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+      className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-lg px-2 text-xs font-medium text-muted-foreground hover:bg-surface-2 hover:text-foreground"
     >
       {label} <ArrowRight className="h-3.5 w-3.5" />
     </a>

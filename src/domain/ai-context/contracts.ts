@@ -31,6 +31,8 @@ export interface ContextEntity {
   updatedAt?: string | null;
   href: string;
   sourceRank: number;
+  freshness?: ContextFreshness | null;
+  rankBreakdown?: Record<string, number> | null;
 }
 
 export interface ContextRelationship {
@@ -38,6 +40,15 @@ export interface ContextRelationship {
   to: { type: AiContextEntityType; id: string };
   relationship: WorkRelationshipCode;
   weight: number;
+}
+
+export interface ContextFreshness {
+  level: "fresh" | "recent" | "aging" | "stale" | "unknown";
+  label: string;
+  description: string;
+  ageDays: number | null;
+  decay: number;
+  halfLifeDays: number;
 }
 
 export interface ContextSource {
@@ -48,6 +59,7 @@ export interface ContextSource {
   href: string;
   excerpt: string;
   updatedAt: string | null;
+  freshness?: ContextFreshness | null;
 }
 
 export interface ContextFact {
@@ -64,7 +76,14 @@ export interface AiContextPack {
   relationships: ContextRelationship[];
   sources: ContextSource[];
   facts: ContextFact[];
-  ambiguity?: { candidates: { entityType: AiContextEntityType; entityId: string; title: string; href: string }[] } | null;
+  ambiguity?: {
+    candidates: {
+      entityType: AiContextEntityType;
+      entityId: string;
+      title: string;
+      href: string;
+    }[];
+  } | null;
   retrieval: {
     strategy: AiRetrievalStrategy;
     query: string;
@@ -73,6 +92,7 @@ export interface AiContextPack {
     truncated: boolean;
     timeRange?: { from: string; to: string; label: string } | null;
     timings: Record<string, number>;
+    rankerVersion?: string;
   };
   budget: { estimatedTokens: number; maxTokens: number };
   partial: boolean;
@@ -110,6 +130,10 @@ export const AI_CONTEXT_POLICY = {
     PERSON: 5,
     WORKSPACE: 3,
     TENANT: 0,
+    WORK_PRODUCT: 5,
+    EXECUTION: 5,
+    // Quyết định đã xác nhận là nguồn authority cao → luôn có suất trong context pack.
+    DECISION: 5,
   } as Record<AiContextEntityType, number>,
 } as const;
 
@@ -127,6 +151,11 @@ export const RELATIONSHIP_WEIGHTS: Record<WorkRelationshipCode, number> = {
   PARTICIPATED_IN: 0.5,
   SHARED_IN: 0.45,
   RELATED_TO: 0.3,
+  PRODUCES: 0.85,
+  CREATED_BY: 0.7,
+  REALIZED_AS: 0.8,
+  HAS_EXECUTION: 0.8,
+  PERFORMS: 0.7,
 };
 
 export const estimateTokens = (text: string): number => Math.ceil(text.length / 4);

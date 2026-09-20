@@ -5,7 +5,19 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Bot, Plus, Play, Sparkles, Trash2, Pencil, ShieldCheck, History, Loader2, ArrowLeft } from "lucide-react";
+import {
+  Bot,
+  Plus,
+  Play,
+  Sparkles,
+  Trash2,
+  Pencil,
+  ShieldCheck,
+  History,
+  Loader2,
+  ArrowLeft,
+  ChevronDown,
+} from "lucide-react";
 import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,8 +25,20 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { listMyWorkspaces } from "@/lib/api/meeting-rooms.functions";
 import {
   listWorkflowAgents,
@@ -28,9 +52,25 @@ import {
   type AgentEvaluation,
 } from "@/lib/api/workflow-agents.functions";
 import { proposeAiAction } from "@/lib/api/ai-actions.functions";
+import { listAiSkills } from "@/lib/api/ai-skills.functions";
+
+type HubSkillRow = {
+  id: string;
+  name: string;
+  kind: string;
+  description: string | null;
+  enabled: boolean;
+  action_types: string[] | null;
+};
 import { ActionProposalCard } from "@/components/ai/action-proposal-card";
 import type { ProposedAiAction } from "@/domain/ai-actions/contracts";
-import { AI_ACTION_TOOLS, AI_ACTION_TYPES, AI_ACTION_SOURCES, type AiActionType, type AiActionSource } from "@/domain/ai-actions/contracts";
+import {
+  AI_ACTION_TOOLS,
+  AI_ACTION_TYPES,
+  AI_ACTION_SOURCES,
+  type AiActionType,
+  type AiActionSource,
+} from "@/domain/ai-actions/contracts";
 import {
   AGENT_TRIGGERS,
   AGENT_TRIGGER_LABELS,
@@ -56,7 +96,11 @@ import {
   skillsByKind,
   skillsGranting,
 } from "@/domain/workflow-agents/skills";
-import { AI_AGENT_DOMAINS, matchDomainFromSkills, skillsForDomain } from "@/domain/workflow-agents/skills";
+import {
+  AI_AGENT_DOMAINS,
+  matchDomainFromSkills,
+  skillsForDomain,
+} from "@/domain/workflow-agents/skills";
 import {
   AI_WORKER_PROFILES,
   AI_WORKER_PROFILE_MAP,
@@ -71,9 +115,16 @@ export const Route = createFileRoute("/workflows_/agents")({
   head: () => ({
     meta: [
       { title: "Agent Builder · UNIWORK" },
-      { name: "description", content: "Thiết kế agent theo điều kiện: AI đề xuất, con người phê duyệt, không tự động thực thi." },
+      {
+        name: "description",
+        content:
+          "Thiết kế agent theo điều kiện: AI đề xuất, con người phê duyệt, không tự động thực thi.",
+      },
       { property: "og:title", content: "Agent Builder · UNIWORK" },
-      { property: "og:description", content: "Điều kiện → AI đề xuất → phê duyệt. Không có agent tự trị." },
+      {
+        property: "og:description",
+        content: "Điều kiện → AI đề xuất → phê duyệt. Không có agent tự trị.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -118,10 +169,17 @@ function AgentBuilderPage() {
   const qc = useQueryClient();
   const [workspaceId, setWorkspaceId] = useState<string>("");
   const [draft, setDraft] = useState<ReturnType<typeof emptyDraft> | null>(null);
-  const [evaluation, setEvaluation] = useState<(AgentEvaluation & { agentName: string }) | null>(null);
+  const [evaluation, setEvaluation] = useState<(AgentEvaluation & { agentName: string }) | null>(
+    null,
+  );
   const [proposals, setProposals] = useState<ProposedAiAction[]>([]);
   const [proposing, setProposing] = useState<string | null>(null);
-  const derivedAllowed = useMemo(() => deriveAllowedFromSkills(draft?.skills ?? []), [draft?.skills]);
+  const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});
+  const toggleExpanded = (id: string) => setExpandedIds((s) => ({ ...s, [id]: !s[id] }));
+  const derivedAllowed = useMemo(
+    () => deriveAllowedFromSkills(draft?.skills ?? []),
+    [draft?.skills],
+  );
   const [prefilled, setPrefilled] = useState(false);
 
   const wsQuery = useQuery({ queryKey: ["my-workspaces"], queryFn: () => listMyWorkspaces() });
@@ -158,6 +216,24 @@ function AgentBuilderPage() {
     queryFn: () => listWorkflowAgentRuns({ data: { workspaceId: activeWs, limit: 20 } }),
     enabled: !!activeWs,
   });
+
+  // Kỹ năng Skill Hub của tổ chức (chỉ hiển thị + gợi ý, không đổi quyền của agent).
+  const hubQuery = useQuery({
+    queryKey: ["ai-skills", activeWs],
+    queryFn: () => listAiSkills({ data: { workspaceId: activeWs } }),
+    enabled: !!activeWs,
+  });
+  const hubSkills = (hubQuery.data ?? []) as unknown as HubSkillRow[];
+  const enabledHubSkills = useMemo(() => hubSkills.filter((s) => s.enabled), [hubSkills]);
+  const suggestHubSkills = (agent: AgentRow) => {
+    const allowed = new Set<string>([
+      agent.action_type,
+      ...normalizeAllowedActionTypes(agent.allowed_action_types),
+    ]);
+    return enabledHubSkills
+      .filter((s) => (s.action_types ?? []).some((t) => allowed.has(t)))
+      .slice(0, 4);
+  };
 
   const save = useServerFn(saveWorkflowAgent);
   const toggle = useServerFn(setWorkflowAgentEnabled);
@@ -200,7 +276,10 @@ function AgentBuilderPage() {
   });
 
   const runMutation = useMutation({
-    mutationFn: async (a: AgentRow) => ({ agent: a, res: await evaluate({ data: { agentId: a.id } }) }),
+    mutationFn: async (a: AgentRow) => ({
+      agent: a,
+      res: await evaluate({ data: { agentId: a.id } }),
+    }),
     onSuccess: ({ agent, res }) => {
       setProposals([]);
       setEvaluation({ ...res, agentName: agent.name });
@@ -221,7 +300,13 @@ function AgentBuilderPage() {
     if (!candidate) return;
     setProposing(candidateId);
     try {
-      await assertAllowed({ data: { agentId: activeAgent.id, actionType: activeAgent.action_type, source: "WORKFLOW_AGENT" } });
+      await assertAllowed({
+        data: {
+          agentId: activeAgent.id,
+          actionType: activeAgent.action_type,
+          source: "WORKFLOW_AGENT",
+        },
+      });
       const proposal = await propose({
         data: {
           query: buildAgentQuery(
@@ -240,11 +325,15 @@ function AgentBuilderPage() {
         },
       });
       setProposals((p) => [proposal, ...p.filter((x) => x.actionId !== proposal.actionId)]);
-      await record({ data: { agentId: activeAgent.id, proposalId: proposal.actionId, status: "PROPOSED" } });
+      await record({
+        data: { agentId: activeAgent.id, proposalId: proposal.actionId, status: "PROPOSED" },
+      });
       invalidate();
     } catch (e: any) {
       toast.error(e?.message ?? "Không tạo được đề xuất");
-      await record({ data: { agentId: activeAgent.id, status: "FAILED", error: String(e?.message ?? "") } }).catch(() => {});
+      await record({
+        data: { agentId: activeAgent.id, status: "FAILED", error: String(e?.message ?? "") },
+      }).catch(() => {});
     } finally {
       setProposing(null);
     }
@@ -252,15 +341,26 @@ function AgentBuilderPage() {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <AppSidebar active="workflows" open={open} onClose={() => setOpen(false)} />
+      <AppSidebar active="ai-brain" open={open} onClose={() => setOpen(false)} />
       <div className="flex min-w-0 flex-1 flex-col">
         <AppTopbar variant="documents" onOpenSidebar={() => setOpen(true)} />
         <main className="min-w-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">
           <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
             <div>
-              <Link to="/workflows" className="mb-1 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-                <ArrowLeft className="h-4 w-4" /> Workflows
-              </Link>
+              <div className="mb-1 flex flex-wrap items-center gap-3">
+                <Link
+                  to="/ai-brain"
+                  className="inline-flex min-h-11 items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+                >
+                  <ArrowLeft className="h-4 w-4" /> Bộ não AI
+                </Link>
+                <Link
+                  to="/ai-brain/skills"
+                  className="inline-flex min-h-11 items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+                >
+                  Hồ sơ kỹ năng AI
+                </Link>
+              </div>
               <h1 className="flex items-center gap-2 text-2xl font-bold">
                 <Bot className="h-6 w-6 text-primary" /> Agent Builder
               </h1>
@@ -268,14 +368,24 @@ function AgentBuilderPage() {
                 Điều kiện → AI đề xuất → bạn phê duyệt. Agent không bao giờ tự thực thi.
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
               <Select value={activeWs} onValueChange={setWorkspaceId}>
-                <SelectTrigger className="w-56"><SelectValue placeholder="Chọn không gian" /></SelectTrigger>
+                <SelectTrigger className="w-full min-h-11 sm:w-56">
+                  <SelectValue placeholder="Chọn không gian" />
+                </SelectTrigger>
                 <SelectContent>
-                  {workspaces.map((w) => <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>)}
+                  {workspaces.map((w) => (
+                    <SelectItem key={w.id} value={w.id}>
+                      {w.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
-              <Button disabled={!activeWs} onClick={() => setDraft(emptyDraft(activeWs))}>
+              <Button
+                className="min-h-11"
+                disabled={!activeWs}
+                onClick={() => setDraft(emptyDraft(activeWs))}
+              >
                 <Plus className="mr-1.5 h-4 w-4" /> Tạo agent
               </Button>
             </div>
@@ -284,8 +394,8 @@ function AgentBuilderPage() {
           <div className="mb-5 flex items-start gap-2 rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
             <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
             <span>
-              Chế độ an toàn V1: agent chỉ đọc dữ liệu và sinh đề xuất. Mọi thay đổi cần bạn xác nhận trên thẻ đề xuất
-              (không có tuỳ chọn tự động thực thi).
+              Chế độ an toàn V1: agent chỉ đọc dữ liệu và sinh đề xuất. Mọi thay đổi cần bạn xác
+              nhận trên thẻ đề xuất (không có tuỳ chọn tự động thực thi).
             </span>
           </div>
 
@@ -301,95 +411,161 @@ function AgentBuilderPage() {
                 const fields = conditionFieldsFor(a.trigger_type);
                 const conds = a.conditions ?? [];
                 return (
-                  <article key={a.id} className="rounded-xl border border-border bg-card p-4">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <h2 className="truncate font-semibold">{a.name}</h2>
-                        {a.description && <p className="mt-0.5 text-sm text-muted-foreground">{a.description}</p>}
-                        <div className="mt-2 flex flex-wrap gap-1.5">
-                          <Badge variant="secondary">{AGENT_TRIGGER_LABELS[a.trigger_type]}</Badge>
-                          {a.worker_profile && AI_WORKER_PROFILE_MAP[a.worker_profile] && (
-                            <Badge variant="outline" className="gap-1">
-                              <Bot className="h-3 w-3" /> {AI_WORKER_PROFILE_MAP[a.worker_profile]!.name}
-                            </Badge>
+                  <article
+                    key={a.id}
+                    className="min-w-0 rounded-xl border border-border bg-card p-4"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => toggleExpanded(a.id)}
+                      className="flex min-h-11 w-full min-w-0 items-center justify-between gap-2 text-left sm:hidden"
+                      aria-expanded={!!expandedIds[a.id]}
+                    >
+                      <span className="flex min-w-0 items-center gap-2">
+                        <span className="truncate font-semibold">{a.name}</span>
+                        <Badge variant="secondary" className="shrink-0">
+                          {AGENT_TRIGGER_LABELS[a.trigger_type]}
+                        </Badge>
+                      </span>
+                      <ChevronDown
+                        className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${expandedIds[a.id] ? "rotate-180" : ""}`}
+                      />
+                    </button>
+                    <div className={`${expandedIds[a.id] ? "block" : "hidden"} sm:block`}>
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <h2 className="hidden truncate font-semibold sm:block">{a.name}</h2>
+                          {a.description && (
+                            <p className="mt-0.5 text-sm text-muted-foreground">{a.description}</p>
                           )}
-                          <Badge variant="outline">{AI_ACTION_TOOLS[a.action_type]?.label ?? a.action_type}</Badge>
-                          <Badge variant="outline" className="gap-1"><ShieldCheck className="h-3 w-3" /> Cần phê duyệt</Badge>
-                        </div>
-                        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                          <span className="text-xs text-muted-foreground">Kỹ năng AI:</span>
-                          {normalizeSkills(a.skills).length === 0 ? (
-                            <>
-                              <Badge variant="outline" className="text-[11px]">Chưa cấu hình</Badge>
-                              {normalizeAllowedActionTypes(a.allowed_action_types).map((t) => (
-                                <Badge key={t} variant="secondary" className="text-[11px]">
-                                  {AI_ACTION_TOOLS[t]?.label ?? t}
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            <Badge variant="secondary">
+                              {AGENT_TRIGGER_LABELS[a.trigger_type]}
+                            </Badge>
+                            {a.worker_profile && AI_WORKER_PROFILE_MAP[a.worker_profile] && (
+                              <Badge variant="outline" className="gap-1">
+                                <Bot className="h-3 w-3" />{" "}
+                                {AI_WORKER_PROFILE_MAP[a.worker_profile]!.name}
+                              </Badge>
+                            )}
+                            <Badge variant="outline">
+                              {AI_ACTION_TOOLS[a.action_type]?.label ?? a.action_type}
+                            </Badge>
+                            <Badge variant="outline" className="gap-1">
+                              <ShieldCheck className="h-3 w-3" /> Cần phê duyệt
+                            </Badge>
+                          </div>
+                          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                            <span className="text-xs text-muted-foreground">Kỹ năng AI:</span>
+                            {normalizeSkills(a.skills).length === 0 ? (
+                              <>
+                                <Badge variant="outline" className="text-[11px]">
+                                  Chưa cấu hình
+                                </Badge>
+                                {normalizeAllowedActionTypes(a.allowed_action_types).map((t) => (
+                                  <Badge key={t} variant="secondary" className="text-[11px]">
+                                    {AI_ACTION_TOOLS[t]?.label ?? t}
+                                  </Badge>
+                                ))}
+                              </>
+                            ) : (
+                              normalizeSkills(a.skills).map((id) => (
+                                <Badge key={id} variant="secondary" className="text-[11px]">
+                                  {AI_SKILL_KIND_LABELS[AI_SKILL_MAP[id]!.kind]} ·{" "}
+                                  {AI_SKILL_MAP[id]!.name}
+                                </Badge>
+                              ))
+                            )}
+                            {normalizeAllowedSources(a.allowed_sources).map((s) => (
+                              <Badge key={s} variant="outline" className="text-[11px]">
+                                {AI_ACTION_SOURCE_LABELS[s]}
+                              </Badge>
+                            ))}
+                          </div>
+                          {suggestHubSkills(a).length > 0 && (
+                            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                              <span className="text-xs text-muted-foreground">
+                                Skill Hub gợi ý:
+                              </span>
+                              {suggestHubSkills(a).map((s) => (
+                                <Badge key={s.id} variant="outline" className="gap-1 text-[11px]">
+                                  <Sparkles className="h-3 w-3 text-primary" /> {s.name}
                                 </Badge>
                               ))}
-                            </>
-                          ) : (
-                            normalizeSkills(a.skills).map((id) => (
-                              <Badge key={id} variant="secondary" className="text-[11px]">
-                                {AI_SKILL_KIND_LABELS[AI_SKILL_MAP[id]!.kind]} · {AI_SKILL_MAP[id]!.name}
-                              </Badge>
-                            ))
+                            </div>
                           )}
-                          {normalizeAllowedSources(a.allowed_sources).map((s) => (
-                            <Badge key={s} variant="outline" className="text-[11px]">{AI_ACTION_SOURCE_LABELS[s]}</Badge>
-                          ))}
+                          {conds.length > 0 && (
+                            <p className="mt-2 text-xs text-muted-foreground">
+                              Điều kiện:{" "}
+                              {conds.map((c) => describeCondition(c, fields)).join(" và ")}
+                            </p>
+                          )}
                         </div>
-                        {conds.length > 0 && (
-                          <p className="mt-2 text-xs text-muted-foreground">
-                            Điều kiện: {conds.map((c) => describeCondition(c, fields)).join(" và ")}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <Switch
-                          checked={a.enabled}
-                          onCheckedChange={async (v) => {
-                            await toggle({ data: { agentId: a.id, enabled: v } });
-                            invalidate();
-                          }}
-                        />
-                        <Button size="sm" variant="outline" onClick={() => runMutation.mutate(a)} disabled={runMutation.isPending}>
-                          {runMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-                          <span className="ml-1.5 hidden sm:inline">Chạy điều kiện</span>
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() =>
-                            setDraft({
-                              id: a.id,
-                              workspaceId: activeWs,
-                              name: a.name,
-                              description: a.description ?? "",
-                              triggerType: a.trigger_type,
-                              conditions: a.conditions ?? [],
-                              actionType: a.action_type,
-                              skills: normalizeSkills(a.skills),
-                              workerProfile: a.worker_profile ?? null,
-                              allowedActionTypes: normalizeAllowedActionTypes(a.allowed_action_types),
-                              allowedSources: normalizeAllowedSources(a.allowed_sources),
-                              instruction: a.instruction ?? "",
-                              enabled: a.enabled,
-                            })
-                          }
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={async () => {
-                            await remove({ data: { agentId: a.id } });
-                            toast.success("Đã xoá agent");
-                            invalidate();
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="inline-flex min-h-11 min-w-11 items-center justify-center">
+                            <Switch
+                              checked={a.enabled}
+                              onCheckedChange={async (v) => {
+                                await toggle({ data: { agentId: a.id, enabled: v } });
+                                invalidate();
+                              }}
+                            />
+                          </span>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="min-h-11"
+                            onClick={() => runMutation.mutate(a)}
+                            disabled={runMutation.isPending}
+                          >
+                            {runMutation.isPending ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Play className="h-4 w-4" />
+                            )}
+                            <span className="ml-1.5 hidden sm:inline">Chạy điều kiện</span>
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-11 w-11"
+                            aria-label="Chỉnh sửa agent"
+                            onClick={() =>
+                              setDraft({
+                                id: a.id,
+                                workspaceId: activeWs,
+                                name: a.name,
+                                description: a.description ?? "",
+                                triggerType: a.trigger_type,
+                                conditions: a.conditions ?? [],
+                                actionType: a.action_type,
+                                skills: normalizeSkills(a.skills),
+                                workerProfile: a.worker_profile ?? null,
+                                allowedActionTypes: normalizeAllowedActionTypes(
+                                  a.allowed_action_types,
+                                ),
+                                allowedSources: normalizeAllowedSources(a.allowed_sources),
+                                instruction: a.instruction ?? "",
+                                enabled: a.enabled,
+                              })
+                            }
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-11 w-11"
+                            aria-label="Xoá agent"
+                            onClick={async () => {
+                              await remove({ data: { agentId: a.id } });
+                              toast.success("Đã xoá agent");
+                              invalidate();
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </article>
@@ -398,18 +574,30 @@ function AgentBuilderPage() {
 
               {evaluation && (
                 <section className="rounded-xl border border-border bg-card p-4">
-                  <h3 className="font-semibold">
-                    Kết quả điều kiện · {evaluation.agentName}
-                  </h3>
+                  <h3 className="font-semibold">Kết quả điều kiện · {evaluation.agentName}</h3>
                   <p className="mt-0.5 text-sm text-muted-foreground">
-                    Đã quét {evaluation.evaluated} bản ghi · {evaluation.matches.length} khớp điều kiện.
+                    Đã quét {evaluation.evaluated} bản ghi · {evaluation.matches.length} khớp điều
+                    kiện.
                   </p>
                   <ul className="mt-3 space-y-2">
                     {evaluation.matches.map((m) => (
-                      <li key={m.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border p-3">
+                      <li
+                        key={m.id}
+                        className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border p-3"
+                      >
                         <span className="min-w-0 text-sm">{m.summary}</span>
-                        <Button size="sm" variant="secondary" disabled={proposing === m.id} onClick={() => onPropose(m.id)}>
-                          {proposing === m.id ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Sparkles className="mr-1.5 h-4 w-4" />}
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="min-h-11"
+                          disabled={proposing === m.id}
+                          onClick={() => onPropose(m.id)}
+                        >
+                          {proposing === m.id ? (
+                            <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                          ) : (
+                            <Sparkles className="mr-1.5 h-4 w-4" />
+                          )}
                           Tạo đề xuất
                         </Button>
                       </li>
@@ -421,25 +609,96 @@ function AgentBuilderPage() {
               {proposals.length > 0 && (
                 <section className="space-y-3">
                   <h3 className="font-semibold">Đề xuất chờ bạn phê duyệt</h3>
-                  {proposals.map((p) => <ActionProposalCard key={p.actionId} proposal={p} />)}
+                  {proposals.map((p) => (
+                    <ActionProposalCard key={p.actionId} proposal={p} />
+                  ))}
                 </section>
               )}
             </section>
 
-            <aside className="rounded-xl border border-border bg-card p-4">
-              <h3 className="flex items-center gap-2 font-semibold"><History className="h-4 w-4" /> Lịch sử agent</h3>
-              <ul className="mt-3 space-y-2 text-sm">
-                {(runsQuery.data ?? []).map((r: any) => (
-                  <li key={r.id} className="flex items-center justify-between gap-2 border-b border-border pb-2 last:border-0">
-                    <span className="text-muted-foreground">{new Date(r.created_at).toLocaleString("vi-VN")}</span>
-                    <span className="flex items-center gap-2">
-                      <Badge variant={r.status === "NO_MATCH" ? "outline" : "secondary"}>{r.status}</Badge>
-                      <span className="text-xs text-muted-foreground">{r.matched_count} khớp</span>
-                    </span>
-                  </li>
-                ))}
-                {(runsQuery.data ?? []).length === 0 && <li className="text-muted-foreground">Chưa có lần chạy nào.</li>}
-              </ul>
+            <aside className="space-y-5">
+              <section className="rounded-xl border border-border bg-card p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="flex items-center gap-2 font-semibold">
+                    <Sparkles className="h-4 w-4 text-primary" /> Kỹ năng Skill Hub
+                  </h3>
+                  <Link
+                    to="/ai-brain/skills"
+                    className="inline-flex min-h-11 items-center text-sm text-muted-foreground hover:text-foreground"
+                  >
+                    Mở Skill Hub
+                  </Link>
+                </div>
+                <p className="mt-0.5 text-sm text-muted-foreground">
+                  Kỹ năng đang bật của tổ chức. Agent có thể dùng kỹ năng khi loại hành động trùng
+                  khớp.
+                </p>
+                {hubQuery.isLoading && (
+                  <p className="mt-3 text-sm text-muted-foreground">Đang tải…</p>
+                )}
+                {!hubQuery.isLoading && hubSkills.length === 0 && (
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    Chưa có kỹ năng nào trong Skill Hub.
+                  </p>
+                )}
+                <ul className="mt-3 space-y-2">
+                  {hubSkills.slice(0, 12).map((s) => (
+                    <li key={s.id} className="rounded-lg border border-border p-2.5">
+                      <div className="flex min-w-0 items-start justify-between gap-2">
+                        <span className="min-w-0">
+                          <span className="block truncate text-sm font-medium">{s.name}</span>
+                          {s.description && (
+                            <span className="mt-0.5 line-clamp-2 block text-xs text-muted-foreground">
+                              {s.description}
+                            </span>
+                          )}
+                        </span>
+                        <Badge variant={s.enabled ? "secondary" : "outline"} className="shrink-0">
+                          {s.enabled ? "Đang bật" : "Đang tắt"}
+                        </Badge>
+                      </div>
+                      {(s.action_types ?? []).length > 0 && (
+                        <div className="mt-1.5 flex flex-wrap gap-1.5">
+                          {(s.action_types ?? []).slice(0, 4).map((t) => (
+                            <Badge key={t} variant="outline" className="text-[11px]">
+                              {AI_ACTION_TOOLS[t as AiActionType]?.label ?? t}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+
+              <section className="rounded-xl border border-border bg-card p-4">
+                <h3 className="flex items-center gap-2 font-semibold">
+                  <History className="h-4 w-4" /> Lịch sử agent
+                </h3>
+                <ul className="mt-3 space-y-2 text-sm">
+                  {(runsQuery.data ?? []).map((r: any) => (
+                    <li
+                      key={r.id}
+                      className="flex items-center justify-between gap-2 border-b border-border pb-2 last:border-0"
+                    >
+                      <span className="text-muted-foreground">
+                        {new Date(r.created_at).toLocaleString("vi-VN")}
+                      </span>
+                      <span className="flex items-center gap-2">
+                        <Badge variant={r.status === "NO_MATCH" ? "outline" : "secondary"}>
+                          {r.status}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {r.matched_count} khớp
+                        </span>
+                      </span>
+                    </li>
+                  ))}
+                  {(runsQuery.data ?? []).length === 0 && (
+                    <li className="text-muted-foreground">Chưa có lần chạy nào.</li>
+                  )}
+                </ul>
+              </section>
             </aside>
           </div>
         </main>
@@ -447,16 +706,25 @@ function AgentBuilderPage() {
 
       <Dialog open={!!draft} onOpenChange={(o) => !o && setDraft(null)}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader><DialogTitle>{draft?.id ? "Sửa agent" : "Tạo agent"}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>{draft?.id ? "Sửa agent" : "Tạo agent"}</DialogTitle>
+          </DialogHeader>
           {draft && (
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <Label>Tên agent</Label>
-                <Input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="VD: Nhắc việc quá hạn" />
+                <Input
+                  value={draft.name}
+                  onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+                  placeholder="VD: Nhắc việc quá hạn"
+                />
               </div>
               <div className="space-y-1.5">
                 <Label>Mô tả</Label>
-                <Input value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
+                <Input
+                  value={draft.description}
+                  onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+                />
               </div>
 
               <div className="space-y-1.5 rounded-lg border border-border bg-muted/30 p-3">
@@ -484,11 +752,15 @@ function AgentBuilderPage() {
                     });
                   }}
                 >
-                  <SelectTrigger><SelectValue placeholder="Không gắn hồ sơ" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Không gắn hồ sơ" />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="NONE">Không gắn hồ sơ (tự cấu hình)</SelectItem>
                     {AI_WORKER_PROFILES.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>{p.name} · {p.domain}</SelectItem>
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name} · {p.domain}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -501,10 +773,21 @@ function AgentBuilderPage() {
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label>Điều kiện kích hoạt</Label>
-                  <Select value={draft.triggerType} onValueChange={(v) => setDraft({ ...draft, triggerType: v as AgentTrigger, conditions: [] })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                  <Select
+                    value={draft.triggerType}
+                    onValueChange={(v) =>
+                      setDraft({ ...draft, triggerType: v as AgentTrigger, conditions: [] })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
-                      {AGENT_TRIGGERS.map((t) => <SelectItem key={t} value={t}>{AGENT_TRIGGER_LABELS[t]}</SelectItem>)}
+                      {AGENT_TRIGGERS.map((t) => (
+                        <SelectItem key={t} value={t}>
+                          {AGENT_TRIGGER_LABELS[t]}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -515,9 +798,15 @@ function AgentBuilderPage() {
                     disabled={derivedAllowed.actionTypes.length === 0}
                     onValueChange={(v) => setDraft({ ...draft, actionType: v as AiActionType })}
                   >
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
-                      {derivedAllowed.actionTypes.map((t) => <SelectItem key={t} value={t}>{AI_ACTION_TOOLS[t].label}</SelectItem>)}
+                      {derivedAllowed.actionTypes.map((t) => (
+                        <SelectItem key={t} value={t}>
+                          {AI_ACTION_TOOLS[t].label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">
@@ -534,7 +823,8 @@ function AgentBuilderPage() {
                   <div>
                     <Label className="text-sm">Kỹ năng AI của agent</Label>
                     <p className="text-xs text-muted-foreground">
-                      Bật từng kỹ năng agent được dùng. Nguồn dữ liệu và loại hành động được suy ra từ kỹ năng; ngoài phạm vi này hệ thống chặn ở cả giao diện và máy chủ.
+                      Bật từng kỹ năng agent được dùng. Nguồn dữ liệu và loại hành động được suy ra
+                      từ kỹ năng; ngoài phạm vi này hệ thống chặn ở cả giao diện và máy chủ.
                     </p>
                   </div>
                 </div>
@@ -550,26 +840,38 @@ function AgentBuilderPage() {
                       setDraft({
                         ...draft,
                         skills: next,
-                        allowedActionTypes: allowed.actionTypes.length ? allowed.actionTypes : [draft.actionType],
-                        allowedSources: allowed.sources.length ? allowed.sources : ["WORKFLOW_AGENT"],
+                        allowedActionTypes: allowed.actionTypes.length
+                          ? allowed.actionTypes
+                          : [draft.actionType],
+                        allowedSources: allowed.sources.length
+                          ? allowed.sources
+                          : ["WORKFLOW_AGENT"],
                         actionType: allowed.actionTypes.includes(draft.actionType)
                           ? draft.actionType
-                          : allowed.actionTypes[0] ?? draft.actionType,
+                          : (allowed.actionTypes[0] ?? draft.actionType),
                       });
                     }}
                   >
-                    <SelectTrigger><SelectValue placeholder="Chọn lĩnh vực" /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Chọn lĩnh vực" />
+                    </SelectTrigger>
                     <SelectContent>
                       {AI_AGENT_DOMAINS.map((d) => (
-                        <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                        <SelectItem key={d.id} value={d.id}>
+                          {d.name}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">
-                    {AI_AGENT_DOMAINS.find((d) => d.id === matchDomainFromSkills(draft.skills))?.description}
+                    {
+                      AI_AGENT_DOMAINS.find((d) => d.id === matchDomainFromSkills(draft.skills))
+                        ?.description
+                    }
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Chọn lĩnh vực sẽ tự bật bộ kỹ năng phù hợp; bạn vẫn có thể chỉnh từng kỹ năng bên dưới. Nếu tắt hết, kỹ năng Đề xuất tạo công việc sẽ tự động bật lại.
+                    Chọn lĩnh vực sẽ tự bật bộ kỹ năng phù hợp; bạn vẫn có thể chỉnh từng kỹ năng
+                    bên dưới. Nếu tắt hết, kỹ năng Đề xuất tạo công việc sẽ tự động bật lại.
                   </p>
                 </div>
 
@@ -584,28 +886,42 @@ function AgentBuilderPage() {
                     {skillsByKind(kind).map((skill) => {
                       const on = draft.skills.includes(skill.id);
                       const inProfile =
-                        !draft.workerProfile || skillsForWorkerProfile(draft.workerProfile).includes(skill.id);
+                        !draft.workerProfile ||
+                        skillsForWorkerProfile(draft.workerProfile).includes(skill.id);
                       return (
-                        <div key={skill.id} className="flex min-h-11 items-start justify-between gap-3 rounded-md border border-border p-3">
+                        <div
+                          key={skill.id}
+                          className="flex min-h-11 items-start justify-between gap-3 rounded-md border border-border p-3"
+                        >
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-1.5">
                               <p className="text-sm font-medium">{skill.name}</p>
                               {!on && (
-                                <Badge variant="outline" className="border-dashed text-[11px] text-muted-foreground">
+                                <Badge
+                                  variant="outline"
+                                  className="border-dashed text-[11px] text-muted-foreground"
+                                >
                                   Chưa cấu hình
                                 </Badge>
                               )}
                               {!inProfile && (
-                                <Badge variant="outline" className="text-[11px] text-muted-foreground">
+                                <Badge
+                                  variant="outline"
+                                  className="text-[11px] text-muted-foreground"
+                                >
                                   Ngoài hồ sơ
                                 </Badge>
                               )}
                             </div>
                             <p className="text-xs text-muted-foreground">{skill.description}</p>
-                            <p className="mt-0.5 text-xs italic text-muted-foreground">Ví dụ: {skill.example}</p>
+                            <p className="mt-0.5 text-xs italic text-muted-foreground">
+                              Ví dụ: {skill.example}
+                            </p>
                             <div className="mt-1 flex flex-wrap gap-1">
                               {skill.actionTypes.length === 0 ? (
-                                <Badge variant="outline" className="text-[11px]">Chỉ đọc</Badge>
+                                <Badge variant="outline" className="text-[11px]">
+                                  Chỉ đọc
+                                </Badge>
                               ) : (
                                 skill.actionTypes.map((t) => (
                                   <Badge key={t} variant="secondary" className="text-[11px]">
@@ -620,17 +936,23 @@ function AgentBuilderPage() {
                             disabled={!inProfile}
                             onCheckedChange={(v) => {
                               const next = ensureDefaultSkill(
-                                v ? [...draft.skills, skill.id] : draft.skills.filter((x) => x !== skill.id),
+                                v
+                                  ? [...draft.skills, skill.id]
+                                  : draft.skills.filter((x) => x !== skill.id),
                               );
                               const allowed = deriveAllowedFromSkills(next);
                               setDraft({
                                 ...draft,
                                 skills: next,
-                                allowedActionTypes: allowed.actionTypes.length ? allowed.actionTypes : [draft.actionType],
-                                allowedSources: allowed.sources.length ? allowed.sources : ["WORKFLOW_AGENT"],
+                                allowedActionTypes: allowed.actionTypes.length
+                                  ? allowed.actionTypes
+                                  : [draft.actionType],
+                                allowedSources: allowed.sources.length
+                                  ? allowed.sources
+                                  : ["WORKFLOW_AGENT"],
                                 actionType: allowed.actionTypes.includes(draft.actionType)
                                   ? draft.actionType
-                                  : allowed.actionTypes[0] ?? draft.actionType,
+                                  : (allowed.actionTypes[0] ?? draft.actionType),
                               });
                             }}
                           />
@@ -646,10 +968,12 @@ function AgentBuilderPage() {
                     <span className="text-xs text-muted-foreground">—</span>
                   ) : (
                     derivedAllowed.sources.map((s) => (
-                      <Badge key={s} variant="outline" className="text-[11px]">{AI_ACTION_SOURCE_LABELS[s]}</Badge>
+                      <Badge key={s} variant="outline" className="text-[11px]">
+                        {AI_ACTION_SOURCE_LABELS[s]}
+                      </Badge>
                     ))
                   )}
-              </div>
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -661,7 +985,14 @@ function AgentBuilderPage() {
                     onClick={() =>
                       setDraft({
                         ...draft,
-                        conditions: [...draft.conditions, { field: conditionFieldsFor(draft.triggerType)[0]!.field, operator: "eq", value: "" }],
+                        conditions: [
+                          ...draft.conditions,
+                          {
+                            field: conditionFieldsFor(draft.triggerType)[0]!.field,
+                            operator: "eq",
+                            value: "",
+                          },
+                        ],
                       })
                     }
                   >
@@ -672,27 +1003,60 @@ function AgentBuilderPage() {
                   const fields = conditionFieldsFor(draft.triggerType);
                   const def = fields.find((f) => f.field === c.field);
                   const update = (patch: Partial<AgentCondition>) =>
-                    setDraft({ ...draft, conditions: draft.conditions.map((x, j) => (j === i ? { ...x, ...patch } : x)) });
+                    setDraft({
+                      ...draft,
+                      conditions: draft.conditions.map((x, j) =>
+                        j === i ? { ...x, ...patch } : x,
+                      ),
+                    });
                   return (
-                    <div key={i} className="flex flex-wrap items-center gap-2 rounded-lg border border-border p-2">
-                      <Select value={c.field} onValueChange={(v) => update({ field: v, value: "" })}>
-                        <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+                    <div
+                      key={i}
+                      className="flex flex-wrap items-center gap-2 rounded-lg border border-border p-2"
+                    >
+                      <Select
+                        value={c.field}
+                        onValueChange={(v) => update({ field: v, value: "" })}
+                      >
+                        <SelectTrigger className="w-44">
+                          <SelectValue />
+                        </SelectTrigger>
                         <SelectContent>
-                          {fields.map((f) => <SelectItem key={f.field} value={f.field}>{f.label}</SelectItem>)}
+                          {fields.map((f) => (
+                            <SelectItem key={f.field} value={f.field}>
+                              {f.label}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
-                      <Select value={c.operator} onValueChange={(v) => update({ operator: v as AgentCondition["operator"] })}>
-                        <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+                      <Select
+                        value={c.operator}
+                        onValueChange={(v) => update({ operator: v as AgentCondition["operator"] })}
+                      >
+                        <SelectTrigger className="w-32">
+                          <SelectValue />
+                        </SelectTrigger>
                         <SelectContent>
-                          {CONDITION_OPERATORS.map((o) => <SelectItem key={o} value={o}>{OPERATOR_LABELS[o]}</SelectItem>)}
+                          {CONDITION_OPERATORS.map((o) => (
+                            <SelectItem key={o} value={o}>
+                              {OPERATOR_LABELS[o]}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
-                      {c.operator !== "is_empty" && c.operator !== "is_not_empty" && (
-                        def?.kind === "enum" ? (
+                      {c.operator !== "is_empty" &&
+                        c.operator !== "is_not_empty" &&
+                        (def?.kind === "enum" ? (
                           <Select value={c.value} onValueChange={(v) => update({ value: v })}>
-                            <SelectTrigger className="w-40"><SelectValue placeholder="Giá trị" /></SelectTrigger>
+                            <SelectTrigger className="w-40">
+                              <SelectValue placeholder="Giá trị" />
+                            </SelectTrigger>
                             <SelectContent>
-                              {def.options?.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                              {def.options?.map((o) => (
+                                <SelectItem key={o.value} value={o.value}>
+                                  {o.label}
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                         ) : (
@@ -703,12 +1067,16 @@ function AgentBuilderPage() {
                             onChange={(e) => update({ value: e.target.value })}
                             placeholder="Giá trị"
                           />
-                        )
-                      )}
+                        ))}
                       <Button
                         size="icon"
                         variant="ghost"
-                        onClick={() => setDraft({ ...draft, conditions: draft.conditions.filter((_, j) => j !== i) })}
+                        onClick={() =>
+                          setDraft({
+                            ...draft,
+                            conditions: draft.conditions.filter((_, j) => j !== i),
+                          })
+                        }
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
@@ -730,19 +1098,24 @@ function AgentBuilderPage() {
               <div className="flex items-center justify-between rounded-lg border border-border p-3">
                 <div>
                   <p className="text-sm font-medium">Bắt buộc phê duyệt</p>
-                  <p className="text-xs text-muted-foreground">Không thể tắt trong V1 — agent chỉ được đề xuất.</p>
+                  <p className="text-xs text-muted-foreground">
+                    Không thể tắt trong V1 — agent chỉ được đề xuất.
+                  </p>
                 </div>
                 <Switch checked disabled />
               </div>
             </div>
           )}
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setDraft(null)}>Huỷ</Button>
+            <Button variant="ghost" onClick={() => setDraft(null)}>
+              Huỷ
+            </Button>
             <Button
               disabled={!draft?.name.trim() || saveMutation.isPending}
               onClick={() => draft && saveMutation.mutate(draft)}
             >
-              {saveMutation.isPending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />} Lưu agent
+              {saveMutation.isPending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />} Lưu
+              agent
             </Button>
           </DialogFooter>
         </DialogContent>

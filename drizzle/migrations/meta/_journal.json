@@ -1,0 +1,111 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1789122130618,
+      "tag": "0000_ceo_kpi_auto_refresh_snapshot",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789373545727,
+      "tag": "0001_ceo_auto_standup",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789373840701,
+      "tag": "0002_schedule_ceo_standup_daily",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789373910852,
+      "tag": "0003_user_layout_history",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789374144867,
+      "tag": "0004_layout_history_scope_ceo",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1789374618515,
+      "tag": "0005_ceo_kpi_snapshots",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789376176996,
+      "tag": "0006_ceo_standup_hour",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1789378267973,
+      "tag": "0007_ceo_weekly_meeting_settings",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1789392848696,
+      "tag": "0008_go2c_office_bridge",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1789702698268,
+      "tag": "0009_decision_authority_graph",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1789714333258,
+      "tag": "0010_decision_revisions_history",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1789718776477,
+      "tag": "0011_extract_decisions_from_meeting",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1789719090686,
+      "tag": "0012_search_universal_include_decisions",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1789719282404,
+      "tag": "0013_fix_decision_revision_trigger_array",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1789721410226,
+      "tag": "0014_extract_decisions_return_ids",
+      "breakpoints": true
+    }
+  ]
+}

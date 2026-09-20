@@ -187,12 +187,8 @@ function HelpPage() {
         <AppTopbar variant="documents" onOpenSidebar={() => setSidebarOpen(true)} />
 
         {/* Hero */}
-        <section className="relative overflow-hidden border-b border-border bg-gradient-to-br from-primary/15 via-surface to-background">
-          <div className="pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_at_top,black,transparent_70%)]">
-            <div className="absolute -top-24 left-1/3 h-72 w-72 rounded-full bg-primary/20 blur-3xl" />
-            <div className="absolute -bottom-16 right-10 h-64 w-64 rounded-full bg-violet-500/20 blur-3xl" />
-          </div>
-          <div className="relative mx-auto w-full max-w-none px-4 py-12 text-center sm:px-6 sm:py-16">
+        <section className="border-b border-border bg-surface">
+          <div className="mx-auto w-full max-w-none px-4 py-8 text-center sm:px-6 sm:py-14">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-border bg-surface/70 px-3 py-1 text-xs text-muted-foreground backdrop-blur">
               <LifeBuoy className="h-3.5 w-3.5 text-primary" />
               Trung tâm trợ giúp UNIWORK
@@ -200,7 +196,7 @@ function HelpPage() {
                 v2.4
               </span>
             </div>
-            <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+            <h1 className="text-2xl font-semibold sm:text-4xl">
               Chúng tôi có thể giúp gì cho bạn?
             </h1>
             <p className="mx-auto mt-2 max-w-2xl text-sm text-muted-foreground">
@@ -214,7 +210,7 @@ function HelpPage() {
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Tìm theo chủ đề, lỗi hoặc câu hỏi… (vd: bật 2FA, ghi âm cuộc họp)"
-                className="w-full rounded-2xl border border-border bg-surface py-3.5 pl-11 pr-28 text-sm shadow-lg shadow-black/20 placeholder:text-muted-foreground focus:border-primary/60 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="h-12 w-full min-w-0 rounded-xl border border-border-strong bg-card pl-11 pr-4 text-sm shadow-card placeholder:text-muted-foreground focus:border-primary/60 focus:outline-none focus:ring-2 focus:ring-primary/30 sm:pr-28"
               />
               <kbd className="absolute right-3 top-1/2 hidden -translate-y-1/2 items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-[10px] text-muted-foreground sm:inline-flex">
                 <span>⌘</span>
@@ -228,7 +224,7 @@ function HelpPage() {
                 <button
                   key={p}
                   onClick={() => setQ(p)}
-                  className="rounded-full border border-border bg-surface/60 px-2.5 py-1 hover:border-primary/40 hover:text-foreground"
+                  className="inline-flex min-h-11 items-center rounded-full border border-border bg-surface/60 px-3 py-2 hover:border-primary/40 hover:text-foreground"
                 >
                   {p}
                 </button>
@@ -237,10 +233,10 @@ function HelpPage() {
           </div>
         </section>
 
-        <div className="mx-auto grid w-full max-w-none flex-1 gap-5 px-4 py-6 sm:px-6 lg:grid-cols-[260px_1fr_300px]">
+        <div className="mx-auto grid w-full min-w-0 max-w-none flex-1 gap-5 px-4 py-6 sm:px-6 lg:grid-cols-[260px_minmax(0,1fr)_300px]">
           {/* Left: categories */}
           <aside className="space-y-4">
-            <nav className="rounded-2xl border border-border bg-surface p-2">
+            <nav className="rounded-xl border border-border bg-card p-2 shadow-card">
               <div className="px-3 pb-2 pt-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 Chủ đề
               </div>
@@ -254,7 +250,7 @@ function HelpPage() {
                   <button
                     key={c.key}
                     onClick={() => setCat(c.key)}
-                    className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${active ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"}`}
+                    className={`flex min-h-11 w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${active ? "bg-pale-purple text-primary" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"}`}
                   >
                     <c.icon className={`h-4 w-4 ${c.tint}`} />
                     <span className="flex-1 text-left">{c.label}</span>
@@ -268,14 +264,17 @@ function HelpPage() {
               })}
             </nav>
 
-            <div className="rounded-2xl border border-border bg-gradient-to-br from-primary/10 to-violet-500/10 p-4">
+            <div className="rounded-xl border border-primary/30 bg-pale-purple p-4">
               <div className="flex items-center gap-2 text-sm font-semibold">
                 <Sparkles className="h-4 w-4 text-primary" /> UNIWORK Academy
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
                 Khoá học miễn phí 4 tuần, cấp chứng chỉ Digital Workplace Specialist.
               </p>
-              <button onClick={() => notifyComingSoon()} className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90">
+              <button
+                onClick={() => notifyComingSoon()}
+                className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+              >
                 Đăng ký miễn phí <ArrowRight className="h-3.5 w-3.5" />
               </button>
             </div>
@@ -284,11 +283,12 @@ function HelpPage() {
           {/* Middle: content */}
           <section className="min-w-0 space-y-6">
             {/* Quick links */}
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="grid grid-cols-1 gap-3 min-[390px]:grid-cols-2 sm:grid-cols-4">
               {QUICK_LINKS.map((q) => (
-                <button onClick={() => notifyComingSoon()}
+                <button
+                  onClick={() => notifyComingSoon()}
                   key={q.label}
-                  className="group rounded-2xl border border-border bg-surface p-3 text-left transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5"
+                  className="group min-h-11 min-w-0 rounded-xl border border-border bg-card p-3 text-left shadow-card transition-[transform,border-color] hover:-translate-y-0.5 hover:border-primary/40"
                 >
                   <div
                     className={`flex h-9 w-9 items-center justify-center rounded-lg bg-surface-2 ${q.color}`}
@@ -304,12 +304,17 @@ function HelpPage() {
 
             {/* Popular */}
             {cat === "all" && !q && (
-              <div className="rounded-2xl border border-border bg-surface">
-                <div className="flex items-center justify-between border-b border-border px-4 py-3">
+              <div className="rounded-xl border border-border bg-card shadow-card">
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border px-4 py-3">
                   <div className="flex items-center gap-2 text-sm font-semibold">
                     <Star className="h-4 w-4 text-amber-300" /> Bài viết phổ biến
                   </div>
-                  <button onClick={() => notifyComingSoon()} className="text-xs text-primary hover:underline">Xem tất cả</button>
+                  <button
+                    onClick={() => notifyComingSoon()}
+                    className="min-h-11 shrink-0 px-2 text-xs text-primary hover:underline"
+                  >
+                    Xem tất cả
+                  </button>
                 </div>
                 <div className="divide-y divide-border">
                   {popular.map((a) => {
@@ -346,15 +351,15 @@ function HelpPage() {
             )}
 
             {/* Articles list */}
-            <div className="rounded-2xl border border-border bg-surface">
-              <div className="flex items-center justify-between border-b border-border px-4 py-3">
-                <div className="text-sm font-semibold">
+            <div className="rounded-xl border border-border bg-card shadow-card">
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border px-4 py-3">
+                <div className="min-w-0 text-sm font-semibold">
                   {cat === "all" ? "Tất cả bài viết" : CATS.find((c) => c.key === cat)?.label}
                   <span className="ml-2 text-xs font-normal text-muted-foreground">
                     {filtered.length} kết quả
                   </span>
                 </div>
-                <select className="rounded-lg border border-border bg-surface-2 px-2 py-1 text-xs text-muted-foreground focus:outline-none">
+                <select className="min-h-11 max-w-32 shrink-0 rounded-lg border border-border bg-surface-2 px-2 py-1 text-xs text-muted-foreground focus:outline-none sm:max-w-none">
                   <option>Liên quan nhất</option>
                   <option>Mới nhất</option>
                   <option>Phổ biến</option>
@@ -425,12 +430,17 @@ function HelpPage() {
             </div>
 
             {/* Video tutorials */}
-            <div className="rounded-2xl border border-border bg-surface">
-              <div className="flex items-center justify-between border-b border-border px-4 py-3">
+            <div className="rounded-xl border border-border bg-card shadow-card">
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border px-4 py-3">
                 <div className="flex items-center gap-2 text-sm font-semibold">
                   <Video className="h-4 w-4 text-rose-300" /> Video hướng dẫn
                 </div>
-                <button onClick={() => notifyComingSoon()} className="text-xs text-primary hover:underline">Thư viện đầy đủ</button>
+                <button
+                  onClick={() => notifyComingSoon()}
+                  className="min-h-11 shrink-0 px-2 text-xs text-primary hover:underline"
+                >
+                  Thư viện đầy đủ
+                </button>
               </div>
               <div className="grid gap-3 p-4 sm:grid-cols-3">
                 {[
@@ -446,7 +456,8 @@ function HelpPage() {
                   },
                   { t: "Trợ lý AI và lệnh tắt", d: "04:32", g: "from-amber-500/30 to-rose-500/30" },
                 ].map((v) => (
-                  <button onClick={() => notifyComingSoon()}
+                  <button
+                    onClick={() => notifyComingSoon()}
                     key={v.t}
                     className="group overflow-hidden rounded-xl border border-border bg-surface-2 text-left transition-transform hover:-translate-y-0.5"
                   >
@@ -479,7 +490,7 @@ function HelpPage() {
                     <div key={f.q}>
                       <button
                         onClick={() => setOpenFaq(open ? null : i)}
-                        className="flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-surface-2/50"
+                        className="flex min-h-11 w-full items-start gap-3 px-4 py-3 text-left hover:bg-surface-2/50"
                       >
                         <span
                           className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${open ? "bg-primary text-primary-foreground" : "bg-surface-2 text-muted-foreground"}`}
@@ -494,14 +505,20 @@ function HelpPage() {
                       {open && (
                         <div className="px-4 pb-4 pl-12 text-sm text-muted-foreground">
                           <p>{f.a}</p>
-                          <div className="mt-3 flex items-center gap-3 text-xs">
+                          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
                             <span className="text-muted-foreground">
                               Câu trả lời này có hữu ích?
                             </span>
-                            <button onClick={() => notifyComingSoon()} className="inline-flex items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1 hover:border-primary/40 hover:text-foreground">
+                            <button
+                              onClick={() => notifyComingSoon()}
+                              className="inline-flex min-h-11 items-center gap-1 rounded-md border border-border bg-surface-2 px-3 py-2 hover:border-primary/40 hover:text-foreground"
+                            >
                               <ThumbsUp className="h-3 w-3" /> Có
                             </button>
-                            <button onClick={() => notifyComingSoon()} className="inline-flex items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1 hover:border-destructive/40 hover:text-destructive">
+                            <button
+                              onClick={() => notifyComingSoon()}
+                              className="inline-flex min-h-11 items-center gap-1 rounded-md border border-border bg-surface-2 px-3 py-2 hover:border-destructive/40 hover:text-destructive"
+                            >
                               <ThumbsDown className="h-3 w-3" /> Không
                             </button>
                           </div>
@@ -538,7 +555,7 @@ function HelpPage() {
                   c: "text-emerald-300",
                 },
               ].map((x) => (
-                <div key={x.t} className="rounded-2xl border border-border bg-surface p-4">
+                <div key={x.t} className="rounded-xl border border-border bg-card p-4 shadow-card">
                   <div
                     className={`flex h-9 w-9 items-center justify-center rounded-lg bg-surface-2 ${x.c}`}
                   >
@@ -546,7 +563,10 @@ function HelpPage() {
                   </div>
                   <div className="mt-3 text-sm font-semibold">{x.t}</div>
                   <div className="text-xs text-muted-foreground">{x.d}</div>
-                  <button onClick={() => notifyComingSoon()} className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline">
+                  <button
+                    onClick={() => notifyComingSoon()}
+                    className="mt-3 inline-flex min-h-11 items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+                  >
                     {x.a} <ArrowRight className="h-3.5 w-3.5" />
                   </button>
                 </div>
@@ -557,7 +577,7 @@ function HelpPage() {
           {/* Right: AI assistant + status */}
           <aside className="space-y-4">
             {/* AI assistant */}
-            <div className="overflow-hidden rounded-2xl border border-border bg-gradient-to-b from-surface to-background">
+            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-card">
               <div className="flex items-center gap-2 border-b border-border bg-surface px-4 py-3">
                 <div className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-primary/20 text-primary">
                   <Bot className="h-4 w-4" />
@@ -579,9 +599,10 @@ function HelpPage() {
                     "Tạo quy trình phê duyệt nghỉ phép",
                     "Liên hệ chuyên gia triển khai",
                   ].map((s) => (
-                    <button onClick={() => notifyComingSoon()}
+                    <button
+                      onClick={() => notifyComingSoon()}
                       key={s}
-                      className="flex w-full items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-left text-xs hover:border-primary/40 hover:text-foreground"
+                      className="flex min-h-11 w-full items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-left text-xs hover:border-primary/40 hover:text-foreground"
                     >
                       <Sparkles className="h-3.5 w-3.5 text-primary" /> {s}
                     </button>
@@ -590,9 +611,12 @@ function HelpPage() {
                 <div className="relative">
                   <input
                     placeholder="Nhập câu hỏi…"
-                    className="w-full rounded-xl border border-border bg-surface py-2.5 pl-3 pr-10 text-sm placeholder:text-muted-foreground focus:border-primary/60 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    className="min-h-11 w-full rounded-xl border border-border bg-surface py-2.5 pl-3 pr-12 text-sm placeholder:text-muted-foreground focus:border-primary/60 focus:outline-none focus:ring-2 focus:ring-primary/20"
                   />
-                  <button onClick={() => notifyComingSoon()} className="absolute right-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90">
+                  <button
+                    onClick={() => notifyComingSoon()}
+                    className="absolute right-0 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
+                  >
                     <Send className="h-3.5 w-3.5" />
                   </button>
                 </div>
@@ -600,7 +624,7 @@ function HelpPage() {
             </div>
 
             {/* System status */}
-            <div className="rounded-2xl border border-border bg-surface">
+            <div className="rounded-xl border border-border bg-card shadow-card">
               <div className="flex items-center justify-between border-b border-border px-4 py-3">
                 <div className="flex items-center gap-2 text-sm font-semibold">
                   <Activity className="h-4 w-4 text-success" /> Trạng thái hệ thống
@@ -632,7 +656,7 @@ function HelpPage() {
             </div>
 
             {/* Specialist card */}
-            <div className="rounded-2xl border border-border bg-surface p-4">
+            <div className="rounded-xl border border-border bg-card p-4 shadow-card">
               <div className="flex items-center gap-3">
                 <img
                   src={avatar("le-thanh-cs")}
@@ -650,13 +674,16 @@ function HelpPage() {
                 Đặt lịch 1:1 để được hướng dẫn cấu hình workspace, đào tạo nhóm hoặc tích hợp hệ
                 thống nội bộ.
               </p>
-              <button onClick={() => notifyComingSoon()} className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-xs font-medium hover:bg-surface-2/70">
+              <button
+                onClick={() => notifyComingSoon()}
+                className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-xs font-medium hover:bg-surface-2/70"
+              >
                 Đặt lịch tư vấn <ArrowRight className="h-3.5 w-3.5" />
               </button>
             </div>
 
             {/* Useful links */}
-            <div className="rounded-2xl border border-border bg-surface p-2">
+            <div className="rounded-xl border border-border bg-card p-2 shadow-card">
               {[
                 { icon: SettingsIcon, label: "Cài đặt tài khoản", to: "/settings" },
                 { icon: Github, label: "Changelog & Roadmap", to: "/blog" },
@@ -665,7 +692,7 @@ function HelpPage() {
                 <a
                   key={l.label}
                   href={l.to}
-                  className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+                  className="flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground"
                 >
                   <l.icon className="h-4 w-4" /> <span className="flex-1">{l.label}</span>{" "}
                   <ExternalLink className="h-3.5 w-3.5 opacity-60" />

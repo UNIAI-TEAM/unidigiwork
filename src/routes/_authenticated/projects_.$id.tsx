@@ -1,0 +1,1339 @@
+// Chi tiết dự án — bảng công việc, tiến độ, ghi chú và gợi ý kỹ năng AI từ Skill Hub.
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import {
+  ArrowLeft,
+  Folder,
+  Loader2,
+  ListChecks,
+  StickyNote,
+  Sparkles,
+  AlertTriangle,
+  CalendarDays,
+  Save,
+  GripVertical,
+  Search,
+  X,
+  User,
+  History as HistoryIcon,
+  MessageSquare,
+  Upload,
+  Download,
+  CalendarClock,
+} from "lucide-react";
+import { CommentThread } from "@/components/projects/comment-thread";
+import { AssignToCommandCenter } from "@/components/projects/assign-to-command-center";
+import { ProjectCalendar } from "@/components/projects/project-calendar";
+import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  addProjectComment,
+  getProject,
+  getProjectActivity,
+  updateProject,
+  updateTaskProgress,
+  importTaskProgress,
+  listProjectMeetings,
+  scheduleProjectMeeting,
+  importProjectMeetings,
+  listProjectProposals,
+  type ProjectProposal,
+  type ProjectRow,
+  type ProjectStatus,
+} from "@/lib/api/projects.functions";
+import { listAiSkills } from "@/lib/api/ai-skills.functions";
+import { transitionTask } from "@/lib/api/tasks.functions";
+
+export const Route = createFileRoute("/_authenticated/projects_/$id")({
+  component: ProjectDetailPage,
+  head: () => ({
+    meta: [
+      { title: "Chi tiết dự án · UNIWORK" },
+      {
+        name: "description",
+        content: "Xem tiến độ, thời hạn, ghi chú và danh sách công việc thuộc dự án trong UNIWORK.",
+      },
+      { property: "og:title", content: "Chi tiết dự án · UNIWORK" },
+      {
+        property: "og:description",
+        content: "Tiến độ dự án, công việc liên quan và gợi ý kỹ năng AI trong UNIWORK.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
+});
+
+/** Gom đề xuất AI theo ngày tạo để hiển thị cạnh cuộc họp cùng ngày. */
+function proposalsByDay(list: ProjectProposal[]) {
+  const map = new Map<string, ProjectProposal[]>();
+  for (const p of list) {
+    const d = new Date(p.createdAt);
+    if (Number.isNaN(d.getTime())) continue;
+    const k = d.toDateString();
+    map.set(k, [...(map.get(k) ?? []), p]);
+  }
+  return map;
+}
+
+const STATUS_LABEL: Record<ProjectStatus, string> = {
+  planning: "Lập kế hoạch",
+  active: "Đang chạy",
+  on_hold: "Tạm dừng",
+  completed: "Hoàn thành",
+  canceled: "Đã hủy",
+};
+
+const TASK_GROUPS: { key: string; label: string; dot: string }[] = [
+  { key: "in_progress", label: "Đang làm", dot: "bg-primary" },
+  { key: "todo", label: "Cần làm", dot: "bg-muted-foreground" },
+  { key: "blocked", label: "Bị chặn", dot: "bg-destructive" },
+  { key: "done", label: "Hoàn thành", dot: "bg-emerald-500" },
+  { key: "canceled", label: "Đã hủy", dot: "bg-muted" },
+];
+
+const TASK_STATUS_LABEL: Record<string, string> = {
+  todo: "Cần làm",
+  in_progress: "Đang làm",
+  blocked: "Bị chặn",
+  done: "Hoàn thành",
+  canceled: "Đã hủy",
+};
+
+type SkillRow = {
+  id: string;
+  name: string;
+  description: string;
+  kind: string;
+  enabled: boolean;
+  action_types: string[];
+};
+
+const STOPWORDS = new Set([
+  "và",
+  "của",
+  "cho",
+  "các",
+  "một",
+  "dự",
+  "án",
+  "công",
+  "việc",
+  "the",
+  "for",
+  "with",
+]);
+
+function tokenize(text: string): string[] {
+  return text
+    .toLowerCase()
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter((w) => w.length >= 3 && !STOPWORDS.has(w));
+}
+
+function StatCard({
+  label,
+  value,
+  hint,
+  tone,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  tone?: "danger";
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-card p-4">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p
+        className={`mt-1 text-xl font-semibold ${tone === "danger" ? "text-destructive" : ""}`}
+        suppressHydrationWarning
+      >
+        {value}
+      </p>
+      {hint && <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>}
+    </div>
+  );
+}
+
+function ProjectDetailPage() {
+  const [open, setOpen] = useSidebarState();
+  const { id } = Route.useParams();
+  const qc = useQueryClient();
+
+  const query = useQuery({
+    queryKey: ["project", id],
+    queryFn: () => getProject({ data: { projectId: id } }),
+  });
+
+  const project = query.data?.project as ProjectRow | undefined;
+  const tasks = query.data?.tasks ?? [];
+
+  const [notes, setNotes] = useState("");
+  const [notesDirty, setNotesDirty] = useState(false);
+  useEffect(() => {
+    if (project && !notesDirty) setNotes(project.notes ?? "");
+  }, [project, notesDirty]);
+
+  const update = useServerFn(updateProject);
+  const importProgress = useServerFn(importTaskProgress);
+  const saveNotes = useMutation({
+    mutationFn: async () => update({ data: { projectId: id, notes } }),
+    onSuccess: () => {
+      setNotesDirty(false);
+      toast.success("Đã lưu ghi chú");
+      qc.invalidateQueries({ queryKey: ["project", id] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Không lưu được ghi chú"),
+  });
+
+  const activityQuery = useQuery({
+    queryKey: ["project", id, "activity"],
+    queryFn: () => getProjectActivity({ data: { projectId: id, limit: 60 } }),
+  });
+
+  // Lịch họp thật của dự án.
+  const meetingsQuery = useQuery({
+    queryKey: ["project", id, "meetings"],
+    queryFn: () => listProjectMeetings({ data: { projectId: id } }),
+  });
+  // Đề xuất giao việc của AI gắn với dự án (hiển thị trên lịch và trong lịch họp).
+  const proposalsQuery = useQuery({
+    queryKey: ["project", id, "proposals"],
+    queryFn: () => listProjectProposals({ data: { projectId: id } }),
+  });
+
+  const scheduleMeetingFn = useServerFn(scheduleProjectMeeting);
+  const importMeetingsFn = useServerFn(importProjectMeetings);
+  const [importingMeetings, setImportingMeetings] = useState(false);
+  const meetingFileRef = useRef<HTMLInputElement>(null);
+  const [mTitle, setMTitle] = useState("");
+  const [mStart, setMStart] = useState("");
+  const [mEnd, setMEnd] = useState("");
+  const [mLocation, setMLocation] = useState("");
+  const [mAgenda, setMAgenda] = useState("");
+  const createMeeting = useMutation({
+    mutationFn: async () =>
+      scheduleMeetingFn({
+        data: {
+          projectId: id,
+          title: mTitle.trim(),
+          startAt: mStart,
+          endAt: mEnd,
+          location: mLocation.trim() || null,
+          agenda: mAgenda.trim() || null,
+        },
+      }),
+    onSuccess: () => {
+      toast.success("Đã thêm lịch họp vào dự án");
+      setMTitle("");
+      setMStart("");
+      setMEnd("");
+      setMLocation("");
+      setMAgenda("");
+      qc.invalidateQueries({ queryKey: ["project", id, "meetings"] });
+      qc.invalidateQueries({ queryKey: ["ai-brain"] });
+      qc.invalidateQueries({ queryKey: ["ceo"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Không thêm được lịch họp"),
+  });
+
+  const skillsQuery = useQuery({
+    queryKey: ["ai-skills", project?.workspace_id ?? null],
+    queryFn: () => listAiSkills({ data: { workspaceId: project?.workspace_id ?? null } }),
+    enabled: !!project,
+  });
+
+  const stats = useMemo(() => {
+    const now = Date.now();
+    const done = tasks.filter((t) => t.status === "done").length;
+    const overdue = tasks.filter(
+      (t) => t.status !== "done" && t.due_at && new Date(t.due_at).getTime() < now,
+    ).length;
+    const pct = tasks.length ? Math.round((done / tasks.length) * 100) : 0;
+    return { done, overdue, pct, total: tasks.length };
+  }, [tasks]);
+
+  // Bộ lọc + tìm kiếm trong danh sách công việc.
+  const [searchText, setSearchText] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [assigneeFilter, setAssigneeFilter] = useState("all");
+  const [dueFilter, setDueFilter] = useState("all");
+
+  const assigneeOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const t of tasks) for (const a of t.assignees ?? []) map.set(a.id, a.name);
+    return Array.from(map.entries()).sort((a, b) => a[1].localeCompare(b[1]));
+  }, [tasks]);
+
+  const hasFilter =
+    searchText.trim() !== "" ||
+    statusFilter !== "all" ||
+    assigneeFilter !== "all" ||
+    dueFilter !== "all";
+
+  function clearFilters() {
+    setSearchText("");
+    setStatusFilter("all");
+    setAssigneeFilter("all");
+    setDueFilter("all");
+  }
+
+  const filteredTasks = useMemo(() => {
+    const now = Date.now();
+    const weekAhead = now + 7 * 24 * 3600 * 1000;
+    const q = searchText.trim().toLowerCase();
+    return tasks.filter((t) => {
+      if (q && !`${t.title}`.toLowerCase().includes(q)) return false;
+      if (statusFilter !== "all" && t.status !== statusFilter) return false;
+      if (assigneeFilter !== "all" && !(t.assignees ?? []).some((a) => a.id === assigneeFilter))
+        return false;
+      if (dueFilter !== "all") {
+        const due = t.due_at ? new Date(t.due_at).getTime() : null;
+        if (dueFilter === "overdue" && !(due && due < now && t.status !== "done")) return false;
+        if (dueFilter === "this_week" && !(due && due >= now && due <= weekAhead)) return false;
+        if (dueFilter === "no_due" && due !== null) return false;
+      }
+      return true;
+    });
+  }, [tasks, searchText, statusFilter, assigneeFilter, dueFilter]);
+
+  const grouped = useMemo(() => {
+    return TASK_GROUPS.map((g) => ({
+      ...g,
+      items: filteredTasks.filter((t) => t.status === g.key),
+    }));
+  }, [filteredTasks]);
+
+  // Kéo thả đổi trạng thái — vẫn đi qua command transitionTask, không ghi thẳng DB.
+  const [dragTaskId, setDragTaskId] = useState<string | null>(null);
+  const [openComments, setOpenComments] = useState<string | null>(null);
+  const [dropGroup, setDropGroup] = useState<string | null>(null);
+  const transition = useMutation({
+    mutationFn: (p: { taskId: string; toStatus: string }) =>
+      transitionTask({
+        data: {
+          taskId: p.taskId,
+          toStatus: p.toStatus as never,
+          idempotencyKey: crypto.randomUUID(),
+        },
+      }),
+    onSuccess: (_d, p) => {
+      toast.success(`Đã chuyển sang “${TASK_STATUS_LABEL[p.toStatus] ?? p.toStatus}”`);
+      qc.invalidateQueries({ queryKey: ["project", id] });
+    },
+    onError: (e: Error) => toast.error(e.message || "Không đổi được trạng thái"),
+  });
+
+  // Tiến độ từng công việc: % hoàn thành, ngày bắt đầu, ngày kết thúc.
+  const [openProgress, setOpenProgress] = useState<string | null>(null);
+  const progressMutation = useMutation({
+    mutationFn: (p: {
+      taskId: string;
+      progressPct?: number;
+      startAt?: string | null;
+      endAt?: string | null;
+    }) => updateTaskProgress({ data: p }),
+    onSuccess: () => {
+      toast.success("Đã cập nhật tiến độ");
+      qc.invalidateQueries({ queryKey: ["project", id] });
+      qc.invalidateQueries({ queryKey: ["ai-brain"] });
+      qc.invalidateQueries({ queryKey: ["ceo"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Không cập nhật được tiến độ"),
+  });
+
+  // Nhập tiến độ theo tuần: cập nhật % nhiều công việc cùng lúc + ghi nhật ký tuần.
+  const [weeklyOpen, setWeeklyOpen] = useState(false);
+  const [weeklyValues, setWeeklyValues] = useState<Record<string, string>>({});
+  const [weeklyNote, setWeeklyNote] = useState("");
+  const updateProgressFn = useServerFn(updateTaskProgress);
+  const addProjectCommentFn = useServerFn(addProjectComment);
+
+  const weekLabel = useMemo(() => {
+    const now = new Date();
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    return `${monday.toLocaleDateString("vi-VN")} – ${sunday.toLocaleDateString("vi-VN")}`;
+  }, []);
+
+  function openWeekly() {
+    const init: Record<string, string> = {};
+    for (const t of tasks) init[t.id] = String(t.progress_pct ?? 0);
+    setWeeklyValues(init);
+    setWeeklyNote("");
+    setWeeklyOpen(true);
+  }
+
+  const weeklyMutation = useMutation({
+    mutationFn: async () => {
+      const changed = tasks.filter((t) => {
+        const raw = weeklyValues[t.id];
+        if (raw === undefined) return false;
+        const pct = Number(raw);
+        return Number.isFinite(pct) && pct !== (t.progress_pct ?? 0);
+      });
+      for (const t of changed) {
+        const pct = Math.max(0, Math.min(100, Math.round(Number(weeklyValues[t.id]))));
+        await updateProgressFn({ data: { taskId: t.id, progressPct: pct } });
+      }
+      const lines = changed.map(
+        (t) => `- ${t.title}: ${t.progress_pct ?? 0}% → ${Math.round(Number(weeklyValues[t.id]))}%`,
+      );
+      const body = [
+        `Cập nhật tiến độ tuần ${weekLabel}`,
+        ...(lines.length ? lines : ["- Không có thay đổi tiến độ"]),
+        ...(weeklyNote.trim() ? ["", `Ghi chú: ${weeklyNote.trim()}`] : []),
+      ].join("\n");
+      await addProjectCommentFn({ data: { projectId: id, body } });
+      return changed.length;
+    },
+    onSuccess: (n) => {
+      toast.success(`Đã ghi nhận tiến độ tuần (${n} công việc)`);
+      setWeeklyOpen(false);
+      qc.invalidateQueries({ queryKey: ["project", id] });
+      qc.invalidateQueries({ queryKey: ["project", id, "meetings"] });
+      qc.invalidateQueries({ queryKey: ["project", id, "proposals"] });
+      qc.invalidateQueries({ queryKey: ["project", id, "activity"] });
+      qc.invalidateQueries({ queryKey: ["project-activity", id] });
+      qc.invalidateQueries({ queryKey: ["project-comments", id] });
+      qc.invalidateQueries({ queryKey: ["ai-brain"] });
+      qc.invalidateQueries({ queryKey: ["ceo"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Không lưu được tiến độ tuần"),
+  });
+
+  // Nhập tiến độ hàng loạt từ Excel/CSV.
+  const fileRef = useRef<HTMLInputElement | null>(null);
+  const [importing, setImporting] = useState(false);
+
+  function downloadTemplate() {
+    const header = "Tên công việc,% hoàn thành,Ngày bắt đầu,Ngày kết thúc\n";
+    const sample = tasks
+      .slice(0, 10)
+      .map(
+        (t) =>
+          `"${t.title.replace(/"/g, '""')}",${t.progress_pct ?? 0},${
+            t.start_at ? t.start_at.slice(0, 10) : ""
+          },${t.end_at ? t.end_at.slice(0, 10) : ""}`,
+      )
+      .join("\n");
+    const blob = new Blob(["\ufeff" + header + sample], {
+      type: "text/csv;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "mau-tien-do-cong-viec.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function pickColumn(headers: string[], keys: string[]) {
+    return headers.findIndex((h) => keys.some((k) => h.includes(k)));
+  }
+
+  async function handleImportFile(file: File) {
+    setImporting(true);
+    try {
+      const [{ readXlsxRows, readCsvRows, normalizeDateCell }] = await Promise.all([
+        import("@/lib/xlsx-read"),
+      ]);
+      const rows = file.name.toLowerCase().endsWith(".csv")
+        ? readCsvRows(await file.text())
+        : readXlsxRows(await file.arrayBuffer());
+      if (rows.length < 2) throw new Error("Tệp không có dữ liệu");
+
+      const headers = (rows[0] ?? []).map((h) => h.toLowerCase().trim());
+      const titleCol = pickColumn(headers, ["tên", "ten", "title", "công việc", "task"]);
+      const pctCol = pickColumn(headers, ["%", "hoàn thành", "hoan thanh", "progress"]);
+      const startCol = pickColumn(headers, ["bắt đầu", "bat dau", "start"]);
+      const endCol = pickColumn(headers, ["kết thúc", "ket thuc", "end", "finish"]);
+      if (titleCol < 0) throw new Error("Thiếu cột tên công việc");
+
+      const payload = rows
+        .slice(1)
+        .map((r) => {
+          const title = (r[titleCol] ?? "").trim();
+          if (!title) return null;
+          const pctRaw = pctCol >= 0 ? (r[pctCol] ?? "").replace("%", "").trim() : "";
+          const pctNum = pctRaw === "" ? null : Number(pctRaw.replace(",", "."));
+          const pct =
+            pctNum === null || Number.isNaN(pctNum)
+              ? null
+              : Math.max(
+                  0,
+                  Math.min(
+                    100,
+                    Math.round(pctNum <= 1 && pctRaw.includes(".") ? pctNum * 100 : pctNum),
+                  ),
+                );
+          return {
+            title,
+            progressPct: pct,
+            ...(startCol >= 0 ? { startAt: normalizeDateCell(r[startCol] ?? "") } : {}),
+            ...(endCol >= 0 ? { endAt: normalizeDateCell(r[endCol] ?? "") } : {}),
+          };
+        })
+        .filter((r): r is NonNullable<typeof r> => r !== null)
+        .slice(0, 500);
+
+      if (payload.length === 0) throw new Error("Không đọc được dòng dữ liệu nào");
+
+      const result = await importProgress({ data: { projectId: id, rows: payload } });
+      qc.invalidateQueries({ queryKey: ["project", id] });
+      qc.invalidateQueries({ queryKey: ["project-activity", id] });
+      qc.invalidateQueries({ queryKey: ["ai-brain"] });
+      qc.invalidateQueries({ queryKey: ["ceo"] });
+      const warn: string[] = [];
+      if (result.notFoundCount > 0) warn.push(`${result.notFoundCount} dòng không khớp công việc`);
+      if (result.invalidCount > 0) warn.push(`${result.invalidCount} dòng lỗi dữ liệu`);
+      toast.success(
+        `Đã cập nhật tiến độ ${result.updated} công việc${warn.length ? ` · ${warn.join(", ")}` : ""}`,
+      );
+    } catch (e) {
+      toast.error((e as Error)?.message || "Không đọc được tệp");
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  function downloadMeetingTemplate() {
+    const csv =
+      "Tiêu đề,Bắt đầu,Kết thúc,Địa điểm,Nội dung\nHọp tiến độ tuần,2026-09-14 09:00,2026-09-14 10:00,Phòng họp A,Rà soát tiến độ\n";
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "mau-lich-hop.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function handleImportMeetingFile(file: File) {
+    setImportingMeetings(true);
+    try {
+      const { readXlsxRows, readCsvRows, normalizeDateCell } = await import("@/lib/xlsx-read");
+      const rows = file.name.toLowerCase().endsWith(".csv")
+        ? readCsvRows(await file.text())
+        : readXlsxRows(await file.arrayBuffer());
+      if (rows.length < 2) throw new Error("Tệp không có dữ liệu");
+
+      const headers = (rows[0] ?? []).map((h) => h.toLowerCase().trim());
+      const titleCol = pickColumn(headers, ["tiêu đề", "tieu de", "title", "cuộc họp", "họp"]);
+      const startCol = pickColumn(headers, ["bắt đầu", "bat dau", "start", "thời gian"]);
+      const endCol = pickColumn(headers, ["kết thúc", "ket thuc", "end"]);
+      const locCol = pickColumn(headers, ["địa điểm", "dia diem", "location", "phòng"]);
+      const agendaCol = pickColumn(headers, ["nội dung", "noi dung", "agenda", "chương trình"]);
+      if (titleCol < 0 || startCol < 0) throw new Error("Thiếu cột tiêu đề hoặc thời gian bắt đầu");
+
+      const payload = rows
+        .slice(1)
+        .map((r) => {
+          const title = (r[titleCol] ?? "").trim();
+          const rawStart = (r[startCol] ?? "").trim();
+          if (!title || !rawStart) return null;
+          const startAt = normalizeDateCell(rawStart) ?? rawStart;
+          const rawEnd = endCol >= 0 ? (r[endCol] ?? "").trim() : "";
+          return {
+            title,
+            startAt,
+            endAt: rawEnd ? (normalizeDateCell(rawEnd) ?? rawEnd) : null,
+            location: locCol >= 0 ? (r[locCol] ?? "").trim() || null : null,
+            agenda: agendaCol >= 0 ? (r[agendaCol] ?? "").trim() || null : null,
+          };
+        })
+        .filter((r): r is NonNullable<typeof r> => r !== null)
+        .slice(0, 100);
+      if (!payload.length) throw new Error("Không đọc được dòng lịch họp nào");
+
+      const result = await importMeetingsFn({ data: { projectId: id, rows: payload } });
+      qc.invalidateQueries({ queryKey: ["project", id, "meetings"] });
+      qc.invalidateQueries({ queryKey: ["project-activity", id] });
+      qc.invalidateQueries({ queryKey: ["ai-brain"] });
+      qc.invalidateQueries({ queryKey: ["ceo"] });
+      toast.success(
+        `Đã nhập ${result.created} cuộc họp${result.invalid.length ? ` · ${result.invalid.length} dòng lỗi` : ""}`,
+      );
+    } catch (e) {
+      toast.error((e as Error)?.message || "Không nhập được lịch họp");
+    } finally {
+      setImportingMeetings(false);
+    }
+  }
+
+  function moveTask(taskId: string, toStatus: string) {
+    const current = tasks.find((t) => t.id === taskId);
+    if (!current || current.status === toStatus) return;
+    transition.mutate({ taskId, toStatus });
+  }
+
+  const suggestedSkills = useMemo(() => {
+    const skills = ((skillsQuery.data ?? []) as unknown as SkillRow[]).filter((s) => s.enabled);
+    if (!project || skills.length === 0) return [];
+    const corpus = new Set(
+      tokenize(
+        [project.name, project.description ?? "", ...tasks.slice(0, 40).map((t) => t.title)].join(
+          " ",
+        ),
+      ),
+    );
+    return skills
+      .map((s) => {
+        const words = tokenize(`${s.name} ${s.description}`);
+        const hits = Array.from(new Set(words.filter((w) => corpus.has(w))));
+        return { skill: s, score: hits.length, hits };
+      })
+      .sort((a, b) => b.score - a.score || a.skill.name.localeCompare(b.skill.name))
+      .slice(0, 5);
+  }, [skillsQuery.data, project, tasks]);
+
+  return (
+    <div className="flex min-h-screen bg-background">
+      <AppSidebar active="projects" open={open} onClose={() => setOpen(false)} />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <AppTopbar variant="documents" onOpenSidebar={() => setOpen(true)} />
+        <main className="min-w-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">
+          <Link
+            to="/projects"
+            className="inline-flex min-h-11 items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" /> Dự án
+          </Link>
+
+          {query.isLoading && (
+            <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> Đang tải…
+            </p>
+          )}
+
+          {query.isError && (
+            <p className="mt-4 text-sm text-destructive">Không tìm thấy dự án này.</p>
+          )}
+
+          {project && (
+            <>
+              <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h1 className="flex items-center gap-2 text-2xl font-bold">
+                    <Folder className="h-6 w-6 text-primary" />
+                    <span className="min-w-0 break-words">{project.name}</span>
+                  </h1>
+                  <p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    {project.code && <span className="font-mono">{project.code}</span>}
+                    <span className="inline-flex items-center gap-1">
+                      <CalendarDays className="h-3.5 w-3.5" />
+                      {project.start_date ?? "—"} → {project.due_date ?? "—"}
+                    </span>
+                  </p>
+                </div>
+                <Badge>{STATUS_LABEL[project.status]}</Badge>
+              </div>
+
+              {project.description && (
+                <p className="mt-3 max-w-3xl text-sm text-muted-foreground">
+                  {project.description}
+                </p>
+              )}
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="rounded-xl border border-border bg-card p-4">
+                  <p className="text-xs text-muted-foreground">Tiến độ</p>
+                  <p className="mt-1 text-xl font-semibold">{stats.pct}%</p>
+                  <Progress value={stats.pct} className="mt-2 h-2" />
+                </div>
+                <StatCard label="Tổng công việc" value={String(stats.total)} />
+                <StatCard label="Hoàn thành" value={String(stats.done)} />
+                <StatCard
+                  label="Quá hạn"
+                  value={String(stats.overdue)}
+                  tone={stats.overdue > 0 ? "danger" : undefined}
+                />
+              </div>
+
+              <div className="mt-5 grid gap-4 xl:grid-cols-3">
+                <section className="rounded-xl border border-border bg-card p-4 xl:col-span-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h2 className="flex min-w-0 items-center gap-2 font-semibold">
+                      <ListChecks className="h-4 w-4 text-primary" /> Công việc (
+                      {filteredTasks.length}
+                      {hasFilter && `/${tasks.length}`})
+                    </h2>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <input
+                        ref={fileRef}
+                        type="file"
+                        accept=".xlsx,.csv,text/csv"
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          e.target.value = "";
+                          if (f) void handleImportFile(f);
+                        }}
+                      />
+                      <AssignToCommandCenter
+                        projectId={id}
+                        projectName={project.name}
+                        workspaceId={project.workspace_id ?? null}
+                        tasks={tasks}
+                      />
+                      <Button
+                        size="sm"
+                        className="min-h-11 gap-1 px-3 text-xs"
+                        onClick={openWeekly}
+                        disabled={tasks.length === 0}
+                      >
+                        <CalendarClock className="h-3.5 w-3.5" /> Nhập tiến độ tuần
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="min-h-11 gap-1 px-3 text-xs"
+                        disabled={importing}
+                        onClick={() => fileRef.current?.click()}
+                      >
+                        {importing ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Upload className="h-3.5 w-3.5" />
+                        )}
+                        Nhập tiến độ từ Excel
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="min-h-11 gap-1 px-3 text-xs"
+                        onClick={downloadTemplate}
+                      >
+                        <Download className="h-3.5 w-3.5" /> Tải mẫu
+                      </Button>
+                    </div>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Tệp cần có cột: Tên công việc, % hoàn thành, Ngày bắt đầu, Ngày kết thúc.
+                  </p>
+                  {tasks.length === 0 && (
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      Chưa có công việc nào gắn với dự án này.
+                    </p>
+                  )}
+                  {tasks.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      <div className="relative">
+                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          value={searchText}
+                          onChange={(e) => setSearchText(e.target.value)}
+                          placeholder="Tìm công việc…"
+                          className="pl-9"
+                          aria-label="Tìm công việc"
+                        />
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <select
+                          aria-label="Lọc theo trạng thái"
+                          value={statusFilter}
+                          onChange={(e) => setStatusFilter(e.target.value)}
+                          className="min-h-11 rounded-md border border-border bg-background px-2 text-xs"
+                        >
+                          <option value="all">Mọi trạng thái</option>
+                          {TASK_GROUPS.map((s) => (
+                            <option key={s.key} value={s.key}>
+                              {TASK_STATUS_LABEL[s.key]}
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          aria-label="Lọc theo người phụ trách"
+                          value={assigneeFilter}
+                          onChange={(e) => setAssigneeFilter(e.target.value)}
+                          className="min-h-11 rounded-md border border-border bg-background px-2 text-xs"
+                        >
+                          <option value="all">Mọi người phụ trách</option>
+                          {assigneeOptions.map(([uid, name]) => (
+                            <option key={uid} value={uid}>
+                              {name}
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          aria-label="Lọc theo hạn kết thúc"
+                          value={dueFilter}
+                          onChange={(e) => setDueFilter(e.target.value)}
+                          className="min-h-11 rounded-md border border-border bg-background px-2 text-xs"
+                        >
+                          <option value="all">Mọi hạn</option>
+                          <option value="overdue">Quá hạn</option>
+                          <option value="this_week">7 ngày tới</option>
+                          <option value="no_due">Chưa có hạn</option>
+                        </select>
+                        {hasFilter && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="min-h-11 gap-1 px-3 text-xs"
+                            onClick={clearFilters}
+                          >
+                            <X className="h-3.5 w-3.5" /> Xóa bộ lọc
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  <div className="mt-3 space-y-4">
+                    <p className="text-xs text-muted-foreground">
+                      Kéo công việc sang nhóm khác để đổi trạng thái. Trên điện thoại, chọn trạng
+                      thái trong danh sách thả xuống.
+                    </p>
+                    {hasFilter && filteredTasks.length === 0 && (
+                      <p className="rounded-md border border-dashed border-border px-3 py-3 text-sm text-muted-foreground">
+                        Không có công việc nào khớp bộ lọc hiện tại.
+                      </p>
+                    )}
+                    {grouped.map((g) => (
+                      <div
+                        key={g.key}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          if (dropGroup !== g.key) setDropGroup(g.key);
+                        }}
+                        onDragLeave={() => setDropGroup((c) => (c === g.key ? null : c))}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          const taskId = dragTaskId || e.dataTransfer.getData("text/plain");
+                          setDropGroup(null);
+                          setDragTaskId(null);
+                          if (taskId) moveTask(taskId, g.key);
+                        }}
+                        className={`rounded-lg border border-dashed p-2 transition-colors ${
+                          dropGroup === g.key ? "border-primary bg-primary/5" : "border-transparent"
+                        }`}
+                      >
+                        <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          <span className={`h-2 w-2 rounded-full ${g.dot}`} />
+                          {g.label} · {g.items.length}
+                        </p>
+                        {g.items.length === 0 && (
+                          <p className="mt-2 rounded-md border border-dashed border-border px-3 py-3 text-xs text-muted-foreground">
+                            Thả công việc vào đây
+                          </p>
+                        )}
+                        <ul className="mt-2 space-y-2">
+                          {g.items.map((t) => {
+                            const overdue =
+                              t.status !== "done" &&
+                              !!t.due_at &&
+                              new Date(t.due_at).getTime() < Date.now();
+                            return (
+                              <li
+                                key={t.id}
+                                draggable
+                                onDragStart={(e) => {
+                                  setDragTaskId(t.id);
+                                  e.dataTransfer.effectAllowed = "move";
+                                  e.dataTransfer.setData("text/plain", t.id);
+                                }}
+                                onDragEnd={() => {
+                                  setDragTaskId(null);
+                                  setDropGroup(null);
+                                }}
+                                className={`rounded-lg border border-border bg-card p-3 transition-colors hover:bg-accent/40 sm:cursor-grab sm:active:cursor-grabbing ${
+                                  dragTaskId === t.id ? "opacity-50" : ""
+                                }`}
+                              >
+                                <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+                                  <Link
+                                    to="/tasks/$id"
+                                    params={{ id: t.id }}
+                                    className="flex min-h-11 min-w-0 flex-1 items-center gap-2"
+                                  >
+                                    <GripVertical className="hidden h-4 w-4 shrink-0 text-muted-foreground sm:block" />
+                                    <span className="min-w-0 flex-1 truncate text-sm font-medium">
+                                      {t.title}
+                                    </span>
+                                  </Link>
+                                  <span className="flex shrink-0 items-center gap-1.5">
+                                    {(t.assignees ?? []).length > 0 && (
+                                      <span
+                                        className="hidden max-w-36 truncate items-center gap-1 text-xs text-muted-foreground sm:inline-flex"
+                                        title={(t.assignees ?? []).map((a) => a.name).join(", ")}
+                                      >
+                                        <User className="h-3 w-3" />
+                                        {(t.assignees ?? []).map((a) => a.name).join(", ")}
+                                      </span>
+                                    )}
+                                    {t.due_at && (
+                                      <span
+                                        className={`text-xs ${overdue ? "text-destructive" : "text-muted-foreground"}`}
+                                        suppressHydrationWarning
+                                      >
+                                        {overdue && (
+                                          <AlertTriangle className="mr-1 inline h-3 w-3" />
+                                        )}
+                                        {new Date(t.due_at).toLocaleDateString("vi-VN")}
+                                      </span>
+                                    )}
+                                    <select
+                                      aria-label={`Trạng thái: ${t.title}`}
+                                      value={t.status}
+                                      disabled={transition.isPending}
+                                      onChange={(e) => moveTask(t.id, e.target.value)}
+                                      className="min-h-11 rounded-md border border-border bg-background px-2 text-xs"
+                                    >
+                                      {TASK_GROUPS.map((s) => (
+                                        <option key={s.key} value={s.key}>
+                                          {TASK_STATUS_LABEL[s.key]}
+                                        </option>
+                                      ))}
+                                    </select>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="min-h-11"
+                                      aria-label={`Thảo luận: ${t.title}`}
+                                      onClick={() =>
+                                        setOpenComments((c) => (c === t.id ? null : t.id))
+                                      }
+                                    >
+                                      <MessageSquare className="h-4 w-4" />
+                                    </Button>
+                                  </span>
+                                </div>
+                                <div className="mt-2 flex min-w-0 flex-wrap items-center gap-2">
+                                  <div
+                                    className="h-1.5 min-w-24 flex-1 overflow-hidden rounded-full bg-muted"
+                                    role="progressbar"
+                                    aria-valuenow={t.progress_pct ?? 0}
+                                    aria-valuemin={0}
+                                    aria-valuemax={100}
+                                    aria-label={`Tiến độ: ${t.title}`}
+                                  >
+                                    <div
+                                      className="h-full rounded-full bg-primary"
+                                      style={{ width: `${t.progress_pct ?? 0}%` }}
+                                    />
+                                  </div>
+                                  <span className="shrink-0 text-xs text-muted-foreground">
+                                    {t.progress_pct ?? 0}%
+                                  </span>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="min-h-11 shrink-0 text-xs"
+                                    aria-label={`Cập nhật tiến độ: ${t.title}`}
+                                    onClick={() =>
+                                      setOpenProgress((c) => (c === t.id ? null : t.id))
+                                    }
+                                  >
+                                    Tiến độ
+                                  </Button>
+                                </div>
+                                {openProgress === t.id && (
+                                  <form
+                                    className="mt-2 grid gap-2 border-t border-border pt-2 sm:grid-cols-4"
+                                    onSubmit={(e) => {
+                                      e.preventDefault();
+                                      const fd = new FormData(e.currentTarget);
+                                      progressMutation.mutate({
+                                        taskId: t.id,
+                                        progressPct: Number(fd.get("pct") ?? 0),
+                                        startAt: (fd.get("start") as string) || null,
+                                        endAt: (fd.get("end") as string) || null,
+                                      });
+                                    }}
+                                  >
+                                    <label className="text-xs text-muted-foreground">
+                                      % hoàn thành
+                                      <Input
+                                        name="pct"
+                                        type="number"
+                                        min={0}
+                                        max={100}
+                                        defaultValue={t.progress_pct ?? 0}
+                                        className="mt-1 min-h-11"
+                                      />
+                                    </label>
+                                    <label className="text-xs text-muted-foreground">
+                                      Ngày bắt đầu
+                                      <Input
+                                        name="start"
+                                        type="date"
+                                        defaultValue={(t.start_at ?? "").slice(0, 10)}
+                                        className="mt-1 min-h-11"
+                                      />
+                                    </label>
+                                    <label className="text-xs text-muted-foreground">
+                                      Ngày kết thúc
+                                      <Input
+                                        name="end"
+                                        type="date"
+                                        defaultValue={(t.end_at ?? "").slice(0, 10)}
+                                        className="mt-1 min-h-11"
+                                      />
+                                    </label>
+                                    <Button
+                                      type="submit"
+                                      size="sm"
+                                      className="mt-1 min-h-11 self-end"
+                                      disabled={progressMutation.isPending}
+                                    >
+                                      Lưu tiến độ
+                                    </Button>
+                                  </form>
+                                )}
+                                {openComments === t.id && (
+                                  <div className="mt-3 border-t border-border pt-3">
+                                    <CommentThread kind="task" taskId={t.id} compact />
+                                  </div>
+                                )}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                <div className="space-y-4">
+                  <section className="rounded-xl border border-border bg-card p-4">
+                    <h2 className="flex items-center gap-2 font-semibold">
+                      <StickyNote className="h-4 w-4 text-primary" /> Ghi chú
+                    </h2>
+                    <Textarea
+                      rows={6}
+                      className="mt-3"
+                      value={notes}
+                      onChange={(e) => {
+                        setNotes(e.target.value);
+                        setNotesDirty(true);
+                      }}
+                      placeholder="Ghi chú nội bộ: rủi ro, quyết định, việc cần theo dõi…"
+                    />
+                    <Button
+                      className="mt-3 min-h-11 w-full"
+                      disabled={!notesDirty || saveNotes.isPending}
+                      onClick={() => saveNotes.mutate()}
+                    >
+                      {saveNotes.isPending ? (
+                        <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Save className="mr-1.5 h-4 w-4" />
+                      )}
+                      Lưu ghi chú
+                    </Button>
+                  </section>
+
+                  <ProjectCalendar
+                    tasks={tasks}
+                    meetings={meetingsQuery.data ?? []}
+                    proposals={proposalsQuery.data ?? []}
+                  />
+
+                  <section className="rounded-xl border border-border bg-card p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h2 className="flex items-center gap-2 font-semibold">
+                        <CalendarDays className="h-4 w-4 text-primary" /> Lịch họp dự án
+                      </h2>
+                      <span className="text-xs text-muted-foreground">
+                        {meetingsQuery.data?.length ?? 0} cuộc họp
+                      </span>
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="min-h-11"
+                        onClick={downloadMeetingTemplate}
+                      >
+                        Tải mẫu lịch họp
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="min-h-11"
+                        disabled={importingMeetings}
+                        onClick={() => meetingFileRef.current?.click()}
+                      >
+                        {importingMeetings ? "Đang nhập..." : "Nhập lịch họp từ Excel"}
+                      </Button>
+                      <input
+                        ref={meetingFileRef}
+                        type="file"
+                        accept=".xlsx,.csv"
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) void handleImportMeetingFile(f);
+                          e.target.value = "";
+                        }}
+                      />
+                    </div>
+
+                    <div className="mt-3 space-y-2">
+                      <Input
+                        value={mTitle}
+                        onChange={(e) => setMTitle(e.target.value)}
+                        placeholder="Tiêu đề cuộc họp"
+                        className="min-h-11"
+                      />
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        <label className="text-xs text-muted-foreground">
+                          Bắt đầu
+                          <Input
+                            type="datetime-local"
+                            value={mStart}
+                            onChange={(e) => setMStart(e.target.value)}
+                            className="mt-1 min-h-11"
+                          />
+                        </label>
+                        <label className="text-xs text-muted-foreground">
+                          Kết thúc
+                          <Input
+                            type="datetime-local"
+                            value={mEnd}
+                            onChange={(e) => setMEnd(e.target.value)}
+                            className="mt-1 min-h-11"
+                          />
+                        </label>
+                      </div>
+                      <Input
+                        value={mLocation}
+                        onChange={(e) => setMLocation(e.target.value)}
+                        placeholder="Địa điểm / link họp (tuỳ chọn)"
+                        className="min-h-11"
+                      />
+                      <Textarea
+                        value={mAgenda}
+                        onChange={(e) => setMAgenda(e.target.value)}
+                        placeholder="Nội dung / chương trình họp (tuỳ chọn)"
+                        rows={3}
+                      />
+                      <Button
+                        className="min-h-11 w-full sm:w-auto"
+                        disabled={createMeeting.isPending || !mTitle.trim() || !mStart || !mEnd}
+                        onClick={() => createMeeting.mutate()}
+                      >
+                        {createMeeting.isPending ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <CalendarDays className="mr-2 h-4 w-4" />
+                        )}
+                        Thêm lịch họp
+                      </Button>
+                    </div>
+
+                    {meetingsQuery.isLoading && (
+                      <p className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" /> Đang tải lịch họp…
+                      </p>
+                    )}
+                    {!meetingsQuery.isLoading && (meetingsQuery.data?.length ?? 0) === 0 && (
+                      <p className="mt-3 text-sm text-muted-foreground">
+                        Chưa có cuộc họp nào cho dự án này.
+                      </p>
+                    )}
+                    <ul className="mt-3 space-y-2">
+                      {(meetingsQuery.data ?? []).map((m) => (
+                        <li key={m.id} className="rounded-lg border border-border p-3">
+                          <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-2">
+                            <p className="min-w-0 text-sm font-medium">{m.title}</p>
+                            <Badge variant="secondary">{m.status}</Badge>
+                          </div>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {new Date(m.startAt).toLocaleString("vi-VN")} –{" "}
+                            {new Date(m.endAt).toLocaleTimeString("vi-VN", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                            {m.location ? ` · ${m.location}` : ""}
+                          </p>
+                          {m.agenda && (
+                            <p className="mt-1 text-xs text-muted-foreground">{m.agenda}</p>
+                          )}
+                          {proposalsByDay(proposalsQuery.data ?? [])
+                            .get(new Date(m.startAt).toDateString())
+                            ?.map((p) => (
+                              <div
+                                key={p.id}
+                                className="mt-2 flex min-w-0 flex-wrap items-center gap-2 rounded-md bg-muted/60 px-2 py-1.5"
+                              >
+                                <Sparkles className="h-3.5 w-3.5 shrink-0 text-violet-500" />
+                                <span className="min-w-0 flex-1 text-xs">{p.title}</span>
+                                <Badge variant={p.handled === "PENDING" ? "default" : "secondary"}>
+                                  {p.handled === "PENDING"
+                                    ? "Chờ xử lý"
+                                    : p.handled === "DONE"
+                                      ? "Đã xử lý"
+                                      : "Đã bỏ qua"}
+                                </Badge>
+                              </div>
+                            ))}
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+
+                  <section className="rounded-xl border border-border bg-card p-4">
+                    <h2 className="flex items-center gap-2 font-semibold">
+                      <MessageSquare className="h-4 w-4 text-primary" /> Thảo luận ghi chú
+                    </h2>
+                    <div className="mt-3">
+                      <CommentThread kind="project" projectId={id} />
+                    </div>
+                  </section>
+
+                  <section className="rounded-xl border border-border bg-card p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h2 className="flex items-center gap-2 font-semibold">
+                        <HistoryIcon className="h-4 w-4 text-primary" /> Dòng thời gian hoạt động
+                      </h2>
+                      {activityQuery.data && (
+                        <span className="text-xs text-muted-foreground">
+                          {activityQuery.data.length} hoạt động
+                        </span>
+                      )}
+                    </div>
+                    {activityQuery.isLoading && (
+                      <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" /> Đang tải lịch sử…
+                      </p>
+                    )}
+                    {!activityQuery.isLoading && (activityQuery.data?.length ?? 0) === 0 && (
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        Chưa có hoạt động nào được ghi nhận.
+                      </p>
+                    )}
+                    <ol className="mt-3 max-h-96 space-y-3 overflow-y-auto pr-1">
+                      {(activityQuery.data ?? []).map((a) => (
+                        <li key={a.id} className="relative pl-5">
+                          <span className="absolute left-0 top-1.5 h-2 w-2 rounded-full bg-primary" />
+                          <div className="flex min-w-0 flex-wrap items-baseline gap-x-2">
+                            <p className="min-w-0 text-sm font-medium">{a.title}</p>
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(a.at).toLocaleString("vi-VN")}
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {a.actorName}
+                            {a.detail ? ` · ${a.detail}` : ""}
+                          </p>
+                        </li>
+                      ))}
+                    </ol>
+                  </section>
+
+                  <section className="rounded-xl border border-border bg-card p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h2 className="flex items-center gap-2 font-semibold">
+                        <Sparkles className="h-4 w-4 text-primary" /> Kỹ năng AI gợi ý
+                      </h2>
+                      <Link to="/ai-brain/skills" className="text-xs text-primary hover:underline">
+                        Skill Hub
+                      </Link>
+                    </div>
+                    {skillsQuery.isLoading && (
+                      <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" /> Đang tìm kỹ năng…
+                      </p>
+                    )}
+                    {!skillsQuery.isLoading && suggestedSkills.length === 0 && (
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        Chưa có kỹ năng nào đang bật để gợi ý cho dự án này.
+                      </p>
+                    )}
+                    <ul className="mt-3 space-y-2">
+                      {suggestedSkills.map(({ skill, score, hits }) => (
+                        <li key={skill.id} className="rounded-lg border border-border p-3">
+                          <div className="flex min-w-0 items-start justify-between gap-2">
+                            <p className="min-w-0 flex-1 text-sm font-medium">{skill.name}</p>
+                            <Badge variant={score > 0 ? "default" : "outline"} className="shrink-0">
+                              {score > 0 ? "Phù hợp" : "Có thể dùng"}
+                            </Badge>
+                          </div>
+                          <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                            {skill.description}
+                          </p>
+                          {hits.length > 0 && (
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              Liên quan: {hits.slice(0, 4).join(", ")}
+                            </p>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                </div>
+              </div>
+            </>
+          )}
+        </main>
+      </div>
+
+      <Dialog open={weeklyOpen} onOpenChange={setWeeklyOpen}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Nhập tiến độ tuần</DialogTitle>
+            <DialogDescription>
+              Tuần {weekLabel}. Cập nhật % hoàn thành từng việc.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {tasks.map((t) => (
+              <div key={t.id} className="flex items-center gap-3">
+                <span className="min-w-0 flex-1 truncate text-sm">{t.title}</span>
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  inputMode="numeric"
+                  className="h-11 w-20"
+                  value={weeklyValues[t.id] ?? "0"}
+                  onChange={(e) => setWeeklyValues((prev) => ({ ...prev, [t.id]: e.target.value }))}
+                />
+                <span className="text-xs text-muted-foreground">%</span>
+              </div>
+            ))}
+            <Textarea
+              placeholder="Ghi chú tuần (tuỳ chọn)"
+              value={weeklyNote}
+              onChange={(e) => setWeeklyNote(e.target.value)}
+              rows={3}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              className="min-h-11 w-full sm:w-auto"
+              disabled={weeklyMutation.isPending}
+              onClick={() => weeklyMutation.mutate()}
+            >
+              {weeklyMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 h-4 w-4" />
+              )}
+              Lưu tiến độ tuần
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

@@ -1,0 +1,2 @@
+ALTER TABLE public.meetings ADD COLUMN IF NOT EXISTS project_id uuid REFERENCES public.projects(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS meetings_project_id_idx ON public.meetings(project_id) WHERE project_id IS NOT NULL;

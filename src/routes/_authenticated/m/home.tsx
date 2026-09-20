@@ -21,7 +21,10 @@ export const Route = createFileRoute("/_authenticated/m/home")({
       { title: "Trang chủ · UNIWORK" },
       { name: "description", content: "Tổng quan công việc và hoạt động trên UNIWORK mobile." },
       { property: "og:title", content: "Trang chủ · UNIWORK" },
-      { property: "og:description", content: "Tổng quan công việc và hoạt động trên UNIWORK mobile." },
+      {
+        property: "og:description",
+        content: "Tổng quan công việc và hoạt động trên UNIWORK mobile.",
+      },
     ],
   }),
   component: MobileHomePage,
@@ -72,15 +75,15 @@ function MobileHomePage() {
   const { meetings = [], tasks = [], notifications = [] } = summary ?? {};
 
   return (
-    <div className="flex min-h-full flex-col gap-5 p-4 pb-24">
-      <section>
+    <div className="flex min-h-full min-w-0 max-w-full flex-col gap-5 overflow-x-hidden px-4 pb-28 pt-4">
+      <section className="min-w-0 max-w-full">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Hôm nay
           </h2>
           <button
             onClick={() => navigate({ to: "/calendar" })}
-            className="text-xs text-primary"
+            className="inline-flex min-h-11 items-center rounded-lg px-3 text-xs font-semibold text-primary active:bg-primary/10"
           >
             Lịch
           </button>
@@ -90,14 +93,14 @@ function MobileHomePage() {
             Không có cuộc họp nào sắp tới.
           </p>
         ) : (
-          <div className="flex flex-col gap-2">
+          <div className="flex min-w-0 max-w-full flex-col gap-2 overflow-hidden">
             {meetings.map((m) => (
               <MobileListItem
                 key={m.id}
                 title={m.title}
                 subtitle={formatDateLabel(m.start_at)}
                 icon={
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                     <CalendarDays className="h-4 w-4" />
                   </span>
                 }
@@ -115,14 +118,14 @@ function MobileHomePage() {
         )}
       </section>
 
-      <section>
+      <section className="min-w-0 max-w-full">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Việc cần làm
           </h2>
           <button
             onClick={() => navigate({ to: "/m/tasks" as any })}
-            className="text-xs text-primary"
+            className="inline-flex min-h-11 items-center rounded-lg px-3 text-xs font-semibold text-primary active:bg-primary/10"
           >
             Tất cả
           </button>
@@ -132,7 +135,7 @@ function MobileHomePage() {
             Không có việc nào đang chờ.
           </p>
         ) : (
-          <div className="flex flex-col gap-2">
+          <div className="flex min-w-0 max-w-full flex-col gap-2 overflow-hidden">
             {tasks.map((t) => (
               <MobileListItem
                 key={t.id}
@@ -146,14 +149,14 @@ function MobileHomePage() {
         )}
       </section>
 
-      <section>
+      <section className="min-w-0 max-w-full">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Thông báo mới
           </h2>
           <button
             onClick={() => navigate({ to: "/notifications" })}
-            className="text-xs text-primary"
+            className="inline-flex min-h-11 items-center rounded-lg px-3 text-xs font-semibold text-primary active:bg-primary/10"
           >
             Xem tất cả
           </button>
@@ -163,7 +166,7 @@ function MobileHomePage() {
             Không có thông báo mới.
           </p>
         ) : (
-          <div className="flex flex-col gap-2">
+          <div className="flex min-w-0 max-w-full flex-col gap-2 overflow-hidden">
             {notifications.map((n) => (
               <MobileListItem
                 key={n.id}
@@ -172,7 +175,7 @@ function MobileHomePage() {
                 meta={formatRelative(n.created_at)}
                 priorityBar={notifPriority(n.type)}
                 icon={
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-destructive/10 text-destructive">
                     <Bell className="h-4 w-4" />
                   </span>
                 }

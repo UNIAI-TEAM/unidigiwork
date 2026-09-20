@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { BrandMark } from "@/components/brand-logo";
+import { BrandMark, BrandWordmark } from "@/components/brand-logo";
 import type { LucideIcon } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -26,7 +26,6 @@ import {
   MoreHorizontal,
   MessageCircle,
   Circle,
-  Cloud,
   Menu,
   X,
   HelpCircle,
@@ -63,7 +62,6 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { TenantSwitcher } from "@/components/tenant-switcher";
-import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 import { useActiveWorkspace } from "@/lib/active-workspace";
 import { useCurrentIdentity } from "@/lib/use-current-identity";
 import { QuickCreateDialog, type QuickCreateKind } from "@/components/quick-create-dialog";
@@ -100,7 +98,9 @@ type NavKey =
   | "meetings"
   | "calendar"
   | "tasks"
+  | "projects"
   | "documents"
+  | "work-products"
   | "knowledge"
   | "workflows"
   | "people"
@@ -108,6 +108,8 @@ type NavKey =
   | "reports"
   | "ai"
   | "ai-workforce"
+  | "ai-brain"
+  | "ceo"
   | "notifications"
   | "settings"
   | "help";
@@ -133,7 +135,7 @@ function NavItem({
     "relative flex items-center rounded-lg transition-colors",
     collapsed ? "w-full justify-center px-2 py-2.5" : "w-full gap-3 px-3 py-2 text-sm",
     active
-      ? "bg-primary/15 font-medium text-foreground"
+      ? "bg-secondary font-semibold text-primary"
       : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
   );
   const inner = collapsed ? (
@@ -360,10 +362,6 @@ export function AppSidebar({
 }) {
   const { t } = useI18n();
   const { collapsed, toggleCollapsed } = useSidebarCollapsed();
-  const sidebarIdentity = useCurrentIdentity();
-  const [wsOpen, setWsOpen] = useState(false);
-  const { unreadCount } = useUnreadNotifications();
-
   const desktopWidth = collapsed ? "lg:w-14 xl:w-14" : "lg:w-56 xl:w-64";
 
   return (
@@ -371,13 +369,13 @@ export function AppSidebar({
       {open && (
         <button
           aria-label="Close sidebar"
-          className="fixed inset-0 z-30 bg-black/60 lg:hidden"
+          className="fixed inset-0 z-30 bg-foreground/55 lg:hidden"
           onClick={onClose}
         />
       )}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 flex shrink-0 flex-col border-r border-border bg-surface transition-all duration-200 lg:static lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-40 flex shrink-0 flex-col border-r border-border bg-card transition-all duration-200 lg:static lg:translate-x-0",
           desktopWidth,
           open ? "translate-x-0 w-64" : "-translate-x-full w-64",
           collapsed && "lg:items-center lg:px-2 lg:py-4",
@@ -386,17 +384,16 @@ export function AppSidebar({
         {/* Header */}
         <div
           className={cn(
-            "flex items-center gap-2 py-5",
+            "flex items-center gap-2 border-b border-border py-4",
             collapsed ? "px-2 lg:justify-center" : "px-5",
           )}
         >
-          <BrandMark className="h-9 w-9" />
-          {!collapsed && (
-            <div className="flex-1 leading-tight">
-              <div className="text-base font-bold tracking-wide">UNIWORK</div>
-              <div className="text-[10px] text-muted-foreground">Digital Workplace Platform</div>
-            </div>
+          {collapsed ? (
+            <BrandMark className="h-9 w-9" />
+          ) : (
+            <BrandWordmark className="h-9 max-w-[150px]" />
           )}
+          {!collapsed && <div className="flex-1" />}
           <button
             aria-label="Close sidebar"
             className="rounded p-1 text-muted-foreground hover:bg-surface-2 lg:hidden"
@@ -407,47 +404,9 @@ export function AppSidebar({
         </div>
 
         {/* Navigation */}
-        <div className={cn("pb-3", collapsed ? "px-1" : "px-3")}>
-          <WorkspaceSwitcher collapsed={collapsed} />
-        </div>
         <nav className={cn("flex-1 space-y-1 overflow-y-auto", collapsed ? "px-1" : "px-3")}>
           <DesktopNavigation collapsed={collapsed} />
-
-          {!collapsed && (
-            <>
-              <div className="flex items-center justify-between px-3 pb-2 pt-6 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                <span>{t("nav.workspaces")}</span>
-                <button
-                  className="rounded p-0.5 hover:bg-surface-2"
-                  aria-label={t("sh.ws.addAria")}
-                  onClick={() => setWsOpen(true)}
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                </button>
-              </div>
-              <WorkspaceList />
-            </>
-          )}
-          {collapsed && (
-            <>
-              <div className="my-2 h-px bg-border" />
-              <WorkspaceList collapsed />
-            </>
-          )}
         </nav>
-
-        {/* Bottom section */}
-        {!collapsed && (
-          <>
-            <div className="flex items-center gap-2 border-t border-border px-4 py-3 text-sm">
-              <Cloud className="h-5 w-5 text-sky-400" />
-              <div>
-                <div className="font-medium">{sidebarIdentity.displayName}</div>
-                <div className="text-[11px] text-muted-foreground">{t("sh.user.weather")}</div>
-              </div>
-            </div>
-          </>
-        )}
 
         {/* Collapse toggle */}
         <div
@@ -493,7 +452,6 @@ export function AppSidebar({
           </Tooltip>
         </div>
       </aside>
-      <CreateWorkspaceDialog open={wsOpen} onOpenChange={setWsOpen} />
     </TooltipProvider>
   );
 }
@@ -1512,17 +1470,17 @@ export function AppTopbar({
   // standard search field (Enter → /search).
 
   return (
-    <header className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-3 sm:gap-3 sm:px-6 lg:flex-nowrap lg:gap-4">
+    <header className="sticky top-0 z-20 flex flex-wrap items-center gap-2 border-b border-border bg-background/95 px-3 py-2.5 sm:grid sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:gap-3 sm:px-5 lg:flex lg:flex-nowrap lg:gap-4">
       <button
         aria-label="Open sidebar"
-        className="rounded-lg p-2 hover:bg-surface-2 lg:hidden"
+        className="flex h-11 w-11 items-center justify-center rounded-lg hover:bg-surface-2 lg:hidden"
         onClick={onOpenSidebar}
       >
         <Menu className="h-5 w-5" />
       </button>
       <button
         aria-label={collapsed ? t("sh.menu.expand") : t("sh.menu.collapse")}
-        className="hidden rounded-lg p-2 hover:bg-surface-2 lg:block"
+        className="hidden h-11 w-11 items-center justify-center rounded-lg hover:bg-surface-2 lg:flex"
         onClick={toggleCollapsed}
       >
         {collapsed ? <PanelLeft className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
@@ -1534,7 +1492,7 @@ export function AppTopbar({
           const q = searchValue.trim();
           navigate({ to: "/search", search: q ? { q } : {} });
         }}
-        className="relative order-last w-full min-w-0 flex-1 basis-full sm:order-none sm:basis-auto sm:max-w-2xl"
+        className="relative order-last w-full min-w-0 flex-1 basis-full sm:order-none sm:col-span-1 sm:row-auto sm:basis-auto sm:max-w-2xl"
       >
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
@@ -1542,7 +1500,7 @@ export function AppTopbar({
           value={searchValue}
           onChange={(e) => setSearchValue(e.target.value)}
           placeholder={variant === "documents" ? t("topbar.search.docs") : t("topbar.search")}
-          className="w-full rounded-lg bg-surface-2 py-2.5 pl-10 pr-16 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+          className="h-11 w-full rounded-xl border border-input bg-background py-2.5 pl-10 pr-16 text-sm shadow-card placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring"
         />
         <kbd className="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 rounded border border-border bg-surface-1 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">
           ⌘K
@@ -1571,20 +1529,20 @@ export function AppTopbar({
               }}
               aria-haspopup="dialog"
               aria-expanded={onNew ? undefined : newOpen}
-              className="flex items-center gap-1.5 rounded-lg bg-primary px-2.5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 sm:px-3"
+              className="flex min-h-11 items-center gap-1.5 rounded-lg bg-primary px-2.5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 sm:px-3"
             >
               <Plus className="h-4 w-4" />{" "}
               <span className="hidden sm:inline">{t("topbar.new")}</span>
             </button>
             {newOpen && <NewPanel onClose={() => setNewOpen(false)} />}
           </div>
-          <div className="relative" ref={aiRef}>
+          <div className="relative hidden sm:block" ref={aiRef}>
             <button
               onClick={() => setAiOpen((v) => !v)}
               aria-haspopup="dialog"
               aria-expanded={aiOpen}
               className={cn(
-                "flex items-center gap-1.5 rounded-lg bg-surface-2 px-2.5 py-2 text-sm hover:bg-surface-2/70 sm:px-3",
+                "flex min-h-11 items-center gap-1.5 rounded-lg bg-surface-2 px-2.5 py-2 text-sm hover:bg-surface-2/70 sm:px-3",
                 aiOpen && "ring-1 ring-primary/40",
               )}
             >
@@ -1596,15 +1554,21 @@ export function AppTopbar({
           <Link
             to="/help"
             aria-label={t("sh.aria.help")}
-            className="hidden rounded-lg p-2 hover:bg-surface-2 md:block"
+            className="hidden h-11 w-11 items-center justify-center rounded-lg hover:bg-surface-2 md:flex"
           >
             <HelpCircle className="h-5 w-5 text-muted-foreground" />
           </Link>
         </>
       )}
-      <LanguageToggle />
-      <ToneToggle />
-      <ThemeToggle />
+      <span className="hidden md:inline-flex">
+        <LanguageToggle />
+      </span>
+      <span className="hidden md:inline-flex">
+        <ToneToggle />
+      </span>
+      <span className="hidden sm:inline-flex">
+        <ThemeToggle />
+      </span>
       <Link
         to="/settings"
         className="hidden rounded-lg p-2 hover:bg-surface-2 2xl:block"
@@ -1631,7 +1595,10 @@ export function AppTopbar({
       <div className="relative" ref={notifRef}>
         <button
           onClick={() => setNotifOpen((v) => !v)}
-          className={cn("relative rounded-lg p-2 hover:bg-surface-2", notifOpen && "bg-surface-2")}
+          className={cn(
+            "relative flex h-11 w-11 items-center justify-center rounded-lg hover:bg-surface-2",
+            notifOpen && "bg-surface-2",
+          )}
           aria-label={t("sh.notif.aria")}
           aria-haspopup="dialog"
           aria-expanded={notifOpen}
@@ -1651,7 +1618,10 @@ export function AppTopbar({
           aria-label={t("sh.cal.aria")}
           aria-haspopup="dialog"
           aria-expanded={calOpen}
-          className={cn("rounded-lg p-2 hover:bg-surface-2", calOpen && "bg-surface-2")}
+          className={cn(
+            "hidden h-11 w-11 items-center justify-center rounded-lg hover:bg-surface-2 sm:flex",
+            calOpen && "bg-surface-2",
+          )}
         >
           <Calendar className="h-5 w-5 text-muted-foreground" />
         </button>
@@ -1663,7 +1633,7 @@ export function AppTopbar({
           aria-haspopup="menu"
           aria-expanded={userOpen}
           className={cn(
-            "flex items-center gap-2.5 rounded-xl border bg-surface-2/80 px-2 py-1.5 transition-colors hover:bg-surface-2",
+            "flex min-h-11 items-center gap-2.5 rounded-xl border bg-surface-2/80 px-2 py-1.5 transition-colors hover:bg-surface-2",
             userOpen ? "border-primary/60" : "border-border/60 hover:border-primary/40",
           )}
         >
@@ -1676,15 +1646,13 @@ export function AppTopbar({
             </span>
             <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-surface-2 bg-emerald-400" />
           </span>
-          <div className="hidden text-left leading-tight sm:block">
-            <div className="whitespace-nowrap text-sm font-semibold">{identity.displayName}</div>
-            <div className="whitespace-nowrap text-[11px] text-muted-foreground">
-              {identity.roleLabel}
-            </div>
+          <div className="hidden min-w-0 max-w-28 text-left leading-tight 2xl:block">
+            <div className="truncate text-sm font-semibold">{identity.displayName}</div>
+            <div className="truncate text-[11px] text-muted-foreground">{identity.roleLabel}</div>
           </div>
           <ChevronDown
             className={cn(
-              "hidden h-4 w-4 text-muted-foreground transition-transform sm:block",
+              "hidden h-4 w-4 text-muted-foreground transition-transform 2xl:block",
               userOpen ? "rotate-180 text-primary" : "",
             )}
           />

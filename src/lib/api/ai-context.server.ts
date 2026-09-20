@@ -19,17 +19,93 @@ import {
   type ContextSource,
 } from "@/domain/ai-context/contracts";
 import { parseQueryIntent } from "@/domain/ai-context/query-intent";
+import { rankUnifiedContext, CONTEXT_RANKER_VERSION } from "@/domain/ai-context/context-ranker";
+import {
+  computeTemporalFreshness,
+  freshnessTag,
+  type TemporalFreshness,
+} from "@/domain/ai-context/temporal-freshness";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any, any, any>;
 
 // Stopword tiếng Việt/Anh thường gặp trong câu hỏi — loại bỏ để lấy từ khoá tra cứu.
 const QUERY_STOPWORDS = new Set([
-  "là","gì","của","có","cho","các","những","và","hay","hoặc","với","về","trong","ngoài","trên","dưới",
-  "bao","nhiêu","nào","ai","khi","thì","này","đó","được","bị","đang","đã","sẽ","cần","phải","tôi","bạn",
-  "chúng","ta","hãy","xin","vui","lòng","một","cái","số","thế","sao","tại","vì","để","theo","từ","đến",
-  "what","is","the","a","an","of","for","to","in","on","and","or","how","many","much","who","when","why",
-  "please","tell","me","my","our","current","status",
+  "là",
+  "gì",
+  "của",
+  "có",
+  "cho",
+  "các",
+  "những",
+  "và",
+  "hay",
+  "hoặc",
+  "với",
+  "về",
+  "trong",
+  "ngoài",
+  "trên",
+  "dưới",
+  "bao",
+  "nhiêu",
+  "nào",
+  "ai",
+  "khi",
+  "thì",
+  "này",
+  "đó",
+  "được",
+  "bị",
+  "đang",
+  "đã",
+  "sẽ",
+  "cần",
+  "phải",
+  "tôi",
+  "bạn",
+  "chúng",
+  "ta",
+  "hãy",
+  "xin",
+  "vui",
+  "lòng",
+  "một",
+  "cái",
+  "số",
+  "thế",
+  "sao",
+  "tại",
+  "vì",
+  "để",
+  "theo",
+  "từ",
+  "đến",
+  "what",
+  "is",
+  "the",
+  "a",
+  "an",
+  "of",
+  "for",
+  "to",
+  "in",
+  "on",
+  "and",
+  "or",
+  "how",
+  "many",
+  "much",
+  "who",
+  "when",
+  "why",
+  "please",
+  "tell",
+  "me",
+  "my",
+  "our",
+  "current",
+  "status",
 ]);
 
 function deriveSearchQueries(raw: string): string[] {
@@ -51,7 +127,6 @@ function deriveSearchQueries(raw: string): string[] {
 }
 
 const SEARCH_TO_GRAPH: Record<string, AiContextEntityType> = {
-
   PROJECT: "WORKSPACE",
   TASK: "TASK",
   MEETING: "MEETING",
@@ -60,6 +135,7 @@ const SEARCH_TO_GRAPH: Record<string, AiContextEntityType> = {
   CHAT_CHANNEL: "CHAT_CHANNEL",
   MEETING_ARTIFACT: "MEETING_ARTIFACT",
   PERSON: "PERSON",
+  WORK_PRODUCT: "WORK_PRODUCT",
 };
 const GRAPH_TO_SEARCH: Record<AiContextEntityType, string> = {
   WORKSPACE: "PROJECT",
@@ -71,6 +147,9 @@ const GRAPH_TO_SEARCH: Record<AiContextEntityType, string> = {
   MEETING_ARTIFACT: "MEETING_ARTIFACT",
   PERSON: "PERSON",
   TENANT: "PROJECT",
+  WORK_PRODUCT: "WORK_PRODUCT",
+  EXECUTION: "TASK",
+  DECISION: "MEETING",
 };
 
 /** Làm sạch HTML/markdown và cắt cứng độ dài mỗi source (§145, §146). */
@@ -85,6 +164,12 @@ export function cleanExcerpt(raw: unknown, cap: number = AI_CONTEXT_POLICY.excer
   return text.length > cap ? `${text.slice(0, cap)}…` : text;
 }
 
+type ScoredCandidate = Candidate & {
+  rank: number;
+  freshness: TemporalFreshness;
+  rankBreakdown: Record<string, number>;
+};
+
 type Candidate = {
   type: AiContextEntityType;
   id: string;
@@ -94,18 +179,8 @@ type Candidate = {
   lexical: number;
   relationship: WorkRelationshipCode | "ROOT" | "SEARCH_MATCH" | null;
   graphDistance: 0 | 1 | 2;
-};
-
-const ENTITY_PRIORITY_BASE: Record<AiContextEntityType, number> = {
-  TASK: 0.6,
-  MEETING: 0.55,
-  WORKSPACE: 0.5,
-  EMAIL: 0.45,
-  DOCUMENT: 0.45,
-  CHAT_CHANNEL: 0.4,
-  MEETING_ARTIFACT: 0.72,
-  PERSON: 0.3,
-  TENANT: 0,
+  /** Ghi đè ưu tiên nền khi cần (vd: quyết định theo trạng thái xác nhận). */
+  intentPriority?: number;
 };
 
 export const MEETING_ARTIFACT_LABEL: Record<string, string> = {
@@ -118,15 +193,12 @@ export const MEETING_ARTIFACT_LABEL: Record<string, string> = {
   FOLLOW_UP: "Thư theo dõi",
 };
 
-function recencyBoost(iso: string | null): number {
-  if (!iso) return 0;
-  const days = (Date.now() - new Date(iso).getTime()) / 86_400_000;
-  if (Number.isNaN(days) || days < 0) return 0.1;
-  if (days <= 2) return 0.15;
-  if (days <= 7) return 0.1;
-  if (days <= 30) return 0.05;
-  return 0;
-}
+export const DECISION_STATUS_LABEL: Record<string, string> = {
+  CANDIDATE: "Chờ xác nhận",
+  CONFIRMED: "Đã xác nhận",
+  REJECTED: "Đã từ chối",
+  SUPERSEDED: "Đã bị thay thế",
+};
 
 export async function resolveTenantForActor(
   supabase: Db,
@@ -195,7 +267,8 @@ async function hydrateSelected(
         for (const a of (assignees ?? []) as Array<{ task_id: string }>)
           assigneeCount.set(a.task_id, (assigneeCount.get(a.task_id) ?? 0) + 1);
         for (const t of (tasks ?? []) as Array<Record<string, any>>) {
-          const overdue = t["due_at"] && new Date(t["due_at"]).getTime() < Date.now() && t["status"] !== "DONE";
+          const overdue =
+            t["due_at"] && new Date(t["due_at"]).getTime() < Date.now() && t["status"] !== "DONE";
           put(
             "TASK",
             t["id"],
@@ -224,7 +297,11 @@ async function hydrateSelected(
         .in("id", wsIds)
         .then(({ data }) => {
           for (const w of (data ?? []) as Array<Record<string, any>>)
-            put("WORKSPACE", w["id"], `dự án: ${w["name"]} · phạm vi: ${w["visibility"]} · ${cleanExcerpt(w["description"], 300)}`);
+            put(
+              "WORKSPACE",
+              w["id"],
+              `dự án: ${w["name"]} · phạm vi: ${w["visibility"]} · ${cleanExcerpt(w["description"], 300)}`,
+            );
         }),
     );
   }
@@ -242,7 +319,11 @@ async function hydrateSelected(
             put(
               "MEETING",
               m["id"],
-              [`thời gian: ${m["start_at"]}`, `trạng thái: ${m["status"]}`, m["agenda"] ? `agenda: ${cleanExcerpt(m["agenda"], 400)}` : null]
+              [
+                `thời gian: ${m["start_at"]}`,
+                `trạng thái: ${m["status"]}`,
+                m["agenda"] ? `agenda: ${cleanExcerpt(m["agenda"], 400)}` : null,
+              ]
                 .filter(Boolean)
                 .join(" · "),
             );
@@ -288,7 +369,11 @@ async function hydrateSelected(
         for (const m of (data ?? []) as Array<Record<string, any>>) {
           if (seen.has(m["thread_id"])) continue;
           seen.add(m["thread_id"]);
-          put("EMAIL", m["thread_id"], `tiêu đề: ${m["subject"] ?? ""} · gửi lúc: ${m["sent_at"] ?? ""} · trích: ${cleanExcerpt(m["body"], 400)}`);
+          put(
+            "EMAIL",
+            m["thread_id"],
+            `tiêu đề: ${m["subject"] ?? ""} · gửi lúc: ${m["sent_at"] ?? ""} · trích: ${cleanExcerpt(m["body"], 400)}`,
+          );
         }
       })(),
     );
@@ -312,7 +397,8 @@ async function hydrateSelected(
           if (list.length < 5) list.push(cleanExcerpt(m["body"], 140));
           grouped.set(m["channel_id"], list);
         }
-        for (const [id, msgs] of grouped) put("CHAT_CHANNEL", id, `tin nhắn gần đây: ${msgs.join(" | ")}`);
+        for (const [id, msgs] of grouped)
+          put("CHAT_CHANNEL", id, `tin nhắn gần đây: ${msgs.join(" | ")}`);
       })(),
     );
   }
@@ -344,6 +430,79 @@ async function hydrateSelected(
     );
   }
 
+  // DECISION: chỉ quyết định đã xác nhận mới tồn tại trên Work Graph; hydrate
+  // đúng trạng thái xác nhận từ bảng nguồn để AI biết đây là kết luận chính thức.
+  const decisionIds = byType.get("DECISION") ?? [];
+  if (decisionIds.length) {
+    jobs.push(
+      (async () => {
+        const [{ data: rows }, { data: revs }] = await Promise.all([
+          supabase
+            .from("decisions")
+            .select(
+              "id,title,detail,status,origin,source_type,source_id,decided_at,confirmed_at,superseded_by,row_version",
+            )
+            .eq("tenant_id", tenantId)
+            .in("id", decisionIds),
+          // Lịch sử phiên bản: AI cần thấy quyết định đã thay đổi thế nào, không chỉ bản hiện tại.
+          supabase
+            .from("decision_revisions")
+            .select("decision_id,row_version,change_kind,changed_fields,snapshot,changed_at")
+            .eq("tenant_id", tenantId)
+            .in("decision_id", decisionIds)
+            .order("changed_at", { ascending: false })
+            .limit(60),
+        ]);
+        const revByDecision = new Map<string, string[]>();
+        for (const r of (revs ?? []) as Array<Record<string, any>>) {
+          const id = String(r["decision_id"]);
+          const list = revByDecision.get(id) ?? [];
+          if (list.length >= 4) continue;
+          const snap = (r["snapshot"] ?? {}) as Record<string, any>;
+          const fields = Array.isArray(r["changed_fields"]) ? r["changed_fields"] : [];
+          list.push(
+            [
+              `v${r["row_version"] ?? "-"}`,
+              r["changed_at"],
+              r["change_kind"] ?? "UPDATE",
+              fields.length ? `đổi: ${fields.join(",")}` : null,
+              snap["status"] ? `trạng thái khi đó: ${DECISION_STATUS_LABEL[String(snap["status"])] ?? snap["status"]}` : null,
+              fields.includes("title") && snap["title"]
+                ? `nội dung khi đó: ${cleanExcerpt(snap["title"], 160)}`
+                : null,
+            ]
+              .filter(Boolean)
+              .join(" "),
+          );
+          revByDecision.set(id, list);
+        }
+        for (const d of (rows ?? []) as Array<Record<string, any>>) {
+          const history = revByDecision.get(String(d["id"])) ?? [];
+          put(
+            "DECISION",
+            d["id"],
+            [
+              `trạng thái: ${DECISION_STATUS_LABEL[String(d["status"])] ?? d["status"]}`,
+              d["confirmed_at"] ? `xác nhận lúc: ${d["confirmed_at"]}` : "chưa xác nhận",
+              d["decided_at"] ? `quyết định lúc: ${d["decided_at"]}` : null,
+              `nguồn: ${d["origin"] ?? "-"}${d["source_type"] ? `/${d["source_type"]}` : ""}`,
+              d["superseded_by"] ? `đã bị thay thế bởi: ${d["superseded_by"]}` : null,
+              `nội dung: ${cleanExcerpt(d["title"], 200)}`,
+              d["detail"] ? `chi tiết: ${cleanExcerpt(d["detail"], 400)}` : null,
+              `phiên bản hiện tại: v${d["row_version"] ?? "-"}`,
+              history.length
+                ? `lịch sử thay đổi (mới → cũ): ${history.join(" | ")}`
+                : "lịch sử thay đổi: chưa có bản ghi",
+            ]
+              .filter(Boolean)
+              .join(" · "),
+          );
+        }
+      })(),
+    );
+  }
+
+
   const personIds = byType.get("PERSON") ?? [];
   if (personIds.length) {
     jobs.push(
@@ -370,14 +529,22 @@ async function buildFacts(
 ): Promise<ContextFact[]> {
   if (!workspaceId) return [];
   const nowIso = new Date().toISOString();
-  const base = () => supabase.from("tasks").select("id", { count: "exact", head: true }).eq("tenant_id", tenantId).eq("workspace_id", workspaceId).is("deleted_at", null);
+  const base = () =>
+    supabase
+      .from("tasks")
+      .select("id", { count: "exact", head: true })
+      .eq("tenant_id", tenantId)
+      .eq("workspace_id", workspaceId)
+      .is("deleted_at", null);
   const [overdue, open] = await Promise.all([
     base().lt("due_at", nowIso).neq("status", "DONE"),
     base().neq("status", "DONE"),
   ]);
   const facts: ContextFact[] = [];
-  if (typeof overdue.count === "number") facts.push({ key: "overdueTasks", value: overdue.count, sourceIds: [] });
-  if (typeof open.count === "number") facts.push({ key: "openTasks", value: open.count, sourceIds: [] });
+  if (typeof overdue.count === "number")
+    facts.push({ key: "overdueTasks", value: overdue.count, sourceIds: [] });
+  if (typeof open.count === "number")
+    facts.push({ key: "openTasks", value: open.count, sourceIds: [] });
   return facts;
 }
 
@@ -393,8 +560,14 @@ export async function buildAiContextPack(
   const timings: Record<string, number> = {};
   const failures: string[] = [];
   const requestId = crypto.randomUUID();
-  const maxSources = Math.min(request.maxSources ?? AI_CONTEXT_POLICY.maxSourcesDefault, AI_CONTEXT_POLICY.maxSourcesHard);
-  const maxTokens = Math.min(request.maxTokens ?? AI_CONTEXT_POLICY.maxTokensDefault, AI_CONTEXT_POLICY.maxTokensHard);
+  const maxSources = Math.min(
+    request.maxSources ?? AI_CONTEXT_POLICY.maxSourcesDefault,
+    AI_CONTEXT_POLICY.maxSourcesHard,
+  );
+  const maxTokens = Math.min(
+    request.maxTokens ?? AI_CONTEXT_POLICY.maxTokensDefault,
+    AI_CONTEXT_POLICY.maxTokensHard,
+  );
 
   const tenantId = await resolveTenantForActor(supabase, userId, tenantHint);
   const intent = parseQueryIntent(request.query);
@@ -409,7 +582,15 @@ export async function buildAiContextPack(
     sources: [],
     facts: [],
     ambiguity: null,
-    retrieval: { strategy, query: request.query, resultCount: 0, graphExpansionDepth: 0, truncated: false, timeRange, timings },
+    retrieval: {
+      strategy,
+      query: request.query,
+      resultCount: 0,
+      graphExpansionDepth: 0,
+      truncated: false,
+      timeRange,
+      timings,
+    },
     budget: { estimatedTokens: 0, maxTokens },
     partial: false,
     failures,
@@ -434,7 +615,9 @@ export async function buildAiContextPack(
   const tSearch = Date.now();
   let searchItems: ReturnType<typeof mapRow>[] = [];
   if (request.query.trim().length >= 2) {
-    const entityTypes = (request.requestedEntityTypes ?? intent.entityHints).map((t) => GRAPH_TO_SEARCH[t]);
+    const entityTypes = (request.requestedEntityTypes ?? intent.entityHints).map(
+      (t) => GRAPH_TO_SEARCH[t],
+    );
     // Câu hỏi tự nhiên không khớp LIKE toàn chuỗi → thử lần lượt: câu đầy đủ,
     // cụm từ khoá (bỏ stopword), rồi từng từ khoá dài nhất.
     for (const q of deriveSearchQueries(request.query)) {
@@ -464,7 +647,8 @@ export async function buildAiContextPack(
     const top = searchItems[0]!;
     const second = searchItems[1];
     const strong = top.matchType === "EXACT" || top.matchType === "PREFIX";
-    const close = second && second.entityType === top.entityType && Math.abs(second.score - top.score) < 0.08;
+    const close =
+      second && second.entityType === top.entityType && Math.abs(second.score - top.score) < 0.08;
     if (strong && !close) {
       root = {
         entityType: SEARCH_TO_GRAPH[top.entityType] ?? "WORKSPACE",
@@ -519,7 +703,8 @@ export async function buildAiContextPack(
     if (error) failures.push("WORK_GRAPH");
     else {
       graphDepth = AI_CONTEXT_POLICY.graphDepth;
-      const rels = ((raw ?? {}) as { relationships?: Array<Record<string, any>> }).relationships ?? [];
+      const rels =
+        ((raw ?? {}) as { relationships?: Array<Record<string, any>> }).relationships ?? [];
       // RLS-aware: entity nào actor không thấy sẽ bị loại hoàn toàn (không leak quan hệ).
       const resolved = await resolveWorkEntities(
         supabase,
@@ -601,30 +786,66 @@ export async function buildAiContextPack(
 
   if (timeRange) strategy = strategy === "MIXED" ? "MIXED" : "TIME_FILTERED";
 
-  /* --- PHASE H: ranking + per-type limits + budget --- */
-  const scored = candidates
+  /* --- PHASE G2: ưu tiên quyết định theo trạng thái xác nhận ---
+     Đề xuất AI phải dựa trên điều hành thực tế: quyết định ĐÃ XÁC NHẬN đứng
+     trước mọi bản ghi công việc; quyết định chờ xác nhận bị hạ mạnh để không
+     dẫn dắt câu trả lời. (Trên Work Graph chỉ có quyết định đã xác nhận; luồng
+     tìm kiếm có thể trả cả bản chờ, nên cần đọc trạng thái thật.) */
+  const decisionCandidates = candidates.filter((c) => c.type === "DECISION");
+  if (decisionCandidates.length) {
+    const tDecision = Date.now();
+    const { data: dRows, error: dErr } = await supabase
+      .from("decisions")
+      .select("id,status")
+      .eq("tenant_id", tenantId)
+      .in(
+        "id",
+        decisionCandidates.map((c) => c.id),
+      );
+    timings["decisionStatus"] = Date.now() - tDecision;
+    if (dErr) failures.push("DECISION_STATUS");
+    else {
+      const statusById = new Map(
+        ((dRows ?? []) as Array<Record<string, any>>).map((d) => [
+          String(d["id"]),
+          String(d["status"]),
+        ]),
+      );
+      for (const c of decisionCandidates) {
+        const st = statusById.get(c.id);
+        // Không đọc được trạng thái → coi như chưa xác nhận, an toàn trước.
+        c.intentPriority = st === "CONFIRMED" ? 1 : st === "SUPERSEDED" ? 0.55 : 0.15;
+      }
+    }
+  }
+
+  /* --- PHASE H: ranking (module riêng, giải thích được) + per-type limits + budget --- */
+  const rankNow = new Date();
+  const eligible = candidates
     .filter((c) => c.type !== "TENANT")
     .filter((c) => {
       if (!timeRange || !c.updatedAt) return true;
       const ts = new Date(c.updatedAt).getTime();
       return ts >= new Date(timeRange.from).getTime() && ts <= new Date(timeRange.to).getTime();
     })
-    .map((c) => {
-      const relWeight = c.relationship && c.relationship in RELATIONSHIP_WEIGHTS ? RELATIONSHIP_WEIGHTS[c.relationship as WorkRelationshipCode] : 0.25;
-      let priority = ENTITY_PRIORITY_BASE[c.type];
-      if (intent.wantsBlockers && (c.type === "TASK" || c.relationship === "BLOCKS" || c.relationship === "DEPENDS_ON")) priority += 0.2;
-      if (intent.wantsCommunication && (c.type === "EMAIL" || c.type === "CHAT_CHANNEL" || c.type === "MEETING")) priority += 0.2;
-      if (intent.wantsLatestMeeting && c.type === "MEETING") priority += 0.25;
-      if (c.type === "MEETING_ARTIFACT" && (intent.wantsMeetingOutcome || root?.entityType === "MEETING")) priority += 0.3;
-      const proximity = c.graphDistance === 1 ? 0.35 : 0.1;
-      const rank = c.lexical * 0.35 + relWeight * 0.25 + priority * 0.25 + proximity + recencyBoost(c.updatedAt) * 0.6;
-      return { ...c, rank };
-    })
-    .sort((a, b) => b.rank - a.rank);
+    .map((c) => ({ ...c, meta: c }));
+
+  const scored = rankUnifiedContext<Candidate>({
+    semantic: eligible.filter((c) => c.relationship === "SEARCH_MATCH"),
+    graph: eligible.filter((c) => c.relationship !== "SEARCH_MATCH"),
+    intent,
+    rootType: root?.entityType ?? null,
+    now: rankNow,
+  }).map((r) => ({
+    ...(r.candidate.meta as Candidate),
+    rank: r.score,
+    freshness: r.freshness,
+    rankBreakdown: r.breakdown as unknown as Record<string, number>,
+  }));
 
   const perType = new Map<AiContextEntityType, number>();
   const seen = new Set<string>();
-  const selected: (Candidate & { rank: number })[] = [];
+  const selected: ScoredCandidate[] = [];
   for (const c of scored) {
     const k = `${c.type}:${c.id}`;
     if (seen.has(k)) continue; // §74 dedupe
@@ -642,7 +863,20 @@ export async function buildAiContextPack(
   const tHydrate = Date.now();
   let excerpts = new Map<string, string>();
   try {
-    excerpts = await hydrateSelected(supabase, tenantId, root ? [{ ...(root as unknown as Candidate), type: root.entityType, id: root.entityId } as Candidate, ...selected] : selected);
+    excerpts = await hydrateSelected(
+      supabase,
+      tenantId,
+      root
+        ? [
+            {
+              ...(root as unknown as Candidate),
+              type: root.entityType,
+              id: root.entityId,
+            } as Candidate,
+            ...selected,
+          ]
+        : selected,
+    );
   } catch {
     failures.push("HYDRATION");
   }
@@ -653,7 +887,17 @@ export async function buildAiContextPack(
   let tokens = 0;
   let budgetTruncated = false;
 
-  const pushSource = (c: { type: AiContextEntityType; id: string; title: string; updatedAt: string | null; snippet?: string; relationship?: Candidate["relationship"]; rank: number }) => {
+  const pushSource = (c: {
+    type: AiContextEntityType;
+    id: string;
+    title: string;
+    updatedAt: string | null;
+    snippet?: string;
+    relationship?: Candidate["relationship"];
+    rank: number;
+    freshness?: TemporalFreshness;
+    rankBreakdown?: Record<string, number>;
+  }) => {
     const excerpt = excerpts.get(`${c.type}:${c.id}`) ?? cleanExcerpt(c.snippet ?? "");
     const sourceId = `S${sources.length + 1}`;
     const cost = estimateTokens(`${c.title}${excerpt}`) + 20;
@@ -663,7 +907,17 @@ export async function buildAiContextPack(
     }
     tokens += cost;
     const href = workEntityHref(c.type, c.id);
-    sources.push({ sourceId, entityType: c.type, entityId: c.id, title: c.title, href, excerpt, updatedAt: c.updatedAt });
+    const freshness = c.freshness ?? computeTemporalFreshness(c.type, c.updatedAt, rankNow);
+    sources.push({
+      sourceId,
+      entityType: c.type,
+      entityId: c.id,
+      title: c.title,
+      href,
+      excerpt,
+      updatedAt: c.updatedAt,
+      freshness,
+    });
     entities.push({
       entityType: c.type,
       entityId: c.id,
@@ -674,13 +928,36 @@ export async function buildAiContextPack(
       updatedAt: c.updatedAt,
       href,
       sourceRank: c.rank,
+      freshness,
+      rankBreakdown: c.rankBreakdown ?? null,
     });
     return true;
   };
 
-  if (root) pushSource({ type: root.entityType, id: root.entityId, title: root.title, updatedAt: root.updatedAt ?? null, relationship: "ROOT", rank: 1 });
+  if (root)
+    pushSource({
+      type: root.entityType,
+      id: root.entityId,
+      title: root.title,
+      updatedAt: root.updatedAt ?? null,
+      relationship: "ROOT",
+      rank: 1,
+    });
   for (const c of selected) {
-    if (!pushSource({ type: c.type, id: c.id, title: c.title, updatedAt: c.updatedAt, snippet: c.snippet, relationship: c.relationship, rank: c.rank })) break;
+    if (
+      !pushSource({
+        type: c.type,
+        id: c.id,
+        title: c.title,
+        updatedAt: c.updatedAt,
+        snippet: c.snippet,
+        relationship: c.relationship,
+        rank: c.rank,
+        freshness: c.freshness,
+        rankBreakdown: c.rankBreakdown,
+      })
+    )
+      break;
   }
 
   const facts = await buildFacts(
@@ -708,6 +985,7 @@ export async function buildAiContextPack(
       truncated: truncatedByLimit || budgetTruncated,
       timeRange,
       timings,
+      rankerVersion: CONTEXT_RANKER_VERSION,
     },
     budget: { estimatedTokens: tokens, maxTokens },
     partial: failures.length > 0,
@@ -727,6 +1005,10 @@ export const GROUNDED_SYSTEM_PROMPT = [
   "Với câu hỏi về cuộc họp: CHỈ dựa trên các nguồn MEETING_ARTIFACT (tóm tắt, ý chính, quyết định, việc cần làm, rủi ro, câu hỏi mở, thư theo dõi) đã được grounding. Không suy đoán từ transcript thô, không tự rút ra quyết định hay việc cần làm mới.",
   "Nếu không có MEETING_ARTIFACT nào cho cuộc họp được hỏi, hãy nói rõ cuộc họp chưa có biên bản/tóm tắt AI thay vì tự suy luận.",
   "Mỗi khẳng định về quyết định, việc cần làm hay rủi ro phải trích dẫn đúng sourceId của artifact tương ứng.",
+  "Mỗi nguồn có trường freshness (Mới / Khá mới / Có thể đã thay đổi / Có thể lỗi thời). Ưu tiên nguồn mới hơn khi các nguồn mâu thuẫn, và nói rõ khi kết luận dựa trên nguồn có thể đã lỗi thời.",
+  "Quyết định có trạng thái 'Đã xác nhận' là điều hành thực tế của tổ chức: khi liên quan, hãy trả lời dựa trên các quyết định đó TRƯỚC, rồi mới đến bản ghi công việc; quyết định 'Chờ xác nhận' chỉ được nhắc tới như đề xuất chưa chốt, không dùng làm căn cứ kết luận.",
+  "Nguồn quyết định kèm 'phiên bản hiện tại' và 'lịch sử thay đổi (mới → cũ)'. Khi đề xuất, hãy đọc cả lịch sử: nêu rõ quyết định đã đổi nội dung/trạng thái ra sao, đề xuất theo hướng thay đổi gần nhất, và cảnh báo nếu công việc đang bám theo một phiên bản cũ hoặc một quyết định đã bị thay thế. Không suy diễn thay đổi nào không có trong lịch sử.",
+
   "Trả lời ngắn gọn, đúng ngôn ngữ của câu hỏi.",
   'Chỉ trả về JSON hợp lệ dạng {"answer": string, "citations": [{"sourceId": string}]} — không kèm markdown fence.',
 ].join("\n");
@@ -734,16 +1016,24 @@ export const GROUNDED_SYSTEM_PROMPT = [
 export function renderContextForModel(pack: AiContextPack): string {
   const lines: string[] = [];
   if (pack.root) lines.push(`ROOT: ${pack.root.entityType} · ${pack.root.title}`);
-  if (pack.retrieval.timeRange) lines.push(`TIME RANGE: ${pack.retrieval.timeRange.label} (${pack.retrieval.timeRange.from} → ${pack.retrieval.timeRange.to})`);
-  if (pack.facts.length) lines.push(`FACTS: ${pack.facts.map((f) => `${f.key}=${f.value}`).join(", ")}`);
-  if (pack.ambiguity) lines.push(`AMBIGUOUS ROOT CANDIDATES: ${pack.ambiguity.candidates.map((c) => c.title).join(" | ")}`);
+  if (pack.retrieval.timeRange)
+    lines.push(
+      `TIME RANGE: ${pack.retrieval.timeRange.label} (${pack.retrieval.timeRange.from} → ${pack.retrieval.timeRange.to})`,
+    );
+  if (pack.facts.length)
+    lines.push(`FACTS: ${pack.facts.map((f) => `${f.key}=${f.value}`).join(", ")}`);
+  if (pack.ambiguity)
+    lines.push(
+      `AMBIGUOUS ROOT CANDIDATES: ${pack.ambiguity.candidates.map((c) => c.title).join(" | ")}`,
+    );
   if (pack.partial) lines.push(`PARTIAL RETRIEVAL: ${pack.failures.join(",")}`);
   for (const s of pack.sources) {
     lines.push(
-      `[SOURCE ${s.sourceId}]\ntype: ${s.entityType}\ntitle: ${s.title}\nupdated: ${s.updatedAt ?? "-"}\ncontent: ${s.excerpt}\n[/SOURCE ${s.sourceId}]`,
+      `[SOURCE ${s.sourceId}]\ntype: ${s.entityType}\ntitle: ${s.title}\nupdated: ${s.updatedAt ?? "-"}\nfreshness: ${s.freshness ? `${freshnessTag(s.freshness)} (${s.freshness.level})` : "unknown"}\ncontent: ${s.excerpt}\n[/SOURCE ${s.sourceId}]`,
     );
   }
-  if (!pack.sources.length) lines.push("(không có nguồn nào truy xuất được trong quyền của người dùng)");
+  if (!pack.sources.length)
+    lines.push("(không có nguồn nào truy xuất được trong quyền của người dùng)");
   return lines.join("\n");
 }
 

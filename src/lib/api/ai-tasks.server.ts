@@ -1,13 +1,15 @@
 // AI TASK EXECUTION V1 — engine chạy một lượt AI cho công việc.
 // Bất biến: chỉ đọc ngữ cảnh qua AI Context Engine (RLS của chính actor),
 // không ghi dữ liệu nghiệp vụ, kết quả luôn là bản nháp chờ người duyệt.
-import { streamText } from "ai";
 import type { AiContextPack } from "@/domain/ai-context/contracts";
 import { usableSources, validateAnswerCitations } from "@/domain/ai-context/citations";
 import type { AiExecutionEvidence, DeliverableTemplate } from "@/domain/ai-tasks/contracts";
 import { buildAiContextPack, renderContextForModel } from "./ai-context.server";
 
-export const AI_TASK_MODEL = "openai/gpt-5.6-sol";
+import { AI_CONSUMER_POLICIES } from "@/domain/ai-context/consumer-contract";
+
+/** Model của AI Workers do hợp đồng consumer quyết định. */
+export const AI_TASK_MODEL = AI_CONSUMER_POLICIES.AI_WORKER.model;
 
 export interface AiTaskSpec {
   taskId: string;
@@ -103,19 +105,15 @@ export async function runAiTaskExecution(
     }));
 
 
-  const { createLovableResponsesProvider } = await import("@/lib/ai-gateway.server");
-  const provider = createLovableResponsesProvider(apiKey);
-
-  const result = streamText({
-    model: provider.responses(AI_TASK_MODEL),
+  const { callAiConsumer } = await import("./ai-consumer.server");
+  const call = await callAiConsumer({
+    consumer: "AI_WORKER",
     system: systemPrompt(spec),
     prompt: userPrompt(spec, pack),
-    providerOptions: {
-      openai: { forceReasoning: true, reasoningEffort: "medium", reasoningSummary: "auto", store: false },
-    },
+    apiKey,
   });
-  const raw = await result.text;
-  const usage = await result.usage;
+  const raw = call.text;
+  const usage = call.usage;
 
   const parsed = parseModelJson(raw);
   const safeSources = usableSources(pack.sources);
@@ -135,7 +133,7 @@ export async function runAiTaskExecution(
       entityType: s.entityType,
     })),
     evidence: {
-      model: AI_TASK_MODEL,
+      model: call.model,
       contextRequestId: pack.requestId,
       sourceCount: pack.sources.length,
       estimatedTokens: pack.budget.estimatedTokens,

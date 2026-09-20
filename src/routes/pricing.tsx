@@ -33,9 +33,16 @@ export const Route = createFileRoute("/pricing")({
   head: () => ({
     meta: [
       { title: "Bảng giá — UNIWORK" },
-      { name: "description", content: "Bảng giá UNIWORK: Starter, Business và Enterprise. Tính theo số nhân sự, có dùng thử miễn phí 14 ngày." },
+      {
+        name: "description",
+        content:
+          "Bảng giá UNIWORK: Starter, Business và Enterprise. Tính theo số nhân sự, có dùng thử miễn phí 14 ngày.",
+      },
       { property: "og:title", content: "Bảng giá — UNIWORK" },
-      { property: "og:description", content: "Ba gói linh hoạt cho mọi quy mô. Dùng thử miễn phí 14 ngày." },
+      {
+        property: "og:description",
+        content: "Ba gói linh hoạt cho mọi quy mô. Dùng thử miễn phí 14 ngày.",
+      },
       { property: "og:url", content: "https://unidigiwork.lovable.app/pricing" },
     ],
     links: [{ rel: "canonical", href: "https://unidigiwork.lovable.app/pricing" }],
@@ -138,8 +145,8 @@ function PricingPage() {
     onSuccess: async (_res, plan) => {
       // PERF-005: chỉ làm mới dữ liệu billing/entitlement thay vì toàn bộ cache.
       await Promise.all(
-        [["plans"], ["billing"], ["subscription"], ["entitlements"], ["tenant-context"]].map((key) =>
-          qc.invalidateQueries({ queryKey: key }),
+        [["plans"], ["billing"], ["subscription"], ["entitlements"], ["tenant-context"]].map(
+          (key) => qc.invalidateQueries({ queryKey: key }),
         ),
       );
       setCheckoutPlan(null);
@@ -160,29 +167,33 @@ function PricingPage() {
 
   return (
     <PublicShell active="pricing">
-      <section className="border-b border-border/60">
-        <div className="mx-auto max-w-5xl px-4 py-16 text-center sm:px-6 lg:py-24">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+      <section className="border-b border-border bg-surface">
+        <div className="mx-auto max-w-5xl px-4 py-10 text-center sm:px-6 sm:py-14 lg:py-20">
+          <span className="module-label inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-pale-purple px-3 py-1.5 text-primary">
             <Sparkles className="h-3.5 w-3.5" /> Bảng giá minh bạch
           </span>
-          <h1 className="mt-5 text-4xl font-bold tracking-tight sm:text-5xl">
+          <h1 className="mt-5 font-heading text-3xl font-bold sm:text-5xl">
             Giá hợp lý cho mọi quy mô đội ngũ
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-muted-foreground">
-            Bắt đầu miễn phí, nâng cấp khi đội ngũ phát triển. Hợp đồng linh hoạt
-            theo tháng hoặc năm, có hoá đơn VAT đầy đủ.
+            Bắt đầu miễn phí, nâng cấp khi đội ngũ phát triển. Hợp đồng linh hoạt theo tháng hoặc
+            năm, có hoá đơn VAT đầy đủ.
           </p>
           {tenantQuery.data && currentPlanCode && (
             <p className="mt-4 text-sm text-muted-foreground">
-              Tổ chức <span className="font-medium text-foreground">{tenantQuery.data.tenantName}</span>{" "}
+              Tổ chức{" "}
+              <span className="font-medium text-foreground">{tenantQuery.data.tenantName}</span>{" "}
               đang dùng gói{" "}
-              <span className="font-medium text-primary">{subQuery.data?.planName ?? currentPlanCode}</span>.
+              <span className="font-medium text-primary">
+                {subQuery.data?.planName ?? currentPlanCode}
+              </span>
+              .
             </p>
           )}
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:py-20">
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:py-20">
         {plansQuery.isLoading ? (
           <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" /> Đang tải bảng giá…
@@ -196,7 +207,7 @@ function PricingPage() {
             Chưa có gói dịch vụ nào được công bố.
           </p>
         ) : (
-          <div className="grid gap-6 lg:grid-cols-3">
+          <div className="grid gap-4 lg:grid-cols-3">
             {plans.map((p) => {
               const Icon = PLAN_ICONS[p.code] ?? Sparkles;
               const price = formatPrice(p);
@@ -205,10 +216,10 @@ function PricingPage() {
               return (
                 <div
                   key={p.id}
-                  className={`relative flex flex-col rounded-2xl border p-7 ${highlight ? "border-primary bg-gradient-to-b from-primary/10 to-transparent shadow-2xl shadow-primary/10" : "border-border bg-surface"}`}
+                  className={`relative flex min-w-0 flex-col rounded-xl border bg-card p-5 shadow-card sm:p-6 ${highlight ? "border-primary ring-1 ring-primary/20" : "border-border"}`}
                 >
                   {(isCurrent || p.isFeatured) && (
-                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary-foreground">
+                    <span className="module-label absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-action px-3 py-1.5 text-action-foreground">
                       {isCurrent ? "Gói hiện tại" : "Phổ biến nhất"}
                     </span>
                   )}
@@ -216,8 +227,10 @@ function PricingPage() {
                     <Icon className="h-5 w-5 text-primary" />
                     <h3 className="text-lg font-semibold">{p.name}</h3>
                   </div>
-                  <div className="mt-4 flex items-baseline gap-1">
-                    <span className="text-4xl font-bold tracking-tight">{price.value}</span>
+                  <div className="mt-4 flex min-w-0 flex-wrap items-baseline gap-1">
+                    <span className="break-words font-heading text-3xl font-bold sm:text-4xl">
+                      {price.value}
+                    </span>
                     {price.unit && (
                       <span className="text-sm text-muted-foreground">{price.unit}</span>
                     )}
@@ -247,7 +260,7 @@ function PricingPage() {
                     <button
                       type="button"
                       onClick={() => setCheckoutPlan(p)}
-                      className={`mt-7 inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium ${highlight ? "bg-primary text-primary-foreground hover:bg-primary/90" : "border border-border bg-surface-2 hover:bg-surface-3"}`}
+                      className={`mt-7 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-center text-sm font-semibold ${highlight ? "bg-action text-action-foreground hover:opacity-90" : "border border-border-strong bg-card hover:bg-surface-2"}`}
                     >
                       {direction(p) === "upgrade" ? (
                         <>
@@ -266,7 +279,7 @@ function PricingPage() {
                   ) : (
                     <Link
                       to={p.priceAmount === null ? "/contact" : "/auth"}
-                      className={`mt-7 inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium ${highlight ? "bg-primary text-primary-foreground hover:bg-primary/90" : "border border-border bg-surface-2 hover:bg-surface-3"}`}
+                      className={`mt-7 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-center text-sm font-semibold ${highlight ? "bg-action text-action-foreground hover:opacity-90" : "border border-border-strong bg-card hover:bg-surface-2"}`}
                     >
                       {p.priceAmount === null
                         ? (p.ctaLabel ?? "Liên hệ tư vấn")
@@ -292,20 +305,22 @@ function PricingPage() {
             <DialogDescription>
               {checkoutPlan && (
                 <>
-                  Tổ chức <span className="font-medium">{tenantQuery.data?.tenantName}</span> sẽ chuyển
-                  từ gói <span className="font-medium">{currentPlan?.name ?? "hiện tại"}</span> sang{" "}
+                  Tổ chức <span className="font-medium">{tenantQuery.data?.tenantName}</span> sẽ
+                  chuyển từ gói{" "}
+                  <span className="font-medium">{currentPlan?.name ?? "hiện tại"}</span> sang{" "}
                   <span className="font-medium">{checkoutPlan.name}</span> (
-                  {formatPrice(checkoutPlan).value} {formatPrice(checkoutPlan).unit}). Chi phí được tính
-                  tỷ lệ theo ngày sử dụng còn lại của chu kỳ.
+                  {formatPrice(checkoutPlan).value} {formatPrice(checkoutPlan).unit}). Chi phí được
+                  tính tỷ lệ theo ngày sử dụng còn lại của chu kỳ.
                 </>
               )}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCheckoutPlan(null)}>
+            <Button className="min-h-11" variant="outline" onClick={() => setCheckoutPlan(null)}>
               Huỷ
             </Button>
             <Button
+              className="min-h-11"
               onClick={() => checkoutPlan && changeMutation.mutate(checkoutPlan)}
               disabled={changeMutation.isPending}
             >
@@ -316,10 +331,10 @@ function PricingPage() {
         </DialogContent>
       </Dialog>
 
-      <section className="border-t border-border/60 bg-surface/30 py-16">
+      <section className="border-t border-border bg-surface py-12 sm:py-16">
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
           <h2 className="text-center text-3xl font-bold sm:text-4xl">Câu hỏi thường gặp</h2>
-          <div className="mt-10 divide-y divide-border rounded-2xl border border-border bg-surface">
+          <div className="mt-10 divide-y divide-border rounded-xl border border-border bg-card shadow-card">
             {[
               {
                 q: "UNIWORK có dùng thử miễn phí không?",
@@ -338,10 +353,12 @@ function PricingPage() {
                 a: "Có. UNIWORK phát hành hoá đơn điện tử theo Thông tư 78 ngay sau khi thanh toán.",
               },
             ].map((f) => (
-              <details key={f.q} className="group p-5">
-                <summary className="flex cursor-pointer items-center justify-between text-sm font-medium">
+              <details key={f.q} className="group px-4 py-1 sm:px-5">
+                <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-sm font-medium">
                   {f.q}
-                  <span className="text-muted-foreground transition-transform group-open:rotate-45">+</span>
+                  <span className="text-muted-foreground transition-transform group-open:rotate-45">
+                    +
+                  </span>
                 </summary>
                 <p className="mt-3 text-sm text-muted-foreground">{f.a}</p>
               </details>

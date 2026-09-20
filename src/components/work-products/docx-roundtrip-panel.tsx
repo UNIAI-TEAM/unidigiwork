@@ -1,0 +1,1533 @@
+// Tài liệu Word đã nhập — sửa từng đoạn, xem đối chiếu và vá giữ nguyên bản gốc.
+import { useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  Check,
+  GitCompare,
+  ListChecks,
+  Loader2,
+  Lock,
+  RotateCcw,
+  SlidersHorizontal,
+  Sparkles,
+  Undo2,
+  Wand2,
+  X,
+} from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Card } from "@/components/ui/card";
+import { Slider } from "@/components/ui/slider";
+import { cn } from "@/lib/utils";
+import {
+  applyWorkProductAcceptedChanges,
+  decideWorkProductChangeOps,
+  listWorkProductBlocks,
+  listWorkProductChangeOps,
+  proposeAiWorkProductBlockEdits,
+  proposeWorkProductChanges,
+  proposeTasksFromWorkProduct,
+  createTasksFromWorkProduct,
+  proposeFollowUpsFromDocxChanges,
+  createFollowUpsFromWorkProduct,
+  listWorkProductDocxVersions,
+  compareWorkProductDocxVersions,
+  reanalyzeWorkProductDocx,
+  getAiProposalAccuracyReport,
+  getDocxRecognitionReport,
+  suggestDocxWeightsFromContent,
+  getWorkProductDocxChangeHistory,
+  getTenantDocxProfile,
+  saveTenantDocxProfile,
+} from "@/lib/api/work-products-docx.functions";
+
+type ChangeHistoryEntry = {
+  id: string;
+  origin: string;
+  semanticRole: string | null;
+  before: string;
+  after: string;
+  editor: string;
+  decidedBy: string;
+};
+
+type ChangeHistory = {
+  items: Array<{
+    version: number;
+    summary: string;
+    createdAt: string;
+    aiGenerated: boolean;
+    author: string;
+    counts: { total: number; human: number; ai: number };
+    changes: ChangeHistoryEntry[];
+  }>;
+  pending: ChangeHistoryEntry[];
+  totals: { versions: number; changes: number; human: number; ai: number };
+};
+
+type RecognitionReport = {
+  totalBlocks: number;
+  totalDocuments: number;
+  overallAccuracy: number | null;
+  roles: Array<{
+    role: string;
+    weightKey: string | null;
+    weight: number | null;
+    blocks: number;
+    documents: number;
+    avgScore: number | null;
+    lowConfidence: number;
+    accepted: number;
+    rejected: number;
+    pending: number;
+    accuracy: number | null;
+    advice: "INCREASE" | "DECREASE" | "KEEP";
+  }>;
+};
+
+type FollowUpEvidence = {
+  index: number;
+  blockKey: string;
+  role: string;
+  heading: string | null;
+  section: string | null;
+  origin: string;
+  before: string;
+  after: string;
+};
+
+type FollowUpSuggestion = {
+  kind: "TASK" | "DECISION" | "MEETING";
+  title: string;
+  detail: string;
+  reason?: string;
+  priority: string;
+  confidence?: number;
+  evidenceIndexes?: number[];
+};
+
+/** Ghi kèm lý do đề xuất vào mô tả để người nhận việc hiểu vì sao có mục này. */
+function withReason(f: { detail: string; reason?: string }) {
+  const detail = f.detail?.trim() ?? "";
+  const reason = f.reason?.trim();
+  if (!reason) return detail.slice(0, 500);
+  return `${detail ? `${detail}\n\n` : ""}Lý do đề xuất: ${reason}`.slice(0, 500);
+}
+
+type AccuracyReport = {
+  total: number;
+  accepted: number;
+  rejected: number;
+  pending: number;
+  accuracy: number | null;
+  avgSimilarity: number;
+  roles: Array<{
+    role: string;
+    total: number;
+    accepted: number;
+    rejected: number;
+    accuracy: number | null;
+    avgSimilarity: number;
+  }>;
+  weakest: Array<{ role: string; accuracy: number | null; rejected: number }>;
+  documents: Array<{
+    workProductId: string;
+    title: string;
+    businessType: string | null;
+    total: number;
+    accepted: number;
+    rejected: number;
+    pending: number;
+    accuracy: number | null;
+    avgSimilarity: number;
+    worstRole: { role: string; rejected: number } | null;
+  }>;
+  recent: Array<{
+    id: string;
+    role: string;
+    status: string;
+    similarity: number;
+    before: string;
+    after: string;
+  }>;
+};
+
+const WEIGHT_KEYS = ["title", "heading", "listItem", "quote", "caption", "table"] as const;
+type WeightKey = (typeof WEIGHT_KEYS)[number];
+type Weights = Record<WeightKey, number>;
+
+const DEFAULT_WEIGHTS: Weights = {
+  title: 1,
+  heading: 1,
+  listItem: 1,
+  quote: 1,
+  caption: 1,
+  table: 1,
+};
+
+const WEIGHT_LABELS: Record<WeightKey, string> = {
+  title: "Tiêu đề tài liệu",
+  heading: "Tiêu đề mục",
+  listItem: "Gạch đầu dòng",
+  quote: "Trích dẫn",
+  caption: "Chú thích",
+  table: "Bảng",
+};
+
+const ROLE_LABELS: Record<string, string> = {
+  TITLE: "Tiêu đề tài liệu",
+  HEADING: "Tiêu đề mục",
+  PARAGRAPH: "Đoạn văn",
+  LIST_ITEM: "Gạch đầu dòng",
+  TABLE: "Bảng",
+  QUOTE: "Trích dẫn",
+  CAPTION: "Chú thích",
+  FOOTNOTE: "Chú thích cuối trang",
+  OTHER: "Khác",
+};
+
+const WEIGHTS_STORAGE_KEY = "uniwork.docx-detection-weights";
+
+type DocxVersion = {
+  id: string;
+  role: string;
+  version: number | null;
+  created_at: string;
+};
+
+type DiffWord = { op: "same" | "del" | "ins"; text: string };
+type DiffRow = {
+  key: string;
+  ordinal: number;
+  blockType: string;
+  change: "ADDED" | "REMOVED" | "MODIFIED";
+  before: string;
+  after: string;
+  words: DiffWord[];
+};
+type CompareResult = {
+  base: { id: string; role: string; version: number | null };
+  target: { id: string; role: string; version: number | null };
+  totals: {
+    changed: number;
+    added: number;
+    removed: number;
+    modified: number;
+  };
+  diffs: DiffRow[];
+};
+
+const versionLabel = (v: DocxVersion) =>
+  v.role === "SOURCE_ORIGINAL" ? "Bản gốc" : `Phiên bản ${v.version ?? "?"}`;
+
+type BlockAnchor = {
+  role?: string | null;
+  headingLevel?: number | null;
+  section?: string | null;
+  score?: number | null;
+  signals?: string[] | null;
+  table?: { rows?: number; cols?: number; headerConfidence?: number } | null;
+} | null;
+
+type Block = {
+  id: string;
+  block_key: string;
+  ordinal: number;
+  block_type: string;
+  text: string | null;
+  editability: string;
+  source_anchor?: BlockAnchor;
+};
+
+type ChangeOp = {
+  id: string;
+  block_key: string;
+  before_text: string;
+  after_text: string;
+  origin: string;
+  status: string;
+};
+
+export function DocxRoundTripPanel({
+  productId,
+  activeSources,
+}: {
+  productId: string;
+  activeSources: Array<{ type: string; id: string }>;
+}) {
+  const qc = useQueryClient();
+  const [selected, setSelected] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
+  const [instruction, setInstruction] = useState("");
+  const [taskSuggestions, setTaskSuggestions] = useState<
+    Array<{ title: string; priority: string; checked: boolean }>
+  >([]);
+  const [followUps, setFollowUps] = useState<
+    Array<{
+      kind: "TASK" | "DECISION" | "MEETING";
+      title: string;
+      detail: string;
+      reason?: string;
+      priority: string;
+      confidence?: number;
+      evidenceIndexes?: number[];
+      checked: boolean;
+    }>
+  >([]);
+  const [followUpEvidence, setFollowUpEvidence] = useState<FollowUpEvidence[]>([]);
+  const [followUpDetail, setFollowUpDetail] = useState<number | null>(null);
+  const [showWeights, setShowWeights] = useState(false);
+  const [weights, setWeights] = useState<Weights>(DEFAULT_WEIGHTS);
+  const [guidance, setGuidance] = useState("");
+
+  // Hồ sơ nhận diện theo tổ chức: cùng một tệp có thể cho đề xuất khác nhau ở mỗi tổ chức.
+  const { data: profile } = useQuery({
+    queryKey: ["docx-tenant-profile"],
+    queryFn: () =>
+      getTenantDocxProfile({ data: {} }) as Promise<{
+        tenantId: string;
+        canEdit: boolean;
+        weights: Weights;
+        aiGuidance: string;
+      }>,
+  });
+
+  useEffect(() => {
+    if (!profile) return;
+    setWeights({ ...DEFAULT_WEIGHTS, ...profile.weights });
+    setGuidance(profile.aiGuidance ?? "");
+  }, [profile]);
+
+  const saveProfile = useMutation({
+    mutationFn: (input: { weights?: Weights; aiGuidance?: string }) =>
+      saveTenantDocxProfile({ data: input }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["docx-tenant-profile"] });
+      toast.success("Đã lưu cấu hình nhận diện của tổ chức");
+    },
+    onError: (e: Error) =>
+      toast.error(
+        e.message.includes("DOCX_PROFILE_FORBIDDEN")
+          ? "Chỉ chủ sở hữu hoặc quản trị viên tổ chức được đổi cấu hình."
+          : "Không lưu được cấu hình nhận diện.",
+      ),
+  });
+
+  const canEditProfile = profile?.canEdit ?? false;
+
+  const saveWeights = (next: Weights) => {
+    setWeights(next);
+    try {
+      localStorage.setItem(WEIGHTS_STORAGE_KEY, JSON.stringify(next));
+    } catch {
+      /* bỏ qua khi trình duyệt chặn lưu */
+    }
+  };
+
+  const { data: blocks, isLoading } = useQuery({
+    queryKey: ["wp-blocks", productId],
+    queryFn: () => listWorkProductBlocks({ data: { id: productId } }) as Promise<Block[]>,
+  });
+  const { data: ops } = useQuery({
+    queryKey: ["wp-change-ops", productId],
+    queryFn: () => listWorkProductChangeOps({ data: { id: productId } }) as Promise<ChangeOp[]>,
+  });
+
+  const [showCompare, setShowCompare] = useState(false);
+  const [baseId, setBaseId] = useState<string>("");
+  const [targetId, setTargetId] = useState<string>("");
+  const { data: versions } = useQuery({
+    queryKey: ["wp-docx-versions", productId],
+    queryFn: () =>
+      listWorkProductDocxVersions({ data: { id: productId } }) as Promise<DocxVersion[]>,
+  });
+  const [openVersion, setOpenVersion] = useState<number | null>(null);
+  const { data: history } = useQuery({
+    queryKey: ["wp-docx-history", productId],
+    queryFn: () =>
+      getWorkProductDocxChangeHistory({ data: { id: productId } }) as Promise<ChangeHistory>,
+  });
+
+  const compare = useMutation({
+    mutationFn: () =>
+      compareWorkProductDocxVersions({
+        data: {
+          id: productId,
+          ...(baseId ? { baseArtifactId: baseId } : {}),
+          ...(targetId ? { targetArtifactId: targetId } : {}),
+        },
+      }) as Promise<CompareResult>,
+    onSuccess: () => setShowCompare(true),
+    onError: (e: any) =>
+      toast.error(
+        e?.message?.includes("NOT_ENOUGH_VERSIONS")
+          ? "Chưa có phiên bản sửa đổi để so sánh."
+          : "Không so sánh được hai bản.",
+      ),
+  });
+
+  // Xem theo tài liệu hiện tại hoặc tổng hợp nhiều tài liệu Word của tổ chức.
+  const [accuracyScope, setAccuracyScope] = useState<"THIS" | "ALL">("THIS");
+  const { data: accuracy } = useQuery({
+    queryKey: ["wp-ai-accuracy", productId, accuracyScope],
+    queryFn: () =>
+      getAiProposalAccuracyReport({
+        data: accuracyScope === "THIS" ? { id: productId } : {},
+      }) as Promise<AccuracyReport>,
+  });
+
+  // Báo cáo nhận diện Word của toàn tổ chức, dùng để chỉnh trọng số.
+  const { data: recognition } = useQuery({
+    queryKey: ["wp-docx-recognition", weights],
+    queryFn: () => getDocxRecognitionReport({ data: { weights } }) as Promise<RecognitionReport>,
+  });
+
+  const reanalyze = useMutation({
+    mutationFn: () => reanalyzeWorkProductDocx({ data: { id: productId, weights } }),
+    onSuccess: (r: { updated: number; counts: Record<string, number> }) => {
+      qc.invalidateQueries({ queryKey: ["wp-blocks", productId] });
+      toast.success(`Đã nhận diện lại ${r.updated} đoạn`);
+    },
+    onError: (e: Error) =>
+      toast.error(
+        e.message.includes("NOT_IMPORTED_DOCX")
+          ? "Chỉ áp dụng cho tài liệu Word đã nhập."
+          : "Không phân tích lại được tài liệu.",
+      ),
+  });
+
+  // Tự học trọng số từ nội dung tài liệu Word thật, thay vì kéo tay từng thanh trượt.
+  type WeightSuggestion = {
+    weights: Weights;
+    changes: Array<{ key: string; role: string; from: number; to: number; reason: string }>;
+    analyzedBlocks: number;
+    analyzedDocuments: number;
+    scope: "THIS" | "ALL";
+  };
+  const [autoResult, setAutoResult] = useState<WeightSuggestion | null>(null);
+  const autoWeights = useMutation({
+    mutationFn: async (input: { scope: "THIS" | "ALL"; apply?: boolean }) => {
+      const r = (await suggestDocxWeightsFromContent({
+        data: {
+          ...(input.scope === "THIS" ? { id: productId } : {}),
+          weights,
+          idempotencyKey: crypto.randomUUID(),
+        },
+      })) as WeightSuggestion;
+      // Áp dụng ngay cho cả tổ chức: lưu hồ sơ nhận diện, không cần bấm thêm.
+      if (input.apply && r.changes.length) {
+        await saveTenantDocxProfile({
+          data: { weights: { ...weights, ...r.weights }, aiGuidance: guidance },
+        });
+      }
+      return { ...r, applied: Boolean(input.apply && r.changes.length) };
+    },
+    onSuccess: (r) => {
+      setAutoResult(r);
+      if (!r.changes.length) {
+        toast.success("Nội dung hiện tại đã khớp với trọng số đang dùng");
+        return;
+      }
+      saveWeights({ ...weights, ...r.weights });
+      if (r.applied) {
+        void qc.invalidateQueries({ queryKey: ["tenant-docx-profile"] });
+        void qc.invalidateQueries({ queryKey: ["wp-docx-recognition"] });
+        toast.success(`Đã áp dụng ${r.changes.length} trọng số mới cho cả tổ chức`);
+        return;
+      }
+      toast.success(`Đã cập nhật ${r.changes.length} loại nhận diện theo nội dung tài liệu`);
+    },
+    onError: (e: Error) =>
+      toast.error(
+        e.message.includes("NO_DOCX_CONTENT")
+          ? "Chưa có nội dung tài liệu Word để phân tích."
+          : "Không tự cập nhật được trọng số.",
+      ),
+  });
+
+  const refresh = () => {
+    qc.invalidateQueries({ queryKey: ["wp-change-ops", productId] });
+    qc.invalidateQueries({ queryKey: ["wp-blocks", productId] });
+    qc.invalidateQueries({ queryKey: ["work-deliverable", productId] });
+  };
+
+  const pending = useMemo(() => (ops ?? []).filter((o) => o.status === "PENDING"), [ops]);
+  const accepted = useMemo(() => (ops ?? []).filter((o) => o.status === "ACCEPTED"), [ops]);
+
+  const propose = useMutation({
+    mutationFn: (v: { blockId: string; after: string }) =>
+      proposeWorkProductChanges({ data: { id: productId, changes: [v], origin: "HUMAN" } }),
+    onSuccess: () => {
+      setSelected(null);
+      setDraft("");
+      refresh();
+      toast.success("Đã tạo thay đổi chờ duyệt");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const askAi = useMutation({
+    mutationFn: (blockKeys: string[]) =>
+      proposeAiWorkProductBlockEdits({
+        data: { id: productId, blockKeys, instruction, sources: activeSources },
+      }),
+    onSuccess: () => {
+      setInstruction("");
+      refresh();
+      toast.success("AI đã đề xuất chỉnh sửa");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const suggestTasks = useMutation({
+    mutationFn: () => proposeTasksFromWorkProduct({ data: { id: productId } }),
+    onSuccess: (r: { suggestions: Array<{ title: string; priority: string }> }) => {
+      setTaskSuggestions(r.suggestions.map((s) => ({ ...s, checked: true })));
+      toast.success("AI đã gợi ý công việc");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const createTasks = useMutation({
+    mutationFn: () =>
+      createTasksFromWorkProduct({
+        data: {
+          id: productId,
+          tasks: taskSuggestions
+            .filter((t) => t.checked)
+            .map((t) => ({ title: t.title, priority: t.priority as "low" })),
+        },
+      }),
+    onSuccess: (r: { created: Array<{ id: string }> }) => {
+      setTaskSuggestions([]);
+      qc.invalidateQueries({ queryKey: ["work-deliverable-links", productId] });
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+      toast.success(`Đã tạo ${r.created.length} công việc và liên kết vào tài liệu`);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const decide = useMutation({
+    mutationFn: (v: { changeIds?: string[]; decision: "ACCEPTED" | "REJECTED"; all?: boolean }) =>
+      decideWorkProductChangeOps({
+        data: { id: productId, changeIds: v.changeIds, decision: v.decision, all: v.all ?? false },
+      }),
+    onSuccess: () => refresh(),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  // Sau khi chấp nhận, tự động tạo công việc thực từ nội dung vừa thay đổi.
+  const autoCreateTasks = useMutation({
+    mutationFn: (items: FollowUpSuggestion[]) =>
+      createFollowUpsFromWorkProduct({
+        data: {
+          id: productId,
+          items: items.map((f) => ({
+            kind: "TASK" as const,
+            title: f.title,
+            detail: withReason(f),
+            priority: f.priority as "low",
+          })),
+        },
+      }),
+    onSuccess: (r: { created: Array<{ kind: string }> }) => {
+      qc.invalidateQueries({ queryKey: ["work-deliverable-links", productId] });
+      qc.invalidateQueries({ queryKey: ["work-graph-overview"] });
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+      if (r.created.length) {
+        toast.success(`Đã tự động tạo ${r.created.length} công việc và gắn vào bản đồ công việc`);
+      }
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const suggestFollowUps = useMutation({
+    mutationFn: (v?: { version?: number; auto?: boolean }) =>
+      proposeFollowUpsFromDocxChanges({
+        data: { id: productId, ...(v?.version ? { version: v.version } : {}) },
+      }).then((r) => ({ ...r, auto: v?.auto ?? false })),
+    onSuccess: (r: {
+      auto: boolean;
+      evidence?: FollowUpEvidence[];
+      suggestions: FollowUpSuggestion[];
+    }) => {
+      setFollowUpEvidence(r.evidence ?? []);
+      setFollowUpDetail(null);
+      if (r.auto) {
+        const tasks = r.suggestions.filter((s) => s.kind === "TASK");
+        // Công việc được tạo ngay; quyết định và cuộc họp vẫn chờ người dùng chọn.
+        setFollowUps(
+          r.suggestions.filter((s) => s.kind !== "TASK").map((s) => ({ ...s, checked: true })),
+        );
+        if (tasks.length) autoCreateTasks.mutate(tasks);
+        return;
+      }
+      setFollowUps(r.suggestions.map((s) => ({ ...s, checked: true })));
+    },
+    onError: (e: Error) =>
+      toast.error(
+        e.message.includes("NO_APPLIED_CHANGES")
+          ? "Chưa có thay đổi nào được áp dụng để phân tích."
+          : "Chưa gợi ý được hành động tiếp theo.",
+      ),
+  });
+
+  const createFollowUps = useMutation({
+    mutationFn: () =>
+      createFollowUpsFromWorkProduct({
+        data: {
+          id: productId,
+          items: followUps
+            .filter((f) => f.checked)
+            .map((f) => ({
+              kind: f.kind,
+              title: f.title,
+              detail: withReason(f),
+              priority: f.priority as "low",
+            })),
+        },
+      }),
+    onSuccess: (r: { created: Array<{ kind: string }> }) => {
+      setFollowUps([]);
+      qc.invalidateQueries({ queryKey: ["work-deliverable-links", productId] });
+      qc.invalidateQueries({ queryKey: ["work-deliverable-comments", productId] });
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+      qc.invalidateQueries({ queryKey: ["meetings"] });
+      toast.success(`Đã tạo ${r.created.length} mục tiếp theo`);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const apply = useMutation({
+    mutationFn: () => applyWorkProductAcceptedChanges({ data: { id: productId } }),
+    onSuccess: (r: { version: number; preservation: { preservedRatio: number } }) => {
+      refresh();
+      toast.success(
+        `Đã tạo phiên bản v${r.version} — giữ nguyên ${r.preservation.preservedRatio}% cấu trúc gốc`,
+      );
+      // Sau khi chấp nhận, tự động phân tích nội dung vừa đổi để gợi ý bước tiếp theo.
+      suggestFollowUps.mutate({ version: r.version, auto: true });
+    },
+    onError: (e: Error) =>
+      toast.error(
+        e.message.includes("PATCH_UNSAFE")
+          ? "Phần này của tài liệu chưa thể sửa an toàn mà vẫn giữ nguyên định dạng gốc."
+          : e.message,
+      ),
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-6">
+        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  const editable = (blocks ?? []).filter((b) => b.editability === "EDITABLE");
+  const roleCounts = (blocks ?? []).reduce<Record<string, number>>((acc, b) => {
+    const role = b.source_anchor?.role || "PARAGRAPH";
+    acc[role] = (acc[role] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge variant="secondary">Word · giữ nguyên bản gốc</Badge>
+        <span className="text-xs text-muted-foreground">
+          {editable.length}/{(blocks ?? []).length} đoạn có thể sửa
+        </span>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="ml-auto h-7 gap-1 px-2 text-xs"
+          onClick={() => setShowWeights((v) => !v)}
+        >
+          <SlidersHorizontal className="h-3 w-3" />
+          Cấu hình nhận diện
+        </Button>
+      </div>
+
+      {/* Trọng số nhận diện từng loại nội dung */}
+      {showWeights && (
+        <Card className="space-y-3 p-3">
+          <p className="text-xs text-muted-foreground">
+            Cấu hình áp dụng cho cả tổ chức: cùng một tệp Word có thể được đọc hiểu và đề xuất khác
+            nhau ở mỗi tổ chức. Không sửa tệp gốc.
+            {!canEditProfile && " Bạn chỉ xem được; chủ sở hữu hoặc quản trị viên mới đổi được."}
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {WEIGHT_KEYS.map((k) => (
+              <div key={k} className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span>{WEIGHT_LABELS[k]}</span>
+                  <span className="tabular-nums text-muted-foreground">
+                    {weights[k].toFixed(1)}×
+                  </span>
+                </div>
+                <Slider
+                  value={[weights[k]]}
+                  min={0}
+                  max={2}
+                  step={0.1}
+                  disabled={!canEditProfile}
+                  onValueChange={(v) => saveWeights({ ...weights, [k]: v[0] ?? 1 })}
+                />
+              </div>
+            ))}
+          </div>
+
+          <div className="space-y-1">
+            <p className="text-xs font-medium">Hướng dẫn riêng cho AI của tổ chức</p>
+            <Textarea
+              rows={3}
+              value={guidance}
+              disabled={!canEditProfile}
+              onChange={(e) => setGuidance(e.target.value)}
+              placeholder="Ví dụ: tài liệu của chúng tôi luôn có mục Điều khoản thanh toán; ưu tiên đề xuất công việc pháp lý và mốc nghiệm thu."
+              className="text-xs"
+            />
+            <p className="text-[11px] text-muted-foreground">
+              AI dùng hướng dẫn này khi viết lại nội dung và khi đề xuất công việc, quyết định, cuộc
+              họp.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              size="sm"
+              variant="secondary"
+              className="h-7 gap-1 px-2 text-xs"
+              disabled={!canEditProfile || autoWeights.isPending}
+              onClick={() => autoWeights.mutate({ scope: "THIS" })}
+            >
+              {autoWeights.isPending ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Wand2 className="h-3 w-3" />
+              )}
+              Cập nhật tự động từ tài liệu
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 gap-1 px-2 text-xs"
+              disabled={!canEditProfile || autoWeights.isPending}
+              onClick={() => autoWeights.mutate({ scope: "ALL" })}
+            >
+              <Wand2 className="h-3 w-3" />
+              Từ toàn bộ tài liệu tổ chức
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              className="h-7 gap-1 px-2 text-xs"
+              disabled={!canEditProfile || autoWeights.isPending}
+              onClick={() => autoWeights.mutate({ scope: "ALL", apply: true })}
+            >
+              <Wand2 className="h-3 w-3" />
+              Tự điều chỉnh và áp dụng cho tổ chức
+            </Button>
+            <Button
+              size="sm"
+              className="h-7 gap-1 px-2 text-xs"
+              disabled={!canEditProfile || saveProfile.isPending}
+              onClick={() => saveProfile.mutate({ weights, aiGuidance: guidance })}
+            >
+              {saveProfile.isPending ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <SlidersHorizontal className="h-3 w-3" />
+              )}
+              Lưu cho tổ chức
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="h-7 gap-1 px-2 text-xs"
+              disabled={reanalyze.isPending}
+              onClick={() => reanalyze.mutate()}
+            >
+              {reanalyze.isPending ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Wand2 className="h-3 w-3" />
+              )}
+              Nhận diện lại tài liệu
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 gap-1 px-2 text-xs"
+              disabled={!canEditProfile}
+              onClick={() => saveWeights(DEFAULT_WEIGHTS)}
+            >
+              <RotateCcw className="h-3 w-3" />
+              Mặc định
+            </Button>
+          </div>
+
+          {autoResult && (
+            <div className="space-y-1 rounded-md border bg-muted/40 p-2">
+              <p className="text-[11px] text-muted-foreground">
+                Đã đọc {autoResult.analyzedBlocks} đoạn của {autoResult.analyzedDocuments} tài liệu
+                {autoResult.scope === "THIS" ? " (tài liệu này)" : " (toàn tổ chức)"}.
+                {autoResult.changes.length
+                  ? " Trọng số đã cập nhật, bấm “Lưu cho tổ chức” để áp dụng cho mọi người."
+                  : " Không cần đổi trọng số."}
+              </p>
+              {autoResult.changes.map((c) => (
+                <p key={c.key} className="text-[11px]">
+                  <span className="font-medium">
+                    {WEIGHT_LABELS[c.key as WeightKey] ?? c.role}: {c.from.toFixed(1)}× →{" "}
+                    {c.to.toFixed(1)}×
+                  </span>{" "}
+                  <span className="text-muted-foreground">— {c.reason}</span>
+                </p>
+              ))}
+            </div>
+          )}
+
+          <div className="flex flex-wrap gap-1">
+            {Object.entries(roleCounts).map(([role, n]) => (
+              <Badge key={role} variant="outline" className="text-[10px]">
+                {ROLE_LABELS[role] ?? role}: {n}
+              </Badge>
+            ))}
+          </div>
+
+          {/* Báo cáo nhận diện toàn tổ chức */}
+          {recognition && recognition.roles.length > 0 && (
+            <div className="space-y-2 border-t pt-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-xs font-medium">Báo cáo nhận diện của tổ chức</p>
+                <span className="text-[11px] text-muted-foreground">
+                  {recognition.totalDocuments} tài liệu · {recognition.totalBlocks} đoạn
+                  {recognition.overallAccuracy !== null
+                    ? ` · đúng ${recognition.overallAccuracy}%`
+                    : ""}
+                </span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[520px] text-[11px]">
+                  <thead className="text-muted-foreground">
+                    <tr className="text-left">
+                      <th className="py-1 pr-2 font-medium">Loại</th>
+                      <th className="py-1 pr-2 font-medium">Trọng số</th>
+                      <th className="py-1 pr-2 font-medium">Số đoạn</th>
+                      <th className="py-1 pr-2 font-medium">Điểm nhận diện</th>
+                      <th className="py-1 pr-2 font-medium">Đúng / Sai</th>
+                      <th className="py-1 pr-2 font-medium">Chính xác</th>
+                      <th className="py-1 font-medium">Gợi ý</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recognition.roles.map((r) => (
+                      <tr key={r.role} className="border-t">
+                        <td className="py-1 pr-2">{ROLE_LABELS[r.role] ?? r.role}</td>
+                        <td className="py-1 pr-2 tabular-nums">
+                          {r.weight === null ? "—" : `${r.weight.toFixed(1)}×`}
+                        </td>
+                        <td className="py-1 pr-2 tabular-nums">
+                          {r.blocks}
+                          {r.lowConfidence > 0 ? (
+                            <span className="text-muted-foreground"> ({r.lowConfidence} yếu)</span>
+                          ) : null}
+                        </td>
+                        <td className="py-1 pr-2 tabular-nums">{r.avgScore ?? "—"}</td>
+                        <td className="py-1 pr-2 tabular-nums">
+                          {r.accepted} / {r.rejected}
+                        </td>
+                        <td className="py-1 pr-2 tabular-nums">
+                          {r.accuracy === null ? "chưa có" : `${r.accuracy}%`}
+                        </td>
+                        <td className="py-1">
+                          {r.advice === "INCREASE" ? (
+                            <Badge variant="secondary" className="text-[10px]">
+                              Nên tăng
+                            </Badge>
+                          ) : r.advice === "DECREASE" ? (
+                            <Badge variant="outline" className="text-[10px]">
+                              Có thể giảm
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground">Giữ nguyên</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Sau khi chỉnh trọng số, bấm “Nhận diện lại tài liệu” để áp dụng.
+              </p>
+            </div>
+          )}
+        </Card>
+      )}
+
+      {/* So sánh bản gốc và bản đã sửa */}
+      <Card className="space-y-3 p-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs font-medium">So sánh bản gốc và bản đã sửa</p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 gap-1 px-2 text-xs"
+            disabled={compare.isPending || (versions ?? []).length < 2}
+            onClick={() => compare.mutate()}
+          >
+            {compare.isPending ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <GitCompare className="h-3 w-3" />
+            )}
+            So sánh nội dung
+          </Button>
+        </div>
+
+        {(versions ?? []).length >= 2 ? (
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <select
+              className="h-8 rounded-md border bg-background px-2"
+              value={baseId}
+              onChange={(e) => setBaseId(e.target.value)}
+            >
+              <option value="">Bản gốc</option>
+              {(versions ?? []).map((v) => (
+                <option key={v.id} value={v.id}>
+                  {versionLabel(v)}
+                </option>
+              ))}
+            </select>
+            <span className="text-muted-foreground">so với</span>
+            <select
+              className="h-8 rounded-md border bg-background px-2"
+              value={targetId}
+              onChange={(e) => setTargetId(e.target.value)}
+            >
+              <option value="">Bản mới nhất</option>
+              {(versions ?? []).map((v) => (
+                <option key={v.id} value={v.id}>
+                  {versionLabel(v)}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            Cần ít nhất một phiên bản đã sửa để so sánh.
+          </p>
+        )}
+
+        {showCompare && compare.data && (
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <Badge variant="secondary">{compare.data.totals.changed} đoạn khác nhau</Badge>
+              <Badge variant="outline">Sửa {compare.data.totals.modified}</Badge>
+              <Badge variant="outline">Thêm {compare.data.totals.added}</Badge>
+              <Badge variant="outline">Xoá {compare.data.totals.removed}</Badge>
+              <button
+                type="button"
+                className="ml-auto text-muted-foreground underline"
+                onClick={() => setShowCompare(false)}
+              >
+                Ẩn
+              </button>
+            </div>
+
+            {compare.data.diffs.length === 0 ? (
+              <p className="text-xs text-muted-foreground">Hai bản có nội dung giống nhau.</p>
+            ) : (
+              <div className="max-h-[420px] space-y-2 overflow-y-auto pr-1">
+                {compare.data.diffs.map((d) => (
+                  <div key={d.key} className="rounded-md border p-2 text-xs">
+                    <div className="mb-1 flex items-center gap-2">
+                      <Badge variant="outline" className="text-[10px]">
+                        {d.change === "ADDED"
+                          ? "Thêm mới"
+                          : d.change === "REMOVED"
+                            ? "Đã xoá"
+                            : "Đã sửa"}
+                      </Badge>
+                      <span className="text-muted-foreground">Đoạn {d.ordinal}</span>
+                    </div>
+                    <p className="leading-relaxed">
+                      {d.words.map((w, i) => (
+                        <span
+                          key={`${d.key}-${i}`}
+                          className={cn(
+                            w.op === "del" &&
+                              "bg-destructive/10 text-destructive line-through decoration-destructive/60",
+                            w.op === "ins" && "bg-primary/10 text-primary",
+                          )}
+                        >
+                          {w.text}
+                        </span>
+                      ))}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </Card>
+
+      {/* Tạo công việc từ tài liệu */}
+      <Card className="space-y-2 p-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs font-medium">Tạo công việc từ tài liệu</p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 gap-1 px-2 text-xs"
+            disabled={suggestTasks.isPending}
+            onClick={() => suggestTasks.mutate()}
+          >
+            {suggestTasks.isPending ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <ListChecks className="h-3 w-3" />
+            )}
+            Gợi ý công việc
+          </Button>
+        </div>
+        {taskSuggestions.length > 0 && (
+          <div className="space-y-1">
+            {taskSuggestions.map((t, i) => (
+              <label
+                key={`${t.title}-${i}`}
+                className="flex items-start gap-2 rounded-md border p-2 text-xs"
+              >
+                <input
+                  type="checkbox"
+                  className="mt-0.5"
+                  checked={t.checked}
+                  onChange={(e) =>
+                    setTaskSuggestions((prev) =>
+                      prev.map((x, xi) => (xi === i ? { ...x, checked: e.target.checked } : x)),
+                    )
+                  }
+                />
+                <span className="flex-1">{t.title}</span>
+                <Badge variant="outline" className="text-[10px]">
+                  {t.priority}
+                </Badge>
+              </label>
+            ))}
+            <Button
+              size="sm"
+              className="h-7 px-2 text-xs"
+              disabled={createTasks.isPending || !taskSuggestions.some((t) => t.checked)}
+              onClick={() => createTasks.mutate()}
+            >
+              {createTasks.isPending ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Check className="h-3 w-3" />
+              )}
+              Tạo công việc đã chọn
+            </Button>
+          </div>
+        )}
+      </Card>
+
+      {/* Đề xuất tiếp theo từ nội dung vừa thay đổi */}
+      {(suggestFollowUps.isPending || followUps.length > 0) && (
+        <Card className="space-y-2 p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs font-medium">Đề xuất tiếp theo từ thay đổi vừa duyệt</p>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 gap-1 px-2 text-xs"
+              disabled={suggestFollowUps.isPending}
+              onClick={() => suggestFollowUps.mutate(undefined)}
+            >
+              {suggestFollowUps.isPending ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <ListChecks className="h-3 w-3" />
+              )}
+              Phân tích lại
+            </Button>
+          </div>
+          {suggestFollowUps.isPending && (
+            <p className="text-xs text-muted-foreground">AI đang đọc phần nội dung vừa đổi…</p>
+          )}
+          {followUps.map((f, i) => (
+            <div key={`${f.kind}-${f.title}-${i}`} className="rounded-md border p-2 text-xs">
+              <div className="flex items-start gap-2">
+                <input
+                  type="checkbox"
+                  className="mt-0.5"
+                  checked={f.checked}
+                  onChange={(e) =>
+                    setFollowUps((prev) =>
+                      prev.map((x, xi) => (xi === i ? { ...x, checked: e.target.checked } : x)),
+                    )
+                  }
+                />
+                <div className="flex-1 space-y-1">
+                  <p className="font-medium">{f.title}</p>
+                  {f.detail ? <p className="text-muted-foreground">{f.detail}</p> : null}
+                  {f.reason ? (
+                    <p className="text-muted-foreground">
+                      <span className="font-medium text-foreground">Lý do:</span> {f.reason}
+                    </p>
+                  ) : null}
+                  <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                    {typeof f.confidence === "number" && (
+                      <Badge variant="secondary" className="text-[10px]">
+                        Tin cậy {f.confidence}%
+                      </Badge>
+                    )}
+                    {f.evidenceIndexes?.length ? (
+                      <span className="text-[10px] text-muted-foreground">
+                        Căn cứ: {f.evidenceIndexes.map((n) => `#${n}`).join(", ")}
+                      </span>
+                    ) : null}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-[11px]"
+                      onClick={() => setFollowUpDetail(followUpDetail === i ? null : i)}
+                    >
+                      {followUpDetail === i ? "Ẩn chi tiết" : "Xem chi tiết"}
+                    </Button>
+                  </div>
+                </div>
+                <Badge variant="outline" className="shrink-0 text-[10px]">
+                  {f.kind === "TASK"
+                    ? "Công việc"
+                    : f.kind === "DECISION"
+                      ? "Quyết định"
+                      : "Cuộc họp"}
+                </Badge>
+              </div>
+
+              {followUpDetail === i && (
+                <div className="mt-2 space-y-2 border-t pt-2">
+                  {(f.evidenceIndexes ?? [])
+                    .map((n) => followUpEvidence.find((e) => e.index === n))
+                    .filter(Boolean)
+                    .map((e) => (
+                      <div key={e!.index} className="space-y-1 rounded-md bg-muted/40 p-2">
+                        <p className="text-[10px] font-medium text-muted-foreground">
+                          #{e!.index} · {e!.role}
+                          {e!.heading ? ` · ${e!.heading}` : ""} ·{" "}
+                          {e!.origin === "AI" ? "AI sửa" : "Người dùng sửa"}
+                        </p>
+                        <p className="whitespace-pre-wrap text-[11px] text-destructive line-through">
+                          {e!.before || "(trống)"}
+                        </p>
+                        <p className="whitespace-pre-wrap text-[11px] text-emerald-600 dark:text-emerald-400">
+                          {e!.after || "(trống)"}
+                        </p>
+                      </div>
+                    ))}
+                  {!(f.evidenceIndexes ?? []).some((n) =>
+                    followUpEvidence.some((e) => e.index === n),
+                  ) && (
+                    <p className="text-[11px] text-muted-foreground">
+                      Không tìm thấy đoạn thay đổi tương ứng.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+          {followUps.length > 0 && (
+            <Button
+              size="sm"
+              className="h-7 px-2 text-xs"
+              disabled={createFollowUps.isPending || !followUps.some((f) => f.checked)}
+              onClick={() => createFollowUps.mutate()}
+            >
+              {createFollowUps.isPending ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Check className="h-3 w-3" />
+              )}
+              Tạo mục đã chọn
+            </Button>
+          )}
+        </Card>
+      )}
+
+      {/* Nhờ AI sửa */}
+      <Card className="space-y-2 p-3">
+        <p className="text-xs font-medium">Nhờ AI đề xuất chỉnh sửa</p>
+        <Textarea
+          value={instruction}
+          onChange={(e) => setInstruction(e.target.value)}
+          placeholder="Ví dụ: đổi thời hạn thanh toán thành 60 ngày và viết trang trọng hơn"
+          className="min-h-[64px] text-sm"
+        />
+        <Button
+          size="sm"
+          className="gap-2"
+          disabled={!instruction.trim() || !selected || askAi.isPending}
+          onClick={() => selected && askAi.mutate([selected])}
+        >
+          {askAi.isPending ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Sparkles className="h-4 w-4" />
+          )}
+          Đề xuất cho đoạn đang chọn
+        </Button>
+      </Card>
+
+      {/* Danh sách đoạn */}
+      <div className="space-y-2">
+        {(blocks ?? []).map((b) => {
+          const locked = b.editability !== "EDITABLE";
+          const isOpen = selected === b.block_key;
+          return (
+            <div
+              key={b.id}
+              className={cn(
+                "rounded-lg border p-3 text-sm",
+                locked && "bg-muted/40",
+                isOpen && "border-primary",
+              )}
+            >
+              <div className="mb-1 flex flex-wrap items-center gap-1">
+                <Badge variant="outline" className="text-[10px]">
+                  {ROLE_LABELS[b.source_anchor?.role || "PARAGRAPH"] ?? "Đoạn văn"}
+                  {b.source_anchor?.headingLevel ? ` ${b.source_anchor.headingLevel}` : ""}
+                </Badge>
+                {b.source_anchor?.table && (
+                  <Badge variant="outline" className="text-[10px]">
+                    {b.source_anchor.table.rows ?? 0}×{b.source_anchor.table.cols ?? 0} ô
+                  </Badge>
+                )}
+                {(b.source_anchor?.signals ?? []).slice(0, 3).map((s) => (
+                  <span key={s} className="text-[10px] text-muted-foreground">
+                    · {s}
+                  </span>
+                ))}
+              </div>
+              <div className="flex items-start gap-2">
+                <p className="min-w-0 flex-1 whitespace-pre-wrap break-words">
+                  {b.text || <span className="text-muted-foreground">(không có nội dung chữ)</span>}
+                </p>
+                {locked ? (
+                  <Lock
+                    className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground"
+                    aria-label="Giữ nguyên"
+                  />
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 shrink-0 px-2 text-xs"
+                    onClick={() => {
+                      setSelected(isOpen ? null : b.block_key);
+                      setDraft(b.text ?? "");
+                    }}
+                  >
+                    {isOpen ? "Đóng" : "Sửa"}
+                  </Button>
+                )}
+              </div>
+              {isOpen && !locked && (
+                <div className="mt-2 space-y-2">
+                  <Textarea
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    className="min-h-[80px] text-sm"
+                  />
+                  <Button
+                    size="sm"
+                    disabled={!draft.trim() || draft === b.text || propose.isPending}
+                    onClick={() => propose.mutate({ blockId: b.id, after: draft })}
+                  >
+                    Gửi thay đổi
+                  </Button>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Đối chiếu thay đổi */}
+      {pending.length > 0 && (
+        <Card className="space-y-3 p-3">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-medium">Đối chiếu thay đổi ({pending.length})</p>
+            <div className="flex gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={() => decide.mutate({ decision: "ACCEPTED", all: true })}
+              >
+                Chấp nhận tất cả
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={() => decide.mutate({ decision: "REJECTED", all: true })}
+              >
+                Từ chối tất cả
+              </Button>
+            </div>
+          </div>
+          {pending.map((o) => (
+            <div key={o.id} className="rounded-md border p-2 text-xs">
+              <div className="mb-1 flex items-center gap-2">
+                <Badge
+                  variant={o.origin === "AI" ? "default" : "secondary"}
+                  className="text-[10px]"
+                >
+                  {o.origin === "AI" ? "AI đề xuất" : "Người dùng sửa"}
+                </Badge>
+              </div>
+              <p className="whitespace-pre-wrap text-destructive">- {o.before_text}</p>
+              <p className="whitespace-pre-wrap text-emerald-600 dark:text-emerald-400">
+                + {o.after_text}
+              </p>
+              <div className="mt-2 flex gap-1">
+                <Button
+                  size="sm"
+                  className="h-7 gap-1 px-2 text-xs"
+                  onClick={() => decide.mutate({ changeIds: [o.id], decision: "ACCEPTED" })}
+                >
+                  <Check className="h-3 w-3" /> Chấp nhận
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 gap-1 px-2 text-xs"
+                  onClick={() => decide.mutate({ changeIds: [o.id], decision: "REJECTED" })}
+                >
+                  <X className="h-3 w-3" /> Từ chối
+                </Button>
+              </div>
+            </div>
+          ))}
+        </Card>
+      )}
+
+      {/* Áp dụng */}
+      {accepted.length > 0 && (
+        <Card className="flex flex-wrap items-center justify-between gap-2 p-3">
+          <p className="text-xs text-muted-foreground">
+            {accepted.length} thay đổi đã chấp nhận, chờ ghi vào tệp Word mới.
+          </p>
+          <Button
+            size="sm"
+            className="gap-2"
+            disabled={apply.isPending}
+            onClick={() => apply.mutate()}
+          >
+            {apply.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Undo2 className="h-4 w-4" />
+            )}
+            Tạo phiên bản Word mới
+          </Button>
+        </Card>
+      )}
+      {/* Lịch sử thay đổi từng bản Word: ai sửa, sửa gì */}
+      {history && history.items.length > 0 && (
+        <Card className="space-y-3 p-4">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h3 className="text-sm font-semibold">Lịch sử thay đổi</h3>
+            <p className="text-xs text-muted-foreground">
+              {history.totals.versions} phiên bản · {history.totals.changes} thay đổi ·{" "}
+              {history.totals.human} người sửa · {history.totals.ai} AI đề xuất
+            </p>
+          </div>
+          <div className="space-y-2">
+            {history.items.map((v) => (
+              <div key={v.version} className="rounded-md border">
+                <button
+                  type="button"
+                  className="flex w-full flex-wrap items-center gap-2 px-3 py-2 text-left text-xs hover:bg-accent/40"
+                  onClick={() => setOpenVersion((cur) => (cur === v.version ? null : v.version))}
+                >
+                  <Badge variant="outline">v{v.version}</Badge>
+                  <span className="font-medium">{v.author}</span>
+                  {v.aiGenerated && <Badge variant="secondary">Có AI hỗ trợ</Badge>}
+                  <span className="text-muted-foreground">
+                    {new Date(v.createdAt).toLocaleString()}
+                  </span>
+                  <span className="ml-auto text-muted-foreground">
+                    {v.counts.total} thay đổi ({v.counts.human} người · {v.counts.ai} AI)
+                  </span>
+                </button>
+                {openVersion === v.version && (
+                  <div className="space-y-2 border-t p-3">
+                    {v.summary && <p className="text-xs text-muted-foreground">{v.summary}</p>}
+                    {v.changes.length === 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        Không có thay đổi theo khối được ghi cho bản này.
+                      </p>
+                    )}
+                    {v.changes.map((c) => (
+                      <div key={c.id} className="rounded-md border p-2 text-xs">
+                        <div className="mb-1 flex flex-wrap items-center gap-2">
+                          <Badge variant={c.origin === "AI" ? "secondary" : "outline"}>
+                            {c.origin === "AI" ? "AI đề xuất" : "Người sửa"}
+                          </Badge>
+                          {c.semanticRole && <Badge variant="outline">{c.semanticRole}</Badge>}
+                          <span className="text-muted-foreground">
+                            {c.editor}
+                            {c.decidedBy !== "—" && c.decidedBy !== c.editor
+                              ? ` · duyệt: ${c.decidedBy}`
+                              : ""}
+                          </span>
+                        </div>
+                        <p className="whitespace-pre-wrap text-destructive line-through">
+                          {c.before || "(trống)"}
+                        </p>
+                        <p className="whitespace-pre-wrap text-emerald-600 dark:text-emerald-400">
+                          {c.after || "(đã xoá)"}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          {history.pending.length > 0 && (
+            <p className="text-xs text-muted-foreground">
+              Còn {history.pending.length} thay đổi chờ duyệt, chưa vào phiên bản nào.
+            </p>
+          )}
+        </Card>
+      )}
+      {/* Nhật ký đề xuất AI và độ chính xác */}
+      {accuracy && (
+        <Card className="space-y-3 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="text-sm font-semibold">Đề xuất AI so với bản gốc</h3>
+            <div className="flex items-center gap-1 rounded-md border p-0.5">
+              <Button
+                type="button"
+                size="sm"
+                variant={accuracyScope === "THIS" ? "secondary" : "ghost"}
+                className="h-6 px-2 text-[11px]"
+                onClick={() => setAccuracyScope("THIS")}
+              >
+                Tài liệu này
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={accuracyScope === "ALL" ? "secondary" : "ghost"}
+                className="h-6 px-2 text-[11px]"
+                onClick={() => setAccuracyScope("ALL")}
+              >
+                Tất cả tài liệu Word
+              </Button>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {accuracy.total} đề xuất · {accuracy.accepted} chấp nhận · {accuracy.rejected} từ chối ·{" "}
+            {accuracy.pending} chờ duyệt
+            {accuracyScope === "ALL" ? ` · ${accuracy.documents.length} tài liệu` : ""}
+          </p>
+          {accuracy.total === 0 && (
+            <p className="text-xs text-muted-foreground">
+              Chưa có đề xuất AI nào để đối chiếu. Hãy nhờ AI sửa một vài tài liệu Word rồi duyệt
+              hoặc từ chối để có số liệu.
+            </p>
+          )}
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">Độ chính xác trung bình</p>
+              <p className="text-2xl font-semibold">
+                {accuracy.accuracy === null ? "—" : `${accuracy.accuracy}%`}
+              </p>
+            </div>
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">Mức giữ nguyên nội dung gốc</p>
+              <p className="text-2xl font-semibold">{accuracy.avgSimilarity}%</p>
+            </div>
+          </div>
+
+          {accuracy.weakest.length > 0 && (
+            <p className="text-xs text-muted-foreground">
+              Hay sai nhất:{" "}
+              {accuracy.weakest
+                .map(
+                  (w) =>
+                    `${ROLE_LABELS[w.role] ?? w.role} (${w.accuracy}% đúng, ${w.rejected} bị từ chối)`,
+                )
+                .join(" · ")}
+            </p>
+          )}
+
+          <div className="space-y-1">
+            {accuracy.roles.map((r) => (
+              <div
+                key={r.role}
+                className="flex items-center justify-between gap-3 rounded-md border px-3 py-2 text-xs"
+              >
+                <span className="font-medium">{ROLE_LABELS[r.role] ?? r.role}</span>
+                <span className="text-muted-foreground">
+                  {r.total} đề xuất · giữ gốc {r.avgSimilarity}% ·{" "}
+                  {r.accuracy === null ? "chưa duyệt" : `đúng ${r.accuracy}%`}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {accuracyScope === "ALL" && accuracy.documents.length > 0 && (
+            <div className="space-y-1">
+              <p className="text-xs font-medium">So sánh giữa các tài liệu Word</p>
+              {accuracy.documents.map((d) => (
+                <div
+                  key={d.workProductId}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2 text-xs"
+                >
+                  <span className="min-w-0 flex-1 truncate font-medium" title={d.title}>
+                    {d.title}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {d.total} đề xuất · {d.accuracy === null ? "chưa duyệt" : `đúng ${d.accuracy}%`}{" "}
+                    · giữ gốc {d.avgSimilarity}%
+                    {d.worstRole
+                      ? ` · hay sai: ${ROLE_LABELS[d.worstRole.role] ?? d.worstRole.role}`
+                      : ""}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <details className="text-xs">
+            <summary className="cursor-pointer text-muted-foreground">
+              Nhật ký đề xuất gần đây
+            </summary>
+            <div className="mt-2 space-y-2">
+              {accuracy.recent.map((r) => (
+                <div key={r.id} className="rounded-md border p-2">
+                  <p className="text-[11px] text-muted-foreground">
+                    {ROLE_LABELS[r.role] ?? r.role} · {r.status} · giống gốc {r.similarity}%
+                  </p>
+                  <p className="mt-1 line-through opacity-70">{r.before || "(trống)"}</p>
+                  <p className="text-emerald-600 dark:text-emerald-400">{r.after || "(xóa)"}</p>
+                </div>
+              ))}
+            </div>
+          </details>
+        </Card>
+      )}
+    </div>
+  );
+}

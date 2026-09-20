@@ -135,6 +135,9 @@ export const ROOT_LABEL: Record<AiContextEntityType, string> = {
   MEETING_ARTIFACT: "Kết quả cuộc họp",
   PERSON: "Thành viên",
   TENANT: "Tổ chức",
+  WORK_PRODUCT: "Kết quả công việc",
+  EXECUTION: "Lượt thực thi",
+  DECISION: "Quyết định",
 };
 
 const GLOBAL_SUGGESTIONS = [

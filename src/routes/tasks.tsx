@@ -11,11 +11,7 @@ import { QuickCreateDialog, type QuickCreateKind } from "@/components/quick-crea
 import { listMyWorkspaces } from "@/lib/api/meeting-rooms.functions";
 import { listTasks, createTask, transitionTask } from "@/lib/api/tasks.functions";
 import { suggestCandidatesForTask } from "@/lib/api/ai-market.functions";
-import {
-  listTaskViews,
-  saveTaskView,
-  deleteTaskView,
-} from "@/lib/api/task-views.functions";
+import { listTaskViews, saveTaskView, deleteTaskView } from "@/lib/api/task-views.functions";
 import {
   Plus,
   Filter,
@@ -59,9 +55,9 @@ type TasksSearch = { filter?: "overdue"; range?: number; ws?: string };
 
 export const Route = createFileRoute("/tasks")({
   validateSearch: (search: Record<string, unknown>): TasksSearch => ({
-    filter: search['filter'] === "overdue" ? ("overdue" as const) : undefined,
-    range: [7, 30, 90].includes(Number(search['range'])) ? Number(search['range']) : undefined,
-    ws: typeof search['ws'] === "string" ? (search['ws'] as string) : undefined,
+    filter: search["filter"] === "overdue" ? ("overdue" as const) : undefined,
+    range: [7, 30, 90].includes(Number(search["range"])) ? Number(search["range"]) : undefined,
+    ws: typeof search["ws"] === "string" ? (search["ws"] as string) : undefined,
   }),
   head: () => ({
     meta: [
@@ -175,43 +171,39 @@ function TasksPage() {
   const overdueOnly = urlFilter === "overdue";
   const [tagFilter, setTagFilter] = useState<string[]>([]);
   const [priorityFilter, setPriorityFilter] = useState<Priority | "">("");
-  const [sortBy, setSortBy] = useState<"default" | "priority-desc" | "priority-asc" | "tag-asc" | "tag-desc">(
-    "default",
-  );
+  const [sortBy, setSortBy] = useState<
+    "default" | "priority-desc" | "priority-asc" | "tag-asc" | "tag-desc"
+  >("default");
   const allTags = useMemo(
     () => Array.from(new Set(allTasks.flatMap((tk) => tk.tags ?? []))).sort(),
     [allTasks],
   );
-  const tasks = useMemo(
-    () => {
-      const filtered = allTasks.filter(
-        (tk) =>
-          (!priorityFilter || tk.priority === priorityFilter) &&
-          (tagFilter.length === 0 || (tk.tags ?? []).some((x) => tagFilter.includes(x))) &&
-          (!rangeDays ||
-            Date.now() - new Date(tk.updated_at).getTime() <= rangeDays * 86400_000) &&
-          (!overdueOnly || isOverdueTask(tk)),
-      );
-      if (sortBy === "default") return filtered;
-      const rank: Record<Priority, number> = { urgent: 4, high: 3, normal: 2, low: 1 };
-      const firstTag = (t: Task) => ((t.tags ?? []).slice().sort()[0] ?? "\uffff").toLowerCase();
-      return filtered.slice().sort((a, b) => {
-        switch (sortBy) {
-          case "priority-desc":
-            return rank[b.priority] - rank[a.priority];
-          case "priority-asc":
-            return rank[a.priority] - rank[b.priority];
-          case "tag-asc":
-            return firstTag(a).localeCompare(firstTag(b), "vi");
-          case "tag-desc":
-            return firstTag(b).localeCompare(firstTag(a), "vi");
-          default:
-            return 0;
-        }
-      });
-    },
-    [allTasks, priorityFilter, tagFilter, sortBy, overdueOnly, rangeDays],
-  );
+  const tasks = useMemo(() => {
+    const filtered = allTasks.filter(
+      (tk) =>
+        (!priorityFilter || tk.priority === priorityFilter) &&
+        (tagFilter.length === 0 || (tk.tags ?? []).some((x) => tagFilter.includes(x))) &&
+        (!rangeDays || Date.now() - new Date(tk.updated_at).getTime() <= rangeDays * 86400_000) &&
+        (!overdueOnly || isOverdueTask(tk)),
+    );
+    if (sortBy === "default") return filtered;
+    const rank: Record<Priority, number> = { urgent: 4, high: 3, normal: 2, low: 1 };
+    const firstTag = (t: Task) => ((t.tags ?? []).slice().sort()[0] ?? "\uffff").toLowerCase();
+    return filtered.slice().sort((a, b) => {
+      switch (sortBy) {
+        case "priority-desc":
+          return rank[b.priority] - rank[a.priority];
+        case "priority-asc":
+          return rank[a.priority] - rank[b.priority];
+        case "tag-asc":
+          return firstTag(a).localeCompare(firstTag(b), "vi");
+        case "tag-desc":
+          return firstTag(b).localeCompare(firstTag(a), "vi");
+        default:
+          return 0;
+      }
+    });
+  }, [allTasks, priorityFilter, tagFilter, sortBy, overdueOnly, rangeDays]);
 
   // Bộ lọc đã lưu ("view") theo người dùng
   const viewsQuery = useQuery({ queryKey: ["task-views"], queryFn: () => listTaskViews() });
@@ -318,23 +310,20 @@ function TasksPage() {
     <div className="flex h-screen overflow-hidden bg-bg text-foreground">
       <AppSidebar active="tasks" open={open} onClose={() => setOpen(false)} />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <TasksTopbar
-          onOpenSidebar={() => setOpen(true)}
-          onNew={() => setQuickCreate("task")}
-        />
+        <TasksTopbar onOpenSidebar={() => setOpen(true)} onNew={() => setQuickCreate("task")} />
         <QuickCreateDialog kind={quickCreate} onOpenChange={(o) => !o && setQuickCreate(null)} />
 
         <div className="flex flex-1 overflow-hidden">
           <main className="flex-1 overflow-y-auto px-4 py-5 sm:px-6 lg:px-8">
             {/* Project header row */}
-            <div className="mb-5 flex flex-wrap items-center gap-3">
+            <div className="mb-5 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:flex sm:flex-wrap">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-2 rounded-lg bg-surface-2 px-3 py-2 text-sm font-medium hover:bg-surface-3">
+                  <button className="flex min-h-11 min-w-0 max-w-full items-center gap-2 rounded-lg bg-surface-2 px-3 py-2 text-sm font-medium hover:bg-surface-3">
                     <span className="flex h-5 w-5 items-center justify-center rounded bg-emerald-500 text-[11px] font-semibold text-white">
                       {(activeWsName || "S").slice(0, 1).toUpperCase()}
                     </span>
-                    {activeWsName || "Chưa chọn workspace"}
+                    <span className="truncate">{activeWsName || "Chưa chọn workspace"}</span>
                     <ChevronDown className="h-4 w-4 text-muted-foreground" />
                   </button>
                 </DropdownMenuTrigger>
@@ -360,14 +349,14 @@ function TasksPage() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <nav className="flex items-center gap-5 text-sm">
+              <nav className="order-3 col-span-2 flex min-w-0 items-center gap-5 overflow-x-auto text-sm sm:order-none sm:col-auto">
                 {(
                   ["overview", "board", "list", "timeline", "calendar", "reports", "files"] as const
                 ).map((id) => (
                   <button
                     key={id}
                     onClick={() => setTab(id)}
-                    className={`-mb-px border-b-2 py-1.5 transition-colors ${tab === id ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+                    className={`min-h-11 shrink-0 border-b-2 py-2 transition-colors ${tab === id ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
                   >
                     {t(`tasks.tab.${id}` as Key)}
                   </button>
@@ -375,7 +364,7 @@ function TasksPage() {
               </nav>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="ml-auto rounded-lg p-2 hover:bg-surface-2">
+                  <button className="ml-auto flex h-11 w-11 items-center justify-center rounded-lg hover:bg-surface-2">
                     <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
                   </button>
                 </DropdownMenuTrigger>
@@ -408,11 +397,7 @@ function TasksPage() {
                 { label: "Trang chủ", to: "/tasks" },
                 { label: "Công việc", to: "/tasks" },
                 {
-                  label: overdueOnly
-                    ? "Quá hạn"
-                    : rangeDays
-                      ? `${rangeDays} ngày qua`
-                      : "Tất cả",
+                  label: overdueOnly ? "Quá hạn" : rangeDays ? `${rangeDays} ngày qua` : "Tất cả",
                 },
               ]}
               title={
@@ -449,17 +434,21 @@ function TasksPage() {
                         onClear: () =>
                           navigateTasks({
                             to: "/tasks",
-                            search: (p) => ({ filter: p.filter === "overdue" ? ("overdue" as const) : undefined, ws: p.ws, range: undefined }),
+                            search: (p) => ({
+                              filter: p.filter === "overdue" ? ("overdue" as const) : undefined,
+                              ws: p.ws,
+                              range: undefined,
+                            }),
                           }),
                       },
                     ]
                   : []),
               ]}
             />
-            <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-2xl font-bold tracking-tight">
+            <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+              <div className="min-w-0">
+                <div className="flex min-w-0 items-center gap-2">
+                  <h1 className="truncate text-xl font-bold sm:text-2xl">
                     {workspaces.data?.find((w) => w.id === activeWs)?.name ?? "Chưa chọn workspace"}
                   </h1>
                   <Star className="h-5 w-5 fill-amber-400 text-amber-400" />
@@ -470,13 +459,13 @@ function TasksPage() {
                     : "Chưa có công việc nào trong workspace này."}
                 </p>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:flex sm:gap-3">
                 <select
                   value={activeWs ?? ""}
                   onChange={(e) => setWsId(e.target.value)}
                   disabled={workspaces.isLoading}
                   aria-label="Workspace"
-                  className="rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-3 focus:outline-none"
+                  className="min-h-11 min-w-0 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-3 focus:outline-none"
                 >
                   {workspaces.data?.length ? (
                     workspaces.data.map((w) => (
@@ -492,7 +481,7 @@ function TasksPage() {
                   <DropdownMenuTrigger asChild>
                     <button
                       disabled={!activeWs}
-                      className="flex items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-3 disabled:opacity-50"
+                      className="flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-sm hover:bg-surface-3 disabled:opacity-50"
                     >
                       <Settings2 className="h-4 w-4" /> {t("tasks.settings")}{" "}
                       <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -501,14 +490,16 @@ function TasksPage() {
                   <DropdownMenuContent align="end" className="w-56">
                     <DropdownMenuItem
                       onSelect={() =>
-                        activeWs && navigateTasks({ to: "/workspace/settings", search: { ws: activeWs } })
+                        activeWs &&
+                        navigateTasks({ to: "/workspace/settings", search: { ws: activeWs } })
                       }
                     >
                       {t("tasks.settings.general")}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onSelect={() =>
-                        activeWs && navigateTasks({ to: "/workspace/members", search: { ws: activeWs } })
+                        activeWs &&
+                        navigateTasks({ to: "/workspace/members", search: { ws: activeWs } })
                       }
                     >
                       {t("tasks.settings.members")}
@@ -519,7 +510,8 @@ function TasksPage() {
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onSelect={() =>
-                        activeWs && navigateTasks({ to: "/workspace/$id", params: { id: activeWs } })
+                        activeWs &&
+                        navigateTasks({ to: "/workspace/$id", params: { id: activeWs } })
                       }
                     >
                       {t("tasks.settings.overview")}
@@ -613,14 +605,12 @@ function TasksPage() {
               )}
               <button
                 type="button"
-                disabled={
-                  saveViewM.isPending || (tagFilter.length === 0 && !priorityFilter)
-                }
+                disabled={saveViewM.isPending || (tagFilter.length === 0 && !priorityFilter)}
                 onClick={() => {
                   const name = window.prompt("Tên bộ lọc:")?.trim();
                   if (name) saveViewM.mutate(name);
                 }}
-                className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 text-xs font-medium transition-colors hover:bg-surface-2 disabled:opacity-50"
+                className="ml-auto inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium transition-colors hover:bg-surface-2 disabled:opacity-50"
               >
                 <BookmarkPlus className="h-3.5 w-3.5" /> Lưu bộ lọc hiện tại
               </button>
@@ -635,7 +625,7 @@ function TasksPage() {
                   setActiveViewId("");
                   setPriorityFilter(e.target.value as Priority | "");
                 }}
-                className="rounded-lg border border-border bg-background px-2 py-1 text-xs outline-none focus:ring-2 focus:ring-ring"
+                className="min-h-11 min-w-0 flex-1 rounded-lg border border-border bg-background px-2 py-1 text-xs outline-none focus:ring-2 focus:ring-ring sm:flex-none"
               >
                 <option value="">Mọi mức ưu tiên</option>
                 <option value="low">Thấp</option>
@@ -648,7 +638,7 @@ function TasksPage() {
                 aria-label="Sắp xếp công việc"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-                className="rounded-lg border border-border bg-background px-2 py-1 text-xs outline-none focus:ring-2 focus:ring-ring"
+                className="min-h-11 min-w-0 flex-1 rounded-lg border border-border bg-background px-2 py-1 text-xs outline-none focus:ring-2 focus:ring-ring sm:flex-none"
               >
                 <option value="default">Mặc định</option>
                 <option value="priority-desc">Ưu tiên: cao → thấp</option>
@@ -681,7 +671,12 @@ function TasksPage() {
               )}
               {overdueOnly && (
                 <button
-                  onClick={() => navigateTasks({ to: "/tasks", search: (p) => ({ range: p.range, ws: p.ws, filter: undefined }) })}
+                  onClick={() =>
+                    navigateTasks({
+                      to: "/tasks",
+                      search: (p) => ({ range: p.range, ws: p.ws, filter: undefined }),
+                    })
+                  }
                   className="inline-flex items-center gap-1 rounded-full bg-warning/15 px-2.5 py-1 text-xs text-warning hover:bg-warning/25"
                 >
                   Chỉ hiển thị quá hạn <X className="h-3 w-3" />
@@ -689,7 +684,16 @@ function TasksPage() {
               )}
               {rangeDays && (
                 <button
-                  onClick={() => navigateTasks({ to: "/tasks", search: (p) => ({ filter: p.filter === "overdue" ? ("overdue" as const) : undefined, ws: p.ws, range: undefined }) })}
+                  onClick={() =>
+                    navigateTasks({
+                      to: "/tasks",
+                      search: (p) => ({
+                        filter: p.filter === "overdue" ? ("overdue" as const) : undefined,
+                        ws: p.ws,
+                        range: undefined,
+                      }),
+                    })
+                  }
                   className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2.5 py-1 text-xs text-primary hover:bg-primary/25"
                 >
                   {rangeDays} ngày qua <X className="h-3 w-3" />
@@ -729,14 +733,17 @@ function TasksPage() {
                     tasks={tasks.filter((tk) => tk.status === col.status)}
                     disabled={!activeWs || createMutation.isPending}
                     onAdd={(payload) =>
-                      createMutation.mutate({ status: col.status, ...payload }, {
-                        onSuccess: (res: unknown) => {
-                          const id = (res as { task_id?: string } | null)?.task_id;
-                          if (id && col.status !== "todo") {
-                            transitionMutation.mutate({ taskId: id, toStatus: col.status });
-                          }
+                      createMutation.mutate(
+                        { status: col.status, ...payload },
+                        {
+                          onSuccess: (res: unknown) => {
+                            const id = (res as { task_id?: string } | null)?.task_id;
+                            if (id && col.status !== "todo") {
+                              transitionMutation.mutate({ taskId: id, toStatus: col.status });
+                            }
+                          },
                         },
-                      })
+                      )
                     }
                     onMove={(taskId, toStatus) => transitionMutation.mutate({ taskId, toStatus })}
                   />
@@ -777,13 +784,7 @@ function TasksPage() {
   );
 }
 
-function TasksTopbar({
-  onOpenSidebar,
-  onNew,
-}: {
-  onOpenSidebar: () => void;
-  onNew: () => void;
-}) {
+function TasksTopbar({ onOpenSidebar, onNew }: { onOpenSidebar: () => void; onNew: () => void }) {
   return (
     <header className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-3 sm:gap-3 sm:px-6">
       <AppTopbar variant="documents" onOpenSidebar={onOpenSidebar} onNew={onNew} />
@@ -881,7 +882,7 @@ function BoardColumn({
         <button
           onClick={() => setAdding(true)}
           disabled={disabled}
-          className="flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-border py-2 text-xs text-muted-foreground hover:bg-surface-2"
+          className="flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-dashed border-border py-2 text-xs text-muted-foreground hover:bg-surface-2"
         >
           <Plus className="h-3.5 w-3.5" /> {t("tasks.add")}
         </button>
@@ -924,13 +925,13 @@ function QuickAddForm({
           if (e.key === "Escape") onCancel();
         }}
         placeholder={t("tasks.quick.title")}
-        className="w-full rounded-md bg-surface-2 px-2 py-1.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+        className="min-h-11 w-full rounded-md bg-surface-2 px-2 py-1.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
       />
       <div className="flex items-center gap-2">
         <select
           value={priority}
           onChange={(e) => setPriority(e.target.value as Priority)}
-          className="flex-1 rounded-md bg-surface-2 px-2 py-1 text-xs hover:bg-surface-3 focus:outline-none"
+          className="min-h-11 flex-1 rounded-md bg-surface-2 px-2 py-1 text-xs hover:bg-surface-3 focus:outline-none"
           aria-label={t("tasks.quick.tag")}
         >
           {priorityOptions.map((p) => (
@@ -943,14 +944,14 @@ function QuickAddForm({
       <div className="flex items-center justify-end gap-2">
         <button
           onClick={onCancel}
-          className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-surface-2"
+          className="min-h-11 rounded-md px-3 py-2 text-xs text-muted-foreground hover:bg-surface-2"
         >
           {t("tasks.quick.cancel")}
         </button>
         <button
           onClick={submit}
           disabled={!title.trim()}
-          className="rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          className="min-h-11 rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
         >
           {t("tasks.quick.save")}
         </button>
@@ -1008,7 +1009,7 @@ function TaskCard({
         value={task.status}
         onChange={(e) => onMove(task.id, e.target.value as Status)}
         aria-label="Chuyển trạng thái"
-        className="mt-2 w-full rounded-md bg-surface-2 px-2 py-1 text-[11px] text-muted-foreground hover:bg-surface-3 focus:outline-none"
+        className="mt-2 min-h-11 w-full rounded-md bg-surface-2 px-2 py-1 text-[11px] text-muted-foreground hover:bg-surface-3 focus:outline-none"
       >
         {columns.map((c) => (
           <option key={c.status} value={c.status}>
@@ -1211,7 +1212,10 @@ function MyTasks({ tasks, onViewAll }: { tasks: Task[]; onViewAll: () => void })
           </div>
         ))}
       </div>
-      <button onClick={onViewAll} className="mt-2 w-full rounded-lg py-2 text-center text-xs text-primary hover:bg-primary/10">
+      <button
+        onClick={onViewAll}
+        className="mt-2 w-full rounded-lg py-2 text-center text-xs text-primary hover:bg-primary/10"
+      >
         {t("tasks.viewalltasks")}
       </button>
     </section>
@@ -1270,8 +1274,7 @@ function CopilotPanel({
   const { t } = useI18n();
   // Chỉ suy ra từ dữ liệu thật đang hiển thị; không có dữ liệu thì để trống.
   const risks = overdue > 0 ? [`${overdue} công việc đang quá hạn`] : [];
-  const suggestions =
-    overdue > 0 ? ["Ưu tiên xử lý các công việc quá hạn trước"] : [];
+  const suggestions = overdue > 0 ? ["Ưu tiên xử lý các công việc quá hạn trước"] : [];
   const [collapsed, setCollapsed] = usePanelCollapse("tasks-copilot");
 
   if (collapsed) {
@@ -1322,8 +1325,6 @@ function CopilotPanel({
       <div className="flex items-center gap-1 border-b border-border px-5 py-2">
         <ExpandCollapseAllButtons panelIds={TASKS_AI_PANEL_IDS} />
       </div>
-
-
 
       <section className="px-5 py-4">
         <div className="flex items-center justify-between text-sm">
@@ -1466,7 +1467,10 @@ function QuickAction({
   onClick: () => void;
 }) {
   return (
-    <button onClick={onClick} className="flex flex-col items-center gap-1 rounded-lg bg-surface-2 px-2 py-3 text-[10px] text-muted-foreground hover:bg-surface-3 hover:text-foreground">
+    <button
+      onClick={onClick}
+      className="flex flex-col items-center gap-1 rounded-lg bg-surface-2 px-2 py-3 text-[10px] text-muted-foreground hover:bg-surface-3 hover:text-foreground"
+    >
       <Icon className="h-4 w-4" />
       <span className="text-center leading-tight">{label}</span>
     </button>

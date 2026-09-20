@@ -4,25 +4,26 @@ import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-route
 import {
   Home,
   MessageSquare,
-  CheckSquare,
-  Video,
+  Sparkles,
+  Inbox,
   LayoutGrid,
   Search,
   Bell,
   MoreHorizontal,
 } from "lucide-react";
+
 import { cn } from "@/lib/utils";
 import { useUnreadNotifications } from "@/lib/use-unread-notifications";
 import { useUnreadCounts } from "@/lib/use-unread-counts";
-import { MobileUniCopilotButton } from "@/components/ai/uni-copilot-mobile";
+import { ThemeToggle } from "@/lib/theme";
 import { useEffect, useRef, useState } from "react";
 
 const TABS = [
   { id: "home", label: "Home", icon: Home, to: "/m/home" },
   { id: "chat", label: "Chat", icon: MessageSquare, to: "/m/chat" },
-  // Work = tab trung tâm nổi bật (công việc của tôi).
-  { id: "tasks", label: "Work", icon: CheckSquare, to: "/m/tasks" },
-  { id: "meet", label: "Meet", icon: Video, to: "/m/meet" },
+  // Nút W ở giữa: mở My AI (đội ngũ AI của bạn).
+  { id: "ai", label: "My AI", icon: Sparkles, to: "/m/ai" },
+  { id: "box", label: "Của tôi", icon: Inbox, to: "/m/box" },
   { id: "more", label: "More", icon: MoreHorizontal, to: "/m/more" },
 ];
 
@@ -37,7 +38,7 @@ export function MobileShell() {
   const isTab = TABS.some((t) => t.id === activeTab);
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex min-h-dvh flex-col bg-surface">
       <MobileTopbar />
       <SwipeableMain className="flex-1" activeTab={activeTab} enabled={isTab && !hideTabBar}>
         <Outlet />
@@ -163,14 +164,14 @@ function SwipeableMain({
 
 function MobileTopbar() {
   const navigate = useNavigate();
-  const { workspaceName, workspaceId, isLoading } = useActiveWorkspace();
+  const { workspaceName, isLoading } = useActiveWorkspace();
   const { unreadCount } = useUnreadNotifications();
 
   return (
-    <header className="sticky top-0 z-40 grid h-14 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-border bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+    <header className="sticky top-0 z-40 grid min-h-16 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-border bg-background px-[max(1rem,env(safe-area-inset-left))] pb-3 pt-[max(.75rem,env(safe-area-inset-top))]">
       <button
         onClick={() => navigate({ to: "/m/more" })}
-        className="flex items-center gap-2"
+        className="flex h-11 w-11 shrink-0 items-center justify-center gap-2"
         aria-label="Menu"
       >
         <BrandMark className="h-8 w-8" />
@@ -178,7 +179,7 @@ function MobileTopbar() {
 
       <button
         onClick={() => navigate({ to: "/workspace" })}
-        className="flex min-w-0 items-center gap-2 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm"
+        className="grid min-h-11 min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2 rounded-xl border border-border bg-background px-3 py-1.5 text-sm shadow-card"
       >
         <LayoutGrid className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
         <span className="min-w-0 truncate font-medium">
@@ -187,17 +188,17 @@ function MobileTopbar() {
       </button>
 
       <div className="flex items-center gap-1">
-        <MobileUniCopilotButton workspaceId={workspaceId ?? null} />
+        <ThemeToggle className="grid h-11 w-11 place-items-center p-0" />
         <Link
           to="/m/search"
-          className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-surface-2"
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-muted-foreground hover:bg-surface-2"
           aria-label="Tìm kiếm"
         >
           <Search className="h-4 w-4" />
         </Link>
         <Link
           to="/notifications"
-          className="relative grid h-9 w-9 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-surface-2"
+          className="relative grid h-11 w-11 shrink-0 place-items-center rounded-xl text-muted-foreground hover:bg-surface-2"
           aria-label="Thông báo"
         >
           <Bell className="h-4 w-4" />
@@ -226,39 +227,41 @@ function BottomTabBar({ activeTab }: { activeTab: string }) {
 
   const badgeFor = (id: string) => (id === "chat" ? chatUnread : id === "email" ? emailUnread : 0);
   return (
-    <nav className="sticky bottom-0 z-50 pb-[env(safe-area-inset-bottom)]">
-      <div className="mx-4 mb-4 rounded-[32px] border border-border/60 bg-surface/95 backdrop-blur-3xl dock-shadow">
-        <ul className="flex h-20 items-center px-2">
+    <nav className="sticky bottom-0 z-50 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-1px_3px_color-mix(in_oklab,var(--color-foreground)_6%,transparent)] backdrop-blur-xl">
+      <div>
+        <ul className="grid h-[4.5rem] grid-cols-5 items-end px-1 pb-1">
           {TABS.map((tab) => {
             const active = activeTab === tab.id;
-            if (tab.id === "tasks") {
+            if (tab.id === "ai") {
               return (
-                <li key={tab.id} className="relative flex flex-1 justify-center -top-4">
+                <li key={tab.id} className="relative flex min-w-0 justify-center">
                   <Link
                     to={tab.to}
-                    className="relative flex flex-col items-center justify-center p-2 -m-2"
+                    className="relative flex min-h-[68px] min-w-14 -translate-y-3 flex-col items-center justify-center gap-1"
                     aria-label={tab.label}
                   >
-                    <div className="dock-task-glow absolute -bottom-4 h-20 w-20 rounded-full blur-3xl opacity-70" />
-                    <span className="relative flex h-16 w-16 items-center justify-center rounded-full border-4 border-background bg-gradient-to-tr from-primary via-primary to-primary-foreground/25 text-primary-foreground shadow-xl shadow-primary/40 transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/50 active:scale-90">
-                      <tab.icon className="h-7 w-7" />
+                    <span
+                      className={cn(
+                        "relative flex h-14 w-14 items-center justify-center rounded-2xl border-4 border-background bg-primary text-primary-foreground shadow-panel transition-transform duration-150 active:scale-95",
+                        active && "ring-2 ring-primary/25 ring-offset-2 ring-offset-background",
+                      )}
+                    >
+                      <BrandMark className="h-8 w-8" />
                     </span>
-                    <span className="absolute -bottom-7 text-[10px] font-bold uppercase tracking-wider text-primary drop-shadow-sm">
-                      {tab.label}
-                    </span>
+                    <span className="text-[10px] font-bold text-primary">{tab.label}</span>
                   </Link>
                 </li>
               );
             }
             return (
-              <li key={tab.id} className="flex-1">
+              <li key={tab.id} className="min-w-0">
                 <Link
                   to={tab.to}
                   className={cn(
-                    "relative flex min-h-[52px] min-w-[56px] flex-col items-center justify-center gap-1 rounded-2xl py-4 px-2 transition-all duration-200 ease-out active:scale-95",
+                    "relative flex min-h-14 w-full min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 transition-colors duration-150 active:scale-95",
                     active
                       ? "text-primary"
-                      : "text-muted-foreground hover:bg-primary/10 hover:text-foreground active:bg-primary/15",
+                      : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
                   )}
                   aria-label={
                     badgeFor(tab.id) > 0 ? `${tab.label}, ${badgeFor(tab.id)} chưa đọc` : tab.label
@@ -278,9 +281,7 @@ function BottomTabBar({ activeTab }: { activeTab: string }) {
                     )}
                   </span>
                   <span className="text-[10px] font-medium">{tab.label}</span>
-                  {active && (
-                    <span className="h-1 w-1 rounded-full bg-primary shadow-[0_0_12px_2px_currentColor]" />
-                  )}
+                  {active && <span className="h-0.5 w-5 rounded-full bg-primary" />}
                 </Link>
               </li>
             );

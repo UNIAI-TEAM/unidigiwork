@@ -29,14 +29,10 @@ import {
   CreditCard,
   Briefcase,
   Loader2,
+  Gavel,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { openUniCopilot } from "@/components/ai/uni-copilot";
 import { useActiveWorkspace } from "@/lib/active-workspace";
@@ -69,6 +65,8 @@ const KIND_ICON: Record<SearchKind, LucideIcon> = {
   task: ListChecks,
   meeting: Video,
   artifact: Sparkles,
+  workproduct: FileText,
+  decision: Gavel,
   document: FileText,
   email: Mail,
   chat: MessageSquare,
@@ -80,6 +78,8 @@ const KIND_LABEL_KEY: Record<SearchKind, Key> = {
   task: "cmd.kind.task",
   meeting: "cmd.kind.meeting",
   artifact: "cmd.kind.artifact",
+  workproduct: "cmd.kind.workproduct",
+  decision: "cmd.kind.decision",
   document: "cmd.kind.document",
   email: "cmd.kind.email",
   chat: "cmd.kind.chat",
@@ -107,24 +107,149 @@ type CmdSpec = {
 
 // Nhãn nhóm khớp Information Architecture V2 (xem src/config/navigation.ts).
 const NAV_ITEMS: CmdSpec[] = [
-  { id: "tasks", group: "nav", labelKey: "nav.mywork", hintKey: "nav.group.home", icon: ListChecks, keywords: "task cong viec my work to do" },
-  { id: "notifications", group: "nav", labelKey: "nav.inbox", hintKey: "nav.group.home", icon: Bell, keywords: "inbox notification thong bao" },
-  { id: "workspace", group: "nav", labelKey: "nav.projects", hintKey: "nav.group.work", icon: LayoutGrid, keywords: "workspace project du an" },
-  { id: "calendar", group: "nav", labelKey: "nav.calendar", hintKey: "nav.group.work", icon: Calendar, keywords: "lich calendar deadline" },
-  { id: "people", group: "nav", labelKey: "nav.people", hintKey: "nav.group.work", icon: Users, keywords: "people nhan su team" },
-  { id: "chat", group: "nav", labelKey: "nav.chat", hintKey: "nav.group.communication", icon: MessageSquare, keywords: "tin nhan message chat" },
-  { id: "meeting", group: "nav", labelKey: "nav.meetings", hintKey: "nav.group.communication", icon: Video, keywords: "meeting hop video" },
-  { id: "email", group: "nav", labelKey: "nav.email", hintKey: "nav.group.communication", icon: Mail, keywords: "mail thu" },
-  { id: "documents", group: "nav", labelKey: "nav.documents", hintKey: "nav.group.knowledge", icon: FileText, keywords: "document file docs tai lieu" },
-  { id: "knowledge", group: "nav", labelKey: "nav.knowledge", hintKey: "nav.group.knowledge", icon: BookOpen, keywords: "knowledge wiki tri thuc" },
-  { id: "workflows", group: "nav", labelKey: "nav.workflows", hintKey: "nav.group.automation", icon: Workflow, keywords: "workflow automation quy trinh" },
-  { id: "ai", group: "nav", labelKey: "nav.ai", hintKey: "nav.group.automation", icon: Bot, keywords: "ai tro ly assistant agent" },
-  { id: "dashboard", group: "nav", labelKey: "nav.dashboard", hintKey: "nav.group.insights", icon: LayoutDashboard, keywords: "dashboard trang chu home tong quan" },
-  { id: "reports", group: "nav", labelKey: "nav.reports", hintKey: "nav.group.insights", icon: BarChart3, keywords: "report bao cao analytics workload" },
-  { id: "admin", group: "nav", labelKey: "nav.admin", hintKey: "nav.group.admin", icon: ShieldCheck, keywords: "admin quan tri console" },
-  { id: "billing", group: "nav", labelKey: "nav.billing", hintKey: "nav.group.admin", icon: CreditCard, keywords: "billing goi thanh toan invoice" },
-  { id: "settings", group: "nav", labelKey: "nav.settings", hintKey: "nav.group.admin", icon: Settings, keywords: "settings cai dat" },
-  { id: "help", group: "nav", labelKey: "nav.help", icon: HelpCircle, keywords: "help support tro giup" },
+  {
+    id: "tasks",
+    group: "nav",
+    labelKey: "nav.mywork",
+    hintKey: "nav.myspace",
+    icon: ListChecks,
+    keywords: "task cong viec my work to do",
+  },
+  {
+    id: "notifications",
+    group: "nav",
+    labelKey: "nav.inbox",
+    hintKey: "nav.myspace",
+    icon: Bell,
+    keywords: "inbox notification thong bao",
+  },
+  {
+    id: "workspace",
+    group: "nav",
+    labelKey: "nav.projects",
+    hintKey: "nav.group.work",
+    icon: LayoutGrid,
+    keywords: "workspace project du an",
+  },
+  {
+    id: "calendar",
+    group: "nav",
+    labelKey: "nav.calendar",
+    hintKey: "nav.group.work",
+    icon: Calendar,
+    keywords: "lich calendar deadline",
+  },
+  {
+    id: "people",
+    group: "nav",
+    labelKey: "nav.people",
+    hintKey: "nav.group.work",
+    icon: Users,
+    keywords: "people nhan su team",
+  },
+  {
+    id: "chat",
+    group: "nav",
+    labelKey: "nav.chat",
+    hintKey: "nav.group.communication",
+    icon: MessageSquare,
+    keywords: "tin nhan message chat",
+  },
+  {
+    id: "meeting",
+    group: "nav",
+    labelKey: "nav.meetings",
+    hintKey: "nav.group.communication",
+    icon: Video,
+    keywords: "meeting hop video",
+  },
+  {
+    id: "email",
+    group: "nav",
+    labelKey: "nav.email",
+    hintKey: "nav.group.communication",
+    icon: Mail,
+    keywords: "mail thu",
+  },
+  {
+    id: "documents",
+    group: "nav",
+    labelKey: "nav.documents",
+    hintKey: "nav.group.knowledge",
+    icon: FileText,
+    keywords: "document file docs tai lieu",
+  },
+  {
+    id: "knowledge",
+    group: "nav",
+    labelKey: "nav.knowledge",
+    hintKey: "nav.group.knowledge",
+    icon: BookOpen,
+    keywords: "knowledge wiki tri thuc",
+  },
+  {
+    id: "workflows",
+    group: "nav",
+    labelKey: "nav.workflows",
+    hintKey: "nav.group.automation",
+    icon: Workflow,
+    keywords: "workflow automation quy trinh",
+  },
+  {
+    id: "ai",
+    group: "nav",
+    labelKey: "nav.ai",
+    hintKey: "nav.group.automation",
+    icon: Bot,
+    keywords: "ai tro ly assistant agent",
+  },
+  {
+    id: "dashboard",
+    group: "nav",
+    labelKey: "nav.dashboard",
+    hintKey: "nav.group.insights",
+    icon: LayoutDashboard,
+    keywords: "dashboard trang chu home tong quan",
+  },
+  {
+    id: "reports",
+    group: "nav",
+    labelKey: "nav.reports",
+    hintKey: "nav.group.insights",
+    icon: BarChart3,
+    keywords: "report bao cao analytics workload",
+  },
+  {
+    id: "admin",
+    group: "nav",
+    labelKey: "nav.admin",
+    hintKey: "nav.group.admin",
+    icon: ShieldCheck,
+    keywords: "admin quan tri console",
+  },
+  {
+    id: "billing",
+    group: "nav",
+    labelKey: "nav.billing",
+    hintKey: "nav.group.admin",
+    icon: CreditCard,
+    keywords: "billing goi thanh toan invoice",
+  },
+  {
+    id: "settings",
+    group: "nav",
+    labelKey: "nav.settings",
+    hintKey: "nav.group.admin",
+    icon: Settings,
+    keywords: "settings cai dat",
+  },
+  {
+    id: "help",
+    group: "nav",
+    labelKey: "nav.help",
+    icon: HelpCircle,
+    keywords: "help support tro giup",
+  },
 ];
 
 const NAV_TO: Record<string, string> = {
@@ -149,11 +274,41 @@ const NAV_TO: Record<string, string> = {
 };
 
 const ACTION_ITEMS: CmdSpec[] = [
-  { id: "new-meeting", group: "action", labelKey: "cmd.act.newMeeting", icon: Video, keywords: "new meeting tao hop" },
-  { id: "new-task", group: "action", labelKey: "cmd.act.newTask", icon: ListChecks, keywords: "new task tao cong viec" },
-  { id: "new-doc", group: "action", labelKey: "cmd.act.newDoc", icon: FileText, keywords: "new document tao tai lieu" },
-  { id: "compose-email", group: "action", labelKey: "cmd.act.composeEmail", icon: Mail, keywords: "compose email soan thu" },
-  { id: "ask-uni", group: "action", labelKey: "cmd.act.askUni", icon: Sparkles, keywords: "ai uni copilot hoi assistant" },
+  {
+    id: "new-meeting",
+    group: "action",
+    labelKey: "cmd.act.newMeeting",
+    icon: Video,
+    keywords: "new meeting tao hop",
+  },
+  {
+    id: "new-task",
+    group: "action",
+    labelKey: "cmd.act.newTask",
+    icon: ListChecks,
+    keywords: "new task tao cong viec",
+  },
+  {
+    id: "new-doc",
+    group: "action",
+    labelKey: "cmd.act.newDoc",
+    icon: FileText,
+    keywords: "new document tao tai lieu",
+  },
+  {
+    id: "compose-email",
+    group: "action",
+    labelKey: "cmd.act.composeEmail",
+    icon: Mail,
+    keywords: "compose email soan thu",
+  },
+  {
+    id: "ask-uni",
+    group: "action",
+    labelKey: "cmd.act.askUni",
+    icon: Sparkles,
+    keywords: "ai uni copilot hoi assistant",
+  },
 ];
 
 const ACTION_TO: Record<string, string> = {
@@ -171,10 +326,7 @@ function norm(s: string) {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
-function buildItems(
-  navigate: ReturnType<typeof useNavigate>,
-  t: (k: Key) => string,
-): CmdItem[] {
+function buildItems(navigate: ReturnType<typeof useNavigate>, t: (k: Key) => string): CmdItem[] {
   const nav = NAV_ITEMS.map<CmdItem>((i) => ({
     id: i.id,
     group: i.group,
@@ -190,8 +342,7 @@ function buildItems(
     icon: i.icon,
     keywords: i.keywords,
     label: t(i.labelKey),
-    run: () =>
-      i.id === "ask-uni" ? openUniCopilot() : navigate({ to: ACTION_TO[i.id] as never }),
+    run: () => (i.id === "ask-uni" ? openUniCopilot() : navigate({ to: ACTION_TO[i.id] as never })),
   }));
   return [...nav, ...act];
 }
@@ -340,9 +491,7 @@ export function CommandPalette() {
 
   // Keep active item in view
   useEffect(() => {
-    const el = listRef.current?.querySelector<HTMLElement>(
-      `[data-cmd-index="${active}"]`,
-    );
+    const el = listRef.current?.querySelector<HTMLElement>(`[data-cmd-index="${active}"]`);
     el?.scrollIntoView({ block: "nearest" });
   }, [active]);
 
@@ -406,11 +555,7 @@ export function CommandPalette() {
           </div>
         )}
 
-        <div
-          ref={listRef}
-          className="max-h-[60vh] overflow-y-auto py-2"
-          role="listbox"
-        >
+        <div ref={listRef} className="max-h-[60vh] overflow-y-auto py-2" role="listbox">
           {results.length === 0 ? (
             <div className="px-6 py-10 text-center text-sm text-muted-foreground">
               {t("cmd.empty")}
@@ -448,17 +593,13 @@ export function CommandPalette() {
                             isActive ? "text-primary" : "text-muted-foreground",
                           )}
                         />
-                        <span className="min-w-0 flex-1 truncate">
-                          {item.label}
-                        </span>
+                        <span className="min-w-0 flex-1 truncate">{item.label}</span>
                         {item.hint && (
                           <span className="hidden text-xs text-muted-foreground sm:inline">
                             {item.hint}
                           </span>
                         )}
-                        {isActive && (
-                          <ArrowRight className="h-3.5 w-3.5 shrink-0 text-primary" />
-                        )}
+                        {isActive && <ArrowRight className="h-3.5 w-3.5 shrink-0 text-primary" />}
                       </button>
                     );
                   })}

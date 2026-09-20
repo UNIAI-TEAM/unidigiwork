@@ -1,0 +1,881 @@
+// Kết quả công việc — danh sách, bộ lọc và tạo mới.
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  FileText,
+  Plus,
+  Search,
+  LayoutGrid,
+  List as ListIcon,
+  X,
+  Sparkles,
+  Loader2,
+  ShieldCheck,
+  Download,
+  Upload,
+} from "lucide-react";
+import { toast } from "sonner";
+import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
+import { FilterPageHeader } from "@/components/filter-page-header";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useI18n, localeTag } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
+import {
+  BUSINESS_TYPES,
+  WP_STATUSES,
+  createWorkDeliverable,
+  getWorkDeliverableWeeklyReport,
+  exportWorkDeliverableWeeklyReportXlsx,
+  getWorkProductAccessPolicy,
+  listWorkDeliverables,
+  updateWorkProductAccessPolicy,
+  WP_SCOPES,
+} from "@/lib/api/work-deliverables.functions";
+import { importWorkDeliverableDocx } from "@/lib/api/work-products-docx.functions";
+
+export const Route = createFileRoute("/_authenticated/work-products")({
+  head: () => ({
+    meta: [
+      { title: "Kết quả công việc — UNIWORK" },
+      {
+        name: "description",
+        content:
+          "Từ ngữ cảnh công việc đến sản phẩm hoàn chỉnh: đề xuất, báo cáo, phân tích được soạn cùng nhân sự AI.",
+      },
+      { property: "og:title", content: "Kết quả công việc — UNIWORK" },
+      {
+        property: "og:description",
+        content:
+          "Từ ngữ cảnh công việc đến sản phẩm hoàn chỉnh, có phiên bản, nguồn gốc AI và quy trình duyệt.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
+  component: WorkProductsPage,
+});
+
+const STATUS_TONE: Record<string, string> = {
+  DRAFT: "bg-muted text-muted-foreground",
+  IN_REVIEW: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
+  CHANGES_REQUESTED: "bg-destructive/15 text-destructive",
+  APPROVED: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+  FINAL: "bg-primary/15 text-primary",
+  ARCHIVED: "bg-muted text-muted-foreground",
+};
+
+const WEEKLY_FORMATS = ["DOCX", "XLSX", "PPTX", "PDF"] as const;
+
+/** Báo cáo 7 ngày: tài liệu mới, đã duyệt, số phiên bản và tệp xuất theo định dạng. */
+function WeeklyReportCard({ workspaceId }: { workspaceId: string | null }) {
+  const { t } = useI18n();
+  const [format, setFormat] = useState<string | null>(null);
+  const { data } = useQuery({
+    queryKey: ["wp-weekly", workspaceId],
+    queryFn: () => getWorkDeliverableWeeklyReport({ data: { workspaceId, days: 7 } }),
+  });
+  const [exporting, setExporting] = useState(false);
+  async function exportXlsx() {
+    setExporting(true);
+    try {
+      const res = await exportWorkDeliverableWeeklyReportXlsx({
+        data: { workspaceId, days: 7, format },
+      });
+      const bin = atob(res.base64);
+      const buf = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+      const url = URL.createObjectURL(
+        new Blob([buf], {
+          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        }),
+      );
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = res.fileName;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(t("wp.weekly.exportDone"));
+    } catch {
+      toast.error(t("wp.weekly.exportError"));
+    } finally {
+      setExporting(false);
+    }
+  }
+  const allRows = data?.rows ?? [];
+  const rows = format ? allRows.filter((r) => (r.formats?.[format] ?? 0) > 0) : allRows;
+  const fmtCell = (formats: Record<string, number> | undefined) =>
+    format ? (
+      <span className="tabular-nums">{formats?.[format] ?? 0}</span>
+    ) : (
+      <span className="flex flex-wrap justify-end gap-1">
+        {WEEKLY_FORMATS.map((f) =>
+          (formats?.[f] ?? 0) > 0 ? (
+            <Badge key={f} variant="outline" className="tabular-nums">
+              {f} {formats![f]}
+            </Badge>
+          ) : null,
+        )}
+        {!WEEKLY_FORMATS.some((f) => (formats?.[f] ?? 0) > 0) && (
+          <span className="text-muted-foreground">—</span>
+        )}
+      </span>
+    );
+  return (
+    <Card className="mb-4 overflow-hidden">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b px-4 py-3">
+        <div className="flex flex-wrap items-baseline gap-2">
+          <h2 className="text-sm font-semibold">{t("wp.weekly.title")}</h2>
+          <span className="text-xs text-muted-foreground">{t("wp.weekly.subtitle")}</span>
+        </div>
+        <div className="flex flex-wrap items-center gap-1">
+          <Button
+            variant={format === null ? "secondary" : "ghost"}
+            size="sm"
+            className="h-7 px-2 text-xs"
+            onClick={() => setFormat(null)}
+          >
+            {t("wp.weekly.allFormats")}
+          </Button>
+          {WEEKLY_FORMATS.map((f) => (
+            <Button
+              key={f}
+              variant={format === f ? "secondary" : "ghost"}
+              size="sm"
+              className="h-7 px-2 text-xs"
+              onClick={() => setFormat(f)}
+            >
+              {f}
+            </Button>
+          ))}
+          <Button
+            variant="outline"
+            size="sm"
+            className="ml-1 h-7 gap-1 px-2 text-xs"
+            disabled={exporting}
+            onClick={exportXlsx}
+          >
+            {exporting ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Download className="h-3 w-3" />
+            )}
+            {t("wp.weekly.exportXlsx")}
+          </Button>
+        </div>
+      </div>
+      {rows.length === 0 ? (
+        <p className="px-4 py-6 text-sm text-muted-foreground">
+          {format ? t("wp.weekly.emptyFormat") : t("wp.weekly.empty")}
+        </p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[640px] text-sm">
+            <thead>
+              <tr className="text-left text-xs uppercase tracking-wide text-muted-foreground">
+                <th className="px-4 py-2 font-medium">{t("wp.weekly.type")}</th>
+                <th className="px-4 py-2 text-right font-medium">{t("wp.weekly.created")}</th>
+                <th className="px-4 py-2 text-right font-medium">{t("wp.weekly.approved")}</th>
+                <th className="px-4 py-2 text-right font-medium">{t("wp.weekly.inReview")}</th>
+                <th className="px-4 py-2 text-right font-medium">{t("wp.weekly.approvedNow")}</th>
+                <th className="px-4 py-2 text-right font-medium">{t("wp.weekly.versions")}</th>
+                <th className="px-4 py-2 text-right font-medium">{t("wp.weekly.shared")}</th>
+                <th className="px-4 py-2 text-right font-medium">{t("wp.weekly.formats")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.businessType} className="border-t">
+                  <td className="px-4 py-2">{t(`wp.type.${r.businessType}` as never)}</td>
+                  <td className="px-4 py-2 text-right tabular-nums">{r.created}</td>
+                  <td className="px-4 py-2 text-right tabular-nums">{r.approved}</td>
+                  <td className="px-4 py-2 text-right tabular-nums">{r.inReview}</td>
+                  <td className="px-4 py-2 text-right tabular-nums">{r.approvedNow}</td>
+                  <td className="px-4 py-2 text-right tabular-nums">{r.versions}</td>
+                  <td className="px-4 py-2 text-right tabular-nums">
+                    {r.shared > 0 ? `${r.shared} (${r.shareTargets})` : "—"}
+                  </td>
+                  <td className="px-4 py-2 text-right">{fmtCell(r.formats)}</td>
+                </tr>
+              ))}
+              <tr className="border-t bg-muted/40 font-medium">
+                <td className="px-4 py-2">{t("wp.weekly.total")}</td>
+                <td className="px-4 py-2 text-right tabular-nums">{data?.totals.created ?? 0}</td>
+                <td className="px-4 py-2 text-right tabular-nums">{data?.totals.approved ?? 0}</td>
+                <td className="px-4 py-2 text-right tabular-nums">{data?.totals.inReview ?? 0}</td>
+                <td className="px-4 py-2 text-right tabular-nums">
+                  {data?.totals.approvedNow ?? 0}
+                </td>
+                <td className="px-4 py-2 text-right tabular-nums">{data?.totals.versions ?? 0}</td>
+                <td className="px-4 py-2 text-right tabular-nums">
+                  {(data?.totals.shared ?? 0) > 0
+                    ? `${data?.totals.shared} (${data?.totals.shareTargets})`
+                    : "—"}
+                </td>
+                <td className="px-4 py-2 text-right">{fmtCell(data?.totals.formats)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
+      {(data?.editors ?? []).length > 0 && (
+        <div className="border-t px-4 py-3">
+          <div className="mb-2 flex flex-wrap items-baseline gap-2">
+            <h3 className="text-sm font-semibold">{t("wp.weekly.changeLog")}</h3>
+            <span className="text-xs text-muted-foreground">
+              {data?.changeTotals.total ?? 0} · {t("wp.weekly.byHuman")}{" "}
+              {data?.changeTotals.human ?? 0} · {t("wp.weekly.byAi")} {data?.changeTotals.ai ?? 0}
+            </span>
+          </div>
+          <table className="w-full min-w-[420px] text-sm">
+            <thead>
+              <tr className="text-left text-xs uppercase tracking-wide text-muted-foreground">
+                <th className="py-1 font-medium">{t("wp.weekly.editor")}</th>
+                <th className="py-1 text-right font-medium">{t("wp.weekly.changes")}</th>
+                <th className="py-1 text-right font-medium">{t("wp.weekly.byHuman")}</th>
+                <th className="py-1 text-right font-medium">{t("wp.weekly.byAi")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(data?.editors ?? []).map((e) => (
+                <tr key={e.name} className="border-t">
+                  <td className="py-1">{e.name}</td>
+                  <td className="py-1 text-right tabular-nums">{e.total}</td>
+                  <td className="py-1 text-right tabular-nums">{e.human}</td>
+                  <td className="py-1 text-right tabular-nums">{e.ai}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+/** Cài đặt quyền xem/sửa Kết quả công việc cho tổ chức hiện tại. */
+function AccessPolicyDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}) {
+  const { t } = useI18n();
+  const qc = useQueryClient();
+  const { data, isLoading } = useQuery({
+    queryKey: ["wp-access-policy"],
+    queryFn: () => getWorkProductAccessPolicy(),
+    enabled: open,
+  });
+  const [viewScope, setViewScope] = useState<string | null>(null);
+  const [editScope, setEditScope] = useState<string | null>(null);
+  const [adminOverride, setAdminOverride] = useState<boolean | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const view = viewScope ?? data?.viewScope ?? "TENANT";
+  const edit = editScope ?? data?.editScope ?? "OWNER";
+  const override = adminOverride ?? data?.adminOverride ?? true;
+  const canManage = data?.canManage ?? false;
+
+  async function save() {
+    setSaving(true);
+    try {
+      await updateWorkProductAccessPolicy({
+        data: { viewScope: view as never, editScope: edit as never, adminOverride: override },
+      });
+      await qc.invalidateQueries({ queryKey: ["wp-access-policy"] });
+      await qc.invalidateQueries({ queryKey: ["work-products"] });
+      toast.success(t("wp.access.saved"));
+      onOpenChange(false);
+    } catch {
+      toast.error(t("wp.access.saveError"));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{t("wp.access.title")}</DialogTitle>
+        </DialogHeader>
+        <p className="text-sm text-muted-foreground">{t("wp.access.intro")}</p>
+        {isLoading ? (
+          <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> {t("wp.loading")}
+          </div>
+        ) : (
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">{t("wp.access.viewScope")}</label>
+              <Select value={view} onValueChange={setViewScope} disabled={!canManage}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {WP_SCOPES.map((sc) => (
+                    <SelectItem key={sc} value={sc}>
+                      {t(`wp.access.scope.${sc}` as never)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {t(`wp.access.viewHint.${view}` as never)}
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">{t("wp.access.editScope")}</label>
+              <Select value={edit} onValueChange={setEditScope} disabled={!canManage}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {WP_SCOPES.map((sc) => (
+                    <SelectItem key={sc} value={sc}>
+                      {t(`wp.access.scope.${sc}` as never)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {t(`wp.access.editHint.${edit}` as never)}
+              </p>
+            </div>
+            <label className="flex items-start gap-2 rounded-md border p-3">
+              <input
+                type="checkbox"
+                className="mt-1"
+                checked={override}
+                disabled={!canManage}
+                onChange={(e) => setAdminOverride(e.target.checked)}
+              />
+              <span>
+                <span className="block text-sm font-medium">{t("wp.access.adminOverride")}</span>
+                <span className="block text-xs text-muted-foreground">
+                  {t("wp.access.adminOverrideHint")}
+                </span>
+              </span>
+            </label>
+            <p className="text-xs text-muted-foreground">{t("wp.access.tenantNote")}</p>
+            {!canManage && (
+              <p className="text-xs text-amber-600 dark:text-amber-400">
+                {t("wp.access.readOnly")}
+              </p>
+            )}
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            {t("wp.cancel")}
+          </Button>
+          <Button onClick={save} disabled={!canManage || saving || isLoading}>
+            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {t("wp.access.save")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function WorkProductsPage() {
+  const { t, lang } = useI18n();
+  const [open, setOpen] = useSidebarState();
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<string>("ALL");
+  const [businessType, setBusinessType] = useState<string>("ALL");
+  const [workspaceId, setWorkspaceId] = useState<string>("ALL");
+  const [mine, setMine] = useState(false);
+  const [view, setView] = useState<"list" | "grid">("list");
+  const [accessOpen, setAccessOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+
+  const { data: workspaces } = useQuery({
+    queryKey: ["wp-workspaces"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("workspaces")
+        .select("id, name")
+        .is("deleted_at", null)
+        .order("name");
+      return (data ?? []) as Array<{ id: string; name: string }>;
+    },
+  });
+
+  const filters = {
+    search: search.trim() || undefined,
+    status: status === "ALL" ? null : (status as (typeof WP_STATUSES)[number]),
+    businessType: businessType === "ALL" ? null : (businessType as (typeof BUSINESS_TYPES)[number]),
+    workspaceId: workspaceId === "ALL" ? null : workspaceId,
+    mine,
+  };
+
+  const {
+    data: items,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["work-deliverables", filters],
+    queryFn: () => listWorkDeliverables({ data: filters }),
+  });
+
+  const hasFilters =
+    search.trim() !== "" ||
+    status !== "ALL" ||
+    businessType !== "ALL" ||
+    workspaceId !== "ALL" ||
+    mine;
+  const clearFilters = () => {
+    setSearch("");
+    setStatus("ALL");
+    setBusinessType("ALL");
+    setWorkspaceId("ALL");
+    setMine(false);
+  };
+
+  const fmt = useMemo(
+    () =>
+      new Intl.DateTimeFormat(localeTag(lang), {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      }),
+    [lang],
+  );
+
+  return (
+    <div className="flex min-h-screen bg-background">
+      <AppSidebar active="work-products" open={open} onClose={() => setOpen(false)} />
+      <main className="flex min-w-0 flex-1 flex-col">
+        <AppTopbar variant="documents" onOpenSidebar={() => setOpen(true)} />
+
+        <div className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-6 sm:px-6">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+            <FilterPageHeader
+              crumbs={[{ label: t("nav.group.knowledge") }, { label: t("wp.title") }]}
+              title={t("wp.title")}
+              description={t("wp.subtitle")}
+            />
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <ImportDocxButton />
+              <Button onClick={() => setCreateOpen(true)} className="gap-2">
+                <Plus className="h-4 w-4" />
+                {t("wp.new")}
+              </Button>
+            </div>
+          </div>
+
+          {/* Bộ lọc */}
+          <div className="mb-5 grid gap-2 rounded-2xl border border-border bg-card p-3 shadow-card sm:grid-cols-2 xl:grid-cols-[minmax(200px,1fr)_150px_135px_135px_auto]">
+            <div className="relative min-w-0">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={t("wp.search")}
+                className="pl-9"
+                aria-label={t("wp.search")}
+              />
+            </div>
+            <Select value={workspaceId} onValueChange={setWorkspaceId}>
+              <SelectTrigger>
+                <SelectValue placeholder={t("wp.allWorkspaces")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">{t("wp.allWorkspaces")}</SelectItem>
+                {(workspaces ?? []).map((w) => (
+                  <SelectItem key={w.id} value={w.id}>
+                    {w.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={businessType} onValueChange={setBusinessType}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">{t("wp.allTypes")}</SelectItem>
+                {BUSINESS_TYPES.map((b) => (
+                  <SelectItem key={b} value={b}>
+                    {t(`wp.type.${b}` as never)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">{t("wp.allStatuses")}</SelectItem>
+                {WP_STATUSES.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {t(`wp.status.${s}` as never)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant={mine ? "default" : "outline"}
+              className="xl:px-3"
+              onClick={() => setMine((v) => !v)}
+            >
+              {t("wp.mine")}
+            </Button>
+            <div className="flex items-center justify-end gap-1 sm:col-span-2 xl:col-span-5">
+              <Button variant="outline" className="gap-2" onClick={() => setAccessOpen(true)}>
+                <ShieldCheck className="h-4 w-4" />
+                <span className="hidden sm:inline">{t("wp.access.button")}</span>
+              </Button>
+              {hasFilters && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={clearFilters}
+                  aria-label={t("wp.clearFilters")}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setView(view === "list" ? "grid" : "list")}
+                aria-label={t("wp.toggleView")}
+              >
+                {view === "list" ? (
+                  <LayoutGrid className="h-4 w-4" />
+                ) : (
+                  <ListIcon className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </div>
+
+          <AccessPolicyDialog open={accessOpen} onOpenChange={setAccessOpen} />
+
+          <WeeklyReportCard workspaceId={workspaceId === "ALL" ? null : workspaceId} />
+
+          {isLoading && (
+            <div className="flex items-center gap-2 py-16 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> {t("wp.loading")}
+            </div>
+          )}
+          {isError && <p className="py-16 text-sm text-destructive">{t("wp.error")}</p>}
+
+          {!isLoading && !isError && (items ?? []).length === 0 && (
+            <Card className="flex flex-col items-center gap-3 border-dashed py-16 text-center">
+              <Sparkles className="h-8 w-8 text-muted-foreground" />
+              <p className="text-sm font-medium">{t("wp.empty")}</p>
+              <p className="max-w-md text-sm text-muted-foreground">{t("wp.emptyHint")}</p>
+              <Button onClick={() => setCreateOpen(true)} className="gap-2">
+                <Plus className="h-4 w-4" /> {t("wp.new")}
+              </Button>
+            </Card>
+          )}
+
+          <div
+            className={cn(
+              view === "grid" ? "grid gap-3 sm:grid-cols-2 lg:grid-cols-3" : "flex flex-col gap-2",
+            )}
+          >
+            {(items ?? []).map((it: any) => (
+              <Link
+                key={it.id}
+                to="/work-products/$id"
+                params={{ id: it.id }}
+                className="rounded-2xl border border-border bg-card p-4 shadow-card transition-colors hover:border-primary/40 hover:bg-surface"
+              >
+                <div className="flex items-start gap-3">
+                  <span className="mt-0.5 rounded-xl bg-secondary p-2 text-primary">
+                    <FileText className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="truncate font-heading font-semibold">{it.title}</p>
+                      <Badge variant="outline">{t(`wp.type.${it.business_type}` as never)}</Badge>
+                      <span
+                        className={cn(
+                          "rounded-full px-2 py-0.5 text-xs",
+                          STATUS_TONE[it.status] ?? "",
+                        )}
+                      >
+                        {t(`wp.status.${it.status}` as never)}
+                      </span>
+                      {it.ai_generated && (
+                        <Badge variant="secondary" className="gap-1">
+                          <Sparkles className="h-3 w-3" /> AI
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+                      {it.description || "—"}
+                    </p>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      {[
+                        it.workspaceName,
+                        it.ownerName,
+                        `v${it.current_version}`,
+                        fmt.format(new Date(it.updated_at)),
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </main>
+
+      <CreateDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        workspaces={workspaces ?? []}
+        onCreated={(id) => {
+          qc.invalidateQueries({ queryKey: ["work-deliverables"] });
+          navigate({ to: "/work-products/$id", params: { id } });
+        }}
+      />
+    </div>
+  );
+}
+
+function CreateDialog({
+  open,
+  onOpenChange,
+  workspaces,
+  onCreated,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  workspaces: Array<{ id: string; name: string }>;
+  onCreated: (id: string) => void;
+}) {
+  const { t } = useI18n();
+  const [step, setStep] = useState(1);
+  const [title, setTitle] = useState("");
+  const [businessType, setBusinessType] = useState<string>("PROPOSAL");
+  const [description, setDescription] = useState("");
+  const [workspaceId, setWorkspaceId] = useState<string>("NONE");
+  const [useTemplate, setUseTemplate] = useState(true);
+  const [busy, setBusy] = useState(false);
+
+  const reset = () => {
+    setStep(1);
+    setTitle("");
+    setBusinessType("PROPOSAL");
+    setDescription("");
+    setWorkspaceId("NONE");
+    setUseTemplate(true);
+  };
+
+  const submit = async () => {
+    if (!title.trim()) return;
+    setBusy(true);
+    try {
+      const res = await createWorkDeliverable({
+        data: {
+          idempotencyKey: crypto.randomUUID(),
+          title: title.trim(),
+          businessType: businessType as (typeof BUSINESS_TYPES)[number],
+          description: description.trim() || undefined,
+          workspaceId: workspaceId === "NONE" ? null : workspaceId,
+          primaryContextType: workspaceId === "NONE" ? null : "WORKSPACE",
+          primaryContextId: workspaceId === "NONE" ? null : workspaceId,
+          useTemplate,
+        },
+      });
+      onOpenChange(false);
+      reset();
+      onCreated(res.id);
+    } catch {
+      toast.error(t("wp.createFailed"));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        onOpenChange(v);
+        if (!v) reset();
+      }}
+    >
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{step === 1 ? t("wp.create.step1") : t("wp.create.step2")}</DialogTitle>
+        </DialogHeader>
+
+        {step === 1 ? (
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">{t("wp.create.type")}</label>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {BUSINESS_TYPES.filter((b) => b !== "OTHER").map((b) => (
+                  <button
+                    key={b}
+                    type="button"
+                    onClick={() => setBusinessType(b)}
+                    className={cn(
+                      "rounded-lg border px-3 py-2 text-left text-sm transition-colors",
+                      businessType === b
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "hover:bg-accent",
+                    )}
+                  >
+                    {t(`wp.type.${b}` as never)}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={useTemplate}
+                onChange={(e) => setUseTemplate(e.target.checked)}
+              />
+              {t("wp.create.template")}
+            </label>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium" htmlFor="wp-title">
+                {t("wp.create.name")}
+              </label>
+              <Input
+                id="wp-title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium" htmlFor="wp-desc">
+                {t("wp.create.description")}
+              </label>
+              <Textarea
+                id="wp-desc"
+                rows={3}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">{t("wp.create.context")}</label>
+              <Select value={workspaceId} onValueChange={setWorkspaceId}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="NONE">{t("wp.create.noContext")}</SelectItem>
+                  {workspaces.map((w) => (
+                    <SelectItem key={w.id} value={w.id}>
+                      {w.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        )}
+
+        <DialogFooter>
+          {step === 2 && (
+            <Button variant="outline" onClick={() => setStep(1)}>
+              {t("wp.create.back")}
+            </Button>
+          )}
+          {step === 1 ? (
+            <Button onClick={() => setStep(2)}>{t("wp.create.next")}</Button>
+          ) : (
+            <Button onClick={submit} disabled={busy || !title.trim()} className="gap-2">
+              {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+              {t("wp.create.submit")}
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** Nhập một tệp Word có sẵn: bản gốc được giữ nguyên, không bao giờ bị ghi đè. */
+function ImportDocxButton() {
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const [busy, setBusy] = useState(false);
+
+  const onFile = async (file: File) => {
+    setBusy(true);
+    try {
+      const buf = new Uint8Array(await file.arrayBuffer());
+      let bin = "";
+      for (let i = 0; i < buf.length; i += 8192) {
+        bin += String.fromCharCode(...buf.subarray(i, i + 8192));
+      }
+      const res = await importWorkDeliverableDocx({
+        data: { fileName: file.name, mimeType: file.type, base64: btoa(bin) },
+      });
+      qc.invalidateQueries({ queryKey: ["work-deliverables"] });
+      toast.success(`Đã nhập tài liệu — ${res.editableBlocks}/${res.totalBlocks} đoạn có thể sửa`);
+      navigate({ to: "/work-products/$id", params: { id: res.id } });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Nhập tài liệu thất bại");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <label>
+      <input
+        type="file"
+        accept=".docx"
+        className="sr-only"
+        disabled={busy}
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) void onFile(f);
+        }}
+      />
+      <Button asChild variant="outline" className="gap-2" disabled={busy}>
+        <span>
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+          Nhập file Word
+        </span>
+      </Button>
+    </label>
+  );
+}

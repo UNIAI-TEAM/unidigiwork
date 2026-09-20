@@ -8,6 +8,8 @@ export const SEARCH_ENTITY_TYPES = [
   "MEETING",
   "MEETING_ARTIFACT",
   "DOCUMENT",
+  "WORK_PRODUCT",
+  "DECISION",
   "EMAIL",
   "CHAT_CHANNEL",
   "PERSON",
@@ -21,6 +23,8 @@ export const SEARCH_KINDS = [
   "meeting",
   "artifact",
   "document",
+  "workproduct",
+  "decision",
   "email",
   "chat",
   "person",
@@ -33,6 +37,8 @@ const KIND_BY_ENTITY: Record<SearchEntityType, SearchKind> = {
   MEETING: "meeting",
   MEETING_ARTIFACT: "artifact",
   DOCUMENT: "document",
+  WORK_PRODUCT: "workproduct",
+  DECISION: "decision",
   EMAIL: "email",
   CHAT_CHANNEL: "chat",
   PERSON: "person",
@@ -44,6 +50,8 @@ const ENTITY_BY_KIND: Record<SearchKind, SearchEntityType> = {
   meeting: "MEETING",
   artifact: "MEETING_ARTIFACT",
   document: "DOCUMENT",
+  workproduct: "WORK_PRODUCT",
+  decision: "DECISION",
   email: "EMAIL",
   chat: "CHAT_CHANNEL",
   person: "PERSON",
@@ -69,6 +77,10 @@ export function searchHref(entityType: string, id: string): string {
       return `/meeting?artifact=${id}`;
     case "DOCUMENT":
       return `/documents/${id}`;
+    case "WORK_PRODUCT":
+      return `/work-products/${id}`;
+    case "DECISION":
+      return `/decisions?id=${id}`;
     case "EMAIL":
       return `/email/${id}`;
     case "CHAT_CHANNEL":
@@ -150,6 +162,8 @@ export const emptyCounts = (): Record<SearchKind, number> => ({
   meeting: 0,
   artifact: 0,
   document: 0,
+  workproduct: 0,
+  decision: 0,
   email: 0,
   chat: 0,
   person: 0,

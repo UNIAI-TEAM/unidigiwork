@@ -14,6 +14,7 @@ import {
   Mail,
   MessageSquare,
   Users,
+  Gavel,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -48,6 +49,8 @@ const KIND_ICON: Record<SearchKind, LucideIcon> = {
   task: ListChecks,
   meeting: Video,
   artifact: Sparkles,
+  workproduct: FileText,
+  decision: Gavel,
   document: FileText,
   email: Mail,
   chat: MessageSquare,
@@ -59,6 +62,8 @@ const KIND_LABEL: Record<SearchKind, string> = {
   task: "Công việc",
   meeting: "Cuộc họp",
   artifact: "Kết quả họp",
+  workproduct: "Kết quả công việc",
+  decision: "Quyết định",
   document: "Tài liệu",
   email: "Email",
   chat: "Chat",

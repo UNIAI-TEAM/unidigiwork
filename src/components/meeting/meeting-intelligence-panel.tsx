@@ -1,5 +1,6 @@
 // Meeting Intelligence V1 — biên bản trực tiếp + tóm tắt AI có nguồn trích dẫn.
 import { useMemo, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { usePanelCollapse } from "@/hooks/use-panel-collapse";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -54,6 +55,7 @@ import {
 import {
   confirmMeetingActionItem,
   dismissMeetingActionItem,
+  extractMeetingDecisions,
   generateMeetingSummary,
   getMeetingSummary,
   getMeetingSummaryProgress,
@@ -410,6 +412,24 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
     },
   });
 
+  const [extractResult, setExtractResult] = useState<{ created: number; total: number } | null>(
+    null,
+  );
+  const extractDecisions = useMutation({
+    mutationFn: () => extractMeetingDecisions({ data: { meetingId } }),
+    onSuccess: (r: { created: number; skipped: number; total: number; decisionIds: string[] }) => {
+      setExtractResult({ created: r.created, total: r.total });
+      toast.success(
+        r.created > 0
+          ? fmt(t("mtg.mi.dec.extractedToast"), { n: r.created })
+          : t("mtg.mi.dec.allExistToast"),
+      );
+    },
+    onError: (err: unknown) => {
+      toast.error(err instanceof Error ? err.message : t("mtg.mi.dec.extractError"));
+    },
+  });
+
   const invalidateTranscript = () => {
     void queryClient.invalidateQueries({ queryKey: ["meeting-transcript", meetingId] });
   };
@@ -715,7 +735,44 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
 
               {summary.decisions.length > 0 && (
                 <section className="space-y-2">
-                  <SectionHeading icon={Gavel}>{t("mtg.mi.decisions")}</SectionHeading>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <SectionHeading icon={Gavel}>{t("mtg.mi.decisions")}</SectionHeading>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={extractDecisions.isPending}
+                      onClick={() => extractDecisions.mutate()}
+                    >
+                      {extractDecisions.isPending ? (
+                        <Loader2 className="animate-spin" aria-hidden="true" />
+                      ) : (
+                        <Gavel aria-hidden="true" />
+                      )}
+                      {t("mtg.mi.dec.extract")}
+                    </Button>
+                  </div>
+
+                  {extractResult ? (
+                    <div
+                      role="status"
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-primary/30 bg-primary/5 p-2 text-[11px]"
+                    >
+                      <span className="text-muted-foreground">
+                        {extractResult.created > 0
+                          ? fmt(t("mtg.mi.dec.result"), {
+                              n: extractResult.created,
+                              total: extractResult.total,
+                            })
+                          : t("mtg.mi.dec.resultExisting")}
+                      </span>
+                      <Button size="sm" variant="secondary" asChild>
+                        <Link to="/decisions" search={{ id: undefined, meeting: meetingId }}>
+                          {t("mtg.mi.dec.openReview")}
+                        </Link>
+                      </Button>
+                    </div>
+                  ) : null}
+
                   <ul className="space-y-2">
                     {summary.decisions.map((d, i) => (
                       <li key={i} className="rounded-md bg-background p-2">
