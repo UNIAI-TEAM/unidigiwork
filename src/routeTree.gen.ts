@@ -13,6 +13,7 @@ import { Route as WorkflowsRouteImport } from './routes/workflows'
 import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TasksRouteImport } from './routes/tasks'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PricingRouteImport } from './routes/pricing'
@@ -173,6 +174,11 @@ const TermsRoute = TermsRouteImport.update({
 const TasksRoute = TasksRouteImport.update({
   id: '/tasks',
   path: '/tasks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReportsRoute = ReportsRouteImport.update({
@@ -952,6 +958,7 @@ export interface FileRoutesByFullPath {
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/reports': typeof ReportsRouteWithChildren
+  '/reset-password': typeof ResetPasswordRoute
   '/tasks': typeof TasksRoute
   '/terms': typeof TermsRoute
   '/welcome': typeof WelcomeRoute
@@ -1097,6 +1104,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/tasks': typeof TasksRoute
   '/terms': typeof TermsRoute
   '/welcome': typeof WelcomeRoute
@@ -1243,6 +1251,7 @@ export interface FileRoutesById {
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/reports': typeof ReportsRouteWithChildren
+  '/reset-password': typeof ResetPasswordRoute
   '/tasks': typeof TasksRoute
   '/terms': typeof TermsRoute
   '/welcome': typeof WelcomeRoute
@@ -1391,6 +1400,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/privacy'
     | '/reports'
+    | '/reset-password'
     | '/tasks'
     | '/terms'
     | '/welcome'
@@ -1536,6 +1546,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/pricing'
     | '/privacy'
+    | '/reset-password'
     | '/tasks'
     | '/terms'
     | '/welcome'
@@ -1681,6 +1692,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/privacy'
     | '/reports'
+    | '/reset-password'
     | '/tasks'
     | '/terms'
     | '/welcome'
@@ -1829,6 +1841,7 @@ export interface RootRouteChildren {
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
   ReportsRoute: typeof ReportsRouteWithChildren
+  ResetPasswordRoute: typeof ResetPasswordRoute
   TasksRoute: typeof TasksRoute
   TermsRoute: typeof TermsRoute
   WelcomeRoute: typeof WelcomeRoute
@@ -1889,6 +1902,13 @@ declare module '@tanstack/react-router' {
       path: '/tasks'
       fullPath: '/tasks'
       preLoaderRoute: typeof TasksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reports': {
@@ -3212,6 +3232,7 @@ const rootRouteChildren: RootRouteChildren = {
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
   ReportsRoute: ReportsRouteWithChildren,
+  ResetPasswordRoute: ResetPasswordRoute,
   TasksRoute: TasksRoute,
   TermsRoute: TermsRoute,
   WelcomeRoute: WelcomeRoute,

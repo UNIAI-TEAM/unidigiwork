@@ -35,6 +35,7 @@ function AuthPage() {
   const [reset, setReset] = useState(false);
   const [codeSent, setCodeSent] = useState(false);
   const [code, setCode] = useState("");
+  const [signupSent, setSignupSent] = useState(false);
 
   useEffect(() => {
     setReady(true);
@@ -52,7 +53,7 @@ function AuthPage() {
       if (reset) {
         if (!email.trim()) throw new Error(t("ac.17"));
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/auth`,
+          redirectTo: `${window.location.origin}/reset-password`,
         });
         if (error) throw error;
         toast.success(t("ac.15"));
@@ -83,12 +84,17 @@ function AuthPage() {
         return;
       }
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: { emailRedirectTo: window.location.origin, data: { display_name: name } },
         });
         if (error) throw error;
+        if (!data.session) {
+          setSignupSent(true);
+          toast.success(t("ac.9"));
+          return;
+        }
         toast.success(t("ac.9"));
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -124,40 +130,56 @@ function AuthPage() {
             <p className="font-heading text-lg font-bold leading-tight text-foreground">
               People + AI.
             </p>
-            <p className="text-xs text-muted-foreground">
-              Same Team. More Possibilities.
-            </p>
+            <p className="text-xs text-muted-foreground">Same Team. More Possibilities.</p>
           </div>
         </div>
       </div>
       <div className="mx-auto w-full max-w-sm rounded-2xl border border-border bg-card/95 p-5 shadow-panel backdrop-blur sm:p-8">
-        {reset ? (
-          <div className="mb-4">
-            <div className="text-sm font-semibold">{t("ac.12")}</div>
-            <p className="mt-1 text-xs text-muted-foreground">{t("ac.13")}</p>
-          </div>
-        ) : (
-          <div className="mb-5 flex rounded-xl bg-surface-2 p-1">
-            {(["signin", "code", "signup"] as const).map((m) => (
-              <button
-                key={m}
-                type="button"
-                onClick={() => {
-                  setMode(m);
-                  setCodeSent(false);
-                  setCode("");
-                }}
-                className={`min-h-10 flex-1 rounded-lg px-1 py-1.5 text-xs font-semibold sm:text-sm ${mode === m ? "bg-background text-foreground shadow-card" : "text-muted-foreground"}`}
-              >
-                {m === "signin" ? t("ac.1") : m === "code" ? t("otp.1") : t("ac.2")}
-              </button>
-            ))}
+        {signupSent && (
+          <div className="mb-4 space-y-3">
+            <div className="text-sm font-semibold">{t("pw.1")}</div>
+            <p className="text-xs text-muted-foreground">{t("pw.2")}</p>
+            <button
+              type="button"
+              onClick={() => {
+                setSignupSent(false);
+                setMode("signin");
+                setPassword("");
+              }}
+              className="min-h-10 w-full rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            >
+              {t("ac.16")}
+            </button>
           </div>
         )}
-        {!reset && mode === "code" && (
+        {!signupSent &&
+          (reset ? (
+            <div className="mb-4">
+              <div className="text-sm font-semibold">{t("ac.12")}</div>
+              <p className="mt-1 text-xs text-muted-foreground">{t("ac.13")}</p>
+            </div>
+          ) : (
+            <div className="mb-5 flex rounded-xl bg-surface-2 p-1">
+              {(["signin", "code", "signup"] as const).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => {
+                    setMode(m);
+                    setCodeSent(false);
+                    setCode("");
+                  }}
+                  className={`min-h-10 flex-1 rounded-lg px-1 py-1.5 text-xs font-semibold sm:text-sm ${mode === m ? "bg-background text-foreground shadow-card" : "text-muted-foreground"}`}
+                >
+                  {m === "signin" ? t("ac.1") : m === "code" ? t("otp.1") : t("ac.2")}
+                </button>
+              ))}
+            </div>
+          ))}
+        {!signupSent && !reset && mode === "code" && (
           <p className="mb-3 text-xs text-muted-foreground">{t("otp.2")}</p>
         )}
-        <form onSubmit={submit} noValidate={false} className="space-y-3">
+        <form onSubmit={submit} noValidate={false} className={signupSent ? "hidden" : "space-y-3"}>
           {!reset && mode === "signup" && (
             <div>
               <label className="mb-1 block text-xs font-medium">{t("ac.3")}</label>
