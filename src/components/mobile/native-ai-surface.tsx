@@ -140,20 +140,66 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
     },
   });
 
+  // ORCHESTRATION LAYER — hệ thống tự định tuyến yêu cầu: trả lời, hay chuẩn bị
+  // hành động và tự chọn Human/Agent thực hiện. Người dùng không chọn agent trước.
+  const runAction = async (value: string, actionType: string, executor: OrchestrationExecutor) => {
+    const root = contexts.find((item) => item.root)?.root;
+    setProposing(true);
+    setPendingText(value);
+    try {
+      const proposal = (await proposeFn({
+        data: {
+          query: value,
+          actionType,
+          source: "UNI_COPILOT",
+          workspaceId: workspaceId ?? null,
+          rootEntity: root ? { type: root.type, id: root.id } : null,
+          targetTaskId: root?.type === "TASK" ? root.id : null,
+        },
+      } as never)) as ProposedAiAction;
+      setTurns((current) => [
+        ...current,
+        { id: proposal.actionId, user: value, proposal, executor },
+      ]);
+      setContexts([]);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t("m.ai.proposeError"));
+    } finally {
+      setProposing(false);
+      setPendingText(null);
+    }
+  };
+
   const submit = (raw: string) => {
     const value = raw.trim();
-    if (!value || send.isPending) return;
+    if (!value || send.isPending || proposing) return;
     setInput("");
+    const route = routeRequest(value);
+    if (route.mode === "BLOCKED") {
+      setTurns((current) => [
+        ...current,
+        {
+          id: `blocked-${Date.now()}`,
+          user: value,
+          note: t(route.reason === "SEND_EMAIL" ? "m.ai.blocked.send" : "m.ai.blocked.delete"),
+        },
+      ]);
+      return;
+    }
+    if (route.mode === "ACTION") {
+      void runAction(value, route.actionType, route.executor);
+      return;
+    }
     setPendingText(value);
     send.mutate(value);
   };
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages.data?.length, pendingText]);
+  }, [messages.data?.length, pendingText, turns.length]);
 
   const displayMessages = (messages.data ?? []).filter((message) => message.role !== "system");
-  const isEmpty = displayMessages.length === 0 && !pendingText;
+  const isEmpty = displayMessages.length === 0 && !pendingText && turns.length === 0;
   const firstName = identity.displayName.trim().split(/\s+/).at(-1) || t("m.ai.user");
 
   return (
