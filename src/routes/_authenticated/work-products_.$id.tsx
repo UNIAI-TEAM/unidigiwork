@@ -385,6 +385,7 @@ function WorkProductDetail() {
       setDirty(false);
       setCompare({ before: res.beforeVersion, after: res.afterVersion });
       toast.success(t("wp.revise.done").replace("{n}", String(res.feedbackCount)));
+      void revisionFeedback.refetch();
       invalidate();
     },
     onError: (e: any) => {

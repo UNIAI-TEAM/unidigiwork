@@ -165,21 +165,19 @@ export const reviseWorkProductFromFeedback = createServerFn({ method: "POST" })
     if (upErr) mapPgError(upErr);
 
     // 5. Lưu chính những góp ý đã dùng cho lần soạn lại này (tra cứu lại về sau).
-    const { error: fbErr } = await context.supabase
-      .from("work_product_revision_feedback")
-      .insert(
-        items.map((i) => ({
-          tenant_id: product.tenant_id as string,
-          work_product_id: data.id,
-          before_version: beforeVersion,
-          after_version: afterVersion,
-          kind: i.kind,
-          feedback_status: i.status ?? null,
-          feedback_at: i.at || null,
-          body: i.text,
-          created_by: context.userId,
-        })),
-      );
+    const { error: fbErr } = await context.supabase.from("work_product_revision_feedback").insert(
+      items.map((i) => ({
+        tenant_id: product.tenant_id as string,
+        work_product_id: data.id,
+        before_version: beforeVersion,
+        after_version: afterVersion,
+        kind: i.kind,
+        feedback_status: i.status ?? null,
+        feedback_at: i.at || null,
+        body: i.text,
+        created_by: context.userId,
+      })),
+    );
     if (fbErr) mapPgError(fbErr);
 
     return {
