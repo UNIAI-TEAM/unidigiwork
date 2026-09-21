@@ -426,7 +426,9 @@ export const listWorkspaceTaskAttachments = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase
       .from("task_attachments")
-      .select("id, file_name, storage_path, mime_type, size_bytes, created_at, task_id, tasks!inner(id, title, workspace_id)")
+      .select(
+        "id, file_name, storage_path, mime_type, size_bytes, created_at, task_id, tasks!inner(id, title, workspace_id)",
+      )
       .eq("tasks.workspace_id", data.workspaceId)
       .order("created_at", { ascending: false })
       .limit(data.limit);
