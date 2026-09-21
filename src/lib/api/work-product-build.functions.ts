@@ -144,7 +144,7 @@ export const buildWorkProduct = createServerFn({ method: "POST" })
       data.brief.slice(0, 120)
     ).slice(0, 300);
 
-    // 2. Ghi vào bảng nguồn — trigger Work Graph chiếu bản ghi này thành node WORK_PRODUCT.
+    // 3. Ghi vào bảng nguồn — trigger Work Graph chiếu bản ghi này thành node WORK_PRODUCT.
     const { data: row, error } = await context.supabase
       .from("work_products")
       .insert({
