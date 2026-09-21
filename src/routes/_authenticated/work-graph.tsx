@@ -147,7 +147,10 @@ function WorkGraphPage() {
             <button
               key={id}
               type="button"
-              onClick={() => setTab(id)}
+              onClick={() => {
+                setTab(id);
+                setPage(1);
+              }}
               className={`flex h-8 items-center gap-1.5 rounded-md px-3 text-sm font-medium transition-colors ${
                 tab === id
                   ? "bg-background text-foreground shadow-sm"
