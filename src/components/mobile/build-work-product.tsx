@@ -42,6 +42,7 @@ export function BuildWorkProductBar({
     mutationFn: (kind: WorkProductBuildKind) =>
       buildFn({
         data: {
+          idempotencyKey: crypto.randomUUID(),
           kind,
           brief: brief.slice(0, 8000),
           ...(workspaceId ? { workspaceId } : {}),
