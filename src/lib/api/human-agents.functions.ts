@@ -128,6 +128,9 @@ async function loadAgents(ctx: Ctx, tenantId: string): Promise<HumanAgentDTO[]> 
         accountEmail,
         workEmail: typeof a?.["work_email"] === "string" ? (a["work_email"] as string) : "",
         role: m.role,
+        assignRole: ((ASSIGN_ROLES as readonly string[]).includes(String(a?.["assign_role"]))
+          ? (a?.["assign_role"] as AssignRole)
+          : "staff") as AssignRole,
         memberStatus: m.status,
         registered: Boolean(a),
         enabled: a ? Boolean(a["enabled"]) : false,
