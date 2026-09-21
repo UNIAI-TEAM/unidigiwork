@@ -18,6 +18,23 @@ import { getWorkGraphOverview, listWorkGraphBoard } from "@/lib/api/work-graph.f
 import type { WorkGraphBoardItem } from "@/lib/api/work-graph.functions";
 
 export const Route = createFileRoute("/_authenticated/work-graph")({
+  head: () => ({
+    meta: [
+      { title: "Work Graph — UNIWORK" },
+      {
+        name: "description",
+        content:
+          "Bản đồ công việc của tổ chức: công việc đang chạy, đã nghiệm thu và kết quả công việc đã liên kết.",
+      },
+      { property: "og:title", content: "Work Graph — UNIWORK" },
+      {
+        property: "og:description",
+        content: "Bản đồ công việc của tổ chức theo thời gian thực.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: WorkGraphPage,
 });
 
