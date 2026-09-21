@@ -237,3 +237,25 @@ export const removeHumanAgent = createServerFn({ method: "POST" })
     if (error) mapPgError(error, "PERMISSION_DENIED");
     return { agents: await loadAgents(ctx, tenant.tenantId) };
   });
+
+/** Bật/tắt quyền nhận việc của một vai trò trong tổ chức. */
+export const setHumanAgentRolePolicy = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({ role: z.enum(ASSIGN_ROLES), canReceiveTasks: z.boolean() }).parse(i),
+  )
+  .handler(async ({ data, context }): Promise<{ rolePolicies: Record<AssignRole, boolean> }> => {
+    const ctx = context as unknown as Ctx;
+    const tenant = await resolveTenant(ctx);
+    if (!tenant)
+      throw new ApiError({ code: "TENANT_ACCESS_DENIED", message: "TENANT_ACCESS_DENIED" });
+    if (!MANAGER_ROLES.includes(tenant.role))
+      throw new ApiError({ code: "PERMISSION_DENIED", message: "PERMISSION_DENIED" });
+    const { error } = await ctx.supabase.rpc("set_human_agent_role_policy", {
+      _tenant_id: tenant.tenantId,
+      _role: data.role,
+      _can_receive_tasks: data.canReceiveTasks,
+    });
+    if (error) mapPgError(error, "PERMISSION_DENIED");
+    return { rolePolicies: await loadRolePolicies(ctx, tenant.tenantId) };
+  });
