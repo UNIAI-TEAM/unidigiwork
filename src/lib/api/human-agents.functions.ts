@@ -179,6 +179,7 @@ const SaveInput = z.object({
   maxOpenTasks: z.number().int().min(1).max(200),
   note: z.string().trim().max(500).optional(),
   role: z.string().trim().max(40).optional(),
+  assignRole: z.enum(ASSIGN_ROLES).optional(),
 });
 
 /** Thêm/sửa một human agent (bật tham gia orchestration, lĩnh vực, email nhận việc, quyền). */
