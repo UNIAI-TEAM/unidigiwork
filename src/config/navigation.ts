@@ -32,6 +32,7 @@ import {
   Gavel,
   History,
   Waypoints,
+  UserCog,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { Key } from "@/lib/i18n";
