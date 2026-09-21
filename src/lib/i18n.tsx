@@ -417,6 +417,13 @@ const dict = {
     "tops.reassignFailed": "Không gán lại được người phụ trách.",
     "tops.graphNote":
       "Mỗi lần gán lại, liên kết người phụ trách trong Work Graph được cập nhật ngay.",
+    "tops.statusFilter": "Trạng thái",
+    "tops.statusAll": "Tất cả trạng thái",
+    "tops.total": "Tổng {n} việc",
+    "tops.pageOf": "Trang {p}/{n}",
+    "tops.prev": "Trước",
+    "tops.next": "Sau",
+    "tops.status.canceled": "Đã huỷ",
     "tops.status.todo": "Chờ làm",
     "tops.status.in_progress": "Đang làm",
     "tops.status.blocked": "Đang vướng",
