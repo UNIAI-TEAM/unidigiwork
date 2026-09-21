@@ -83,6 +83,7 @@ export function WorkProductRun({
               sourceEntities: argsRef.current.sourceEntities,
             },
           });
+          console.log("WPRUN resolved", kind, JSON.stringify(result).slice(0, 200), cancelled);
           if (cancelled) return;
           setStates((current) =>
             current.map((item) =>
