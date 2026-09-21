@@ -103,7 +103,10 @@ export const listTaskOpsBoard = createServerFn({ method: "GET" })
 
     const [assignRes, memberRes, nodeRes] = await Promise.all([
       ctx.supabase.from("task_assignees").select("task_id, user_id, role").in("task_id", taskIds),
-      ctx.supabase.from("workspace_members").select("workspace_id, user_id").in("workspace_id", wsIds),
+      ctx.supabase
+        .from("workspace_members")
+        .select("workspace_id, user_id")
+        .in("workspace_id", wsIds),
       ctx.supabase
         .from("work_nodes")
         .select("id, entity_id")
