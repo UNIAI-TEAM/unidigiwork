@@ -131,8 +131,10 @@ export async function pickHumanAssignee(args: {
       .match(EMAIL_RE)
       ?.map((value) => value.toLowerCase());
     if (mentioned?.length) {
-      const hit = (profiles ?? []).find((p: any) =>
-        mentioned.includes(String(p.email ?? "").toLowerCase()),
+      const hit = (profiles ?? []).find(
+        (p: any) =>
+          mentioned.includes(String(p.email ?? "").toLowerCase()) &&
+          roleAllowed(agentOf.get(p.id as string)?.assign_role),
       );
       if (hit) {
         return {
