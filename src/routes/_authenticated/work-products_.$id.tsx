@@ -1059,6 +1059,21 @@ function WorkProductDetail() {
                             </ul>
                           </div>
                         )}
+                        {data.versions.length > 1 && v.version !== data.versions[0].version && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="mt-2 mr-2"
+                            onClick={() =>
+                              setCompare({
+                                before: v.version,
+                                after: data.versions[0].version,
+                              })
+                            }
+                          >
+                            {t("wp.compare.open")}
+                          </Button>
+                        )}
                         {canEdit && (
                           <Button
                             size="sm"
