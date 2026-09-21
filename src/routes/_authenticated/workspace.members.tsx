@@ -107,7 +107,7 @@ function WorkspaceMembersPage() {
         data: { workspaceId, email: email.trim(), tenantRole, workspaceRole },
       }),
     onSuccess: (r) => {
-      setInviteLink(`${window.location.origin}/workspace/invite?token=${r.token}`);
+      setInviteLink(`${window.location.origin}/invite/${r.token}`);
       setEmail("");
       toast.success(`Đã tạo lời mời cho ${r.email}`);
       refresh();
