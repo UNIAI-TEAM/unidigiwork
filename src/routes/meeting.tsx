@@ -1573,8 +1573,10 @@ function createRoomErrorKey(err: unknown): Key {
   if (/QUOTA_EXCEEDED/.test(msg)) return "mtg.create.quota";
   if (/ENTITLEMENT_DENIED/.test(msg)) return "mtg.create.entitlement";
   if (/MEETING_TIME_INVALID|START_IN_PAST/.test(msg)) return "mtg.create.pastStart";
-  if (/TENANT_ACCESS_DENIED|NO_WORKSPACE|WORKSPACE_FORBIDDEN/.test(msg))
-    return "mtg.create.noWorkspace";
+  // Không còn gộp hai nguyên nhân: "không có workspace nào" khác hẳn với
+  // "workspace đang chọn không thuộc về bạn" (bộ lọc cũ còn sót lại).
+  if (/WORKSPACE_FORBIDDEN/.test(msg)) return "mtg.create.wsForbidden";
+  if (/TENANT_ACCESS_DENIED|NO_WORKSPACE/.test(msg)) return "mtg.create.noWorkspace";
   if (/PERMISSION_DENIED/.test(msg)) return "mtg.perm.denyManage";
   return "mtg.create.error";
 }
