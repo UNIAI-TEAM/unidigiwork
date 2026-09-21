@@ -12,6 +12,7 @@ import {
   Zap,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useI18n } from "@/lib/i18n";
 import { getWorkGraphOverview, listWorkGraphBoard } from "@/lib/api/work-graph.functions";
