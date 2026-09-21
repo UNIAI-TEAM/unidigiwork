@@ -418,8 +418,11 @@ function MobileWorkProductDetail() {
             </p>
             {graphEdges.length > 0 && (
               <ul className="mt-2 grid gap-1.5">
-                {graphEdges.slice(0, 20).map((e: any) => (
-                  <li key={e.id} className="flex items-center gap-2 text-[13px]">
+                {graphEdges.slice(0, 20).map((e: any, i: number) => (
+                  <li
+                    key={e.id ?? `${e.relationshipType ?? e.relationship_type}-${e.entityId ?? i}`}
+                    className="flex items-center gap-2 text-[13px]"
+                  >
                     <Badge variant="outline" className="shrink-0 text-[10px]">
                       {e.relationshipType ?? e.relationship_type}
                     </Badge>
