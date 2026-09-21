@@ -214,7 +214,10 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
   const lastMessage = displayMessages.at(-1);
   const lastUserRequest = [...displayMessages].reverse().find((m) => m.role === "user")?.content;
   const canBuildWorkProduct =
-    !send.isPending && !pendingText && lastMessage?.role === "assistant" && Boolean(lastUserRequest);
+    !send.isPending &&
+    !pendingText &&
+    lastMessage?.role === "assistant" &&
+    Boolean(lastUserRequest);
   const buildBrief = canBuildWorkProduct
     ? `${lastUserRequest}\n\nKẾT QUẢ AI VỪA HOÀN THÀNH:\n${lastMessage?.content ?? ""}`
     : "";
