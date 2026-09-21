@@ -126,6 +126,8 @@ export const meetingsHomeVi = {
   "mtg.create.pastStart":
     "Thời gian bắt đầu đã qua. Chọn lại mốc trong tương lai hoặc tick “Bắt đầu ngay”.",
   "mtg.create.noWorkspace": "Bạn chưa thuộc không gian làm việc nào để tạo phòng họp.",
+  "mtg.create.wsForbidden":
+    "Không gian làm việc đang chọn không còn thuộc về bạn. Hãy chọn lại không gian ở bộ lọc rồi tạo phòng.",
   "mtg.pin.filterCleared": "Đã gỡ bộ lọc để hiện cuộc họp vừa tạo.",
   "mtg.qr.title": "Bắt đầu họp ngay",
   "mtg.qr.desc": "Đặt tên và thời lượng cho phòng họp.",
