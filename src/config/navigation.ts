@@ -31,6 +31,7 @@ import {
   ClipboardList,
   Gavel,
   History,
+  Waypoints,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { Key } from "@/lib/i18n";
@@ -230,6 +231,16 @@ export const NAV_ITEMS: NavItem[] = [
     match: ["/work-approvals"],
     visibility: "everyone",
     order: 1.5,
+  },
+  {
+    id: "work-graph",
+    labelKey: "nav.workGraph",
+    icon: Waypoints,
+    href: "/work-graph",
+    group: "results",
+    match: ["/work-graph"],
+    visibility: "everyone",
+    order: 1.6,
   },
   {
     id: "documents",

@@ -29,7 +29,7 @@ const DONE_EXEC = new Set(["ACCEPTED", "SUCCEEDED"]);
 function isRunning(i: WorkGraphBoardItem) {
   if (i.type === "EXECUTION") return RUNNING_EXEC.has(i.status ?? "");
   if (i.type === "TASK") return RUNNING_TASK.has((i.status ?? "").toLowerCase());
-  return i.status === "IN_REVIEW" || i.status === "DRAFT" ? false : false;
+  return false;
 }
 
 function isDone(i: WorkGraphBoardItem) {
@@ -41,7 +41,7 @@ function isDone(i: WorkGraphBoardItem) {
 type Tab = "all" | "running" | "done" | "products";
 
 function WorkGraphPage() {
-  const { t, locale } = useI18n();
+  const { t, lang } = useI18n();
   const [tab, setTab] = useState<Tab>("all");
   const [q, setQ] = useState("");
 
@@ -79,7 +79,7 @@ function WorkGraphPage() {
   const statusLabel = (i: WorkGraphBoardItem) => {
     const s = i.status ?? "";
     const key = `wg.status.${i.type === "TASK" ? s.toLowerCase() : s}`;
-    const label = t(key as never);
+    const label = t(key as Parameters<typeof t>[0]);
     return label === key ? s : label;
   };
 
@@ -176,7 +176,7 @@ function WorkGraphPage() {
                         {i.links > 0 && ` · ${i.links} ${t("wg.links")}`}
                         {i.updatedAt &&
                           ` · ${new Date(i.updatedAt).toLocaleString(
-                            locale === "vi" ? "vi-VN" : "en-US",
+                            lang === "vi" ? "vi-VN" : "en-US",
                           )}`}
                       </span>
                     </span>
