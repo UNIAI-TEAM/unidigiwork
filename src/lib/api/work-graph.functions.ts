@@ -544,7 +544,8 @@ export const listWorkGraphBoard = createServerFn({ method: "GET" })
     const total = filtered.length;
     const start = (data.page - 1) * data.pageSize;
     const pageRows = filtered.slice(start, start + data.pageSize);
-    if (!pageRows.length) return { items: [], total, page: data.page, pageSize: data.pageSize, counts };
+    if (!pageRows.length)
+      return { items: [], total, page: data.page, pageSize: data.pageSize, counts };
 
     // Liên kết + tiến độ chỉ tính cho trang đang hiển thị (tránh quét toàn bộ graph).
     const pageNodeIds = pageRows.map((r) => r.nodeId);

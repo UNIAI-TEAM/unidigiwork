@@ -97,8 +97,12 @@ function WorkGraphPage() {
     const abs = Math.abs(ms);
     const days = Math.floor(abs / 86400000);
     const hours = Math.floor((abs % 86400000) / 3600000);
-    const span = days > 0 ? `${days}${t("wg.unitDay")}` : `${Math.max(1, hours)}${t("wg.unitHour")}`;
-    return { text: overdue ? t("wg.overdueBy").replace("{v}", span) : t("wg.leftIn").replace("{v}", span), overdue };
+    const span =
+      days > 0 ? `${days}${t("wg.unitDay")}` : `${Math.max(1, hours)}${t("wg.unitHour")}`;
+    return {
+      text: overdue ? t("wg.overdueBy").replace("{v}", span) : t("wg.leftIn").replace("{v}", span),
+      overdue,
+    };
   };
 
   const statusLabel = (i: WorkGraphBoardItem) => {
