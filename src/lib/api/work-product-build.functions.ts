@@ -127,7 +127,6 @@ export const buildWorkProduct = createServerFn({ method: "POST" })
       ],
     });
 
-
     const content = (result.text ?? "").trim();
     if (!content) {
       throw new ApiError({ code: "INTERNAL_ERROR", message: "WORK_PRODUCT_CONTENT_EMPTY" });
@@ -201,6 +200,5 @@ export const buildWorkProduct = createServerFn({ method: "POST" })
       citedSources: result.citedSources?.length ?? 0,
       linkedSources,
       learnedFromFeedback: learned.sampleCount,
-
     };
   });
