@@ -181,7 +181,11 @@ function AuthPage() {
         {!signupSent && !reset && mode === "code" && (
           <p className="mb-3 text-xs text-muted-foreground">{t("otp.2")}</p>
         )}
-        <form onSubmit={submit} noValidate={false} className="space-y-3">
+        <form
+          onSubmit={submit}
+          noValidate={false}
+          className={signupSent ? "hidden" : "space-y-3"}
+        >
           {!reset && mode === "signup" && (
             <div>
               <label className="mb-1 block text-xs font-medium">{t("ac.3")}</label>
