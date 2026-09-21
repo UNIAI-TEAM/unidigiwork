@@ -1054,6 +1054,13 @@ function QuickAddForm({
           ))}
         </select>
       </div>
+      <input
+        type="datetime-local"
+        value={due}
+        onChange={(e) => setDue(e.target.value)}
+        aria-label="Hạn chót"
+        className="min-h-11 w-full rounded-md bg-surface-2 px-2 py-1 text-xs hover:bg-surface-3 focus:outline-none"
+      />
       <div className="flex items-center justify-end gap-2">
         <button
           onClick={onCancel}
