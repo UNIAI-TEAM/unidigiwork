@@ -319,9 +319,7 @@ export function ExecutionObserver({
         </div>
       )}
 
-      {(latest.status === "WAITING_REVIEW" ||
-        latest.status === "CHANGES_REQUESTED" ||
-        failed) && (
+      {(latest.status === "WAITING_REVIEW" || latest.status === "CHANGES_REQUESTED" || failed) && (
         <Button
           size="sm"
           variant="outline"
