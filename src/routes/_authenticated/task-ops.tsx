@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Loader2, Search, UserCog, Waypoints } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -39,16 +40,40 @@ export const Route = createFileRoute("/_authenticated/task-ops")({
   component: TaskOpsPage,
 });
 
+const PAGE_SIZE = 25;
+const STATUS_OPTIONS = ["todo", "in_progress", "blocked", "done", "canceled"] as const;
+
 function TaskOpsPage() {
   const { t, lang } = useI18n();
   const qc = useQueryClient();
   const [q, setQ] = useState("");
+  const [term, setTerm] = useState("");
+  const [status, setStatus] = useState<string>("all");
   const [includeDone, setIncludeDone] = useState(false);
+  const [page, setPage] = useState(1);
   const [pending, setPending] = useState<string | null>(null);
 
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setTerm(q.trim());
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(id);
+  }, [q]);
+
   const board = useQuery({
-    queryKey: ["task-ops-board", includeDone],
-    queryFn: () => listTaskOpsBoard({ data: { includeDone } }),
+    queryKey: ["task-ops-board", includeDone, status, term, page],
+    queryFn: () =>
+      listTaskOpsBoard({
+        data: {
+          includeDone,
+          statuses: status === "all" ? [] : [status as (typeof STATUS_OPTIONS)[number]],
+          search: term,
+          page,
+          pageSize: PAGE_SIZE,
+        },
+      }),
+    placeholderData: (prev) => prev,
   });
 
   const reassign = useMutation({
@@ -73,16 +98,9 @@ function TaskOpsPage() {
   const tasks = board.data?.tasks ?? [];
   const members = board.data?.members ?? {};
 
-  const visible = useMemo(() => {
-    const term = q.trim().toLowerCase();
-    if (!term) return tasks;
-    return tasks.filter(
-      (item) =>
-        item.title.toLowerCase().includes(term) ||
-        item.workspaceName.toLowerCase().includes(term) ||
-        item.assignees.some((a) => a.name.toLowerCase().includes(term)),
-    );
-  }, [tasks, q]);
+  const visible = tasks;
+  const total = board.data?.total ?? 0;
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const overdue = tasks.filter((item) => item.overdue).length;
   const unassigned = tasks.filter((item) => item.assignees.length === 0).length;
@@ -105,7 +123,7 @@ function TaskOpsPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <Badge variant="secondary">
-            {t("tops.statRunning")}: {tasks.length}
+            {t("tops.statRunning")}: {total}
           </Badge>
           <Badge variant={overdue > 0 ? "destructive" : "secondary"}>
             {t("tops.statOverdue")}: {overdue}
@@ -117,11 +135,34 @@ function TaskOpsPage() {
       </div>
 
       <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-3">
           <Switch id="tops-done" checked={includeDone} onCheckedChange={setIncludeDone} />
           <Label htmlFor="tops-done" className="text-sm text-muted-foreground">
             {t("tops.includeDone")}
           </Label>
+          <Select
+            value={status}
+            onValueChange={(v) => {
+              setStatus(v);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger className="h-9 w-44" aria-label={t("tops.statusFilter")}>
+              <SelectValue placeholder={t("tops.statusAll")} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("tops.statusAll")}</SelectItem>
+              {STATUS_OPTIONS.map((s) => {
+                const key = `tops.status.${s}` as Parameters<typeof t>[0];
+                const label = t(key);
+                return (
+                  <SelectItem key={s} value={s}>
+                    {label === key ? s : label}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
         </div>
         <div className="relative sm:w-72">
           <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -214,6 +255,30 @@ function TaskOpsPage() {
             })}
           </ul>
         )}
+      </div>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+        <span className="text-xs text-muted-foreground">
+          {t("tops.total").replace("{n}", String(total))} ·{" "}
+          {t("tops.pageOf").replace("{p}", String(page)).replace("{n}", String(pageCount))}
+        </span>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={page <= 1 || board.isFetching}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+          >
+            {t("tops.prev")}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={page >= pageCount || board.isFetching}
+            onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+          >
+            {t("tops.next")}
+          </Button>
+        </div>
       </div>
       <p className="mt-3 text-xs text-muted-foreground">{t("tops.graphNote")}</p>
     </div>

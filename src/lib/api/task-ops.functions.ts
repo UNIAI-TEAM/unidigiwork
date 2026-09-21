@@ -35,7 +35,12 @@ export type TaskOpsBoard = {
   tenantId: string | null;
   tasks: TaskOpsItem[];
   members: Record<string, TaskOpsPerson[]>;
+  total: number;
+  page: number;
+  pageSize: number;
 };
+
+export const TASK_OPS_STATUSES = ["todo", "in_progress", "blocked", "done", "canceled"] as const;
 
 type Ctx = { supabase: any; userId: string };
 
@@ -57,14 +62,23 @@ export const listTaskOpsBoard = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
     z
-      .object({ includeDone: z.boolean().default(false) })
-      .default({ includeDone: false })
+      .object({
+        includeDone: z.boolean().default(false),
+        statuses: z.array(z.enum(TASK_OPS_STATUSES)).default([]),
+        search: z.string().max(200).default(""),
+        page: z.number().int().min(1).default(1),
+        pageSize: z.number().int().min(10).max(100).default(25),
+      })
+      .default({ includeDone: false, statuses: [], search: "", page: 1, pageSize: 25 })
       .parse(i ?? {}),
   )
   .handler(async ({ data, context }): Promise<TaskOpsBoard> => {
     const ctx = context as unknown as Ctx;
+    const page = data.page;
+    const pageSize = data.pageSize;
+    const empty = { tasks: [], members: {}, total: 0, page, pageSize };
     const tenantId = await resolveTenant(ctx);
-    if (!tenantId) return { tenantId: null, tasks: [], members: {} };
+    if (!tenantId) return { tenantId: null, ...empty };
 
     // Workspace trong phạm vi quyền (RLS lọc).
     const { data: wsRows, error: wsErr } = await ctx.supabase
@@ -74,14 +88,23 @@ export const listTaskOpsBoard = createServerFn({ method: "GET" })
       .limit(200);
     if (wsErr) mapPgError(wsErr);
     const workspaces = (wsRows ?? []) as Array<{ id: string; name: string }>;
-    if (workspaces.length === 0) return { tenantId, tasks: [], members: {} };
+    if (workspaces.length === 0) return { tenantId, ...empty };
     const wsName = new Map(workspaces.map((w) => [w.id, w.name]));
     const wsIds = workspaces.map((w) => w.id);
 
-    const { data: taskRows, error: tErr } = await ctx.supabase.rpc("list_tenant_open_tasks", {
+    const statuses =
+      data.statuses.length > 0
+        ? data.statuses
+        : data.includeDone
+          ? ["todo", "in_progress", "blocked", "done"]
+          : ["todo", "in_progress", "blocked"];
+
+    const { data: taskRows, error: tErr } = await ctx.supabase.rpc("list_tenant_tasks_page", {
       _tenant_id: tenantId,
-      _include_done: data.includeDone,
-      _limit: 300,
+      _statuses: statuses,
+      _search: data.search || null,
+      _limit: pageSize,
+      _offset: (page - 1) * pageSize,
     });
     if (tErr) mapPgError(tErr, "TENANT_ACCESS_DENIED");
     const tasks = (taskRows ?? []) as Array<{
@@ -92,8 +115,10 @@ export const listTaskOpsBoard = createServerFn({ method: "GET" })
       workspace_id: string;
       due_at: string | null;
       updated_at: string | null;
+      total_count: number;
     }>;
-    if (tasks.length === 0) return { tenantId, tasks: [], members: {} };
+    const total = Number(tasks[0]?.total_count ?? 0);
+    if (tasks.length === 0) return { tenantId, ...empty, total };
     const taskIds = tasks.map((t) => t.id);
 
     const [assignRes, memberRes, nodeRes] = await Promise.all([
@@ -181,6 +206,9 @@ export const listTaskOpsBoard = createServerFn({ method: "GET" })
     return {
       tenantId,
       members,
+      total,
+      page,
+      pageSize,
       tasks: tasks.map((t) => ({
         id: t.id,
         title: t.title,
