@@ -62,14 +62,23 @@ export const listTaskOpsBoard = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
     z
-      .object({ includeDone: z.boolean().default(false) })
-      .default({ includeDone: false })
+      .object({
+        includeDone: z.boolean().default(false),
+        statuses: z.array(z.enum(TASK_OPS_STATUSES)).default([]),
+        search: z.string().max(200).default(""),
+        page: z.number().int().min(1).default(1),
+        pageSize: z.number().int().min(10).max(100).default(25),
+      })
+      .default({ includeDone: false, statuses: [], search: "", page: 1, pageSize: 25 })
       .parse(i ?? {}),
   )
   .handler(async ({ data, context }): Promise<TaskOpsBoard> => {
     const ctx = context as unknown as Ctx;
+    const page = data.page;
+    const pageSize = data.pageSize;
+    const empty = { tasks: [], members: {}, total: 0, page, pageSize };
     const tenantId = await resolveTenant(ctx);
-    if (!tenantId) return { tenantId: null, tasks: [], members: {} };
+    if (!tenantId) return { tenantId: null, ...empty };
 
     // Workspace trong phạm vi quyền (RLS lọc).
     const { data: wsRows, error: wsErr } = await ctx.supabase
