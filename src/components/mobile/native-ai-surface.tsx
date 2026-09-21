@@ -351,7 +351,7 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
             disabled={!input.trim() || send.isPending || proposing}
             onClick={() => submit(input)}
           >
-            {send.isPending ? (
+            {send.isPending || proposing ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <ArrowUp className="h-4 w-4" />
