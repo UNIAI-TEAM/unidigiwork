@@ -18,6 +18,7 @@ import {
   Database,
   Coins,
   BadgeDollarSign,
+  Building2,
 } from "lucide-react";
 import { AppSidebar, AppTopbar } from "@/components/app-shell";
 import { useAdminAccess } from "@/features/admin/access";
@@ -35,6 +36,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
 
 const TABS = [
   { to: "/admin" as const, label: "adm.tab.overview", icon: LayoutGrid, exact: true },
+  { to: "/admin/platform" as const, label: "Platform", icon: Building2 },
   { to: "/admin/users" as const, label: "adm.tab.users", icon: Users },
   { to: "/admin/accounts" as const, label: "acct.title", icon: UserCog },
   { to: "/admin/document-access" as const, label: "acc.tab", icon: ShieldCheck },
