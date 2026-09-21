@@ -94,6 +94,8 @@ import {
   unshareWorkProduct,
   updateWorkProductShare,
 } from "@/lib/api/work-deliverables.functions";
+import { reviseWorkProductFromFeedback } from "@/lib/api/work-product-revise.functions";
+import { VersionCompare } from "@/components/work-products/version-compare";
 
 export const Route = createFileRoute("/_authenticated/work-products_/$id")({
   head: () => ({
@@ -238,6 +240,8 @@ function WorkProductDetail() {
   const [leftPanelOpen, setLeftPanelOpen] = useState(false);
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
+  // So sánh bản trước / bản sau khi AI soạn lại theo góp ý.
+  const [compare, setCompare] = useState<{ before: number; after: number } | null>(null);
 
   const { data: documents } = useQuery({
     queryKey: ["work-deliverables", { limit: 60 }],
@@ -363,6 +367,30 @@ function WorkProductDetail() {
       invalidate();
     },
     onError: () => toast.error(t("wp.saveFailed")),
+  });
+
+  /** AI soạn lại toàn văn theo góp ý ĐÃ XỬ LÝ, giữ bản trước để so sánh. */
+  const revise = useMutation({
+    mutationFn: async () => {
+      if (dirty)
+        await updateWorkDeliverable({ data: { id, title: title.trim() || undefined, content } });
+      return reviseWorkProductFromFeedback({
+        data: { idempotencyKey: crypto.randomUUID(), id },
+      });
+    },
+    onSuccess: (res) => {
+      setDirty(false);
+      setCompare({ before: res.beforeVersion, after: res.afterVersion });
+      toast.success(t("wp.revise.done").replace("{n}", String(res.feedbackCount)));
+      invalidate();
+    },
+    onError: (e: any) => {
+      toast.error(
+        String(e?.message ?? "").includes("NO_PROCESSED_FEEDBACK")
+          ? t("wp.revise.none")
+          : t("wp.revise.failed"),
+      );
+    },
   });
 
   const exportArtifact = useMutation({
@@ -974,6 +1002,29 @@ function WorkProductDetail() {
 
                   {/* Phiên bản */}
                   <TabsContent value="versions" className="mt-0 space-y-2">
+                    {canEdit && (
+                      <div className="rounded-lg border bg-background p-3">
+                        <p className="text-sm font-medium">{t("wp.revise.action")}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">{t("wp.revise.hint")}</p>
+                        <Button
+                          size="sm"
+                          className="mt-2 gap-1"
+                          disabled={revise.isPending}
+                          onClick={() => revise.mutate()}
+                        >
+                          <Sparkles className="h-3.5 w-3.5" />
+                          {revise.isPending ? t("wp.revise.running") : t("wp.revise.action")}
+                        </Button>
+                      </div>
+                    )}
+                    {compare && (
+                      <VersionCompare
+                        id={id}
+                        beforeVersion={compare.before}
+                        afterVersion={compare.after}
+                        onClose={() => setCompare(null)}
+                      />
+                    )}
                     {data.versions.length === 0 && (
                       <p className="text-sm text-muted-foreground">{t("wp.versions.empty")}</p>
                     )}
@@ -1007,6 +1058,21 @@ function WorkProductDetail() {
                               ))}
                             </ul>
                           </div>
+                        )}
+                        {data.versions.length > 1 && v.version !== data.versions[0].version && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="mt-2 mr-2"
+                            onClick={() =>
+                              setCompare({
+                                before: v.version,
+                                after: data.versions[0].version,
+                              })
+                            }
+                          >
+                            {t("wp.compare.open")}
+                          </Button>
                         )}
                         {canEdit && (
                           <Button
