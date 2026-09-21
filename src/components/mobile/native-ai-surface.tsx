@@ -48,7 +48,7 @@ type OrchestrationTurn = {
   note?: string;
   proposal?: ProposedAiAction;
   executor?: OrchestrationExecutor;
-  executed?: { taskId: string; agentName?: string };
+  executed?: { taskId: string; agentName?: string; humanName?: string };
 };
 
 type AddedContext = {
