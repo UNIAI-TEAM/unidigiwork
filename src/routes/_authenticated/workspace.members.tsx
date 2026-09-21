@@ -10,10 +10,7 @@ import {
   setWorkspaceMemberRole,
   removeWorkspaceMember,
 } from "@/lib/api/workspaces.functions";
-import {
-  inviteUserToWorkspace,
-  listWorkspaceInvites,
-} from "@/lib/api/workspace-invites.functions";
+import { inviteUserToWorkspace, listWorkspaceInvites } from "@/lib/api/workspace-invites.functions";
 
 export const Route = createFileRoute("/_authenticated/workspace/members")({
   head: () => ({
@@ -56,7 +53,11 @@ const inputCls =
 
 function fmtDate(v: string | null): string {
   if (!v) return "—";
-  return new Date(v).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
+  return new Date(v).toLocaleDateString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
 }
 
 function WorkspaceMembersPage() {
@@ -69,11 +70,17 @@ function WorkspaceMembersPage() {
   const [workspaceRole, setWorkspaceRole] = useState<"owner" | "member">("member");
   const [inviteLink, setInviteLink] = useState<string | null>(null);
 
-  const workspacesQ = useQuery({ queryKey: ["workspaces", "list"], queryFn: () => listWorkspaces() });
+  const workspacesQ = useQuery({
+    queryKey: ["workspaces", "list"],
+    queryFn: () => listWorkspaces(),
+  });
   const workspaces = workspacesQ.data ?? [];
 
   useEffect(() => {
-    if (ws && ws !== workspaceId) { setWorkspaceId(ws); return; }
+    if (ws && ws !== workspaceId) {
+      setWorkspaceId(ws);
+      return;
+    }
     if (!workspaceId && workspaces.length) setWorkspaceId(workspaces[0]!.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workspaces, ws]);
