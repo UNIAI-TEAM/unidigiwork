@@ -78,6 +78,18 @@ function HumanAgentsPage() {
   const list = useQuery({ queryKey: ["human-agents"], queryFn: () => listHumanAgents() });
   const canManage = list.data?.canManage ?? false;
   const agents = useMemo(() => list.data?.agents ?? [], [list.data]);
+  const rolePolicies = list.data?.rolePolicies ?? { admin: true, manager: true, staff: true };
+
+  const savePolicy = useMutation({
+    mutationFn: (v: { role: AssignRole; canReceiveTasks: boolean }) =>
+      setHumanAgentRolePolicy({ data: v }),
+    onSuccess: () => {
+      toast.success(t("ha.policySaved"));
+      void qc.invalidateQueries({ queryKey: ["human-agents"] });
+    },
+    onError: () => toast.error(t("ha.error")),
+  });
+
 
   const save = useMutation({
     mutationFn: (d: Draft) =>
