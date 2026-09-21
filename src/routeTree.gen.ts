@@ -46,6 +46,7 @@ import { Route as AuthenticatedWorkGraphRouteImport } from './routes/_authentica
 import { Route as AuthenticatedWorkCatalogRouteImport } from './routes/_authenticated/work-catalog'
 import { Route as AuthenticatedWorkBoardRouteImport } from './routes/_authenticated/work-board'
 import { Route as AuthenticatedWorkApprovalsRouteImport } from './routes/_authenticated/work-approvals'
+import { Route as AuthenticatedTaskOpsRouteImport } from './routes/_authenticated/task-ops'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSearchRouteImport } from './routes/_authenticated/search'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
@@ -344,6 +345,11 @@ const AuthenticatedWorkApprovalsRoute =
     path: '/work-approvals',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedTaskOpsRoute = AuthenticatedTaskOpsRouteImport.update({
+  id: '/task-ops',
+  path: '/task-ops',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -993,6 +999,7 @@ export interface FileRoutesByFullPath {
   '/projects': typeof AuthenticatedProjectsRoute
   '/search': typeof AuthenticatedSearchRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/task-ops': typeof AuthenticatedTaskOpsRoute
   '/work-approvals': typeof AuthenticatedWorkApprovalsRoute
   '/work-board': typeof AuthenticatedWorkBoardRoute
   '/work-catalog': typeof AuthenticatedWorkCatalogRoute
@@ -1138,6 +1145,7 @@ export interface FileRoutesByTo {
   '/projects': typeof AuthenticatedProjectsRoute
   '/search': typeof AuthenticatedSearchRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/task-ops': typeof AuthenticatedTaskOpsRoute
   '/work-approvals': typeof AuthenticatedWorkApprovalsRoute
   '/work-board': typeof AuthenticatedWorkBoardRoute
   '/work-catalog': typeof AuthenticatedWorkCatalogRoute
@@ -1288,6 +1296,7 @@ export interface FileRoutesById {
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
   '/_authenticated/search': typeof AuthenticatedSearchRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/task-ops': typeof AuthenticatedTaskOpsRoute
   '/_authenticated/work-approvals': typeof AuthenticatedWorkApprovalsRoute
   '/_authenticated/work-board': typeof AuthenticatedWorkBoardRoute
   '/_authenticated/work-catalog': typeof AuthenticatedWorkCatalogRoute
@@ -1438,6 +1447,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/search'
     | '/settings'
+    | '/task-ops'
     | '/work-approvals'
     | '/work-board'
     | '/work-catalog'
@@ -1583,6 +1593,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/search'
     | '/settings'
+    | '/task-ops'
     | '/work-approvals'
     | '/work-board'
     | '/work-catalog'
@@ -1732,6 +1743,7 @@ export interface FileRouteTypes {
     | '/_authenticated/projects'
     | '/_authenticated/search'
     | '/_authenticated/settings'
+    | '/_authenticated/task-ops'
     | '/_authenticated/work-approvals'
     | '/_authenticated/work-board'
     | '/_authenticated/work-catalog'
@@ -2146,6 +2158,13 @@ declare module '@tanstack/react-router' {
       path: '/work-approvals'
       fullPath: '/work-approvals'
       preLoaderRoute: typeof AuthenticatedWorkApprovalsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/task-ops': {
+      id: '/_authenticated/task-ops'
+      path: '/task-ops'
+      fullPath: '/task-ops'
+      preLoaderRoute: typeof AuthenticatedTaskOpsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/settings': {
@@ -3088,6 +3107,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
   AuthenticatedSearchRoute: typeof AuthenticatedSearchRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedTaskOpsRoute: typeof AuthenticatedTaskOpsRoute
   AuthenticatedWorkApprovalsRoute: typeof AuthenticatedWorkApprovalsRoute
   AuthenticatedWorkBoardRoute: typeof AuthenticatedWorkBoardRoute
   AuthenticatedWorkCatalogRoute: typeof AuthenticatedWorkCatalogRoute
@@ -3143,6 +3163,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
   AuthenticatedSearchRoute: AuthenticatedSearchRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedTaskOpsRoute: AuthenticatedTaskOpsRoute,
   AuthenticatedWorkApprovalsRoute: AuthenticatedWorkApprovalsRoute,
   AuthenticatedWorkBoardRoute: AuthenticatedWorkBoardRoute,
   AuthenticatedWorkCatalogRoute: AuthenticatedWorkCatalogRoute,
