@@ -10,6 +10,26 @@ Drawer → Composer → Context → Conversation / Execution Stream → Review �
 
 Người dùng không cần hiểu cấu trúc module. Họ mở UNIWORK, nói điều muốn hoàn thành, bổ sung ngữ cảnh, quan sát Human + AI thực thi, duyệt kết quả và nhận Work Product.
 
+**Định vị UX:** `Tell UniWork what you want done.`
+
+**Interaction canon:**
+
+```text
+Open → Ask → Add Context → Execute → Observe → Approve → Receive Work Product → Remember
+```
+
+### Ba nguyên tắc bất biến
+1. **Conversation không phải sản phẩm cuối.** Chat là giao diện điều khiển; đích đến có thể là action, decision hoặc Work Product.
+2. **AI Agent không phải app.** AI Workforce thuộc orchestration layer; UNIWORK chọn Human/Agent phù hợp và chỉ expose execution khi cần quan sát hoặc can thiệp.
+3. **Work Graph là memory layer.** Composer truy cập ngữ cảnh công việc có quyền hạn gồm people, email, meeting, task, decision, document, execution và Work Product; `+ → Add Context → From UniWork` là interaction cốt lõi.
+
+### Những gì không được quay lại
+- Không bottom tabs.
+- Không dashboard card hoặc module shortcuts trên Home.
+- Không agent picker trước khi giao mục tiêu.
+- Không coi Chat/My AI là một module ngang hàng với các module nghiệp vụ.
+- Không để routing duy trì tư duy module sau khi UI đã chuyển sang Native AI.
+
 ## Đánh giá hiện trạng
 
 ### Có thể tái sử dụng
@@ -38,7 +58,9 @@ Người dùng không cần hiểu cấu trúc module. Họ mở UNIWORK, nói �
 - Nội dung giữa header và composer là conversation, execution stream hoặc object detail.
 
 ### Home / My AI hợp nhất
-- Route vào chính là một conversation surface duy nhất.
+- Route canon là `/m`: một root conversation surface duy nhất.
+- Conversation có URL `/m/c/:id` để mở lại, chia sẻ nội bộ và giữ lịch sử.
+- `/m/home` và `/m/ai` là URL tương thích cũ, redirect vào `/m` hoặc conversation tương ứng; không còn là hai khái niệm sản phẩm.
 - Trạng thái chưa có conversation:
   - Lời chào cá nhân theo thời điểm.
   - Bốn contextual starters: **Plan my day · Catch me up · Prepare me · Create something**.
@@ -114,18 +136,21 @@ Intent → Context → Execution → Review → Work Product → Work Graph
 - Xác nhận batch PWA/UI được phê duyệt vì Blueprint hiện ghi Giai đoạn 0 cấm thêm/chỉnh UI.
 - Chốt activity contract cho Inbox và execution event contract bằng cách tái sử dụng nguồn hiện có; không tạo writer song song.
 - Lập mapping route cũ → interaction model mới để giữ deep link và không làm mất chức năng.
+- Khóa URL contract `/m` và `/m/c/:id`; xác định redirect vĩnh viễn cho `/m/home`, `/m/ai` và hành vi mở shortcut PWA.
 
 **Nghiệm thu:** không xung đột Blueprint; không schema mới ngoài batch duyệt; mọi command quan trọng vẫn qua trusted boundary.
 
 ### Đợt 1 — Native AI shell và conversation home
 - Bỏ bottom navigation khỏi mobile shell.
 - Tạo header `☰ UNIWORK New`, drawer đúng thứ tự đã khóa và composer cố định.
-- Hợp nhất `/m/home` và `/m/ai` về một conversation surface; giữ redirect tương thích cho URL cũ.
+- Tạo route canon `/m` và `/m/c/:id`; chuyển nội dung Home/My AI vào root surface rồi redirect URL cũ.
 - Trạng thái rỗng có lời chào + bốn starter; khi bắt đầu conversation, starter biến mất.
 - Thêm Add Context bottom sheet đủ 5 nguồn ngay trong đợt này.
 - Dùng lại UNI Copilot conversation engine thay vì tạo chatbot thứ hai.
 
 **Nghiệm thu:** mở app → nhập yêu cầu hoặc chọn starter → stream xuất hiện; drawer/composer hoạt động ở 390, 440 và 820px; bàn phím không che ô nhập; mọi hit area ≥44px.
+
+**Nghiệm thu URL:** mở trực tiếp hoặc refresh `/m/c/:id` giữ đúng conversation; `/m/home` và `/m/ai` không tạo surface riêng; shortcut PWA mở `/m`.
 
 ### Đợt 2 — Context và conversation stream
 - Context chips, xem trước, gỡ, upload progress và permission errors.
@@ -220,3 +245,4 @@ Kèm tiêu chí bắt buộc:
 - Dữ liệu thật, permission-aware, tenant-safe; không mock, direct-write hoặc dual-write.
 - AI có nguồn và freshness; mutation cần xác nhận; retry idempotent.
 - PWA cài đặt, cập nhật, offline read-only và push hoạt động trên bản phát hành.
+- URL phản ánh đúng mô hình Native AI: một root `/m`, conversation `/m/c/:id`, URL module cũ chỉ redirect tương thích.

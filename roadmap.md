@@ -43,8 +43,10 @@
 ## PWA Native AI
 
 - [ ] Hợp nhất Home và My AI thành conversation/execution surface
+- [ ] Chuẩn hóa URL canon: `/m` và `/m/c/:id`; redirect `/m/home`, `/m/ai` vào root surface
 - [ ] Thay bottom navigation bằng header tối giản, drawer và composer cố định
 - [ ] Chuẩn hóa Add Context sheet: Photos & Files, Camera, From UniWork, People & AI, Connect apps
 - [ ] Chuyển My Box thành Inbox theo Needs attention / Working / In review
 - [ ] Hiển thị AI Team như execution layer theo tiến độ, không phải destination chính
 - [ ] Hoàn thiện luồng Intent → Context → Execution → Review → Work Product → Work Graph
+- [ ] Giữ interaction canon: Open → Ask → Add Context → Execute → Observe → Approve → Receive Work Product → Remember
