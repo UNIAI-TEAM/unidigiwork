@@ -200,5 +200,7 @@ export const buildWorkProduct = createServerFn({ method: "POST" })
       href: `/work-products/${workProductId}`,
       citedSources: result.citedSources?.length ?? 0,
       linkedSources,
+      learnedFromFeedback: learned.sampleCount,
+
     };
   });
