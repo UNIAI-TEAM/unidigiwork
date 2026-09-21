@@ -146,10 +146,25 @@ export const buildWorkProduct = createServerFn({ method: "POST" })
     if (error) mapPgError(error);
     const workProductId = row.id as string;
 
-    // 3. Provenance: chỉ liên kết với thực thể có thật mà actor đã đính kèm.
+    // 3. Provenance: liên kết với thực thể actor đính kèm VÀ nguồn thật mà bản
+    //    soạn đã trích dẫn (lịch họp, tài liệu, công việc) — không suy diễn.
+    const LINKABLE = new Set(["TASK", "DOCUMENT", "MEETING", "MEETING_ARTIFACT"]);
     const linkedSources: Array<{ type: string; id: string }> = [];
-    for (const entity of data.sourceEntities) {
-      if (entity.type === "WORKSPACE" || entity.type === "TENANT") continue;
+    const seen = new Set<string>();
+
+    const candidates: Array<{ type: string; id: string }> = [
+      ...data.sourceEntities.map((e) => ({ type: e.type as string, id: e.id })),
+      ...(result.citedSources ?? []).map((s) => ({
+        type: s.entityType as string,
+        id: s.entityId,
+      })),
+    ];
+
+    for (const entity of candidates) {
+      if (!LINKABLE.has(entity.type)) continue;
+      const key = `${entity.type}:${entity.id}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
       const { error: linkError } = await context.supabase.rpc("link_work_entities", {
         _source_type: "WORK_PRODUCT",
         _source_id: workProductId,
