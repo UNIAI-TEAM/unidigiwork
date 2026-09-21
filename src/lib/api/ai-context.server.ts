@@ -688,37 +688,128 @@ export async function buildAiContextPack(
 
   /* --- PHASE E2: fallback "hiện trạng công việc" ---
      Câu hỏi tổng quan ("tình hình công việc tuần này") không khớp lexical với
-     bất kỳ title nào → search trả 0 và AI kết luận sai là "không có nguồn".
-     Khi không có root/pinned/search hit, nạp các việc đang mở gần nhất trong
-     phạm vi RLS của actor làm nguồn thật (không suy diễn nội dung). */
-  if (!root && candidates.length === 0 && !searchItems.length) {
+     bất kỳ title nào → search trả 0/rất ít và AI kết luận sai là "không có nguồn".
+     Khi chưa có root và tổng nguồn còn mỏng, nạp các thực thể thật gần nhất
+     trong phạm vi RLS của actor: việc đang chạy trước, rồi họp, tài liệu và
+     kết quả công việc (không suy diễn nội dung). */
+  const THIN_SOURCES = 5;
+  if (!root && candidates.length + searchItems.length < THIN_SOURCES) {
     const tRecent = Date.now();
-    let q = supabase
+    const seen = new Set(candidates.map((c) => `${c.type}:${c.id}`));
+    for (const item of searchItems) {
+      const t = SEARCH_TO_GRAPH[item.entityType];
+      if (t) seen.add(`${t}:${item.id}`);
+    }
+    const push = (c: Candidate) => {
+      const k = `${c.type}:${c.id}`;
+      if (seen.has(k)) return;
+      seen.add(k);
+      candidates.push(c);
+    };
+
+    // 1) Việc đang mở — việc đang chạy/bị chặn được ưu tiên cao hơn việc chờ.
+    let qTasks = supabase
       .from("tasks")
       .select("id,title,description,status,due_at,updated_at")
       .eq("tenant_id", tenantId)
       .is("deleted_at", null)
       .neq("status", "done")
+      .neq("status", "canceled")
       .order("updated_at", { ascending: false })
       .limit(AI_CONTEXT_POLICY.searchCandidates);
-    if (request.workspaceId) q = q.eq("workspace_id", request.workspaceId);
-    const { data: recentRows, error: recentError } = await q;
+    if (request.workspaceId) qTasks = qTasks.eq("workspace_id", request.workspaceId);
+    const { data: recentRows, error: recentError } = await qTasks;
     if (recentError) failures.push("RECENT_WORK");
     else {
       for (const row of (recentRows ?? []) as Array<Record<string, any>>) {
-        candidates.push({
+        const status = String(row["status"] ?? "");
+        const running = status === "in_progress" || status === "blocked";
+        push({
           type: "TASK",
           id: String(row["id"]),
           title: String(row["title"] ?? "(không tiêu đề)"),
-          snippet: String(row["description"] ?? "").slice(0, 280),
+          snippet: `[${status}] ${String(row["description"] ?? "")}`.slice(0, 280),
           updatedAt: (row["updated_at"] as string | null) ?? null,
-          lexical: 0.35,
+          lexical: running ? 0.6 : 0.35,
+          relationship: "SEARCH_MATCH",
+          graphDistance: running ? 1 : 2,
+        });
+      }
+    }
+
+    // 2) Họp gần nhất
+    let qMeetings = supabase
+      .from("meetings")
+      .select("id,title,agenda,status,start_at,updated_at")
+      .eq("tenant_id", tenantId)
+      .is("deleted_at", null)
+      .order("start_at", { ascending: false })
+      .limit(AI_CONTEXT_POLICY.perTypeLimits.MEETING);
+    if (request.workspaceId) qMeetings = qMeetings.eq("workspace_id", request.workspaceId);
+    const { data: meetingRows, error: meetingError } = await qMeetings;
+    if (meetingError) failures.push("RECENT_MEETINGS");
+    else
+      for (const row of (meetingRows ?? []) as Array<Record<string, any>>)
+        push({
+          type: "MEETING",
+          id: String(row["id"]),
+          title: String(row["title"] ?? "(không tiêu đề)"),
+          snippet: String(row["agenda"] ?? "").slice(0, 280),
+          updatedAt: (row["updated_at"] as string | null) ?? null,
+          lexical: 0.3,
           relationship: "SEARCH_MATCH",
           graphDistance: 2,
         });
-      }
-      if (candidates.length) strategy = "MIXED";
-    }
+
+    // 3) Tài liệu gần nhất
+    let qDocs = supabase
+      .from("documents")
+      .select("id,title,content,updated_at")
+      .eq("tenant_id", tenantId)
+      .is("deleted_at", null)
+      .order("updated_at", { ascending: false })
+      .limit(AI_CONTEXT_POLICY.perTypeLimits.DOCUMENT);
+    if (request.workspaceId) qDocs = qDocs.eq("workspace_id", request.workspaceId);
+    const { data: docRows, error: docError } = await qDocs;
+    if (docError) failures.push("RECENT_DOCUMENTS");
+    else
+      for (const row of (docRows ?? []) as Array<Record<string, any>>)
+        push({
+          type: "DOCUMENT",
+          id: String(row["id"]),
+          title: String(row["title"] ?? "(không tiêu đề)"),
+          snippet: String(row["content"] ?? "").slice(0, 280),
+          updatedAt: (row["updated_at"] as string | null) ?? null,
+          lexical: 0.3,
+          relationship: "SEARCH_MATCH",
+          graphDistance: 2,
+        });
+
+    // 4) Kết quả công việc gần nhất (không có workspace_id trên bảng nguồn)
+    const { data: wpRows, error: wpError } = await supabase
+      .from("work_products")
+      .select("id,title,description,status,business_type,updated_at")
+      .eq("tenant_id", tenantId)
+      .is("deleted_at", null)
+      .order("updated_at", { ascending: false })
+      .limit(AI_CONTEXT_POLICY.perTypeLimits.WORK_PRODUCT);
+    if (wpError) failures.push("RECENT_WORK_PRODUCTS");
+    else
+      for (const row of (wpRows ?? []) as Array<Record<string, any>>)
+        push({
+          type: "WORK_PRODUCT",
+          id: String(row["id"]),
+          title: String(row["title"] ?? "(không tiêu đề)"),
+          snippet: `[${String(row["business_type"] ?? "")}/${String(row["status"] ?? "")}] ${String(
+            row["description"] ?? "",
+          )}`.slice(0, 280),
+          updatedAt: (row["updated_at"] as string | null) ?? null,
+          lexical: 0.3,
+          relationship: "SEARCH_MATCH",
+          graphDistance: 2,
+        });
+
+    if (candidates.length) strategy = "MIXED";
     timings["recentWork"] = Date.now() - tRecent;
   }
 
