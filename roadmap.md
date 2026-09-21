@@ -50,3 +50,7 @@
 - [ ] Hiển thị AI Team như execution layer theo tiến độ, không phải destination chính
 - [ ] Hoàn thiện luồng Intent → Context → Execution → Review → Work Product → Work Graph
 - [ ] Giữ interaction canon: Open → Ask → Add Context → Execute → Observe → Approve → Receive Work Product → Remember
+
+## Vòng học từ góp ý & giao việc cho người thật
+- [ ] Chạy E2E thật: Home → Kết quả công việc → gửi góp ý → soạn lại xem AI có cải thiện
+- [ ] Tạo tài khoản nhân viên thật, chạy giao việc admin → inbox nhân viên, kiểm tra email nhận được
