@@ -439,7 +439,11 @@ export const sendAiMessage = createServerFn({ method: "POST" })
           role: "user",
           content: data.text,
           created_by: ctx.userId,
-          metadata: data.metadata ?? {},
+          // Work Graph: lưu thực thể đính kèm cùng tin nhắn để hội thoại tái lập được ngữ cảnh.
+          metadata: {
+            ...(data.metadata ?? {}),
+            ...(data.contextEntities?.length ? { contextEntities: data.contextEntities } : {}),
+          },
         })
         .select("id")
         .single();
