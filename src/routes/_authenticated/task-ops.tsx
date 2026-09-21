@@ -122,7 +122,7 @@ function TaskOpsPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <Badge variant="secondary">
-            {t("tops.statRunning")}: {tasks.length}
+            {t("tops.statRunning")}: {total}
           </Badge>
           <Badge variant={overdue > 0 ? "destructive" : "secondary"}>
             {t("tops.statOverdue")}: {overdue}
