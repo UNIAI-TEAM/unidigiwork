@@ -389,6 +389,17 @@ export const NAV_ITEMS: NavItem[] = [
     mobile: { placement: "more", href: "/hr", order: 4.2 },
   },
   {
+    id: "human-agents",
+    labelKey: "nav.humanAgents",
+    icon: UserCog,
+    href: "/human-agents",
+    group: "organization",
+    match: ["/human-agents"],
+    visibility: "admin",
+    order: 1.25,
+    mobile: { placement: "more", href: "/human-agents", order: 4.25 },
+  },
+  {
     id: "meetings-manage",
     labelKey: "nav.meetingsManage",
     icon: Calendar,
