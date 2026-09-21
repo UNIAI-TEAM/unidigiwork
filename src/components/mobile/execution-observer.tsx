@@ -92,9 +92,7 @@ export function ExecutionObserver({ taskId, agentName }: { taskId: string; agent
         <p className="mt-2 truncate text-xs text-muted-foreground">{currentStep.title}</p>
       )}
 
-      {(latest.status === "WAITING_REVIEW" ||
-        latest.status === "CHANGES_REQUESTED" ||
-        failed) && (
+      {(latest.status === "WAITING_REVIEW" || latest.status === "CHANGES_REQUESTED" || failed) && (
         <Button
           size="sm"
           variant="outline"

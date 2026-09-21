@@ -3,12 +3,26 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, Loader2, Pencil, Sparkles, X, ExternalLink, AlertTriangle, RefreshCw, Eye } from "lucide-react";
+import {
+  Check,
+  Loader2,
+  Pencil,
+  Sparkles,
+  X,
+  ExternalLink,
+  AlertTriangle,
+  RefreshCw,
+  Eye,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { cancelAiAction, confirmAiAction, refreshAiActionProposal } from "@/lib/api/ai-actions.functions";
+import {
+  cancelAiAction,
+  confirmAiAction,
+  refreshAiActionProposal,
+} from "@/lib/api/ai-actions.functions";
 import type { RefreshedAiActionPreview } from "@/lib/api/ai-actions.functions";
 import type { AiActionExecutionResult, ProposedAiAction } from "@/domain/ai-actions/contracts";
 
@@ -44,7 +58,10 @@ export function ActionProposalCard({
   const [refreshed, setRefreshed] = useState<RefreshedAiActionPreview | null>(null);
   const [reviewed, setReviewed] = useState(false);
 
-  const payload = useMemo(() => ({ ...proposal.payload, ...edits }) as Record<string, any>, [proposal.payload, edits]);
+  const payload = useMemo(
+    () => ({ ...proposal.payload, ...edits }) as Record<string, any>,
+    [proposal.payload, edits],
+  );
   const blocking = proposal.ambiguities.filter((a) => !(a.field in edits));
 
   /** Preview rows kèm cờ "sẽ thay đổi" để mobile thấy rõ tác động trước khi xác nhận. */
@@ -52,7 +69,12 @@ export function ActionProposalCard({
     () =>
       proposal.preview.map((row) => {
         const value = editedValue(row.label, payload) ?? row.value;
-        const inert = !value || value === "Giữ nguyên" || value === "Chưa đặt" || value === "—" || value === "Chưa giao";
+        const inert =
+          !value ||
+          value === "Giữ nguyên" ||
+          value === "Chưa đặt" ||
+          value === "—" ||
+          value === "Chưa giao";
         const informational = row.label === "Trạng thái" || row.label === "Không gian làm việc";
         return { label: row.label, value, willChange: !inert && !informational };
       }),
@@ -68,7 +90,9 @@ export function ActionProposalCard({
     setState("running");
     setError(null);
     try {
-      const res = (await confirm({ data: { actionId: proposal.actionId, edits: edits as never } })) as AiActionExecutionResult;
+      const res = (await confirm({
+        data: { actionId: proposal.actionId, edits: edits as never },
+      })) as AiActionExecutionResult;
       setResult(res);
       setState("done");
       onExecuted?.(res);
@@ -90,7 +114,9 @@ export function ActionProposalCard({
     setRefreshing(true);
     setError(null);
     try {
-      const res = (await refresh({ data: { actionId: proposal.actionId } })) as RefreshedAiActionPreview;
+      const res = (await refresh({
+        data: { actionId: proposal.actionId },
+      })) as RefreshedAiActionPreview;
       setRefreshed(res);
       setReviewed(false);
     } catch (e) {
@@ -101,7 +127,11 @@ export function ActionProposalCard({
   };
 
   if (state === "cancelled") {
-    return <p className="rounded-xl border border-border bg-surface px-3 py-2 text-[13px] text-muted-foreground">Đã bỏ qua đề xuất của UNI. Không có dữ liệu nào thay đổi.</p>;
+    return (
+      <p className="rounded-xl border border-border bg-surface px-3 py-2 text-[13px] text-muted-foreground">
+        Đã bỏ qua đề xuất của UNI. Không có dữ liệu nào thay đổi.
+      </p>
+    );
   }
 
   if (state === "done" && result) {
@@ -112,8 +142,11 @@ export function ActionProposalCard({
         </p>
         {result.assignedAgent && (
           <p className="text-[12px] text-muted-foreground">
-            Agent phụ trách: <span className="font-medium text-foreground">{result.assignedAgent.agentName}</span>
-            {result.assignedAgent.profileName ? ` · ${result.assignedAgent.profileName}` : ""} — {result.assignedAgent.reason}
+            Agent phụ trách:{" "}
+            <span className="font-medium text-foreground">{result.assignedAgent.agentName}</span>
+            {result.assignedAgent.profileName
+              ? ` · ${result.assignedAgent.profileName}`
+              : ""} — {result.assignedAgent.reason}
           </p>
         )}
         {result.href && (
@@ -135,7 +168,9 @@ export function ActionProposalCard({
           <Sparkles className="h-4 w-4 text-primary" />
           <span className="font-semibold">UNI đề xuất · {proposal.title}</span>
         </div>
-        <span className="rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground">Cần bạn xác nhận</span>
+        <span className="rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground">
+          Cần bạn xác nhận
+        </span>
       </header>
 
       {stale && (
@@ -144,11 +179,22 @@ export function ActionProposalCard({
             <AlertTriangle className="h-3.5 w-3.5" /> Dữ liệu đã thay đổi kể từ lúc UNI đề xuất
           </p>
           <p className="text-muted-foreground">
-            Để tránh ghi đè thay đổi của người khác, hãy tải lại bản xem trước mới và kiểm tra trước khi xác nhận lại.
+            Để tránh ghi đè thay đổi của người khác, hãy tải lại bản xem trước mới và kiểm tra trước
+            khi xác nhận lại.
           </p>
           {!refreshed ? (
-            <Button size="sm" variant="outline" className="min-h-11 w-full sm:min-h-9 sm:w-auto" onClick={() => void onRefresh()} disabled={refreshing}>
-              {refreshing ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="mr-1.5 h-3.5 w-3.5" />}
+            <Button
+              size="sm"
+              variant="outline"
+              className="min-h-11 w-full sm:min-h-9 sm:w-auto"
+              onClick={() => void onRefresh()}
+              disabled={refreshing}
+            >
+              {refreshing ? (
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+              )}
               Xem preview mới
             </Button>
           ) : (
@@ -158,14 +204,20 @@ export function ActionProposalCard({
                   {refreshed.targetChanges.map((c) => (
                     <li key={c.label} className="flex flex-wrap items-center gap-1.5">
                       <span className="text-muted-foreground">{c.label}:</span>
-                      <span className="rounded bg-surface px-1.5 py-0.5 line-through">{c.before}</span>
+                      <span className="rounded bg-surface px-1.5 py-0.5 line-through">
+                        {c.before}
+                      </span>
                       <span className="text-muted-foreground">→</span>
-                      <span className="rounded bg-primary/10 px-1.5 py-0.5 text-primary">{c.after}</span>
+                      <span className="rounded bg-primary/10 px-1.5 py-0.5 text-primary">
+                        {c.after}
+                      </span>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="text-muted-foreground">Không phát hiện khác biệt hiển thị, nhưng phiên bản dữ liệu đã được làm mới.</p>
+                <p className="text-muted-foreground">
+                  Không phát hiện khác biệt hiển thị, nhưng phiên bản dữ liệu đã được làm mới.
+                </p>
               )}
               <dl className="space-y-1 rounded-lg border border-border bg-background p-2">
                 {refreshed.preview.map((row) => (
@@ -228,7 +280,11 @@ export function ActionProposalCard({
         <p className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
           Đề xuất từ:
           {proposal.sourceRefs.slice(0, 3).map((s) => (
-            <button key={s.sourceId} onClick={() => navigate({ to: s.href })} className="rounded-full bg-surface px-2 py-0.5 text-primary hover:underline">
+            <button
+              key={s.sourceId}
+              onClick={() => navigate({ to: s.href })}
+              className="rounded-full bg-surface px-2 py-0.5 text-primary hover:underline"
+            >
               {s.title}
             </button>
           ))}
@@ -236,7 +292,10 @@ export function ActionProposalCard({
       )}
 
       {blocking.map((a) => (
-        <div key={a.field} className="space-y-1.5 rounded-lg border border-border bg-surface p-2.5 text-[12px]">
+        <div
+          key={a.field}
+          className="space-y-1.5 rounded-lg border border-border bg-surface p-2.5 text-[12px]"
+        >
           <p className="flex items-center gap-1.5 font-medium text-foreground">
             <AlertTriangle className="h-3.5 w-3.5" /> {a.message}
           </p>
@@ -245,7 +304,12 @@ export function ActionProposalCard({
               {a.candidates.slice(0, 8).map((c) => (
                 <button
                   key={c.id}
-                  onClick={() => set(a.field, a.field === "to" ? [c.id] : a.field === "participantIds" ? [c.id] : c.id)}
+                  onClick={() =>
+                    set(
+                      a.field,
+                      a.field === "to" ? [c.id] : a.field === "participantIds" ? [c.id] : c.id,
+                    )
+                  }
                   className="rounded-full border border-border px-2 py-1 hover:bg-surface"
                 >
                   {c.label}
@@ -256,21 +320,32 @@ export function ActionProposalCard({
         </div>
       ))}
 
-      {error && <p className="rounded-lg border border-destructive/40 bg-destructive/5 p-2 text-[12px] text-destructive">{error}</p>}
+      {error && (
+        <p className="rounded-lg border border-destructive/40 bg-destructive/5 p-2 text-[12px] text-destructive">
+          {error}
+        </p>
+      )}
 
-      <footer
-        className="sticky bottom-0 -mx-3 grid grid-cols-2 gap-2 border-t border-border bg-background px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:mx-0 sm:flex sm:flex-wrap sm:border-0 sm:px-0 sm:pb-0"
-      >
+      <footer className="sticky bottom-0 -mx-3 grid grid-cols-2 gap-2 border-t border-border bg-background px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:mx-0 sm:flex sm:flex-wrap sm:border-0 sm:px-0 sm:pb-0">
         <Button
           size="sm"
           onClick={() => void onConfirm()}
           disabled={state === "running" || blocking.length > 0 || (stale && !reviewed)}
           className="col-span-2 min-h-11 w-full sm:min-h-9 sm:w-auto sm:flex-1"
         >
-          {state === "running" ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Check className="mr-1.5 h-4 w-4" />}
+          {state === "running" ? (
+            <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+          ) : (
+            <Check className="mr-1.5 h-4 w-4" />
+          )}
           {stale ? "Xác nhận lại" : "Xác nhận"}
         </Button>
-        <Button size="sm" variant="outline" className="min-h-11 w-full sm:min-h-9 sm:w-auto" onClick={() => setEditing((v) => !v)}>
+        <Button
+          size="sm"
+          variant="outline"
+          className="min-h-11 w-full sm:min-h-9 sm:w-auto"
+          onClick={() => setEditing((v) => !v)}
+        >
           <Pencil className="mr-1.5 h-3.5 w-3.5" /> {editing ? "Xong" : "Chỉnh sửa"}
         </Button>
         <Button
@@ -313,53 +388,120 @@ function EditForm({
     <div className="space-y-2.5" onKeyDown={stop}>
       {(t === "CREATE_TASK" || t === "UPDATE_TASK_FIELDS" || t === "CREATE_MEETING") && (
         <div className="space-y-1">
-          <Label htmlFor="ai-title" className="text-[12px]">Tiêu đề</Label>
-          <Input className="min-h-11 sm:min-h-9" id="ai-title" value={payload.title ?? ""} onChange={(e) => set("title", e.target.value)} />
+          <Label htmlFor="ai-title" className="text-[12px]">
+            Tiêu đề
+          </Label>
+          <Input
+            className="min-h-11 sm:min-h-9"
+            id="ai-title"
+            value={payload.title ?? ""}
+            onChange={(e) => set("title", e.target.value)}
+          />
         </div>
       )}
       {(t === "CREATE_TASK" || t === "UPDATE_TASK_FIELDS") && (
         <div className="space-y-1">
-          <Label htmlFor="ai-due" className="text-[12px]">Hạn hoàn thành</Label>
+          <Label htmlFor="ai-due" className="text-[12px]">
+            Hạn hoàn thành
+          </Label>
           <Input
             id="ai-due"
             type="datetime-local"
             value={toLocalInput(payload.dueAt)}
-            onChange={(e) => set("dueAt", e.target.value ? new Date(e.target.value).toISOString() : null)}
+            onChange={(e) =>
+              set("dueAt", e.target.value ? new Date(e.target.value).toISOString() : null)
+            }
           />
         </div>
       )}
       {t === "CREATE_MEETING" && (
         <>
           <div className="space-y-1">
-            <Label htmlFor="ai-start" className="text-[12px]">Bắt đầu</Label>
-            <Input className="min-h-11 sm:min-h-9" id="ai-start" type="datetime-local" value={toLocalInput(payload.startAt)} onChange={(e) => set("startAt", e.target.value ? new Date(e.target.value).toISOString() : undefined)} />
+            <Label htmlFor="ai-start" className="text-[12px]">
+              Bắt đầu
+            </Label>
+            <Input
+              className="min-h-11 sm:min-h-9"
+              id="ai-start"
+              type="datetime-local"
+              value={toLocalInput(payload.startAt)}
+              onChange={(e) =>
+                set("startAt", e.target.value ? new Date(e.target.value).toISOString() : undefined)
+              }
+            />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="ai-end" className="text-[12px]">Kết thúc</Label>
-            <Input className="min-h-11 sm:min-h-9" id="ai-end" type="datetime-local" value={toLocalInput(payload.endAt)} onChange={(e) => set("endAt", e.target.value ? new Date(e.target.value).toISOString() : undefined)} />
+            <Label htmlFor="ai-end" className="text-[12px]">
+              Kết thúc
+            </Label>
+            <Input
+              className="min-h-11 sm:min-h-9"
+              id="ai-end"
+              type="datetime-local"
+              value={toLocalInput(payload.endAt)}
+              onChange={(e) =>
+                set("endAt", e.target.value ? new Date(e.target.value).toISOString() : undefined)
+              }
+            />
           </div>
         </>
       )}
       {t === "CREATE_EMAIL_DRAFT" && (
         <>
           <div className="space-y-1">
-            <Label htmlFor="ai-to" className="text-[12px]">Người nhận (email, cách nhau dấu phẩy)</Label>
-            <Input className="min-h-11 sm:min-h-9" id="ai-to" value={(payload.to ?? []).join(", ")} onChange={(e) => set("to", e.target.value.split(",").map((s) => s.trim()).filter(Boolean))} />
+            <Label htmlFor="ai-to" className="text-[12px]">
+              Người nhận (email, cách nhau dấu phẩy)
+            </Label>
+            <Input
+              className="min-h-11 sm:min-h-9"
+              id="ai-to"
+              value={(payload.to ?? []).join(", ")}
+              onChange={(e) =>
+                set(
+                  "to",
+                  e.target.value
+                    .split(",")
+                    .map((s) => s.trim())
+                    .filter(Boolean),
+                )
+              }
+            />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="ai-subject" className="text-[12px]">Tiêu đề thư</Label>
-            <Input className="min-h-11 sm:min-h-9" id="ai-subject" value={payload.subject ?? ""} onChange={(e) => set("subject", e.target.value)} />
+            <Label htmlFor="ai-subject" className="text-[12px]">
+              Tiêu đề thư
+            </Label>
+            <Input
+              className="min-h-11 sm:min-h-9"
+              id="ai-subject"
+              value={payload.subject ?? ""}
+              onChange={(e) => set("subject", e.target.value)}
+            />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="ai-body" className="text-[12px]">Nội dung</Label>
-            <Textarea id="ai-body" rows={6} value={payload.body ?? ""} onChange={(e) => set("body", e.target.value)} />
+            <Label htmlFor="ai-body" className="text-[12px]">
+              Nội dung
+            </Label>
+            <Textarea
+              id="ai-body"
+              rows={6}
+              value={payload.body ?? ""}
+              onChange={(e) => set("body", e.target.value)}
+            />
           </div>
         </>
       )}
       {(t === "CREATE_TASK" || t === "UPDATE_TASK_FIELDS") && (
         <div className="space-y-1">
-          <Label htmlFor="ai-desc" className="text-[12px]">Mô tả</Label>
-          <Textarea id="ai-desc" rows={3} value={payload.description ?? ""} onChange={(e) => set("description", e.target.value)} />
+          <Label htmlFor="ai-desc" className="text-[12px]">
+            Mô tả
+          </Label>
+          <Textarea
+            id="ai-desc"
+            rows={3}
+            value={payload.description ?? ""}
+            onChange={(e) => set("description", e.target.value)}
+          />
         </div>
       )}
     </div>
