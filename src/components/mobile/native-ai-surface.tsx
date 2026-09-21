@@ -85,12 +85,15 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
   const queryClient = useQueryClient();
   const sendFn = useServerFn(sendAiMessage);
   const getFn = useServerFn(getAiConversation);
+  const proposeFn = useServerFn(proposeAiAction);
   const { workspaceId } = useActiveWorkspace();
   const identity = useCurrentIdentity();
   const [input, setInput] = useState("");
   const [pendingText, setPendingText] = useState<string | null>(null);
   const [contexts, setContexts] = useState<AddedContext[]>([]);
   const [contextOpen, setContextOpen] = useState(false);
+  const [turns, setTurns] = useState<OrchestrationTurn[]>([]);
+  const [proposing, setProposing] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
