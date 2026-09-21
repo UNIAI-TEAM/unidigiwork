@@ -501,14 +501,27 @@ export const resolveWorkDeliverableComment = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
+    const { data: updated, error } = await context.supabase
       .from("work_product_comments")
       .update({
         resolved_at: data.resolved ? new Date().toISOString() : null,
         resolved_by: data.resolved ? context.userId : null,
       })
-      .eq("id", data.commentId);
+      .eq("id", data.commentId)
+      .select("work_product_id, author_id, body")
+      .maybeSingle();
     if (error) mapPgError(error);
+    if (updated?.work_product_id) {
+      const { notifyWorkProductFeedback } = await import("./work-product-notify.server");
+      await notifyWorkProductFeedback({
+        workProductId: String(updated.work_product_id),
+        actorId: context.userId,
+        kind: data.resolved ? "COMMENT_RESOLVED" : "COMMENT_REOPENED",
+        body: (updated.body as string | null) ?? null,
+        status: data.resolved ? "Đã xử lý" : "Chưa xử lý",
+        extraRecipients: [updated.author_id as string | null],
+      });
+    }
     return { resolved: data.resolved };
   });
 
