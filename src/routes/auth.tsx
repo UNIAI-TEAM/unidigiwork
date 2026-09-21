@@ -101,7 +101,6 @@ function AuthPage() {
         if (error) throw error;
       }
       navigate({ to: "/tasks" });
-
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : t("ac.10"));
     } finally {
@@ -131,9 +130,7 @@ function AuthPage() {
             <p className="font-heading text-lg font-bold leading-tight text-foreground">
               People + AI.
             </p>
-            <p className="text-xs text-muted-foreground">
-              Same Team. More Possibilities.
-            </p>
+            <p className="text-xs text-muted-foreground">Same Team. More Possibilities.</p>
           </div>
         </div>
       </div>
@@ -155,37 +152,34 @@ function AuthPage() {
             </button>
           </div>
         )}
-        {!signupSent && (reset ? (
-          <div className="mb-4">
-            <div className="text-sm font-semibold">{t("ac.12")}</div>
-            <p className="mt-1 text-xs text-muted-foreground">{t("ac.13")}</p>
-          </div>
-        ) : (
-          <div className="mb-5 flex rounded-xl bg-surface-2 p-1">
-            {(["signin", "code", "signup"] as const).map((m) => (
-              <button
-                key={m}
-                type="button"
-                onClick={() => {
-                  setMode(m);
-                  setCodeSent(false);
-                  setCode("");
-                }}
-                className={`min-h-10 flex-1 rounded-lg px-1 py-1.5 text-xs font-semibold sm:text-sm ${mode === m ? "bg-background text-foreground shadow-card" : "text-muted-foreground"}`}
-              >
-                {m === "signin" ? t("ac.1") : m === "code" ? t("otp.1") : t("ac.2")}
-              </button>
-            ))}
-          </div>
-        ))}
+        {!signupSent &&
+          (reset ? (
+            <div className="mb-4">
+              <div className="text-sm font-semibold">{t("ac.12")}</div>
+              <p className="mt-1 text-xs text-muted-foreground">{t("ac.13")}</p>
+            </div>
+          ) : (
+            <div className="mb-5 flex rounded-xl bg-surface-2 p-1">
+              {(["signin", "code", "signup"] as const).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => {
+                    setMode(m);
+                    setCodeSent(false);
+                    setCode("");
+                  }}
+                  className={`min-h-10 flex-1 rounded-lg px-1 py-1.5 text-xs font-semibold sm:text-sm ${mode === m ? "bg-background text-foreground shadow-card" : "text-muted-foreground"}`}
+                >
+                  {m === "signin" ? t("ac.1") : m === "code" ? t("otp.1") : t("ac.2")}
+                </button>
+              ))}
+            </div>
+          ))}
         {!signupSent && !reset && mode === "code" && (
           <p className="mb-3 text-xs text-muted-foreground">{t("otp.2")}</p>
         )}
-        <form
-          onSubmit={submit}
-          noValidate={false}
-          className={signupSent ? "hidden" : "space-y-3"}
-        >
+        <form onSubmit={submit} noValidate={false} className={signupSent ? "hidden" : "space-y-3"}>
           {!reset && mode === "signup" && (
             <div>
               <label className="mb-1 block text-xs font-medium">{t("ac.3")}</label>
