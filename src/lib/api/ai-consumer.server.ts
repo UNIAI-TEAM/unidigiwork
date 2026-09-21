@@ -97,6 +97,7 @@ export async function answerWithContext(
       (await buildAiContextPack(supabase, userId, tenantHint, {
         query: request.query.slice(0, 500),
         rootEntity: request.rootEntity ?? null,
+        pinnedEntities: request.pinnedEntities ?? null,
         workspaceId: request.workspaceId ?? null,
         maxSources: policy.maxSources,
         maxTokens: policy.maxTokens,
