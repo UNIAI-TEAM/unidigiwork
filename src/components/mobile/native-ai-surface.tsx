@@ -35,6 +35,7 @@ import type { AiActionExecutionResult, ProposedAiAction } from "@/domain/ai-acti
 import { routeRequest, type OrchestrationExecutor } from "@/domain/ai-orchestration/route";
 import { ActionProposalCard } from "@/components/ai/action-proposal-card";
 import { ExecutionObserver } from "@/components/mobile/execution-observer";
+import { BuildWorkProductBar } from "@/components/mobile/build-work-product";
 import { useActiveWorkspace } from "@/lib/active-workspace";
 import { useCurrentIdentity } from "@/lib/use-current-identity";
 import { useI18n } from "@/lib/i18n";
@@ -209,6 +210,21 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
   const isEmpty = displayMessages.length === 0 && !pendingText && turns.length === 0;
   const firstName = identity.displayName.trim().split(/\s+/).at(-1) || t("m.ai.user");
 
+  // Build Work Product: chỉ hiện sau khi AI đã trả lời xong lượt gần nhất.
+  const lastMessage = displayMessages.at(-1);
+  const lastUserRequest = [...displayMessages].reverse().find((m) => m.role === "user")?.content;
+  const canBuildWorkProduct =
+    !send.isPending &&
+    !pendingText &&
+    lastMessage?.role === "assistant" &&
+    Boolean(lastUserRequest);
+  const buildBrief = canBuildWorkProduct
+    ? `${lastUserRequest}\n\nKẾT QUẢ AI VỪA HOÀN THÀNH:\n${lastMessage?.content ?? ""}`
+    : "";
+  const buildSources = contexts
+    .filter((item) => item.root)
+    .map((item) => ({ type: item.root!.type, id: item.root!.id }));
+
   return (
     <div className="mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col overflow-hidden">
       <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 pt-4 sm:px-6">
@@ -224,6 +240,15 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
             {displayMessages.map((message) => (
               <Message key={message.id} message={message} />
             ))}
+            {canBuildWorkProduct && (
+              <BuildWorkProductBar
+                key={lastMessage?.id}
+                brief={buildBrief}
+                workspaceId={workspaceId}
+                conversationId={conversationId ?? null}
+                sourceEntities={buildSources}
+              />
+            )}
             {turns.map((turn) => (
               <div key={turn.id} className="space-y-3">
                 <UserMessage content={turn.user} />

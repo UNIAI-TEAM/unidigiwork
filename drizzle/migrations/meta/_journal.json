@@ -141,6 +141,13 @@
       "when": 1789961204686,
       "tag": "0019_platform_admin_join_tenant",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1789967792180,
+      "tag": "0020_work_products_allow_spreadsheet_type",
+      "breakpoints": true
     }
   ]
 }
