@@ -138,7 +138,24 @@ function AuthPage() {
         </div>
       </div>
       <div className="mx-auto w-full max-w-sm rounded-2xl border border-border bg-card/95 p-5 shadow-panel backdrop-blur sm:p-8">
-        {reset ? (
+        {signupSent && (
+          <div className="mb-4 space-y-3">
+            <div className="text-sm font-semibold">{t("pw.1")}</div>
+            <p className="text-xs text-muted-foreground">{t("pw.2")}</p>
+            <button
+              type="button"
+              onClick={() => {
+                setSignupSent(false);
+                setMode("signin");
+                setPassword("");
+              }}
+              className="min-h-10 w-full rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            >
+              {t("ac.16")}
+            </button>
+          </div>
+        )}
+        {!signupSent && (reset ? (
           <div className="mb-4">
             <div className="text-sm font-semibold">{t("ac.12")}</div>
             <p className="mt-1 text-xs text-muted-foreground">{t("ac.13")}</p>
