@@ -1,11 +1,18 @@
-// Build Work Product — sau khi AI trả lời xong, người dùng chọn dạng kết quả và
-// UniWork dựng bản nháp thật trong Kết quả công việc, tự chiếu vào Work Graph.
-import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+// Work Product thật — không hiện thanh chọn nữa: khi yêu cầu của người dùng nêu
+// rõ loại kết quả (báo cáo / đề xuất / bài trình bày / bảng tính), UniWork tự
+// soạn và ghi từng kết quả vào bảng nguồn, rồi chiếu vào Work Graph.
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { FileBarChart, FileSpreadsheet, FileText, Loader2, Presentation } from "lucide-react";
-import { toast } from "sonner";
+import {
+  CheckCircle2,
+  FileBarChart,
+  FileSpreadsheet,
+  FileText,
+  Loader2,
+  Presentation,
+  TriangleAlert,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   buildWorkProduct,
@@ -14,94 +21,133 @@ import {
 import type { AiContextEntityType } from "@/domain/ai-context/contracts";
 import { useI18n } from "@/lib/i18n";
 
-const KINDS: Array<{ kind: WorkProductBuildKind; icon: typeof FileText }> = [
-  { kind: "REPORT", icon: FileBarChart },
-  { kind: "PROPOSAL", icon: FileText },
-  { kind: "PRESENTATION", icon: Presentation },
-  { kind: "SPREADSHEET", icon: FileSpreadsheet },
-];
+const ICONS: Record<WorkProductBuildKind, typeof FileText> = {
+  REPORT: FileBarChart,
+  PROPOSAL: FileText,
+  PRESENTATION: Presentation,
+  SPREADSHEET: FileSpreadsheet,
+};
 
-export function BuildWorkProductBar({
+type BuildState = {
+  kind: WorkProductBuildKind;
+  status: "PENDING" | "RUNNING" | "DONE" | "FAILED";
+  id?: string;
+  title?: string;
+};
+
+export function WorkProductRun({
+  kinds,
   brief,
   workspaceId,
-  conversationId,
   sourceEntities,
 }: {
+  kinds: WorkProductBuildKind[];
   brief: string;
   workspaceId?: string | null;
-  conversationId?: string | null;
   sourceEntities: Array<{ type: AiContextEntityType; id: string }>;
 }) {
   const { t } = useI18n();
   const navigate = useNavigate();
   const buildFn = useServerFn(buildWorkProduct);
-  const [running, setRunning] = useState<WorkProductBuildKind | null>(null);
-  const [built, setBuilt] = useState<{ id: string; title: string } | null>(null);
+  const started = useRef(false);
+  const [states, setStates] = useState<BuildState[]>(() =>
+    kinds.map((kind) => ({ kind, status: "PENDING" as const })),
+  );
 
-  const build = useMutation({
-    mutationFn: (kind: WorkProductBuildKind) =>
-      buildFn({
-        data: {
-          idempotencyKey: crypto.randomUUID(),
-          kind,
-          brief: brief.slice(0, 8000),
-          ...(workspaceId ? { workspaceId } : {}),
-          ...(conversationId ? { conversationId } : {}),
-          sourceEntities,
-        },
-      }),
-    onSuccess: (result) => {
-      setBuilt({ id: result.id, title: result.title });
-      setRunning(null);
-      toast.success(t("m.wp.built"));
-    },
-    onError: () => {
-      setRunning(null);
-      toast.error(t("m.wp.buildError"));
-    },
-  });
+  useEffect(() => {
+    if (started.current || kinds.length === 0) return;
+    started.current = true;
+    let cancelled = false;
 
-  if (built) {
-    return (
-      <div className="rounded-xl border border-border bg-surface px-3 py-2.5">
-        <p className="text-[13px] font-medium">{built.title}</p>
-        <Button
-          variant="outline"
-          size="sm"
-          className="mt-2 min-h-11"
-          onClick={() => void navigate({ to: "/work-products/$id", params: { id: built.id } })}
-        >
-          {t("m.wp.open")}
-        </Button>
-      </div>
-    );
-  }
+    void (async () => {
+      for (const kind of kinds) {
+        if (cancelled) return;
+        setStates((current) =>
+          current.map((item) => (item.kind === kind ? { ...item, status: "RUNNING" } : item)),
+        );
+        try {
+          const result = await buildFn({
+            data: {
+              idempotencyKey: crypto.randomUUID(),
+              kind,
+              brief: brief.slice(0, 8000),
+              ...(workspaceId ? { workspaceId } : {}),
+              sourceEntities,
+            },
+          });
+          if (cancelled) return;
+          setStates((current) =>
+            current.map((item) =>
+              item.kind === kind
+                ? { ...item, status: "DONE", id: result.id, title: result.title }
+                : item,
+            ),
+          );
+        } catch {
+          if (cancelled) return;
+          setStates((current) =>
+            current.map((item) => (item.kind === kind ? { ...item, status: "FAILED" } : item)),
+          );
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [brief, buildFn, kinds, sourceEntities, workspaceId]);
+
+  if (states.length === 0) return null;
 
   return (
-    <div className="space-y-2">
-      <p className="text-xs text-muted-foreground">{t("m.wp.buildHint")}</p>
-      <div className="flex flex-wrap gap-2">
-        {KINDS.map(({ kind, icon: Icon }) => (
-          <Button
-            key={kind}
-            variant="outline"
-            size="sm"
-            className="min-h-11 gap-2"
-            disabled={build.isPending}
-            onClick={() => {
-              setRunning(kind);
-              build.mutate(kind);
-            }}
-          >
-            {running === kind ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Icon className="h-4 w-4" />
-            )}
-            {t(`wp.type.${kind}`)}
-          </Button>
-        ))}
-      </div>
+    <div className="space-y-2 rounded-xl border border-border bg-surface p-3">
+      <p className="text-xs text-muted-foreground">{t("m.wp.running")}</p>
+      <ul className="space-y-2">
+        {states.map((state) => {
+          const Icon = ICONS[state.kind];
+          return (
+            <li key={state.kind} className="flex items-center gap-2.5">
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+                {state.status === "RUNNING" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : state.status === "DONE" ? (
+                  <CheckCircle2 className="h-4 w-4" />
+                ) : state.status === "FAILED" ? (
+                  <TriangleAlert className="h-4 w-4 text-destructive" />
+                ) : (
+                  <Icon className="h-4 w-4" />
+                )}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[13px] font-medium">
+                  {state.title ?? t(`wp.type.${state.kind}`)}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {state.status === "DONE"
+                    ? t("m.wp.built")
+                    : state.status === "FAILED"
+                      ? t("m.wp.buildError")
+                      : state.status === "RUNNING"
+                        ? t("m.wp.building")
+                        : t("m.wp.queued")}
+                </p>
+              </div>
+              {state.status === "DONE" && state.id && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="min-h-11 shrink-0"
+                  onClick={() =>
+                    void navigate({ to: "/work-products/$id", params: { id: state.id! } })
+                  }
+                >
+                  {t("m.wp.open")}
+                </Button>
+              )}
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }

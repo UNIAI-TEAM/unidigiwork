@@ -36,7 +36,8 @@ import type { AiActionExecutionResult, ProposedAiAction } from "@/domain/ai-acti
 import { routeRequest, type OrchestrationExecutor } from "@/domain/ai-orchestration/route";
 import { ActionProposalCard } from "@/components/ai/action-proposal-card";
 import { ExecutionObserver } from "@/components/mobile/execution-observer";
-import { BuildWorkProductBar } from "@/components/mobile/build-work-product";
+import { WorkProductRun } from "@/components/mobile/build-work-product";
+import { detectWorkProductKinds } from "@/domain/ai-orchestration/work-product-intent";
 import { useActiveWorkspace } from "@/lib/active-workspace";
 import { useCurrentIdentity } from "@/lib/use-current-identity";
 import { useI18n } from "@/lib/i18n";
@@ -214,11 +215,13 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
   // Build Work Product: chỉ hiện sau khi AI đã trả lời xong lượt gần nhất.
   const lastMessage = displayMessages.at(-1);
   const lastUserRequest = [...displayMessages].reverse().find((m) => m.role === "user")?.content;
+  const requestedKinds = detectWorkProductKinds(lastUserRequest ?? "");
   const canBuildWorkProduct =
     !send.isPending &&
     !pendingText &&
     lastMessage?.role === "assistant" &&
-    Boolean(lastUserRequest);
+    Boolean(lastUserRequest) &&
+    requestedKinds.length > 0;
   const buildBrief = canBuildWorkProduct
     ? `${lastUserRequest}\n\nKẾT QUẢ AI VỪA HOÀN THÀNH:\n${lastMessage?.content ?? ""}`
     : "";
@@ -251,11 +254,11 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
               <Message key={message.id} message={message} />
             ))}
             {canBuildWorkProduct && (
-              <BuildWorkProductBar
+              <WorkProductRun
                 key={lastMessage?.id}
+                kinds={requestedKinds}
                 brief={buildBrief}
                 workspaceId={workspaceId}
-                conversationId={conversationId ?? null}
                 sourceEntities={buildSources}
               />
             )}
