@@ -189,3 +189,48 @@ export const reviseWorkProductFromFeedback = createServerFn({ method: "POST" })
       tenantGuidanceUsed: learned.sampleCount,
     };
   });
+
+// Đọc lại góp ý đã dùng cho từng lần soạn lại (nhóm theo phiên bản kết quả).
+export const listWorkProductRevisionFeedback = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase
+      .from("work_product_revision_feedback")
+      .select("id, before_version, after_version, kind, feedback_status, feedback_at, body")
+      .eq("work_product_id", data.id)
+      .order("after_version", { ascending: false })
+      .order("feedback_at", { ascending: false })
+      .limit(300);
+    if (error) mapPgError(error);
+    const byVersion: Record<
+      number,
+      {
+        afterVersion: number;
+        beforeVersion: number;
+        items: Array<{
+          id: string;
+          kind: string;
+          status: string | null;
+          at: string | null;
+          body: string;
+        }>;
+      }
+    > = {};
+    for (const r of rows ?? []) {
+      const v = Number(r.after_version);
+      const group = (byVersion[v] ??= {
+        afterVersion: v,
+        beforeVersion: Number(r.before_version),
+        items: [],
+      });
+      group.items.push({
+        id: String(r.id),
+        kind: String(r.kind),
+        status: r.feedback_status ?? null,
+        at: r.feedback_at ?? null,
+        body: String(r.body ?? ""),
+      });
+    }
+    return { groups: Object.values(byVersion).sort((a, b) => b.afterVersion - a.afterVersion) };
+  });
