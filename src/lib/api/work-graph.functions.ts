@@ -443,22 +443,22 @@ export const listWorkGraphBoard = createServerFn({ method: "GET" })
       linkCount.set(e.target_node_id, (linkCount.get(e.target_node_id) ?? 0) + 1);
     });
 
-    return list
-      .map((n) => {
-        const r = resolved.get(entityKey(n.entity_type, n.entity_id));
-        if (!r) return null;
-        return {
-          type: n.entity_type as WorkGraphBoardItem["type"],
-          id: n.entity_id,
-          title: r.title,
-          status:
-            n.entity_type === "EXECUTION"
-              ? (execStatus.get(n.entity_id) ?? null)
-              : (r.subtitle ?? null),
-          href: r.href,
-          updatedAt: r.updatedAt ?? n.updated_at,
-          links: linkCount.get(n.id) ?? 0,
-        } satisfies WorkGraphBoardItem;
-      })
-      .filter((x): x is WorkGraphBoardItem => x !== null);
+    const out: WorkGraphBoardItem[] = [];
+    for (const n of list) {
+      const r = resolved.get(entityKey(n.entity_type, n.entity_id));
+      if (!r) continue;
+      out.push({
+        type: n.entity_type as WorkGraphBoardItem["type"],
+        id: n.entity_id,
+        title: r.title,
+        status:
+          n.entity_type === "EXECUTION"
+            ? (execStatus.get(n.entity_id) ?? null)
+            : (r.subtitle ?? null),
+        href: r.href,
+        updatedAt: r.updatedAt ?? n.updated_at ?? null,
+        links: linkCount.get(n.id) ?? 0,
+      });
+    }
+    return out;
   });
