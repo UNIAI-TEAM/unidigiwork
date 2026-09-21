@@ -9,9 +9,12 @@ const OPEN_STATUSES = ["todo", "in_progress", "blocked"] as const;
 export interface HumanAssignment {
   userId: string;
   name: string;
+  email: string;
   reason: string;
   openTasks: number;
 }
+
+const EMAIL_RE = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi;
 
 const STOP_WORDS = new Set([
   "cho",
@@ -66,8 +69,10 @@ export async function pickHumanAssignee(args: {
   workspaceId: string;
   task: { title?: string | null; description?: string | null };
   preferUserId?: string | null;
+  /** Câu yêu cầu gốc — dùng để nhận diện người được chỉ định qua email. */
+  requestText?: string | null;
 }): Promise<HumanAssignment | null> {
-  const { supabase, workspaceId, task, preferUserId } = args;
+  const { supabase, workspaceId, task, preferUserId, requestText } = args;
   try {
     const { data: members } = await supabase
       .from("workspace_members")
@@ -86,6 +91,28 @@ export async function pickHumanAssignee(args: {
     const nameOf = new Map<string, string>(
       (profiles ?? []).map((p: any) => [p.id as string, (p.display_name || p.email) as string]),
     );
+    const emailOf = new Map<string, string>(
+      (profiles ?? []).map((p: any) => [p.id as string, (p.email ?? "") as string]),
+    );
+
+    // 1) Người được chỉ định đích danh bằng email trong yêu cầu — ưu tiên tuyệt đối.
+    const mentioned = `${requestText ?? ""} ${task.title ?? ""} ${task.description ?? ""}`
+      .match(EMAIL_RE)
+      ?.map((value) => value.toLowerCase());
+    if (mentioned?.length) {
+      const hit = (profiles ?? []).find((p: any) =>
+        mentioned.includes(String(p.email ?? "").toLowerCase()),
+      );
+      if (hit) {
+        return {
+          userId: hit.id as string,
+          name: (hit.display_name || hit.email) as string,
+          email: (hit.email ?? "") as string,
+          reason: `Được chỉ định đích danh qua email ${hit.email}`,
+          openTasks: 0,
+        };
+      }
+    }
 
     // Việc thật của workspace để tính tải và kinh nghiệm (giới hạn để không quét toàn bộ).
     const { data: tasks } = await supabase
@@ -128,6 +155,7 @@ export async function pickHumanAssignee(args: {
       .map((userId) => ({
         userId,
         name: nameOf.get(userId) ?? "Thành viên",
+        email: emailOf.get(userId) ?? "",
         openTasks: load.get(userId) ?? 0,
         experience: experience.get(userId) ?? 0,
         preferred: preferUserId === userId ? 1 : 0,
@@ -140,13 +168,19 @@ export async function pickHumanAssignee(args: {
           a.name.localeCompare(b.name),
       );
 
-    const best = ranked[0];
+    const best = ranked.find((row) => row.email) ?? ranked[0];
     if (!best) return null;
     const reason =
       best.experience > 0
         ? `Đã xử lý ${best.experience} việc tương tự, đang mở ${best.openTasks} việc`
         : `Đang mở ít việc nhất (${best.openTasks} việc) trong không gian làm việc`;
-    return { userId: best.userId, name: best.name, reason, openTasks: best.openTasks };
+    return {
+      userId: best.userId,
+      name: best.name,
+      email: best.email,
+      reason,
+      openTasks: best.openTasks,
+    };
   } catch {
     return null;
   }
