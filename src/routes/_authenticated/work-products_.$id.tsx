@@ -94,6 +94,8 @@ import {
   unshareWorkProduct,
   updateWorkProductShare,
 } from "@/lib/api/work-deliverables.functions";
+import { reviseWorkProductFromFeedback } from "@/lib/api/work-product-revise.functions";
+import { VersionCompare } from "@/components/work-products/version-compare";
 
 export const Route = createFileRoute("/_authenticated/work-products_/$id")({
   head: () => ({
@@ -238,6 +240,8 @@ function WorkProductDetail() {
   const [leftPanelOpen, setLeftPanelOpen] = useState(false);
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
+  // So sánh bản trước / bản sau khi AI soạn lại theo góp ý.
+  const [compare, setCompare] = useState<{ before: number; after: number } | null>(null);
 
   const { data: documents } = useQuery({
     queryKey: ["work-deliverables", { limit: 60 }],
