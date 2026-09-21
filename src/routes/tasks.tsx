@@ -922,7 +922,7 @@ function KpiCard({
   );
 }
 
-type QuickAddPayload = { title: string; priority: Priority };
+type QuickAddPayload = { title: string; priority: Priority; dueAt?: string };
 
 function BoardSkeleton() {
   return (
