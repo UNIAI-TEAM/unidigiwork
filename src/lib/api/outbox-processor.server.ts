@@ -21,7 +21,7 @@ type DeliveryLog = {
   event_id: string;
   tenant_id: string | null;
   event_type: string;
-  channel: "email" | "push" | "webhook" | "noop" | "graph";
+  channel: "email" | "push" | "webhook" | "noop" | "graph" | "inapp";
   target: string | null;
   status: "sent" | "skipped" | "failed";
   http_status?: number | null;
@@ -70,6 +70,54 @@ async function deliverPush(ev: OutboxEvent): Promise<DeliveryLog[]> {
         event_type: ev.event_type,
         channel: "push",
         target: `${userIds.length} user(s)`,
+        status: "failed",
+        error: e instanceof Error ? e.message : String(e),
+        duration_ms: Date.now() - started,
+      },
+    ];
+  }
+}
+
+/** ---------- Channel: in-app notification ---------- */
+async function deliverInApp(admin: SupabaseClient, ev: OutboxEvent): Promise<DeliveryLog[]> {
+  const payload = asRecord(ev.payload);
+  const userIds = [
+    ...new Set([
+      ...asStringArray(payload["notify_user_ids"]),
+      ...asStringArray(payload["recipient_user_ids"]),
+    ]),
+  ];
+  if (userIds.length === 0) return [];
+  const started = Date.now();
+  const title = typeof payload["title"] === "string" ? (payload["title"] as string) : "UNIWORK";
+  const body = typeof payload["body"] === "string" ? (payload["body"] as string) : null;
+  const link = typeof payload["href"] === "string" ? (payload["href"] as string) : null;
+  const base: Omit<DeliveryLog, "status"> = {
+    event_id: ev.id,
+    tenant_id: ev.tenant_id,
+    event_type: ev.event_type,
+    channel: "inapp",
+    target: `${userIds.length} user(s)`,
+  };
+  try {
+    const { error } = await admin.from("notifications").insert(
+      userIds.map((userId) => ({
+        user_id: userId,
+        tenant_id: ev.tenant_id,
+        type: ev.event_type,
+        title,
+        body,
+        link,
+        scope_type: "tenant",
+        meta: { outbox_event_id: ev.id, aggregate_id: ev.aggregate_id },
+      })),
+    );
+    if (error) throw new Error(error.message);
+    return [{ ...base, status: "sent", duration_ms: Date.now() - started }];
+  } catch (e) {
+    return [
+      {
+        ...base,
         status: "failed",
         error: e instanceof Error ? e.message : String(e),
         duration_ms: Date.now() - started,
