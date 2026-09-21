@@ -135,6 +135,28 @@ export const updateTask = createServerFn({ method: "POST" })
     return ensureOk(res, "TASK_NOT_FOUND");
   });
 
+/** Đặt hoặc xoá hạn chót của công việc; đồng bộ node TASK trong Work Graph. */
+export const setTaskDueAt = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        ...commandMetadataSchema.shape,
+        taskId: z.string().uuid(),
+        dueAt: z.string().datetime().nullable(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const res = await context.supabase.rpc("set_task_due_at", {
+      _task_id: data.taskId,
+      _due_at: data.dueAt,
+      _idempotency_key: data.idempotencyKey,
+      _correlation_id: data.correlationId ?? undefined,
+    });
+    return ensureOk(res, "TASK_NOT_FOUND");
+  });
+
 export const transitionTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
