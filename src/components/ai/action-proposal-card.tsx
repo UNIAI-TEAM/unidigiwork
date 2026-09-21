@@ -152,7 +152,8 @@ export function ActionProposalCard({
         {result.assignedHuman && (
           <p className="text-[12px] text-muted-foreground">
             Người phụ trách:{" "}
-            <span className="font-medium text-foreground">{result.assignedHuman.name}</span> —{" "}
+            <span className="font-medium text-foreground">{result.assignedHuman.name}</span>
+            {result.assignedHuman.email ? ` · ${result.assignedHuman.email}` : ""} —{" "}
             {result.assignedHuman.reason}
           </p>
         )}
