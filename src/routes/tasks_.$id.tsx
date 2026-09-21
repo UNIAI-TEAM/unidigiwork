@@ -33,6 +33,7 @@ import {
   addTaskAttachment,
   deleteTaskAttachment,
   updateTask,
+  setTaskDueAt,
   setTaskTags,
   assignTask,
 } from "@/lib/api/tasks.functions";
@@ -156,7 +157,7 @@ function TaskDetailPage() {
   // Sửa hạn chót ngay tại trang chi tiết — Work Graph tự cập nhật theo công việc
   const saveDue = useMutation({
     mutationFn: (dueAt: string | null) =>
-      updateTask({ data: { taskId: id, dueAt, idempotencyKey: crypto.randomUUID() } }),
+      setTaskDueAt({ data: { taskId: id, dueAt, idempotencyKey: crypto.randomUUID() } }),
     onSuccess: () => {
       invalidate();
       toast.success("Đã cập nhật hạn chót");
