@@ -253,7 +253,11 @@ function WorkProductDetail() {
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
   // So sánh bản trước / bản sau khi AI soạn lại theo góp ý.
-  const [compare, setCompare] = useState<{ before: number; after: number } | null>(null);
+  const [compare, setCompare] = useState<{ before: number; after: number } | null>(
+    Number.isFinite(search.compareBefore) && Number.isFinite(search.compareAfter)
+      ? { before: Number(search.compareBefore), after: Number(search.compareAfter) }
+      : null,
+  );
 
   const { data: documents } = useQuery({
     queryKey: ["work-deliverables", { limit: 60 }],
