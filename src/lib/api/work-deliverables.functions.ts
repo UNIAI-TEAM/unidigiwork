@@ -620,6 +620,21 @@ export const decideWorkDeliverableReview = createServerFn({ method: "POST" })
         .update({ status: data.decision === "APPROVED" ? "APPROVED" : "CHANGES_REQUESTED" })
         .eq("id", review.work_product_id);
     }
+    const statusLabel =
+      data.decision === "APPROVED"
+        ? "Đã nghiệm thu"
+        : data.decision === "CHANGES_REQUESTED"
+          ? "Yêu cầu chỉnh sửa"
+          : "Đã huỷ";
+    const { notifyWorkProductFeedback } = await import("./work-product-notify.server");
+    await notifyWorkProductFeedback({
+      workProductId: String(review.work_product_id),
+      actorId: context.userId,
+      kind: "REVIEW_DECIDED",
+      body: data.note ?? null,
+      status: statusLabel,
+      extraRecipients: [(review as { requested_by?: string | null }).requested_by ?? null],
+    });
     return { decision: data.decision };
   });
 
