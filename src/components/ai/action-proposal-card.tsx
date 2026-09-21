@@ -149,6 +149,13 @@ export function ActionProposalCard({
               : ""} — {result.assignedAgent.reason}
           </p>
         )}
+        {result.assignedHuman && (
+          <p className="text-[12px] text-muted-foreground">
+            Người phụ trách:{" "}
+            <span className="font-medium text-foreground">{result.assignedHuman.name}</span> —{" "}
+            {result.assignedHuman.reason}
+          </p>
+        )}
         {result.href && (
           <Button size="sm" variant="outline" onClick={() => navigate({ to: result.href! })}>
             <ExternalLink className="mr-1.5 h-3.5 w-3.5" /> Mở
