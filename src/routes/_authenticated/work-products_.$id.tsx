@@ -102,7 +102,9 @@ import { VersionCompare } from "@/components/work-products/version-compare";
 
 export const Route = createFileRoute("/_authenticated/work-products_/$id")({
   // Liên kết từ hộp thư mở thẳng tab và khung so sánh phiên bản tương ứng.
-  validateSearch: (s: Record<string, unknown>) => ({
+  validateSearch: (
+    s: Record<string, unknown>,
+  ): { tab?: string; compareBefore?: number; compareAfter?: number } => ({
     tab: typeof s.tab === "string" ? s.tab : undefined,
     compareBefore: s.compareBefore == null ? undefined : Number(s.compareBefore),
     compareAfter: s.compareAfter == null ? undefined : Number(s.compareAfter),
