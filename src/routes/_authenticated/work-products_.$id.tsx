@@ -94,7 +94,10 @@ import {
   unshareWorkProduct,
   updateWorkProductShare,
 } from "@/lib/api/work-deliverables.functions";
-import { reviseWorkProductFromFeedback } from "@/lib/api/work-product-revise.functions";
+import {
+  reviseWorkProductFromFeedback,
+  listWorkProductRevisionFeedback,
+} from "@/lib/api/work-product-revise.functions";
 import { VersionCompare } from "@/components/work-products/version-compare";
 
 export const Route = createFileRoute("/_authenticated/work-products_/$id")({
@@ -382,6 +385,7 @@ function WorkProductDetail() {
       setDirty(false);
       setCompare({ before: res.beforeVersion, after: res.afterVersion });
       toast.success(t("wp.revise.done").replace("{n}", String(res.feedbackCount)));
+      void revisionFeedback.refetch();
       invalidate();
     },
     onError: (e: any) => {
@@ -392,6 +396,14 @@ function WorkProductDetail() {
       );
     },
   });
+
+  const revisionFeedback = useQuery({
+    queryKey: ["work-product-revision-feedback", id],
+    queryFn: () => listWorkProductRevisionFeedback({ data: { id } }),
+  });
+  const feedbackByVersion = new Map<number, any[]>(
+    (revisionFeedback.data?.groups ?? []).map((g: any) => [g.afterVersion, g.items]),
+  );
 
   const exportArtifact = useMutation({
     mutationFn: async (v: {
@@ -1054,6 +1066,30 @@ function WorkProductDetail() {
                                 <li key={i} className="truncate text-[11px] text-muted-foreground">
                                   [{p.type}] {p.title}
                                   {p.stamp ? ` · ${p.stamp}` : ""}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {(feedbackByVersion.get(v.version) ?? []).length > 0 && (
+                          <div className="mt-2 rounded-md border border-dashed p-2">
+                            <p className="text-[11px] font-medium text-muted-foreground">
+                              {t("wp.revise.usedTitle").replace(
+                                "{n}",
+                                String((feedbackByVersion.get(v.version) ?? []).length),
+                              )}
+                            </p>
+                            <ul className="mt-1 space-y-1">
+                              {(feedbackByVersion.get(v.version) ?? []).map((f: any) => (
+                                <li key={f.id} className="text-[11px] text-muted-foreground">
+                                  <span className="font-medium">
+                                    {f.kind === "REVIEW"
+                                      ? t("wp.revise.usedReview")
+                                      : t("wp.revise.usedComment")}
+                                    {f.status ? ` · ${f.status}` : ""}
+                                    {f.at ? ` · ${fmt.format(new Date(f.at))}` : ""}
+                                  </span>
+                                  <span className="block whitespace-pre-wrap">{f.body}</span>
                                 </li>
                               ))}
                             </ul>

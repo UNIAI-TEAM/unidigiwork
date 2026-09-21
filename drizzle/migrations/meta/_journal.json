@@ -204,6 +204,13 @@
       "when": 1790001594829,
       "tag": "0028_human_agent_role_permissions",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1790002072224,
+      "tag": "0029_work_product_revision_feedback",
+      "breakpoints": true
     }
   ]
 }
