@@ -53,8 +53,9 @@ function AuthenticatedLayout() {
     );
   }
 
-  // No tenant → onboarding (unless already there, hoặc đang ngoại tuyến).
-  if (!active.data && !offline && !location.pathname.startsWith("/onboarding")) {
+  // No tenant → onboarding (trừ khi đã ở đó, đang nhận lời mời, hoặc ngoại tuyến).
+  const isInviteFlow = location.pathname.startsWith("/workspace/invite");
+  if (!active.data && !offline && !isInviteFlow && !location.pathname.startsWith("/onboarding")) {
     navigate({ to: "/onboarding" });
     return null;
   }
