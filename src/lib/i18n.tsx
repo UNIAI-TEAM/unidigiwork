@@ -389,16 +389,20 @@ const dict = {
     "m.ai.question": "Bạn muốn hoàn thành việc gì?",
     "m.ai.starter.plan": "Lập kế hoạch ngày",
     "m.ai.starter.plan.desc": "Ưu tiên việc quan trọng từ lịch và công việc của bạn.",
-    "m.ai.starter.plan.prompt": "Lập kế hoạch ngày hôm nay dựa trên lịch, công việc và các quyết định đã xác nhận của tôi.",
+    "m.ai.starter.plan.prompt":
+      "Lập kế hoạch ngày hôm nay dựa trên lịch, công việc và các quyết định đã xác nhận của tôi.",
     "m.ai.starter.catchup": "Nắm bắt tình hình",
     "m.ai.starter.catchup.desc": "Xem thay đổi, rủi ro và việc đang chờ bạn.",
-    "m.ai.starter.catchup.prompt": "Cho tôi biết những cập nhật mới nhất, rủi ro và việc đang chờ tôi xử lý.",
+    "m.ai.starter.catchup.prompt":
+      "Cho tôi biết những cập nhật mới nhất, rủi ro và việc đang chờ tôi xử lý.",
     "m.ai.starter.prepare": "Chuẩn bị cho tôi",
     "m.ai.starter.prepare.desc": "Chuẩn bị nội dung cho cuộc họp hoặc công việc tiếp theo.",
-    "m.ai.starter.prepare.prompt": "Chuẩn bị cho cuộc họp tiếp theo của tôi với ngữ cảnh và các quyết định liên quan.",
+    "m.ai.starter.prepare.prompt":
+      "Chuẩn bị cho cuộc họp tiếp theo của tôi với ngữ cảnh và các quyết định liên quan.",
     "m.ai.starter.create": "Tạo nội dung",
     "m.ai.starter.create.desc": "Tạo báo cáo, đề xuất, deck hoặc kế hoạch.",
-    "m.ai.starter.create.prompt": "Giúp tôi tạo một Work Product mới từ ngữ cảnh công việc hiện tại.",
+    "m.ai.starter.create.prompt":
+      "Giúp tôi tạo một Work Product mới từ ngữ cảnh công việc hiện tại.",
     "m.ai.context.files": "Ảnh & tệp",
     "m.ai.context.camera": "Máy ảnh",
     "m.ai.context.uniwork": "Từ UniWork",
@@ -2437,10 +2441,12 @@ const dict = {
     "m.ai.starter.plan.prompt": "Plan my day using my calendar, tasks, and confirmed decisions.",
     "m.ai.starter.catchup": "Catch me up",
     "m.ai.starter.catchup.desc": "See recent changes, risks, and work awaiting you.",
-    "m.ai.starter.catchup.prompt": "Catch me up on recent changes, risks, and work awaiting my attention.",
+    "m.ai.starter.catchup.prompt":
+      "Catch me up on recent changes, risks, and work awaiting my attention.",
     "m.ai.starter.prepare": "Prepare me",
     "m.ai.starter.prepare.desc": "Prepare for your next meeting or piece of work.",
-    "m.ai.starter.prepare.prompt": "Prepare me for my next meeting with its context and related decisions.",
+    "m.ai.starter.prepare.prompt":
+      "Prepare me for my next meeting with its context and related decisions.",
     "m.ai.starter.create": "Create something",
     "m.ai.starter.create.desc": "Create a report, proposal, deck, or plan.",
     "m.ai.starter.create.prompt": "Help me create a new Work Product from my current work context.",
@@ -2450,7 +2456,8 @@ const dict = {
     "m.ai.context.people": "People & AI",
     "m.ai.context.apps": "Connect apps",
     "m.ai.context.search": "Find context",
-    "m.ai.context.description": "Choose permission-aware work data to help UNI understand your work.",
+    "m.ai.context.description":
+      "Choose permission-aware work data to help UNI understand your work.",
     "m.ai.context.searchPlaceholder": "Search work, meetings, decisions…",
     "m.ai.context.empty": "No matching context found.",
     // command palette

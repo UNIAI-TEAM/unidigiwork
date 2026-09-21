@@ -104,10 +104,16 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
     onSuccess: async (result) => {
       setPendingText(null);
       setContexts([]);
-      await queryClient.invalidateQueries({ queryKey: ["native-ai-messages", result.conversationId] });
+      await queryClient.invalidateQueries({
+        queryKey: ["native-ai-messages", result.conversationId],
+      });
       await queryClient.invalidateQueries({ queryKey: ["mobile-ai-conversations"] });
       if (!conversationId) {
-        await navigate({ to: "/m/c/$id" as never, params: { id: result.conversationId } as never, replace: true });
+        await navigate({
+          to: "/m/c/$id" as never,
+          params: { id: result.conversationId } as never,
+          replace: true,
+        });
       }
     },
     onError: (error) => {
@@ -150,7 +156,10 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
             {pendingText && (
               <>
                 <UserMessage content={pendingText} />
-                <div className="flex items-center gap-3 text-sm text-muted-foreground" role="status">
+                <div
+                  className="flex items-center gap-3 text-sm text-muted-foreground"
+                  role="status"
+                >
                   <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary/10 text-primary">
                     <Sparkles className="h-4 w-4" />
                   </span>
@@ -167,15 +176,24 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
         {contexts.length > 0 && (
           <div className="mb-2 flex gap-2 overflow-x-auto pb-1">
             {contexts.map((item) => (
-              <span key={item.id} className="flex min-h-9 shrink-0 items-center gap-2 rounded-lg border border-border bg-surface px-3 text-xs">
-                {item.kind === "file" ? <Paperclip className="h-3.5 w-3.5" /> : <Sparkles className="h-3.5 w-3.5 text-primary" />}
+              <span
+                key={item.id}
+                className="flex min-h-9 shrink-0 items-center gap-2 rounded-lg border border-border bg-surface px-3 text-xs"
+              >
+                {item.kind === "file" ? (
+                  <Paperclip className="h-3.5 w-3.5" />
+                ) : (
+                  <Sparkles className="h-3.5 w-3.5 text-primary" />
+                )}
                 <span className="max-w-48 truncate">{item.label}</span>
                 <Button
                   variant="ghost"
                   size="icon-sm"
                   className="h-7 w-7"
                   aria-label={t("m.ai.removeContext")}
-                  onClick={() => setContexts((current) => current.filter((context) => context.id !== item.id))}
+                  onClick={() =>
+                    setContexts((current) => current.filter((context) => context.id !== item.id))
+                  }
                 >
                   <X className="h-3.5 w-3.5" />
                 </Button>
@@ -208,7 +226,12 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
             }}
             className="max-h-32 min-h-11 min-w-0 flex-1 resize-none bg-transparent px-2 py-3 text-base leading-5 outline-none placeholder:text-muted-foreground"
           />
-          <Button variant="ghost" size="icon" className="h-11 w-11 shrink-0 rounded-xl" aria-label={t("m.ai.voice")}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-11 w-11 shrink-0 rounded-xl"
+            aria-label={t("m.ai.voice")}
+          >
             <Mic className="h-4 w-4" />
           </Button>
           <Button
@@ -218,20 +241,41 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
             disabled={!input.trim() || send.isPending}
             onClick={() => submit(input)}
           >
-            {send.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUp className="h-4 w-4" />}
+            {send.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <ArrowUp className="h-4 w-4" />
+            )}
           </Button>
         </div>
         <p className="mt-2 text-center text-[11px] text-muted-foreground">{t("m.ai.disclaimer")}</p>
       </div>
 
-      <input ref={fileRef} hidden type="file" multiple onChange={(event) => addFiles(event.currentTarget.files, setContexts)} />
-      <input ref={cameraRef} hidden type="file" accept="image/*" capture="environment" onChange={(event) => addFiles(event.currentTarget.files, setContexts)} />
+      <input
+        ref={fileRef}
+        hidden
+        type="file"
+        multiple
+        onChange={(event) => addFiles(event.currentTarget.files, setContexts)}
+      />
+      <input
+        ref={cameraRef}
+        hidden
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={(event) => addFiles(event.currentTarget.files, setContexts)}
+      />
       <AddContextDrawer
         open={contextOpen}
         onOpenChange={setContextOpen}
         onFiles={() => fileRef.current?.click()}
         onCamera={() => cameraRef.current?.click()}
-        onAdd={(item) => setContexts((current) => current.some((context) => context.id === item.id) ? current : [...current, item])}
+        onAdd={(item) =>
+          setContexts((current) =>
+            current.some((context) => context.id === item.id) ? current : [...current, item],
+          )
+        }
       />
     </div>
   );
@@ -245,7 +289,9 @@ function EmptyState({ firstName, onPick }: { firstName: string; onPick: (value: 
         <span className="mx-auto grid h-12 w-12 place-items-center rounded-xl border border-border bg-surface text-primary shadow-card">
           <Sparkles className="h-5 w-5" />
         </span>
-        <h1 className="mt-6 text-3xl font-semibold leading-tight">{t("m.ai.greeting").replace("{name}", firstName)}</h1>
+        <h1 className="mt-6 text-3xl font-semibold leading-tight">
+          {t("m.ai.greeting").replace("{name}", firstName)}
+        </h1>
         <p className="mt-2 text-sm text-muted-foreground">{t("m.ai.question")}</p>
       </div>
       <div className="mx-auto mt-10 grid w-full max-w-xl grid-cols-2 gap-3">
@@ -259,7 +305,9 @@ function EmptyState({ firstName, onPick }: { firstName: string; onPick: (value: 
             <span className="flex h-full flex-col items-start gap-2">
               <Icon className="h-5 w-5 text-primary" />
               <span className="text-sm font-semibold">{t(`m.ai.starter.${key}` as never)}</span>
-              <span className="text-xs font-normal leading-relaxed text-muted-foreground">{t(`m.ai.starter.${key}.desc` as never)}</span>
+              <span className="text-xs font-normal leading-relaxed text-muted-foreground">
+                {t(`m.ai.starter.${key}.desc` as never)}
+              </span>
             </span>
           </Button>
         ))}
@@ -280,7 +328,11 @@ function Message({ message }: { message: AiMessageDTO }) {
         {message.metadata?.sources?.length ? (
           <div className="mt-3 flex flex-wrap gap-2">
             {message.metadata.sources.slice(0, 4).map((source) => (
-              <a key={source.sourceId} href={source.href} className="max-w-full truncate rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground">
+              <a
+                key={source.sourceId}
+                href={source.href}
+                className="max-w-full truncate rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground"
+              >
                 {source.title}
               </a>
             ))}
@@ -292,7 +344,11 @@ function Message({ message }: { message: AiMessageDTO }) {
 }
 
 function UserMessage({ content }: { content: string }) {
-  return <p className="ml-auto w-fit max-w-[86%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-surface-2 px-4 py-3 text-sm leading-6">{content}</p>;
+  return (
+    <p className="ml-auto w-fit max-w-[86%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-surface-2 px-4 py-3 text-sm leading-6">
+      {content}
+    </p>
+  );
 }
 
 function AddContextDrawer({
@@ -330,31 +386,63 @@ function AddContextDrawer({
 
   const search = useQuery({
     queryKey: ["native-ai-context-search", mode, debounced, workspaceId],
-    queryFn: () => searchFn({ data: { q: debounced, workspaceId: workspaceId ?? undefined, kinds: mode === "people" ? ["person"] : undefined, limit: 20, offset: 0, expandGraph: false } }),
+    queryFn: () =>
+      searchFn({
+        data: {
+          q: debounced,
+          workspaceId: workspaceId ?? undefined,
+          kinds: mode === "people" ? ["person"] : undefined,
+          limit: 20,
+          offset: 0,
+          expandGraph: false,
+        },
+      }),
     enabled: open && mode !== "menu" && debounced.length >= 2,
   });
 
   const options = [
     { id: "files", label: t("m.ai.context.files"), icon: Image, action: onFiles },
     { id: "camera", label: t("m.ai.context.camera"), icon: Camera, action: onCamera },
-    { id: "uniwork", label: t("m.ai.context.uniwork"), icon: Search, action: () => setMode("uniwork") },
+    {
+      id: "uniwork",
+      label: t("m.ai.context.uniwork"),
+      icon: Search,
+      action: () => setMode("uniwork"),
+    },
     { id: "people", label: t("m.ai.context.people"), icon: Users, action: () => setMode("people") },
-    { id: "apps", label: t("m.ai.context.apps"), icon: Zap, action: () => void navigate({ to: "/settings", search: { tab: "integrations" } as never }) },
+    {
+      id: "apps",
+      label: t("m.ai.context.apps"),
+      icon: Zap,
+      action: () => void navigate({ to: "/settings", search: { tab: "integrations" } as never }),
+    },
   ];
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="max-h-[78dvh] rounded-t-2xl">
         <DrawerHeader className="text-left">
-          <DrawerTitle>{mode === "menu" ? t("m.ai.addContext") : t("m.ai.context.search")}</DrawerTitle>
+          <DrawerTitle>
+            {mode === "menu" ? t("m.ai.addContext") : t("m.ai.context.search")}
+          </DrawerTitle>
           <DrawerDescription>{t("m.ai.context.description")}</DrawerDescription>
         </DrawerHeader>
         <div className="overflow-y-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
           {mode === "menu" ? (
             <div className="grid gap-2">
               {options.map(({ id, label, icon: Icon, action }) => (
-                <Button key={id} variant="ghost" className="min-h-14 justify-start rounded-xl px-3" onClick={() => { action(); if (id === "files" || id === "camera" || id === "apps") onOpenChange(false); }}>
-                  <span className="grid h-9 w-9 place-items-center rounded-lg bg-surface-2 text-primary"><Icon className="h-4 w-4" /></span>
+                <Button
+                  key={id}
+                  variant="ghost"
+                  className="min-h-14 justify-start rounded-xl px-3"
+                  onClick={() => {
+                    action();
+                    if (id === "files" || id === "camera" || id === "apps") onOpenChange(false);
+                  }}
+                >
+                  <span className="grid h-9 w-9 place-items-center rounded-lg bg-surface-2 text-primary">
+                    <Icon className="h-4 w-4" />
+                  </span>
                   {label}
                 </Button>
               ))}
@@ -363,22 +451,59 @@ function AddContextDrawer({
             <div className="space-y-3">
               <div className="flex items-center gap-2 rounded-xl border border-border bg-surface px-3">
                 <Search className="h-4 w-4 text-muted-foreground" />
-                <input value={query} onChange={(event) => setQuery(event.target.value)} autoFocus aria-label={t("m.ai.context.search")} placeholder={t("m.ai.context.searchPlaceholder")} className="h-12 min-w-0 flex-1 bg-transparent text-sm outline-none" />
+                <input
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  autoFocus
+                  aria-label={t("m.ai.context.search")}
+                  placeholder={t("m.ai.context.searchPlaceholder")}
+                  className="h-12 min-w-0 flex-1 bg-transparent text-sm outline-none"
+                />
               </div>
-              {search.isFetching && <p className="py-6 text-center text-sm text-muted-foreground">{t("m.ai.loading")}</p>}
+              {search.isFetching && (
+                <p className="py-6 text-center text-sm text-muted-foreground">
+                  {t("m.ai.loading")}
+                </p>
+              )}
               <div className="grid gap-1">
                 {(search.data?.items ?? []).map((item) => {
                   const type = ENTITY_MAP[item.entityType];
                   if (!type) return null;
                   return (
-                    <Button key={`${item.entityType}:${item.id}`} variant="ghost" className="h-auto min-h-14 justify-start whitespace-normal rounded-xl px-3 text-left" onClick={() => { onAdd({ id: `${type}:${item.id}`, label: item.title, kind: "entity", root: { type, id: item.id } }); onOpenChange(false); }}>
-                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary"><FileText className="h-4 w-4" /></span>
-                      <span className="min-w-0"><span className="block truncate text-sm font-medium">{item.title}</span><span className="block truncate text-xs font-normal text-muted-foreground">{item.subtitle}</span></span>
+                    <Button
+                      key={`${item.entityType}:${item.id}`}
+                      variant="ghost"
+                      className="h-auto min-h-14 justify-start whitespace-normal rounded-xl px-3 text-left"
+                      onClick={() => {
+                        onAdd({
+                          id: `${type}:${item.id}`,
+                          label: item.title,
+                          kind: "entity",
+                          root: { type, id: item.id },
+                        });
+                        onOpenChange(false);
+                      }}
+                    >
+                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+                        <FileText className="h-4 w-4" />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-medium">{item.title}</span>
+                        <span className="block truncate text-xs font-normal text-muted-foreground">
+                          {item.subtitle}
+                        </span>
+                      </span>
                     </Button>
                   );
                 })}
               </div>
-              {debounced.length >= 2 && !search.isFetching && (search.data?.items.length ?? 0) === 0 && <p className="py-8 text-center text-sm text-muted-foreground">{t("m.ai.context.empty")}</p>}
+              {debounced.length >= 2 &&
+                !search.isFetching &&
+                (search.data?.items.length ?? 0) === 0 && (
+                  <p className="py-8 text-center text-sm text-muted-foreground">
+                    {t("m.ai.context.empty")}
+                  </p>
+                )}
             </div>
           )}
         </div>
@@ -387,8 +512,20 @@ function AddContextDrawer({
   );
 }
 
-function addFiles(files: FileList | null, setContexts: React.Dispatch<React.SetStateAction<AddedContext[]>>) {
+function addFiles(
+  files: FileList | null,
+  setContexts: React.Dispatch<React.SetStateAction<AddedContext[]>>,
+) {
   if (!files?.length) return;
-  const additions = Array.from(files).map((file) => ({ id: `file:${file.name}:${file.lastModified}`, label: file.name, kind: "file" as const }));
-  setContexts((current) => [...current, ...additions.filter((item) => !current.some((existing) => existing.id === item.id))].slice(0, 12));
+  const additions = Array.from(files).map((file) => ({
+    id: `file:${file.name}:${file.lastModified}`,
+    label: file.name,
+    kind: "file" as const,
+  }));
+  setContexts((current) =>
+    [
+      ...current,
+      ...additions.filter((item) => !current.some((existing) => existing.id === item.id)),
+    ].slice(0, 12),
+  );
 }
