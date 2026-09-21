@@ -255,6 +255,30 @@ function TaskOpsPage() {
           </ul>
         )}
       </div>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+        <span className="text-xs text-muted-foreground">
+          {t("tops.total").replace("{n}", String(total))} ·{" "}
+          {t("tops.pageOf").replace("{p}", String(page)).replace("{n}", String(pageCount))}
+        </span>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={page <= 1 || board.isFetching}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+          >
+            {t("tops.prev")}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={page >= pageCount || board.isFetching}
+            onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+          >
+            {t("tops.next")}
+          </Button>
+        </div>
+      </div>
       <p className="mt-3 text-xs text-muted-foreground">{t("tops.graphNote")}</p>
     </div>
   );
