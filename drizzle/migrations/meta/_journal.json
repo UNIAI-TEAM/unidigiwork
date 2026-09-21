@@ -134,6 +134,13 @@
       "when": 1789956638896,
       "tag": "0018_fix_schedule_meeting_ambiguous_overload",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1789961204686,
+      "tag": "0019_platform_admin_join_tenant",
+      "breakpoints": true
     }
   ]
 }

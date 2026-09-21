@@ -10844,6 +10844,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      platform_admin_join_tenant: {
+        Args: { _tenant_id: string }
+        Returns: Json
+      }
       project_document_version_uploaded: {
         Args: { _payload: Json; _tenant_id: string }
         Returns: Json
