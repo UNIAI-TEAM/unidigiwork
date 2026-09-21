@@ -466,7 +466,9 @@ async function hydrateSelected(
               r["changed_at"],
               r["change_kind"] ?? "UPDATE",
               fields.length ? `đổi: ${fields.join(",")}` : null,
-              snap["status"] ? `trạng thái khi đó: ${DECISION_STATUS_LABEL[String(snap["status"])] ?? snap["status"]}` : null,
+              snap["status"]
+                ? `trạng thái khi đó: ${DECISION_STATUS_LABEL[String(snap["status"])] ?? snap["status"]}`
+                : null,
               fields.includes("title") && snap["title"]
                 ? `nội dung khi đó: ${cleanExcerpt(snap["title"], 160)}`
                 : null,
@@ -501,7 +503,6 @@ async function hydrateSelected(
       })(),
     );
   }
-
 
   const personIds = byType.get("PERSON") ?? [];
   if (personIds.length) {

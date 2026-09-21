@@ -160,7 +160,9 @@ export async function recordConsumerTelemetry(
   operation: string,
 ): Promise<void> {
   try {
-    await (supabase as never as { from: (t: string) => { insert: (v: unknown) => Promise<unknown> } })
+    await (
+      supabase as never as { from: (t: string) => { insert: (v: unknown) => Promise<unknown> } }
+    )
       .from("ai_context_metrics")
       .insert({
         tenant_id: result.pack.tenantId || null,
