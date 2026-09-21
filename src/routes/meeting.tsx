@@ -323,7 +323,16 @@ function MeetingPage() {
   }, []);
 
   // Workspace đang xem: ưu tiên tham số URL, mặc định workspace đầu tiên.
-  const activeWs = search.ws ?? restoredFilter?.ws ?? workspaces.data?.[0]?.id;
+  // Giá trị lưu trong URL/localStorage có thể trỏ tới workspace mà người dùng
+  // không còn là thành viên (đổi tổ chức, bị gỡ khỏi workspace, dùng chung
+  // trình duyệt). Khi đó phải bỏ qua nó, nếu không mọi thao tác tạo phòng đều
+  // báo "chưa thuộc không gian làm việc nào" dù tài khoản vẫn có workspace.
+  const wsList = workspaces.data;
+  const requestedWs = search.ws ?? restoredFilter?.ws;
+  const activeWs =
+    requestedWs && (!wsList || wsList.some((w) => w.id === requestedWs))
+      ? requestedWs
+      : wsList?.[0]?.id;
   const roomQuery = search.q ?? restoredFilter?.q ?? "";
   const currentPage = search.page ?? 1;
   const roomState: RoomFilterState = search.state ?? restoredFilter?.state ?? "all";
