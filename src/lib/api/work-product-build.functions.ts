@@ -164,7 +164,7 @@ export const buildWorkProduct = createServerFn({ method: "POST" })
     if (error) mapPgError(error);
     const workProductId = row.id as string;
 
-    // 3. Provenance: liên kết với thực thể actor đính kèm VÀ nguồn thật mà bản
+    // 4. Provenance: liên kết với thực thể actor đính kèm VÀ nguồn thật mà bản
     //    soạn đã trích dẫn (lịch họp, tài liệu, công việc) — không suy diễn.
     const LINKABLE = new Set(["TASK", "DOCUMENT", "MEETING", "MEETING_ARTIFACT"]);
     const linkedSources: Array<{ type: string; id: string }> = [];
