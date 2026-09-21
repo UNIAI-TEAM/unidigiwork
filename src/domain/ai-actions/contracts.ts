@@ -176,14 +176,27 @@ export function parseActionPayload(type: AiActionType, payload: unknown) {
 
 /** Động từ hành động tường minh (§95). Không có → chỉ tư vấn, không đề xuất ghi. */
 const ACTION_VERB_HINTS: { type: AiActionType; re: RegExp }[] = [
-  { type: "CREATE_EMAIL_DRAFT", re: /(soạn|soan)\s+(email|thư|thu|mail)|draft (an )?email|viết email|email follow[- ]?up/i },
-  { type: "CREATE_MEETING", re: /(đặt lịch|dat lich|lên lịch|len lich|tạo (cuộc )?họp|tao hop|schedule (a )?meeting|book a meeting)/i },
-  { type: "UPDATE_TASK_FIELDS", re: /(cập nhật|cap nhat|dời hạn|doi han|đổi hạn|gia hạn|đổi ưu tiên|đổi tiêu đề|update (the )?task|reschedule (the )?task)/i },
-  { type: "CREATE_TASK", re: /(tạo|tao|thêm|them)\s+(task|công việc|cong viec|đầu việc)|create (a )?task|(giao|giao việc)\s+cho/i },
+  {
+    type: "CREATE_EMAIL_DRAFT",
+    re: /(soạn|soan)\s+(email|thư|thu|mail)|draft (an )?email|viết email|email follow[- ]?up/i,
+  },
+  {
+    type: "CREATE_MEETING",
+    re: /(đặt lịch|dat lich|lên lịch|len lich|tạo (cuộc )?họp|tao hop|schedule (a )?meeting|book a meeting)/i,
+  },
+  {
+    type: "UPDATE_TASK_FIELDS",
+    re: /(cập nhật|cap nhat|dời hạn|doi han|đổi hạn|gia hạn|đổi ưu tiên|đổi tiêu đề|update (the )?task|reschedule (the )?task)/i,
+  },
+  {
+    type: "CREATE_TASK",
+    re: /(tạo|tao|thêm|them)\s+(task|công việc|cong viec|đầu việc)|create (a )?task|(giao|giao việc)\s+cho/i,
+  },
 ];
 
 const SEND_INTENT = /(gửi|gui)\s+(email|thư|thu|mail)|send (the )?email/i;
-const DELETE_INTENT = /(xoá|xóa|xoa|huỷ bỏ|delete|remove)\s+(task|công việc|tài liệu|document|user|thành viên)/i;
+const DELETE_INTENT =
+  /(xoá|xóa|xoa|huỷ bỏ|delete|remove)\s+(task|công việc|tài liệu|document|user|thành viên)/i;
 
 /**
  * Câu hỏi hiện trạng ("việc nào mới cập nhật gần đây?") không phải lệnh ghi.

@@ -48,7 +48,8 @@ export async function autoAssignAgentForTask(args: {
         const ranked = pool
           .map((a: any) => ({
             agent: a,
-            overlap: (Array.isArray(a.skills) ? a.skills : []).filter((s: string) => wanted.has(s)).length,
+            overlap: (Array.isArray(a.skills) ? a.skills : []).filter((s: string) => wanted.has(s))
+              .length,
           }))
           .sort((x: { overlap: number }, y: { overlap: number }) => y.overlap - x.overlap);
         if (ranked[0]?.overlap) {
