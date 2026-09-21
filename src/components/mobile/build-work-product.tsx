@@ -54,28 +54,35 @@ export function WorkProductRun({
     kinds.map((kind) => ({ kind, status: "PENDING" as const })),
   );
 
+  // Giữ props mới nhất trong ref: effect chỉ chạy MỘT lần khi mount.
+  // (Trước đây deps đổi theo mỗi lần render tạo mảng mới → cleanup huỷ cập nhật
+  // trạng thái trong khi `started` chặn chạy lại → thanh tiến trình kẹt ở "đang soạn".)
+  const argsRef = useRef({ kinds, brief, workspaceId, sourceEntities, buildFn });
+  argsRef.current = { kinds, brief, workspaceId, sourceEntities, buildFn };
+
+  // Không dùng cờ `cancelled` theo vòng đời effect: ở StrictMode effect bị
+  // tháo/gắn lại ngay, làm mất kết quả trả về trong khi `started` chặn chạy lại
+  // → tiến trình kẹt ở "đang soạn". Chỉ chạy đúng một lần cho mỗi lượt.
   useEffect(() => {
-    if (started.current || kinds.length === 0) return;
+    const { kinds: kindList, brief: briefText, workspaceId: wsId } = argsRef.current;
+    if (started.current || kindList.length === 0) return;
     started.current = true;
-    let cancelled = false;
 
     void (async () => {
-      for (const kind of kinds) {
-        if (cancelled) return;
+      for (const kind of kindList) {
         setStates((current) =>
           current.map((item) => (item.kind === kind ? { ...item, status: "RUNNING" } : item)),
         );
         try {
-          const result = await buildFn({
+          const result = await argsRef.current.buildFn({
             data: {
               idempotencyKey: crypto.randomUUID(),
               kind,
-              brief: brief.slice(0, 8000),
-              ...(workspaceId ? { workspaceId } : {}),
-              sourceEntities,
+              brief: briefText.slice(0, 8000),
+              ...(wsId ? { workspaceId: wsId } : {}),
+              sourceEntities: argsRef.current.sourceEntities,
             },
           });
-          if (cancelled) return;
           setStates((current) =>
             current.map((item) =>
               item.kind === kind
@@ -84,18 +91,14 @@ export function WorkProductRun({
             ),
           );
         } catch {
-          if (cancelled) return;
           setStates((current) =>
             current.map((item) => (item.kind === kind ? { ...item, status: "FAILED" } : item)),
           );
         }
       }
     })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [brief, buildFn, kinds, sourceEntities, workspaceId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (states.length === 0) return null;
 
