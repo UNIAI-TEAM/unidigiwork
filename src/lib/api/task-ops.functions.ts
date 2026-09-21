@@ -35,7 +35,12 @@ export type TaskOpsBoard = {
   tenantId: string | null;
   tasks: TaskOpsItem[];
   members: Record<string, TaskOpsPerson[]>;
+  total: number;
+  page: number;
+  pageSize: number;
 };
+
+export const TASK_OPS_STATUSES = ["todo", "in_progress", "blocked", "done", "canceled"] as const;
 
 type Ctx = { supabase: any; userId: string };
 
