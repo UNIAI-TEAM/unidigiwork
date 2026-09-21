@@ -88,16 +88,18 @@ function AuthenticatedLayout() {
       )}
       <Outlet />
       <CommandPalette />
-      <UniCopilot />
-      <button
-        type="button"
-        onClick={() => openUniCopilot()}
-        title="Hỏi UNI (⌘J)"
-        aria-label="Hỏi UNI"
-        className="fixed bottom-5 right-5 z-30 hidden h-11 w-11 items-center justify-center rounded-full border border-border bg-background shadow-lg transition hover:bg-surface md:flex"
-      >
-        <Sparkles className="h-5 w-5 text-primary" />
-      </button>
+      {!location.pathname.startsWith("/m") && <UniCopilot />}
+      {!location.pathname.startsWith("/m") && (
+        <button
+          type="button"
+          onClick={() => openUniCopilot()}
+          title="Hỏi UNI (⌘J)"
+          aria-label="Hỏi UNI"
+          className="fixed bottom-5 right-5 z-30 hidden h-11 w-11 items-center justify-center rounded-full border border-border bg-background shadow-lg transition hover:bg-surface md:flex"
+        >
+          <Sparkles className="h-5 w-5 text-primary" />
+        </button>
+      )}
     </>
   );
 }
