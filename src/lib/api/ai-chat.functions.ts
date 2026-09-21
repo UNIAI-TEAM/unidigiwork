@@ -55,6 +55,8 @@ export type AiMessageMetadata = {
   rangeDays?: number;
   openedLinks?: AiOpenedLink[];
   contextLabels?: string[];
+  /** Work Graph: thực thể người dùng đính kèm ở composer (task/decision/document/work product...). */
+  contextEntities?: Array<{ type: string; id: string; label?: string }>;
   sources?: Array<{
     sourceId: string;
     entityType: string;
