@@ -221,9 +221,17 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
   const buildBrief = canBuildWorkProduct
     ? `${lastUserRequest}\n\nKẾT QUẢ AI VỪA HOÀN THÀNH:\n${lastMessage?.content ?? ""}`
     : "";
-  const buildSources = contexts
+  // Chips trong composer đã bị xoá sau khi gửi, nên lấy lại ngữ cảnh đã lưu
+  // của lượt hỏi gần nhất để giữ provenance cho Work Product.
+  const lastUserMessage = [...displayMessages].reverse().find((m) => m.role === "user");
+  const persistedSources = (lastUserMessage?.metadata?.contextEntities ?? []).map((item) => ({
+    type: item.type,
+    id: item.id,
+  }));
+  const composerSources = contexts
     .filter((item) => item.root)
     .map((item) => ({ type: item.root!.type, id: item.root!.id }));
+  const buildSources = composerSources.length > 0 ? composerSources : persistedSources;
 
   return (
     <div className="mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col overflow-hidden">
