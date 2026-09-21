@@ -21,7 +21,14 @@ const toLocalInput = (iso?: string | null) => {
   return d.toISOString().slice(0, 16);
 };
 
-export function ActionProposalCard({ proposal }: { proposal: ProposedAiAction }) {
+export function ActionProposalCard({
+  proposal,
+  onExecuted,
+}: {
+  proposal: ProposedAiAction;
+  /** ORCHESTRATION — báo kết quả cho surface cha để mở phần quan sát execution. */
+  onExecuted?: (result: AiActionExecutionResult) => void;
+}) {
   const navigate = useNavigate();
   const confirm = useServerFn(confirmAiAction);
   const cancel = useServerFn(cancelAiAction);
