@@ -1070,6 +1070,30 @@ function WorkProductDetail() {
                             </ul>
                           </div>
                         )}
+                        {(feedbackByVersion.get(v.version) ?? []).length > 0 && (
+                          <div className="mt-2 rounded-md border border-dashed p-2">
+                            <p className="text-[11px] font-medium text-muted-foreground">
+                              {t("wp.revise.usedTitle").replace(
+                                "{n}",
+                                String((feedbackByVersion.get(v.version) ?? []).length),
+                              )}
+                            </p>
+                            <ul className="mt-1 space-y-1">
+                              {(feedbackByVersion.get(v.version) ?? []).map((f: any) => (
+                                <li key={f.id} className="text-[11px] text-muted-foreground">
+                                  <span className="font-medium">
+                                    {f.kind === "REVIEW"
+                                      ? t("wp.revise.usedReview")
+                                      : t("wp.revise.usedComment")}
+                                    {f.status ? ` · ${f.status}` : ""}
+                                    {f.at ? ` · ${fmt.format(new Date(f.at))}` : ""}
+                                  </span>
+                                  <span className="block whitespace-pre-wrap">{f.body}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                         {data.versions.length > 1 && v.version !== data.versions[0].version && (
                           <Button
                             size="sm"
