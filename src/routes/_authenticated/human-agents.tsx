@@ -62,6 +62,7 @@ type Draft = {
   maxOpenTasks: string;
   note: string;
   role: string;
+  assignRole: AssignRole;
 };
 
 function HumanAgentsPage() {
