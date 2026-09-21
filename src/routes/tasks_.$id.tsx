@@ -153,6 +153,17 @@ function TaskDetailPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  // Sửa hạn chót ngay tại trang chi tiết — Work Graph tự cập nhật theo công việc
+  const saveDue = useMutation({
+    mutationFn: (dueAt: string | null) =>
+      updateTask({ data: { taskId: id, dueAt, idempotencyKey: crypto.randomUUID() } }),
+    onSuccess: () => {
+      invalidate();
+      toast.success("Đã cập nhật hạn chót");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   // Sửa nhãn (tags) ngay tại trang chi tiết, lưu tức thì
   const saveTags = useMutation({
     mutationFn: (tags: string[]) => setTaskTags({ data: { taskId: id, tags } }),
