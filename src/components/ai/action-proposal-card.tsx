@@ -71,6 +71,7 @@ export function ActionProposalCard({
       const res = (await confirm({ data: { actionId: proposal.actionId, edits: edits as never } })) as AiActionExecutionResult;
       setResult(res);
       setState("done");
+      onExecuted?.(res);
     } catch (e) {
       const msg = e instanceof Error && e.message ? e.message : "Không thể thực hiện hành động.";
       if (/ACTION_STALE|đã thay đổi kể từ lúc UNI/i.test(msg)) {
