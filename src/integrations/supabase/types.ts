@@ -10767,6 +10767,14 @@ export type Database = {
         }
         Returns: string
       }
+      notify_human_task_assignment: {
+        Args: {
+          _assignee_id: string
+          _idempotency_key?: string
+          _task_id: string
+        }
+        Returns: string
+      }
       open_meeting_attendance: {
         Args: { _correlation_id?: string; _meeting_id: string }
         Returns: {

@@ -278,6 +278,7 @@ export interface AiActionExecutionResult {
   assignedHuman?: {
     userId: string;
     name: string;
+    email: string;
     reason: string;
     openTasks: number;
   } | null;
