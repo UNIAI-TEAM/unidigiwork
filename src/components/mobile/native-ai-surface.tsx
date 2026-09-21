@@ -220,6 +220,49 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
             {displayMessages.map((message) => (
               <Message key={message.id} message={message} />
             ))}
+            {turns.map((turn) => (
+              <div key={turn.id} className="space-y-3">
+                <UserMessage content={turn.user} />
+                {turn.note && (
+                  <p className="rounded-xl border border-border bg-surface px-3 py-2 text-[13px] text-muted-foreground">
+                    {turn.note}
+                  </p>
+                )}
+                {turn.executor && (
+                  <p className="text-xs text-muted-foreground">
+                    {turn.executor.kind === "AI"
+                      ? t("m.ai.assign.ai").replace("{name}", turn.executor.profileName ?? "")
+                      : t("m.ai.assign.human")}
+                  </p>
+                )}
+                {turn.proposal && (
+                  <ActionProposalCard
+                    proposal={turn.proposal}
+                    onExecuted={(result: AiActionExecutionResult) =>
+                      setTurns((current) =>
+                        current.map((item) =>
+                          item.id === turn.id && result.entityType === "TASK" && result.entityId
+                            ? {
+                                ...item,
+                                executed: {
+                                  taskId: result.entityId,
+                                  agentName: result.assignedAgent?.agentName,
+                                },
+                              }
+                            : item,
+                        ),
+                      )
+                    }
+                  />
+                )}
+                {turn.executed && (
+                  <ExecutionObserver
+                    taskId={turn.executed.taskId}
+                    agentName={turn.executed.agentName}
+                  />
+                )}
+              </div>
+            ))}
             {pendingText && (
               <>
                 <UserMessage content={pendingText} />
