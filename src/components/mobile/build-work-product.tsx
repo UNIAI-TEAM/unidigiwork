@@ -57,8 +57,8 @@ export function WorkProductRun({
   // Giữ props mới nhất trong ref: effect chỉ chạy MỘT lần khi mount.
   // (Trước đây deps đổi theo mỗi lần render tạo mảng mới → cleanup huỷ cập nhật
   // trạng thái trong khi `started` chặn chạy lại → thanh tiến trình kẹt ở "đang soạn".)
-  const argsRef = useRef({ kinds, brief, workspaceId, sourceEntities });
-  argsRef.current = { kinds, brief, workspaceId, sourceEntities };
+  const argsRef = useRef({ kinds, brief, workspaceId, sourceEntities, buildFn });
+  argsRef.current = { kinds, brief, workspaceId, sourceEntities, buildFn };
 
   useEffect(() => {
     const { kinds: kindList, brief: briefText, workspaceId: wsId } = argsRef.current;
