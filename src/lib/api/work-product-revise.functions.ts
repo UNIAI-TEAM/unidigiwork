@@ -74,7 +74,11 @@ export const reviseWorkProductFromFeedback = createServerFn({ method: "POST" })
     for (const c of (comments.data ?? []) as Array<Record<string, string | null>>) {
       const text = (c["body"] ?? "").trim();
       if (!text) continue;
-      items.push({ kind: "COMMENT", at: c["resolved_at"] ?? c["created_at"] ?? "", text: text.slice(0, 800) });
+      items.push({
+        kind: "COMMENT",
+        at: c["resolved_at"] ?? c["created_at"] ?? "",
+        text: text.slice(0, 800),
+      });
     }
     if (items.length === 0)
       throw new ApiError({ code: "VALIDATION_FAILED", message: "NO_PROCESSED_FEEDBACK" });
