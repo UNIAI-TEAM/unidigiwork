@@ -16,6 +16,20 @@ export default defineConfig({
   // preset luôn bị ép về cloudflare-module nên dòng này không ảnh hưởng preview.
   nitro: { preset: "node-server" },
   vite: {
+    // Dự phòng: nếu bản build chỉ có biến không mang tiền tố VITE_, vẫn nhúng
+    // đúng thông tin kết nối vào gói trình duyệt để trang không sập khi phát hành.
+    define: {
+      ...(process.env.VITE_SUPABASE_URL || !process.env.SUPABASE_URL
+        ? {}
+        : { "import.meta.env.VITE_SUPABASE_URL": JSON.stringify(process.env.SUPABASE_URL) }),
+      ...(process.env.VITE_SUPABASE_PUBLISHABLE_KEY || !process.env.SUPABASE_PUBLISHABLE_KEY
+        ? {}
+        : {
+            "import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY": JSON.stringify(
+              process.env.SUPABASE_PUBLISHABLE_KEY,
+            ),
+          }),
+    },
     plugins: [
       // Chỉ sinh service worker cho bản build; không đăng ký tự động, không chạy ở dev.
       VitePWA({
