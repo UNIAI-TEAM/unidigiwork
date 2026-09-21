@@ -13,9 +13,7 @@ export default defineConfig({
   },
   // Chỉ build ra Node server khi tự host (Docker): đặt UNIWORK_SELF_HOST=1.
   // Mặc định giữ nguyên preset của Lovable để bản phát hành công khai chạy đúng.
-  ...(process.env.UNIWORK_SELF_HOST === "1"
-    ? { nitro: { preset: "node-server" as const } }
-    : {}),
+  ...(process.env.UNIWORK_SELF_HOST === "1" ? { nitro: { preset: "node-server" as const } } : {}),
   vite: {
     // Dự phòng: nếu bản build chỉ có biến không mang tiền tố VITE_, vẫn nhúng
     // đúng thông tin kết nối vào gói trình duyệt để trang không sập khi phát hành.
