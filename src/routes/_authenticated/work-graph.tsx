@@ -42,6 +42,7 @@ const RUNNING_TASK = new Set(["in_progress", "blocked"]);
 const RUNNING_EXEC = new Set(["QUEUED", "RUNNING", "WAITING_REVIEW", "CHANGES_REQUESTED"]);
 const DONE_TASK = new Set(["done"]);
 const DONE_EXEC = new Set(["ACCEPTED", "SUCCEEDED"]);
+const PAGE_SIZE = 25;
 
 function isRunning(i: WorkGraphBoardItem) {
   if (i.type === "EXECUTION") return RUNNING_EXEC.has(i.status ?? "");
@@ -61,37 +62,43 @@ function WorkGraphPage() {
   const { t, lang } = useI18n();
   const [tab, setTab] = useState<Tab>("all");
   const [q, setQ] = useState("");
+  const [term, setTerm] = useState("");
+  const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setTerm(q);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(id);
+  }, [q]);
 
   const overview = useQuery({
     queryKey: ["work-graph-overview"],
     queryFn: () => getWorkGraphOverview(),
   });
   const board = useQuery({
-    queryKey: ["work-graph-board"],
-    queryFn: () => listWorkGraphBoard(),
+    queryKey: ["work-graph-board", tab, term, page],
+    queryFn: () => listWorkGraphBoard({ data: { tab, search: term, page, pageSize: PAGE_SIZE } }),
+    placeholderData: (prev) => prev,
   });
 
-  const items = board.data ?? [];
+  const visible = board.data?.items ?? [];
+  const counts = board.data?.counts ?? { all: 0, running: 0, done: 0, products: 0 };
+  const total = board.data?.total ?? 0;
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
-  const counts = useMemo(
-    () => ({
-      all: items.length,
-      running: items.filter(isRunning).length,
-      done: items.filter(isDone).length,
-      products: items.filter((i) => i.type === "WORK_PRODUCT").length,
-    }),
-    [items],
-  );
-
-  const visible = useMemo(() => {
-    const term = q.trim().toLowerCase();
-    let list = items;
-    if (tab === "running") list = list.filter(isRunning);
-    else if (tab === "done") list = list.filter(isDone);
-    else if (tab === "products") list = list.filter((i) => i.type === "WORK_PRODUCT");
-    if (term) list = list.filter((i) => i.title.toLowerCase().includes(term));
-    return list;
-  }, [items, tab, q]);
+  /** Thời gian còn lại tới hạn, rút gọn theo ngày/giờ. */
+  const remaining = (due: string | null) => {
+    if (!due) return null;
+    const ms = new Date(due).getTime() - Date.now();
+    const overdue = ms < 0;
+    const abs = Math.abs(ms);
+    const days = Math.floor(abs / 86400000);
+    const hours = Math.floor((abs % 86400000) / 3600000);
+    const span = days > 0 ? `${days}${t("wg.unitDay")}` : `${Math.max(1, hours)}${t("wg.unitHour")}`;
+    return { text: overdue ? t("wg.overdueBy").replace("{v}", span) : t("wg.leftIn").replace("{v}", span), overdue };
+  };
 
   const statusLabel = (i: WorkGraphBoardItem) => {
     const s = i.status ?? "";
