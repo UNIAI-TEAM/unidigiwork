@@ -35,6 +35,7 @@ import type { AiActionExecutionResult, ProposedAiAction } from "@/domain/ai-acti
 import { routeRequest, type OrchestrationExecutor } from "@/domain/ai-orchestration/route";
 import { ActionProposalCard } from "@/components/ai/action-proposal-card";
 import { ExecutionObserver } from "@/components/mobile/execution-observer";
+import { BuildWorkProductBar } from "@/components/mobile/build-work-product";
 import { useActiveWorkspace } from "@/lib/active-workspace";
 import { useCurrentIdentity } from "@/lib/use-current-identity";
 import { useI18n } from "@/lib/i18n";
