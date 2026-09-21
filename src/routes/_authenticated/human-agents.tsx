@@ -28,6 +28,9 @@ import {
   listHumanAgents,
   removeHumanAgent,
   saveHumanAgent,
+  setHumanAgentRolePolicy,
+  ASSIGN_ROLES,
+  type AssignRole,
   type HumanAgentDTO,
 } from "@/lib/api/human-agents.functions";
 
@@ -62,6 +65,7 @@ type Draft = {
   maxOpenTasks: string;
   note: string;
   role: string;
+  assignRole: AssignRole;
 };
 
 function HumanAgentsPage() {
@@ -74,6 +78,17 @@ function HumanAgentsPage() {
   const list = useQuery({ queryKey: ["human-agents"], queryFn: () => listHumanAgents() });
   const canManage = list.data?.canManage ?? false;
   const agents = useMemo(() => list.data?.agents ?? [], [list.data]);
+  const rolePolicies = list.data?.rolePolicies ?? { admin: true, manager: true, staff: true };
+
+  const savePolicy = useMutation({
+    mutationFn: (v: { role: AssignRole; canReceiveTasks: boolean }) =>
+      setHumanAgentRolePolicy({ data: v }),
+    onSuccess: () => {
+      toast.success(t("ha.policySaved"));
+      void qc.invalidateQueries({ queryKey: ["human-agents"] });
+    },
+    onError: () => toast.error(t("ha.error")),
+  });
 
   const save = useMutation({
     mutationFn: (d: Draft) =>
@@ -89,6 +104,7 @@ function HumanAgentsPage() {
           maxOpenTasks: Math.max(1, Math.min(200, Number(d.maxOpenTasks) || 10)),
           note: d.note.trim(),
           role: d.role,
+          assignRole: d.assignRole,
         },
       }),
     onSuccess: () => {
@@ -131,6 +147,7 @@ function HumanAgentsPage() {
       maxOpenTasks: String(a.maxOpenTasks),
       note: a.note,
       role: a.role,
+      assignRole: a.assignRole,
     });
 
   const editing = draft ? agents.find((a) => a.userId === draft.userId) : undefined;
@@ -184,6 +201,28 @@ function HumanAgentsPage() {
         </div>
       </div>
 
+      <div className="mt-4 rounded-xl border bg-card p-4">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-sm font-semibold">{t("ha.policyTitle")}</h2>
+          <p className="text-xs text-muted-foreground">{t("ha.policyHint")}</p>
+        </div>
+        <div className="mt-3 grid gap-2 sm:grid-cols-3">
+          {ASSIGN_ROLES.map((r) => (
+            <div key={r} className="flex items-center justify-between rounded-lg border px-3 py-2">
+              <Label htmlFor={`ha-policy-${r}`} className="text-sm">
+                {t(`ha.assignRole.${r}` as "ha.assignRole.admin")}
+              </Label>
+              <Switch
+                id={`ha-policy-${r}`}
+                checked={rolePolicies[r]}
+                disabled={!canManage || savePolicy.isPending}
+                onCheckedChange={(v) => savePolicy.mutate({ role: r, canReceiveTasks: v })}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div className="mt-4 rounded-xl border bg-card">
         {list.isLoading ? (
           <div className="flex h-40 items-center justify-center text-muted-foreground">
@@ -215,6 +254,9 @@ function HumanAgentsPage() {
                           : t("ha.disabled")}
                     </Badge>
                     <Badge variant="outline">{a.role}</Badge>
+                    <Badge variant={rolePolicies[a.assignRole] ? "outline" : "destructive"}>
+                      {t(`ha.assignRole.${a.assignRole}` as "ha.assignRole.admin")}
+                    </Badge>
                   </span>
                   <span className="mt-0.5 block truncate text-xs text-muted-foreground">
                     {a.workEmail || a.accountEmail || "—"} · {a.openTasks}/{a.maxOpenTasks}{" "}
@@ -311,6 +353,26 @@ function HumanAgentsPage() {
                     value={draft.maxOpenTasks}
                     onChange={(e) => setDraft({ ...draft, maxOpenTasks: e.target.value })}
                   />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="ha-assign-role">{t("ha.assignRole")}</Label>
+                  <Select
+                    value={draft.assignRole}
+                    onValueChange={(v) => setDraft({ ...draft, assignRole: v as AssignRole })}
+                  >
+                    <SelectTrigger id="ha-assign-role">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ASSIGN_ROLES.map((r) => (
+                        <SelectItem key={r} value={r}>
+                          {t(`ha.assignRole.${r}` as "ha.assignRole.admin")}
+                          {!rolePolicies[r] ? ` — ${t("ha.policyBlocked")}` : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">{t("ha.assignRoleHint")}</p>
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="ha-role">{t("ha.role")}</Label>

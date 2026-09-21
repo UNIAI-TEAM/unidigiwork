@@ -11,12 +11,16 @@ const ACTIVE_TENANT_COOKIE = "uniwork_active_tenant";
 const MANAGER_ROLES = ["tenant_owner", "tenant_admin"];
 const OPEN_STATUSES = ["todo", "in_progress", "blocked"];
 
+export const ASSIGN_ROLES = ["admin", "manager", "staff"] as const;
+export type AssignRole = (typeof ASSIGN_ROLES)[number];
+
 export type HumanAgentDTO = {
   userId: string;
   name: string;
   accountEmail: string;
   workEmail: string;
   role: string;
+  assignRole: AssignRole;
   memberStatus: string;
   registered: boolean;
   enabled: boolean;
@@ -31,9 +35,25 @@ export type HumanAgentsResult = {
   tenantId: string | null;
   canManage: boolean;
   agents: HumanAgentDTO[];
+  /** Vai trò nào được orchestration giao việc (mặc định tất cả đều được). */
+  rolePolicies: Record<AssignRole, boolean>;
 };
 
 type Ctx = { supabase: any; userId: string };
+
+async function loadRolePolicies(ctx: Ctx, tenantId: string): Promise<Record<AssignRole, boolean>> {
+  const { data } = await ctx.supabase
+    .from("human_agent_role_policies")
+    .select("role, can_receive_tasks")
+    .eq("tenant_id", tenantId);
+  const result = { admin: true, manager: true, staff: true } as Record<AssignRole, boolean>;
+  for (const row of (data ?? []) as Array<{ role: string; can_receive_tasks: boolean }>) {
+    if ((ASSIGN_ROLES as readonly string[]).includes(row.role)) {
+      result[row.role as AssignRole] = Boolean(row.can_receive_tasks);
+    }
+  }
+  return result;
+}
 
 async function resolveTenant(ctx: Ctx): Promise<{ tenantId: string; role: string } | null> {
   const { data, error } = await ctx.supabase
@@ -108,6 +128,9 @@ async function loadAgents(ctx: Ctx, tenantId: string): Promise<HumanAgentDTO[]> 
         accountEmail,
         workEmail: typeof a?.["work_email"] === "string" ? (a["work_email"] as string) : "",
         role: m.role,
+        assignRole: ((ASSIGN_ROLES as readonly string[]).includes(String(a?.["assign_role"]))
+          ? (a?.["assign_role"] as AssignRole)
+          : "staff") as AssignRole,
         memberStatus: m.status,
         registered: Boolean(a),
         enabled: a ? Boolean(a["enabled"]) : false,
@@ -129,11 +152,22 @@ export const listHumanAgents = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<HumanAgentsResult> => {
     const ctx = context as unknown as Ctx;
     const tenant = await resolveTenant(ctx);
-    if (!tenant) return { tenantId: null, canManage: false, agents: [] };
+    if (!tenant)
+      return {
+        tenantId: null,
+        canManage: false,
+        agents: [],
+        rolePolicies: { admin: true, manager: true, staff: true },
+      };
+    const [agents, rolePolicies] = await Promise.all([
+      loadAgents(ctx, tenant.tenantId),
+      loadRolePolicies(ctx, tenant.tenantId),
+    ]);
     return {
       tenantId: tenant.tenantId,
       canManage: MANAGER_ROLES.includes(tenant.role),
-      agents: await loadAgents(ctx, tenant.tenantId),
+      agents,
+      rolePolicies,
     };
   });
 
@@ -145,6 +179,7 @@ const SaveInput = z.object({
   maxOpenTasks: z.number().int().min(1).max(200),
   note: z.string().trim().max(500).optional(),
   role: z.string().trim().max(40).optional(),
+  assignRole: z.enum(ASSIGN_ROLES).optional(),
 });
 
 /** Thêm/sửa một human agent (bật tham gia orchestration, lĩnh vực, email nhận việc, quyền). */
@@ -167,6 +202,7 @@ export const saveHumanAgent = createServerFn({ method: "POST" })
       _domains: data.domains ?? [],
       _max_open_tasks: data.maxOpenTasks,
       _note: data.note && data.note.length > 0 ? data.note : null,
+      _assign_role: data.assignRole ?? "staff",
     });
     if (error) mapPgError(error, "PERMISSION_DENIED");
 
@@ -200,4 +236,26 @@ export const removeHumanAgent = createServerFn({ method: "POST" })
     });
     if (error) mapPgError(error, "PERMISSION_DENIED");
     return { agents: await loadAgents(ctx, tenant.tenantId) };
+  });
+
+/** Bật/tắt quyền nhận việc của một vai trò trong tổ chức. */
+export const setHumanAgentRolePolicy = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({ role: z.enum(ASSIGN_ROLES), canReceiveTasks: z.boolean() }).parse(i),
+  )
+  .handler(async ({ data, context }): Promise<{ rolePolicies: Record<AssignRole, boolean> }> => {
+    const ctx = context as unknown as Ctx;
+    const tenant = await resolveTenant(ctx);
+    if (!tenant)
+      throw new ApiError({ code: "TENANT_ACCESS_DENIED", message: "TENANT_ACCESS_DENIED" });
+    if (!MANAGER_ROLES.includes(tenant.role))
+      throw new ApiError({ code: "PERMISSION_DENIED", message: "PERMISSION_DENIED" });
+    const { error } = await ctx.supabase.rpc("set_human_agent_role_policy", {
+      _tenant_id: tenant.tenantId,
+      _role: data.role,
+      _can_receive_tasks: data.canReceiveTasks,
+    });
+    if (error) mapPgError(error, "PERMISSION_DENIED");
+    return { rolePolicies: await loadRolePolicies(ctx, tenant.tenantId) };
   });

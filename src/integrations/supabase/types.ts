@@ -2759,8 +2759,53 @@ export type Database = {
         }
         Relationships: []
       }
+      human_agent_role_policies: {
+        Row: {
+          can_receive_tasks: boolean
+          created_at: string
+          created_by: string | null
+          id: string
+          role: string
+          row_version: number
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          can_receive_tasks?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          role: string
+          row_version?: number
+          tenant_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          can_receive_tasks?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          role?: string
+          row_version?: number
+          tenant_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "human_agent_role_policies_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       human_agents: {
         Row: {
+          assign_role: string
           created_at: string
           created_by: string | null
           domains: string[]
@@ -2776,6 +2821,7 @@ export type Database = {
           work_email: string | null
         }
         Insert: {
+          assign_role?: string
           created_at?: string
           created_by?: string | null
           domains?: string[]
@@ -2791,6 +2837,7 @@ export type Database = {
           work_email?: string | null
         }
         Update: {
+          assign_role?: string
           created_at?: string
           created_by?: string | null
           domains?: string[]
@@ -11661,6 +11708,26 @@ export type Database = {
         Args: { _message_id: string; _pinned: boolean }
         Returns: boolean
       }
+      set_human_agent_role_policy: {
+        Args: { _can_receive_tasks: boolean; _role: string; _tenant_id: string }
+        Returns: {
+          can_receive_tasks: boolean
+          created_at: string
+          created_by: string | null
+          id: string
+          role: string
+          row_version: number
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "human_agent_role_policies"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       set_meeting_access_policy: {
         Args: {
           _access_policy: string
@@ -12327,38 +12394,74 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      upsert_human_agent: {
-        Args: {
-          _domains?: string[]
-          _enabled?: boolean
-          _max_open_tasks?: number
-          _note?: string
-          _tenant_id: string
-          _user_id: string
-          _work_email?: string
-        }
-        Returns: {
-          created_at: string
-          created_by: string | null
-          domains: string[]
-          enabled: boolean
-          id: string
-          max_open_tasks: number
-          note: string | null
-          row_version: number
-          tenant_id: string
-          updated_at: string
-          updated_by: string | null
-          user_id: string
-          work_email: string | null
-        }
-        SetofOptions: {
-          from: "*"
-          to: "human_agents"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
+      upsert_human_agent:
+        | {
+            Args: {
+              _domains?: string[]
+              _enabled?: boolean
+              _max_open_tasks?: number
+              _note?: string
+              _tenant_id: string
+              _user_id: string
+              _work_email?: string
+            }
+            Returns: {
+              assign_role: string
+              created_at: string
+              created_by: string | null
+              domains: string[]
+              enabled: boolean
+              id: string
+              max_open_tasks: number
+              note: string | null
+              row_version: number
+              tenant_id: string
+              updated_at: string
+              updated_by: string | null
+              user_id: string
+              work_email: string | null
+            }
+            SetofOptions: {
+              from: "*"
+              to: "human_agents"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: {
+              _assign_role?: string
+              _domains?: string[]
+              _enabled?: boolean
+              _max_open_tasks?: number
+              _note?: string
+              _tenant_id: string
+              _user_id: string
+              _work_email?: string
+            }
+            Returns: {
+              assign_role: string
+              created_at: string
+              created_by: string | null
+              domains: string[]
+              enabled: boolean
+              id: string
+              max_open_tasks: number
+              note: string | null
+              row_version: number
+              tenant_id: string
+              updated_at: string
+              updated_by: string | null
+              user_id: string
+              work_email: string | null
+            }
+            SetofOptions: {
+              from: "*"
+              to: "human_agents"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
       upsert_sell_work_pilot_product: {
         Args: {
           _activate?: boolean
