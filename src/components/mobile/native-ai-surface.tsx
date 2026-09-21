@@ -104,12 +104,19 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
   const send = useMutation({
     mutationFn: (text: string) => {
       const root = contexts.find((item) => item.root)?.root;
+      // Work Graph: mọi thực thể đã đính kèm (task / quyết định / tài liệu / Work Product)
+      // được gửi kèm và lưu cùng tin nhắn, không chỉ nhãn văn bản.
+      const contextEntities = contexts
+        .filter((item) => item.root)
+        .slice(0, 8)
+        .map((item) => ({ type: item.root!.type, id: item.root!.id, label: item.label }));
       return sendFn({
         data: {
           text,
           ...(conversationId ? { conversationId } : {}),
           ...(workspaceId && !conversationId ? { workspaceId } : {}),
           ...(root ? { rootEntity: root } : {}),
+          ...(contextEntities.length ? { contextEntities } : {}),
           ...(contexts.length
             ? {
                 contextNote: contexts.map((item) => item.label).join(" · "),
