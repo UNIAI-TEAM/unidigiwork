@@ -77,11 +77,11 @@ export const reviseWorkProductFromFeedback = createServerFn({ method: "POST" })
       items.push({ kind: "COMMENT", at: c["resolved_at"] ?? c["created_at"] ?? "", text: text.slice(0, 800) });
     }
     if (items.length === 0)
-      throw new ApiError({ code: "VALIDATION_ERROR", message: "NO_PROCESSED_FEEDBACK" });
+      throw new ApiError({ code: "VALIDATION_FAILED", message: "NO_PROCESSED_FEEDBACK" });
 
     const beforeContent = String(product.content ?? "");
     if (!beforeContent.trim())
-      throw new ApiError({ code: "VALIDATION_ERROR", message: "WORK_PRODUCT_CONTENT_EMPTY" });
+      throw new ApiError({ code: "VALIDATION_FAILED", message: "WORK_PRODUCT_CONTENT_EMPTY" });
 
     // 2. Bài học chung của tổ chức cho loại kết quả này (vòng học sẵn có).
     const { loadWorkProductGuidance } = await import("./work-product-learning.server");
