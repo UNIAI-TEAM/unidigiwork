@@ -2,16 +2,18 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getCookie } from "@tanstack/react-start/server";
 import { z } from "zod";
-import { streamText } from "ai";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { ApiError } from "@/contracts/errors";
+import { WORK_ENTITY_TYPES } from "@/domain/work-graph/relationship-types";
 
 const ACTIVE_TENANT_COOKIE = "uniwork_active_tenant";
-const MODEL = "openai/gpt-5.6-sol";
-const SYSTEM_PROMPT =
-  "Bạn là trợ lý AI của UNIWORK, một nền tảng làm việc số cho doanh nghiệp. " +
-  "Trả lời ngắn gọn, chính xác, ưu tiên tiếng Việt trừ khi người dùng dùng ngôn ngữ khác. " +
-  "Khi được hỏi về dữ liệu nội bộ mà bạn không có, hãy nói rõ và gợi ý nơi tra cứu trong UNIWORK.";
+const MODEL = "openai/gpt-6-astra";
+const SYSTEM_PROMPT = [
+  "Bạn là UNI, giao diện điều khiển công việc của UNIWORK.",
+  "Trả lời ngắn gọn, chính xác và dựa trên ngữ cảnh công việc được cấp.",
+  "Conversation là bề mặt điều khiển; khi phù hợp hãy nêu rõ action, decision hoặc Work Product nên là kết quả tiếp theo.",
+  "Ưu tiên tiếng Việt trừ khi người dùng dùng ngôn ngữ khác.",
+].join(" ");
 
 type Ctx = { supabase: any; userId: string };
 
@@ -52,6 +54,15 @@ export type AiMessageMetadata = {
   workspaceName?: string | null;
   rangeDays?: number;
   openedLinks?: AiOpenedLink[];
+  contextLabels?: string[];
+  sources?: Array<{
+    sourceId: string;
+    entityType: string;
+    entityId: string;
+    title: string;
+    href: string;
+    updatedAt: string | null;
+  }>;
 };
 
 const openedLinkSchema = z.object({
@@ -67,6 +78,7 @@ const messageMetadataSchema = z.object({
   workspaceName: z.string().max(200).nullish(),
   rangeDays: z.number().int().min(1).max(3650).optional(),
   openedLinks: z.array(openedLinkSchema).max(10).optional(),
+  contextLabels: z.array(z.string().max(160)).max(12).optional(),
 });
 
 export type AiWorkspaceOption = { id: string; name: string };
@@ -322,6 +334,7 @@ export const sendAiMessage = createServerFn({ method: "POST" })
         text: z.string().min(1).max(8000),
         contextNote: z.string().max(2000).optional(),
         metadata: messageMetadataSchema.optional(),
+        rootEntity: z.object({ type: z.enum(WORK_ENTITY_TYPES), id: z.string().uuid() }).optional(),
       })
       .parse(i),
   )
@@ -392,9 +405,6 @@ export const sendAiMessage = createServerFn({ method: "POST" })
         .limit(40);
 
       const started = Date.now();
-      const { createLovableResponsesProvider } = await import("@/lib/ai-gateway.server");
-      const provider = createLovableResponsesProvider(apiKey);
-
       let reply = "";
       let inputTokens = 0;
       let outputTokens = 0;
@@ -402,21 +412,35 @@ export const sendAiMessage = createServerFn({ method: "POST" })
       let errorMessage: string | null = null;
 
       try {
-        const result = streamText({
-          model: provider.responses(MODEL),
-          system: data.contextNote
-            ? `${SYSTEM_PROMPT}\n\n[Ngữ cảnh hiện tại của người dùng]\n${data.contextNote}\nHãy ưu tiên trả lời bám theo ngữ cảnh này khi phù hợp.`
-            : SYSTEM_PROMPT,
-          messages: ((history ?? []) as Array<{ role: string; content: string }>).map((m) => ({
-            role: m.role === "assistant" ? ("assistant" as const) : ("user" as const),
-            content: m.content,
-          })),
-          providerOptions: { openai: { store: false } },
-        });
-        reply = await result.text;
-        const usage = await result.usage;
-        inputTokens = usage?.inputTokens ?? 0;
-        outputTokens = usage?.outputTokens ?? 0;
+         const { answerWithContext } = await import("./ai-consumer.server");
+         const conversation = ((history ?? []) as Array<{ role: string; content: string }>)
+           .slice(-10)
+           .map((m) => `${m.role === "assistant" ? "UNI" : "Người dùng"}: ${m.content.slice(0, 1200)}`)
+           .join("\n");
+         const result = await answerWithContext(ctx.supabase, ctx.userId, getCookie(ACTIVE_TENANT_COOKIE) ?? null, {
+           consumer: "MY_AI",
+           query: data.text,
+           workspaceId,
+           rootEntity: data.rootEntity ?? null,
+           systemRole: SYSTEM_PROMPT,
+           promptSections: [
+             conversation ? `HỘI THOẠI GẦN ĐÂY:\n${conversation}` : "",
+             data.contextNote ? `NGỮ CẢNH NGƯỜI DÙNG ĐÃ THÊM:\n${data.contextNote}` : "",
+             `YÊU CẦU HIỆN TẠI:\n${data.text}`,
+           ],
+         });
+         reply = result.text;
+         inputTokens = result.usage?.inputTokens ?? 0;
+         outputTokens = result.usage?.outputTokens ?? 0;
+         const sourceMetadata = result.sources.slice(0, 8).map((source) => ({
+           sourceId: source.sourceId,
+           entityType: source.entityType,
+           entityId: source.entityId,
+           title: source.title,
+           href: source.href,
+           updatedAt: source.updatedAt,
+         }));
+         (data as typeof data & { _sourceMetadata?: typeof sourceMetadata })._sourceMetadata = sourceMetadata;
       } catch (e) {
         status = "failed";
         errorMessage = e instanceof Error ? e.message : String(e);
@@ -435,6 +459,11 @@ export const sendAiMessage = createServerFn({ method: "POST" })
             model: MODEL,
             input_tokens: inputTokens,
             output_tokens: outputTokens,
+             metadata: {
+               source: "NATIVE_AI",
+               workspaceId,
+               sources: (data as typeof data & { _sourceMetadata?: AiMessageMetadata["sources"] })._sourceMetadata ?? [],
+             },
           })
           .select("id")
           .single();
@@ -469,7 +498,7 @@ export const sendAiMessage = createServerFn({ method: "POST" })
         output_tokens: outputTokens,
         total_tokens: inputTokens + outputTokens,
         duration_ms: Date.now() - started,
-        run_id: provider.getRunId() ?? null,
+         run_id: null,
         status,
         error_message: errorMessage,
       });
@@ -477,7 +506,10 @@ export const sendAiMessage = createServerFn({ method: "POST" })
       if (status !== "succeeded")
         throw new ApiError({ code: "AI_GENERATION_FAILED", message: errorMessage ?? "AI lỗi" });
 
-      return { conversationId: conversationId!, reply, inputTokens, outputTokens };
+       if (!conversationId) {
+         throw new ApiError({ code: "AI_CONVERSATION_NOT_FOUND", message: "Không tìm thấy hội thoại" });
+       }
+       return { conversationId, reply, inputTokens, outputTokens };
     },
   );
 
