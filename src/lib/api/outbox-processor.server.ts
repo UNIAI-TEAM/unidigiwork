@@ -327,6 +327,7 @@ export async function handleOutboxEvent(
     }
   }
   const results = await Promise.all([
+    deliverInApp(admin, ev),
     deliverPush(ev),
     deliverEmail(ev),
     deliverWebhooks(admin, ev),
