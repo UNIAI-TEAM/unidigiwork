@@ -251,12 +251,13 @@ function TasksPage() {
   }, [activeWs, queryClient]);
 
   const createMutation = useMutation({
-    mutationFn: (p: { status: Status; title: string; priority: Priority }) =>
+    mutationFn: (p: { status: Status; title: string; priority: Priority; dueAt?: string }) =>
       createTask({
         data: {
           workspaceId: activeWs!,
           title: p.title,
           priority: p.priority,
+          ...(p.dueAt ? { dueAt: p.dueAt } : {}),
           idempotencyKey: crypto.randomUUID(),
         },
       }),
