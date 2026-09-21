@@ -142,9 +142,7 @@ function HumanAgentsPage() {
           <h1 className="text-2xl font-semibold tracking-tight">{t("ha.title")}</h1>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{t("ha.subtitle")}</p>
         </div>
-        {!canManage && list.data?.tenantId && (
-          <Badge variant="secondary">{t("ha.readonly")}</Badge>
-        )}
+        {!canManage && list.data?.tenantId && <Badge variant="secondary">{t("ha.readonly")}</Badge>}
       </div>
 
       <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -316,10 +314,7 @@ function HumanAgentsPage() {
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="ha-role">{t("ha.role")}</Label>
-                  <Select
-                    value={draft.role}
-                    onValueChange={(v) => setDraft({ ...draft, role: v })}
-                  >
+                  <Select value={draft.role} onValueChange={(v) => setDraft({ ...draft, role: v })}>
                     <SelectTrigger id="ha-role">
                       <SelectValue />
                     </SelectTrigger>
@@ -349,10 +344,7 @@ function HumanAgentsPage() {
             <Button variant="ghost" onClick={() => setDraft(null)}>
               {t("ha.cancel")}
             </Button>
-            <Button
-              disabled={save.isPending || !draft}
-              onClick={() => draft && save.mutate(draft)}
-            >
+            <Button disabled={save.isPending || !draft} onClick={() => draft && save.mutate(draft)}>
               {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {t("ha.save")}
             </Button>

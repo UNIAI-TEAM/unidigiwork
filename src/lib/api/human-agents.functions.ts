@@ -112,13 +112,16 @@ async function loadAgents(ctx: Ctx, tenantId: string): Promise<HumanAgentDTO[]> 
         registered: Boolean(a),
         enabled: a ? Boolean(a["enabled"]) : false,
         domains: Array.isArray(a?.["domains"]) ? (a["domains"] as string[]) : [],
-        maxOpenTasks: typeof a?.["max_open_tasks"] === "number" ? (a["max_open_tasks"] as number) : 10,
+        maxOpenTasks:
+          typeof a?.["max_open_tasks"] === "number" ? (a["max_open_tasks"] as number) : 10,
         note: typeof a?.["note"] === "string" ? (a["note"] as string) : "",
         openTasks: load.get(m.user_id) ?? 0,
         isSelf: m.user_id === ctx.userId,
       } satisfies HumanAgentDTO;
     })
-    .sort((a, b) => Number(b.registered) - Number(a.registered) || a.name.localeCompare(b.name, "vi"));
+    .sort(
+      (a, b) => Number(b.registered) - Number(a.registered) || a.name.localeCompare(b.name, "vi"),
+    );
 }
 
 export const listHumanAgents = createServerFn({ method: "GET" })
