@@ -481,6 +481,8 @@ export const sendAiMessage = createServerFn({ method: "POST" })
             query: data.text,
             workspaceId,
             rootEntity: data.rootEntity ?? null,
+            pinnedEntities:
+              data.contextEntities?.map((item) => ({ type: item.type, id: item.id })) ?? null,
             systemRole: SYSTEM_PROMPT,
             promptSections: [
               conversation ? `HỘI THOẠI GẦN ĐÂY:\n${conversation}` : "",
