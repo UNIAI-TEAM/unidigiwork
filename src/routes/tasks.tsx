@@ -1013,12 +1013,15 @@ function QuickAddForm({
   const { t } = useI18n();
   const [title, setTitle] = useState("");
   const [priority, setPriority] = useState<Priority>("normal");
+  const [due, setDue] = useState("");
 
   const submit = () => {
     const v = title.trim();
     if (!v) return;
-    onSubmit({ title: v, priority });
+    const dueAt = due ? new Date(due).toISOString() : undefined;
+    onSubmit({ title: v, priority, dueAt });
     setTitle("");
+    setDue("");
   };
 
   return (
