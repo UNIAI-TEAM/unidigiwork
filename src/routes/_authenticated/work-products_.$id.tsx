@@ -393,6 +393,14 @@ function WorkProductDetail() {
     },
   });
 
+  const revisionFeedback = useQuery({
+    queryKey: ["work-product-revision-feedback", id],
+    queryFn: () => listWorkProductRevisionFeedback({ data: { id } }),
+  });
+  const feedbackByVersion = new Map<number, any[]>(
+    (revisionFeedback.data?.groups ?? []).map((g: any) => [g.afterVersion, g.items]),
+  );
+
   const exportArtifact = useMutation({
     mutationFn: async (v: {
       format: "DOCX" | "XLSX" | "PPTX" | "PDF";
