@@ -175,7 +175,6 @@ export const buildWorkProduct = createServerFn({ method: "POST" })
       if (!linkError) linkedSources.push({ type: entity.type, id: entity.id });
     }
 
-
     return {
       id: workProductId,
       title,
