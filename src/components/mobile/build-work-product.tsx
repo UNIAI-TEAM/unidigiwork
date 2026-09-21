@@ -73,7 +73,7 @@ export function WorkProductRun({
           current.map((item) => (item.kind === kind ? { ...item, status: "RUNNING" } : item)),
         );
         try {
-          const result = await buildFn({
+          const result = await argsRef.current.buildFn({
             data: {
               idempotencyKey: crypto.randomUUID(),
               kind,
