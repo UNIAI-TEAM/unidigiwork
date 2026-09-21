@@ -97,16 +97,9 @@ function TaskOpsPage() {
   const tasks = board.data?.tasks ?? [];
   const members = board.data?.members ?? {};
 
-  const visible = useMemo(() => {
-    const term = q.trim().toLowerCase();
-    if (!term) return tasks;
-    return tasks.filter(
-      (item) =>
-        item.title.toLowerCase().includes(term) ||
-        item.workspaceName.toLowerCase().includes(term) ||
-        item.assignees.some((a) => a.name.toLowerCase().includes(term)),
-    );
-  }, [tasks, q]);
+  const visible = tasks;
+  const total = board.data?.total ?? 0;
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const overdue = tasks.filter((item) => item.overdue).length;
   const unassigned = tasks.filter((item) => item.assignees.length === 0).length;
