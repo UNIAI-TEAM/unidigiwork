@@ -203,6 +203,32 @@ function WorkGraphPage() {
                             lang === "vi" ? "vi-VN" : "en-US",
                           )}`}
                       </span>
+                      <span className="mt-1.5 flex items-center gap-2">
+                        <span className="h-1.5 w-24 overflow-hidden rounded-full bg-muted">
+                          <span
+                            className={`block h-full rounded-full ${
+                              isDone(i) ? "bg-primary" : "bg-foreground/50"
+                            }`}
+                            style={{ width: `${Math.min(100, Math.max(0, i.progress))}%` }}
+                          />
+                        </span>
+                        <span className="text-[11px] text-muted-foreground">
+                          {t("wg.progress")} {i.progress}%
+                        </span>
+                        {(() => {
+                          const r = remaining(i.dueAt);
+                          if (!r || isDone(i)) return null;
+                          return (
+                            <span
+                              className={`text-[11px] ${
+                                r.overdue ? "text-destructive" : "text-muted-foreground"
+                              }`}
+                            >
+                              · {r.text}
+                            </span>
+                          );
+                        })()}
+                      </span>
                     </span>
                     {i.status && (
                       <Badge
