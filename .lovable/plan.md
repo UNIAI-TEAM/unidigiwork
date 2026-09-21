@@ -1,161 +1,222 @@
-# PWA UNIWORK bám sát thiết kế trợ lý công việc đã gửi
+# PWA UNIWORK — Native AI Work Operating System
 
-## Kết luận đánh giá
+## Quyết định sản phẩm đã khóa
 
-PWA hiện tại **đã có nền kỹ thuật tốt**, nhưng mới khớp khoảng **45–55% về chức năng** và **25–35% về trải nghiệm hình ảnh** so với bộ thiết kế:
+PWA không triển khai thành tập hợp tám màn tĩnh và không biến Home thành dashboard AI. Toàn bộ trải nghiệm dùng một interaction model thống nhất:
 
-### Đã có và có thể tái sử dụng
-- Cài lên màn hình chính, bộ icon, chế độ độc lập, ngoại tuyến, cập nhật tự động và vùng an toàn thiết bị.
-- Nhánh màn hình riêng `/m/*`, tìm kiếm, thông báo, Chat, Tasks, Meetings, Email, My AI, My Box và Work Products.
-- My AI đã có Ask / Do / Brief Me / AI Team, câu trả lời có nguồn và độ tươi dữ liệu.
-- Work Product đã có danh sách, chi tiết, phiên bản, liên kết công việc/tài liệu/cuộc họp, Open và Share.
-- Có nền trợ lý UNI dùng chung, đề xuất hành động cần xác nhận, AI Workers và Work Graph Context.
-- Hỗ trợ sáng/tối, tiếng Việt mặc định và đa ngôn ngữ.
+```text
+Drawer → Composer → Context → Conversation / Execution Stream → Review → Work Product → Work Graph
+```
 
-### Lệch chính so với thiết kế
-1. **Vỏ ứng dụng:** hiện dùng topbar dày và 5 tab dưới; thiết kế dùng header tối giản, menu trượt bên trái và thanh nhập AI cố định dưới.
-2. **Home:** hiện là danh sách họp/việc/thông báo; thiết kế lấy trợ lý AI làm trung tâm với lời chào và 4 hành động lớn.
-3. **Plan my day / Catch me up / Prepare me / Create something:** chưa có bốn trải nghiệm chuyên biệt như thiết kế; hiện mới là prompt nhanh trong My AI.
-4. **Work Product:** dữ liệu đã có nhưng bố cục chưa khớp Preview / Insights / Sources / Activity và bản xem trước tài liệu lớn.
-5. **Voice:** chưa có màn nghe toàn màn hình, trạng thái nghe/xử lý và điều khiển như mẫu.
-6. **Điều hướng:** sidebar đầy đủ trong ảnh chưa có trên mobile; nhiều chức năng đang nằm ở More hoặc bottom tab.
-7. **Ngôn ngữ giao diện:** một số chuỗi mobile còn viết trực tiếp; cần đưa toàn bộ qua hệ thống dịch.
-8. **Kiến trúc dữ liệu:** một số màn mobile đang đọc/ghi bảng nghiệp vụ trực tiếp; khi triển khai phải chuyển sang luồng máy chủ/SDK hiện có, không tạo writer thứ hai.
-9. **Manifest:** bản hiện tại mở từ `/welcome`, không trực tiếp `/m/home`; cần giữ luồng đúng cho cả khách và người đã đăng nhập thay vì đổi mù quáng.
+Người dùng không cần hiểu cấu trúc module. Họ mở UNIWORK, nói điều muốn hoàn thành, bổ sung ngữ cảnh, quan sát Human + AI thực thi, duyệt kết quả và nhận Work Product.
 
-## Hướng thiết kế chốt
+## Đánh giá hiện trạng
 
-- Bám sát bố cục, nhịp điệu, mật độ và tương tác trong ảnh; không nhúng ảnh tham chiếu vào sản phẩm.
-- **Dark-first** giống mẫu: nền đen-xanh, bề mặt xám than, viền mảnh, xanh điện làm nhấn chính; vẫn hoàn thiện light mode bằng token hiện có.
-- Logo chữ ở giữa header; avatar/menu trái-phải tùy màn; tiêu đề màn nằm gọn trên cùng.
-- Menu hamburger mở drawer toàn chiều cao, chứa New chat, Search, My AI, Inbox, Workspaces và các module chính đúng thứ tự ảnh.
-- Thanh AI composer cố định phía dưới: nút thêm, ô nhập, micro, gửi; nằm trên safe area và không che nội dung.
-- Ô bấm tối thiểu 44px; không tràn ngang trong dải 390–820px; chuyển động ngắn, không nảy mạnh.
-- Tiếng Việt mặc định, English qua i18n; giữ tên sản phẩm như My AI / Work Products khi phù hợp thương hiệu.
+### Có thể tái sử dụng
+- Nền PWA: manifest, icon, cài lên máy, service worker, offline read-only, push notification và safe area.
+- Các route mobile, tìm kiếm, dữ liệu Tasks, Meetings, Email, Documents, Work Products và AI Workers.
+- UNI Copilot hiện có: conversation, nguồn trích dẫn, freshness, Context Ranker và đề xuất hành động cần xác nhận.
+- AI consumer contract, Work Graph Context, execution và Work Product lifecycle hiện có.
+- Work Product mobile đã có bản chi tiết, phiên bản, liên kết nguồn, Open và Share.
+
+### Cần thay đổi
+- Mobile shell hiện dùng topbar nhiều control và bottom navigation; không đúng Native AI model.
+- Home hiện là dashboard danh sách họp/việc/thông báo; phải hợp nhất với My AI.
+- My Box đang chia theo loại card; phải chuyển thành Inbox theo trạng thái hành động.
+- AI Team đang được trình bày như destination; phải trở thành execution layer do UNI tự orchestration.
+- Composer chưa là primitive xuyên suốt và dấu `+` chưa phải Add Context.
+- Conversation hiện thiên về prompt → answer; cần mở rộng thành execution stream kết thúc bằng Work Product.
+- Một số màn mobile còn đọc/ghi bảng nghiệp vụ trực tiếp; implementation phải đi qua SDK/server function/RPC hiện có.
+
+## Mô hình giao diện đích
+
+### App Shell
+- Không bottom navigation.
+- Header tối giản: `☰  UNIWORK  New` theo đúng cấu trúc ảnh; nút New tạo conversation/work mới.
+- Hamburger mở drawer toàn chiều cao.
+- Composer AI neo dưới cùng trên mọi surface phù hợp, nằm trên safe area và bàn phím.
+- Nội dung giữa header và composer là conversation, execution stream hoặc object detail.
+
+### Home / My AI hợp nhất
+- Route vào chính là một conversation surface duy nhất.
+- Trạng thái chưa có conversation:
+  - Lời chào cá nhân theo thời điểm.
+  - Bốn contextual starters: **Plan my day · Catch me up · Prepare me · Create something**.
+  - Composer: **Ask, plan, create, delegate…**
+- Khi người dùng gửi yêu cầu hoặc chọn starter:
+  - Bốn card biến mất.
+  - Màn hình chuyển thành conversation/execution stream.
+  - Mỗi bước hiển thị ngữ cảnh đã dùng, ai đang thực hiện, tiến độ, checkpoint cần người duyệt và kết quả.
+- Không tạo route/module AI riêng chỉ để chọn agent trước khi ra lệnh.
+
+### Drawer
+Thứ tự cuối cùng:
+
+1. **New work**
+2. **Search**
+3. **My AI**
+4. **INBOX**
+   - Needs attention
+   - Working
+   - In review
+5. **WORKSPACES**
+6. **LIBRARY**
+   - Work Products
+   - Meetings
+   - Email
+   - Documents
+7. Profile / Settings
+
+Chat không còn là destination chính trên mobile; conversation chính là My AI. Các cuộc trao đổi đội nhóm vẫn là nguồn/ngữ cảnh và có thể truy cập từ Search hoặc workspace phù hợp.
+
+### Composer và Add Context
+- Composer là interaction primitive chính: nhập chữ, voice, gửi và trạng thái đang thực thi.
+- Dấu `+` chỉ mở **Add Context**, tuyệt đối không thành menu Create Task / Create Meeting / Create Doc.
+- Bottom sheet Add Context gồm:
+  - Photos & Files
+  - Camera
+  - From UniWork
+  - People & AI
+  - Connect apps
+- Context đã chọn hiển thị thành chip có thể xem và gỡ trước khi gửi.
+- Context từ UNIWORK phải qua quyền tenant/workspace; file ngoài phải có trạng thái tải lên và lỗi rõ ràng.
+
+### Inbox thay My Box
+- Một activity model duy nhất, không bắt người dùng phân biệt email/task/agent/work product.
+- Ba trạng thái:
+  - **Needs attention:** cần trả lời, xác nhận, xử lý hoặc đang bị chặn.
+  - **Working:** Human hoặc AI đang thực hiện.
+  - **In review:** kết quả đang chờ người dùng/người có quyền duyệt.
+- Mỗi item trả lời được: việc gì đang xảy ra, ai đang làm, cần hành động nào, hạn khi nào và kết quả sẽ đi đâu.
+- Nguồn gốc (Email, Task, Meeting, Agent, Work Product) là metadata phụ, không phải cấu trúc điều hướng chính.
+
+### AI Team là execution layer
+- UNI tự orchestration Research / Data / Content / các agent phù hợp từ ý định và context.
+- Chỉ expose agent khi có giá trị quan sát: `Research Agent · Working · 42%`.
+- Stream thể hiện Human + AI steps, dependency, progress, blocker và checkpoint duyệt.
+- Người dùng có thể mở chi tiết agent từ execution, nhưng không phải chọn agent trước khi ra lệnh.
+
+### Work Product là first-class object
+- Execution không kết thúc ở câu trả lời nếu yêu cầu cần đầu ra bền vững.
+- Các loại đích: Report, Proposal, Presentation, Spreadsheet, Decision, Plan và loại hiện có.
+- Luồng lõi:
+
+```text
+Intent → Context → Execution → Review → Work Product → Work Graph
+```
+
+- Work Product detail dùng Preview / Insights / Sources / Activity; có version, provenance, review state và liên kết Work Graph.
+- Conversation giữ liên kết tới Work Product; Work Product không bị chôn trong chat history.
 
 ## Kế hoạch triển khai
 
-### Đợt 1 — Vỏ PWA đúng thiết kế
-- Thay bottom tab bằng header tối giản + drawer điều hướng + composer cố định phía dưới.
-- Giữ mọi route hiện có; drawer chỉ thay cách truy cập, không thay quyền hay nghiệp vụ.
-- Thêm avatar người dùng, badge Inbox, danh sách workspace thật và trạng thái active.
-- Chuẩn hóa safe area, bàn phím ảo, chiều cao động và cuộn nội dung.
-- Giữ service worker không chạy trong Preview; kiểm tra lại install/offline/push trên bản phát hành.
+### Đợt 0 — Khóa contract và quyền triển khai
+- Xác nhận batch PWA/UI được phê duyệt vì Blueprint hiện ghi Giai đoạn 0 cấm thêm/chỉnh UI.
+- Chốt activity contract cho Inbox và execution event contract bằng cách tái sử dụng nguồn hiện có; không tạo writer song song.
+- Lập mapping route cũ → interaction model mới để giữ deep link và không làm mất chức năng.
 
-**Nghiệm thu:** drawer mở/đóng bằng chạm, kéo và Escape; composer không bị bàn phím che; mọi mục điều hướng tới đúng màn; không có overflow ở 390, 440 và 820px.
+**Nghiệm thu:** không xung đột Blueprint; không schema mới ngoài batch duyệt; mọi command quan trọng vẫn qua trusted boundary.
 
-### Đợt 2 — Home trợ lý AI
-- Header lời chào theo thời điểm và tên người dùng.
-- Bốn thẻ đúng thiết kế:
-  - **Lập kế hoạch ngày** — ưu tiên việc, họp và việc theo dõi.
-  - **Cập nhật nhanh** — tổng hợp thay đổi kể từ lần truy cập gần nhất.
-  - **Chuẩn bị cho tôi** — chọn cuộc họp sắp tới để dựng briefing.
-  - **Tạo nội dung** — tạo Work Product từ cuộc họp, task hoặc yêu cầu tự do.
-- Chạm thẻ mở đúng luồng riêng; composer Home dùng cùng AI consumer contract hiện có.
-- Trạng thái rỗng, tải, lỗi và dữ liệu một phần phải rõ ràng, không dùng số liệu giả.
+### Đợt 1 — Native AI shell và conversation home
+- Bỏ bottom navigation khỏi mobile shell.
+- Tạo header `☰ UNIWORK New`, drawer đúng thứ tự đã khóa và composer cố định.
+- Hợp nhất `/m/home` và `/m/ai` về một conversation surface; giữ redirect tương thích cho URL cũ.
+- Trạng thái rỗng có lời chào + bốn starter; khi bắt đầu conversation, starter biến mất.
+- Thêm Add Context bottom sheet đủ 5 nguồn ngay trong đợt này.
+- Dùng lại UNI Copilot conversation engine thay vì tạo chatbot thứ hai.
 
-**Nghiệm thu:** cả 4 thẻ dùng dữ liệu tổ chức thật, tôn trọng quyền xem và cho kết quả có nguồn.
+**Nghiệm thu:** mở app → nhập yêu cầu hoặc chọn starter → stream xuất hiện; drawer/composer hoạt động ở 390, 440 và 820px; bàn phím không che ô nhập; mọi hit area ≥44px.
 
-### Đợt 3 — Bốn luồng AI chuyên biệt
+### Đợt 2 — Context và conversation stream
+- Context chips, xem trước, gỡ, upload progress và permission errors.
+- “From UniWork” tìm Tasks, Meetings, Email, Documents, Decisions và Work Products qua Universal Search/Context Engine.
+- Chuẩn hóa message rendering, nguồn, freshness, thinking/execution states và retry.
+- Voice entry nối vào cùng composer; transcript phải được xem lại trước action có mutation.
 
-#### Plan my day
-- Timeline ngày, thời lượng, lịch họp, task đến hạn và 3 việc cần chú ý.
-- AI chỉ đề xuất ưu tiên; người dùng xác nhận trước mọi thay đổi task/lịch.
-- Có “Xem kế hoạch đầy đủ” và mở đúng thực thể nguồn.
+**Nghiệm thu:** câu hỏi có context thật, nguồn và độ tươi; context không rò tenant; offline không cho mutation ngầm.
 
-#### Catch me up
-- Tổng hợp Email, Meetings, Tasks, Projects, People và AI Agents theo khoảng thời gian.
-- Hiển thị số thay đổi, key takeaways, nguồn và độ tươi; quyết định đã xác nhận được ưu tiên trước task.
-- Không suy diễn khi nguồn thiếu hoặc cũ.
+### Đợt 3 — Contextual starters thành workflows
+- **Plan my day:** timeline, ưu tiên và attention items từ dữ liệu thật.
+- **Catch me up:** thay đổi theo thời gian ở email/họp/task/project/people/agents; quyết định đã xác nhận ưu tiên trước task.
+- **Prepare me:** meeting briefing gồm Overview / Context / People / Files từ transcript, summary, decisions và linked entities.
+- **Create something:** execution có bước thật và kết thúc bằng Work Product phù hợp.
+- Các starter chỉ là entry prompt/workflow; kết quả vẫn nằm trong cùng stream, không tạo bốn mini-app rời.
 
-#### Prepare me
-- Chọn cuộc họp thật; hiển thị Overview / Context / People / Files.
-- Dùng transcript, meeting summary, quyết định, action items, người tham dự và tài liệu có quyền xem.
-- Nút “Xem brief đầy đủ” mở briefing hoàn chỉnh, không tạo dữ liệu mới ngoài ý muốn.
+**Nghiệm thu:** mỗi starter tạo đúng stream, dẫn nguồn, không bịa dữ liệu thiếu và không tạo trùng khi retry.
 
-#### Create something
-- Nhận yêu cầu, chọn ngữ cảnh nguồn và loại đầu ra.
-- Hiển thị checklist tiến độ thật: đọc transcript, phân tích tài liệu, soạn thảo, tạo slide/file.
-- Khi hoàn tất mở Work Product mới; lỗi từng bước có thể thử lại an toàn và không tạo trùng.
+### Đợt 4 — Inbox theo activity state
+- Thay My Box bằng Inbox ba trạng thái Needs attention / Working / In review.
+- Xây projection/read model hợp nhất từ nguồn hiện có; không chuyển ownership và không dual-write.
+- Hành động nhanh theo capability: trả lời, xác nhận, mở blocker, duyệt, yêu cầu sửa.
+- Badge drawer dùng số activity cần chú ý thật.
 
-**Nghiệm thu:** mỗi luồng có URL riêng để back/share trong app, trạng thái tải có tiến độ thật, retry có idempotency và mọi mutation đi qua trusted boundary.
+**Nghiệm thu:** cùng một model hiển thị email cần trả lời, task cần duyệt, AI execution đang chạy và Work Product chờ review; action tuân quyền và idempotency.
 
-### Đợt 4 — Work Product đúng mẫu
-- Header tài liệu với icon định dạng, tên, phiên bản, trạng thái Ready.
-- Tabs **Preview / Insights / Sources / Activity**.
-- Preview lớn đúng tỷ lệ; metadata trang, định dạng, AI-created; Open / Share / More.
-- Insights đọc từ dữ liệu thật; Sources liên kết Work Graph; Activity hiển thị phiên bản và lịch sử thật.
-- Composer theo ngữ cảnh “Hỏi về tài liệu này” cố định cuối màn.
+### Đợt 5 — Execution orchestration UX
+- Hiển thị Human + AI execution theo step, agent, dependency, phần trăm và checkpoint.
+- Agent tự được chọn phía orchestration; UI chỉ expose khi đang tham gia hoặc cần giải thích.
+- Hỗ trợ cancel/retry/approve ở các điểm backend cho phép; không dựng progress giả.
+- Stream có thể thu gọn thành activity trong Working và mở lại đúng trạng thái.
 
-**Nghiệm thu:** DOCX/PPTX/XLSX/PDF hiển thị đúng loại; nguồn và phiên bản khớp backend; thao tác Open/Share/Follow hoạt động.
+**Nghiệm thu:** người dùng quan sát được ai đang làm gì, phần nào chờ mình và retry không tạo execution/Work Product trùng.
 
-### Đợt 5 — Voice theo thiết kế
-- Màn toàn màn hình với trạng thái **Đang nghe / Đang xử lý / Đang trả lời / Lỗi**.
-- Orb động vừa phải theo âm lượng, waveform, đóng, tạm dừng/tiếp tục và cài đặt đầu vào.
-- Chuyển giọng nói thành nội dung qua luồng máy chủ hiện có; người dùng nhìn thấy transcript trước khi thực hiện hành động.
-- Mọi lệnh thay đổi dữ liệu vẫn tạo đề xuất cần xác nhận; không tự gửi email, xoá hoặc chỉnh sửa.
-- Có phương án nhập chữ khi trình duyệt từ chối micro; không ghi âm nền ngoài phiên chủ động.
+### Đợt 6 — Work Product first-class
+- Hoàn thiện detail: Preview / Insights / Sources / Activity.
+- Review checkpoint chuyển rõ từ execution sang In review rồi thành Work Product đã duyệt.
+- Hiển thị version, provenance, người/agent tạo, nguồn context và Work Graph links.
+- Conversation có artifact card bền vững, mở thẳng object; drawer Library có Work Products.
 
-**Nghiệm thu:** quyền micro, từ chối quyền, mất mạng, dừng giữa chừng và gửi lại đều có trạng thái rõ; không lộ âm thanh hoặc transcript sang tổ chức khác.
+**Nghiệm thu:** Report/Proposal/Presentation/Spreadsheet/Decision/Plan mở đúng object, có lịch sử và nguồn; conversation không phải nơi duy nhất giữ kết quả.
 
-### Đợt 6 — Hoàn thiện PWA và kiểm thử thật
-- Rà manifest, shortcut và hành vi mở app: khách → Welcome/Auth; đã đăng nhập → Home mobile.
-- Kiểm tra cold start, cập nhật phiên bản, offline read-only, push notification và quay lại online.
-- Kiểm thử dark/light, vi/en, 390×844, 440×956 và 820px; bàn phím iOS/Android; giảm chuyển động.
-- Kiểm tra quyền theo tenant/workspace, route sâu, dữ liệu cũ, nguồn AI, độ tươi và trạng thái lỗi từng phần.
-- Chạy typecheck, test AI context/action, architecture gates và Playwright các hành trình chính.
+### Đợt 7 — PWA hardening và nghiệm thu thiết bị thật
+- Kiểm tra install, cold start, update, push, offline read-only và quay lại online trên bản phát hành.
+- Kiểm thử dark/light, vi/en, reduced motion, iOS/Android keyboard, camera/micro/file picker.
+- Kiểm tra 390×844, 440×956 và 820px; không overflow hoặc occlusion.
+- Chạy typecheck, architecture/domain gates, AI context/action tests và Playwright journeys.
 
-## Cấu trúc kỹ thuật dự kiến
+## Hướng kỹ thuật
 
 ```text
-Mobile App Shell
-├── Header + Navigation Drawer
-├── Context-aware AI Composer
-└── Mobile Routes
-    ├── /m/home
-    ├── /m/ai/plan
-    ├── /m/ai/catch-up
-    ├── /m/ai/prepare
-    ├── /m/ai/create
-    ├── /m/voice
-    └── /m/work-products/:id
+Mobile Native AI Shell
+├── Drawer
+├── Conversation / Execution Stream
+├── Context Composer
+│   └── Add Context Sheet
+├── Unified Inbox Read Model
+└── Work Product Surfaces
 
-AI Consumer Contract hiện có
-├── Work Graph Context + Semantic Context
-├── Freshness + Context Ranker
-├── Permission Filter
-└── My AI / Work Product / Meeting Intelligence
+Existing trusted layer
+├── AI Consumer Contract
+├── Context Engine + Ranker + Freshness
+├── AI Action Proposal / Approval
+├── Execution + Human checkpoints
+├── Work Product lifecycle
+└── Work Graph projection
 ```
 
-- Không thêm bảng mới nếu các nguồn hiện tại đã đủ.
-- Không đọc/ghi bảng nghiệp vụ trực tiếp từ màn mới; dùng SDK/server function/RPC hiện có.
-- Không tạo AI pipeline song song; tái sử dụng consumer contract, ranker, freshness và action proposal.
-- Chỉ cân nhắc migration nếu thiếu dữ liệu trạng thái thực sự cho tiến độ dài hạn; phải qua batch duyệt riêng.
+- Không tạo AI pipeline mới song song với UNI Copilot.
+- Không direct-write domain tables từ component; thay các điểm mobile hiện có bằng SDK/server functions/RPC.
+- Không hard-code UI text; mọi chuỗi mới qua i18n, tiếng Việt mặc định.
+- Chỉ dùng semantic tokens; dark-first theo ảnh nhưng light mode vẫn đầy đủ.
+- Không dùng ảnh tham chiếu làm asset; tái tạo interaction và visual language bằng component thật.
 
-## Thứ tự ưu tiên và ước lượng
+## Rủi ro cần kiểm soát
 
-1. **Shell + Home:** 1 đợt — tạo khác biệt thị giác lớn nhất và khớp hai màn đầu.
-2. **Plan + Catch up:** 1 đợt — giá trị dùng hằng ngày cao nhất.
-3. **Prepare + Create:** 1–2 đợt — phụ thuộc Meeting Intelligence và Work Product execution.
-4. **Work Product detail:** 1 đợt — phần lớn dữ liệu đã sẵn.
-5. **Voice:** 1 đợt — cần kiểm thử quyền micro trên thiết bị thật.
-6. **PWA hardening:** xuyên suốt và một đợt nghiệm thu cuối.
-
-Tổng thể: **6–7 đợt triển khai nhỏ**, mỗi đợt có thể nghiệm thu độc lập, không thay schema hoặc nghiệp vụ ngoài phạm vi đã duyệt.
-
-## Rủi ro cần khóa trước khi triển khai
-
-- Blueprint hiện ghi Giai đoạn 0 cấm thêm/chỉnh UI; cần xác nhận hạng mục này đã được phê duyệt như một batch UI/PWA trước khi bắt đầu code.
-- “Prepare me” chỉ đầy đủ khi cuộc họp có transcript/summary thật; thiếu dữ liệu phải hiển thị rõ, không tạo nội dung giả.
-- “Create something” phải dùng execution hiện có và idempotency, không tạo writer thứ hai cho Work Products.
-- Offline chỉ cho xem dữ liệu đã có an toàn; không xếp hàng mutation ngầm khi mất mạng ở đợt này.
-- Voice trên iOS/Android khác nhau về quyền và audio session; bắt buộc nghiệm thu trên thiết bị thật, không chỉ simulator.
+- Unified Inbox có thể cần read model mới; chỉ thực hiện sau khi chốt ownership và migration batch, không gom dữ liệu bằng dual-write.
+- Progress chỉ hiển thị từ execution telemetry thật; không dùng animation giả để che thiếu backend state.
+- Connect apps chỉ hiển thị connector thực sự có thể dùng; connector chưa kết nối phải có trạng thái rõ.
+- Prepare me phụ thuộc transcript/summary; dữ liệu thiếu phải báo thiếu, không suy diễn.
+- Voice/camera cần kiểm thử thiết bị thật và fallback nhập chữ/file.
+- Xóa Chat khỏi destination mobile không có nghĩa xóa dữ liệu/chat nghiệp vụ; nó vẫn là context và có thể được mở từ Search/workspace.
 
 ## Definition of Done
 
-- Giao diện bám sát cả 8 màn trong ảnh về cấu trúc, nhịp, typography, bề mặt, composer và trạng thái.
-- Không overflow 390–820px; mọi thao tác chính ≥44px; không bị bàn phím hoặc safe area che.
-- Không hard-code màu hoặc chuỗi mới; đủ vi/en, dark/light và reduced motion.
-- Dữ liệu thật, permission-aware, tenant-safe; không mock, không direct-write, không dual-write.
-- AI trả lời có nguồn, độ tươi; hành động cần xác nhận; tiến độ và Work Product không tạo trùng.
-- Cài đặt, mở lại, cập nhật, offline read-only và push được kiểm tra trên bản phát hành.
+> A user should be able to open UniWork, tell it what they want done, provide work context, observe Human + AI execution, review the result, and receive a Work Product—without needing to understand UniWork’s module structure.
+
+Kèm tiêu chí bắt buộc:
+- Drawer để điều hướng, Composer để yêu cầu, Context để hiểu, Stream để quan sát, Work Product để nhận kết quả.
+- Không bottom navigation; `+` luôn là Add Context.
+- Không overflow 390–820px; hit area ≥44px; safe area và bàn phím đúng.
+- Dữ liệu thật, permission-aware, tenant-safe; không mock, direct-write hoặc dual-write.
+- AI có nguồn và freshness; mutation cần xác nhận; retry idempotent.
+- PWA cài đặt, cập nhật, offline read-only và push hoạt động trên bản phát hành.
