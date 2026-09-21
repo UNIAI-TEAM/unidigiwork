@@ -478,6 +478,14 @@ export const commentWorkDeliverable = createServerFn({ method: "POST" })
       author_id: context.userId,
     });
     if (error) mapPgError(error);
+    const { notifyWorkProductFeedback } = await import("./work-product-notify.server");
+    await notifyWorkProductFeedback({
+      workProductId: data.id,
+      actorId: context.userId,
+      kind: "COMMENT",
+      body: data.body,
+      status: "Chưa xử lý",
+    });
     return { added: true };
   });
 
@@ -493,14 +501,27 @@ export const resolveWorkDeliverableComment = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
+    const { data: updated, error } = await context.supabase
       .from("work_product_comments")
       .update({
         resolved_at: data.resolved ? new Date().toISOString() : null,
         resolved_by: data.resolved ? context.userId : null,
       })
-      .eq("id", data.commentId);
+      .eq("id", data.commentId)
+      .select("work_product_id, author_id, body")
+      .maybeSingle();
     if (error) mapPgError(error);
+    if (updated?.work_product_id) {
+      const { notifyWorkProductFeedback } = await import("./work-product-notify.server");
+      await notifyWorkProductFeedback({
+        workProductId: String(updated.work_product_id),
+        actorId: context.userId,
+        kind: data.resolved ? "COMMENT_RESOLVED" : "COMMENT_REOPENED",
+        body: (updated.body as string | null) ?? null,
+        status: data.resolved ? "Đã xử lý" : "Chưa xử lý",
+        extraRecipients: [updated.author_id as string | null],
+      });
+    }
     return { resolved: data.resolved };
   });
 
@@ -588,7 +609,7 @@ export const decideWorkDeliverableReview = createServerFn({ method: "POST" })
         decided_at: new Date().toISOString(),
       })
       .eq("id", data.reviewId)
-      .select("work_product_id")
+      .select("work_product_id, requested_by")
       .maybeSingle();
     if (error) mapPgError(error);
     if (!review) throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "REVIEW_NOT_FOUND" });
@@ -599,6 +620,21 @@ export const decideWorkDeliverableReview = createServerFn({ method: "POST" })
         .update({ status: data.decision === "APPROVED" ? "APPROVED" : "CHANGES_REQUESTED" })
         .eq("id", review.work_product_id);
     }
+    const statusLabel =
+      data.decision === "APPROVED"
+        ? "Đã nghiệm thu"
+        : data.decision === "CHANGES_REQUESTED"
+          ? "Yêu cầu chỉnh sửa"
+          : "Đã huỷ";
+    const { notifyWorkProductFeedback } = await import("./work-product-notify.server");
+    await notifyWorkProductFeedback({
+      workProductId: String(review.work_product_id),
+      actorId: context.userId,
+      kind: "REVIEW_DECIDED",
+      body: data.note ?? null,
+      status: statusLabel,
+      extraRecipients: [(review as { requested_by?: string | null }).requested_by ?? null],
+    });
     return { decision: data.decision };
   });
 

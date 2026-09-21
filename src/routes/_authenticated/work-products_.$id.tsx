@@ -101,6 +101,14 @@ import {
 import { VersionCompare } from "@/components/work-products/version-compare";
 
 export const Route = createFileRoute("/_authenticated/work-products_/$id")({
+  // Liên kết từ hộp thư mở thẳng tab và khung so sánh phiên bản tương ứng.
+  validateSearch: (
+    s: Record<string, unknown>,
+  ): { tab?: string; compareBefore?: number; compareAfter?: number } => ({
+    tab: typeof s.tab === "string" ? s.tab : undefined,
+    compareBefore: s.compareBefore == null ? undefined : Number(s.compareBefore),
+    compareAfter: s.compareAfter == null ? undefined : Number(s.compareAfter),
+  }),
   head: () => ({
     meta: [
       { title: "Soạn kết quả công việc — UNIWORK" },
@@ -134,6 +142,7 @@ const AI_ACTIONS = [
 
 function WorkProductDetail() {
   const { id } = Route.useParams();
+  const search = Route.useSearch();
   const { t, lang } = useI18n();
   const [open, setOpen] = useSidebarState();
   const qc = useQueryClient();
@@ -244,7 +253,11 @@ function WorkProductDetail() {
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
   // So sánh bản trước / bản sau khi AI soạn lại theo góp ý.
-  const [compare, setCompare] = useState<{ before: number; after: number } | null>(null);
+  const [compare, setCompare] = useState<{ before: number; after: number } | null>(
+    Number.isFinite(search.compareBefore) && Number.isFinite(search.compareAfter)
+      ? { before: Number(search.compareBefore), after: Number(search.compareAfter) }
+      : null,
+  );
 
   const { data: documents } = useQuery({
     queryKey: ["work-deliverables", { limit: 60 }],
@@ -840,7 +853,7 @@ function WorkProductDetail() {
 
           {rightPanelOpen && (
             <aside className="fixed inset-x-0 bottom-0 top-28 z-40 w-full shrink-0 border-l bg-card shadow-md sm:left-auto sm:w-[360px] xl:static xl:z-auto xl:shadow-none">
-              <Tabs defaultValue="ai" className="flex h-full flex-col">
+              <Tabs defaultValue={search.tab ?? "ai"} className="flex h-full flex-col">
                 <div className="border-b px-4 py-4">
                   <div className="flex items-center gap-3">
                     <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">

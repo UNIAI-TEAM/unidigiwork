@@ -180,6 +180,16 @@ export const reviseWorkProductFromFeedback = createServerFn({ method: "POST" })
     );
     if (fbErr) mapPgError(fbErr);
 
+    const { notifyWorkProductFeedback } = await import("./work-product-notify.server");
+    await notifyWorkProductFeedback({
+      workProductId: data.id,
+      actorId: context.userId,
+      kind: "REVISED",
+      body: items[0]?.text ?? null,
+      status: `Đã soạn lại theo ${items.length} góp ý đã xử lý`,
+      compare: { before: beforeVersion, after: afterVersion },
+    });
+
     return {
       beforeVersion,
       afterVersion,
