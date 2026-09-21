@@ -268,7 +268,7 @@ async function hydrateSelected(
           assigneeCount.set(a.task_id, (assigneeCount.get(a.task_id) ?? 0) + 1);
         for (const t of (tasks ?? []) as Array<Record<string, any>>) {
           const overdue =
-            t["due_at"] && new Date(t["due_at"]).getTime() < Date.now() && t["status"] !== "DONE";
+            t["due_at"] && new Date(t["due_at"]).getTime() < Date.now() && t["status"] !== "done";
           put(
             "TASK",
             t["id"],
@@ -538,8 +538,8 @@ async function buildFacts(
       .eq("workspace_id", workspaceId)
       .is("deleted_at", null);
   const [overdue, open] = await Promise.all([
-    base().lt("due_at", nowIso).neq("status", "DONE"),
-    base().neq("status", "DONE"),
+    base().lt("due_at", nowIso).neq("status", "done"),
+    base().neq("status", "done"),
   ]);
   const facts: ContextFact[] = [];
   if (typeof overdue.count === "number")
@@ -685,6 +685,42 @@ export async function buildAiContextPack(
   }
 
   timings["search"] = Date.now() - tSearch;
+
+  /* --- PHASE E2: fallback "hiện trạng công việc" ---
+     Câu hỏi tổng quan ("tình hình công việc tuần này") không khớp lexical với
+     bất kỳ title nào → search trả 0 và AI kết luận sai là "không có nguồn".
+     Khi không có root/pinned/search hit, nạp các việc đang mở gần nhất trong
+     phạm vi RLS của actor làm nguồn thật (không suy diễn nội dung). */
+  if (!root && candidates.length === 0 && !searchItems.length) {
+    const tRecent = Date.now();
+    let q = supabase
+      .from("tasks")
+      .select("id,title,description,status,due_at,updated_at")
+      .eq("tenant_id", tenantId)
+      .is("deleted_at", null)
+      .neq("status", "done")
+      .order("updated_at", { ascending: false })
+      .limit(AI_CONTEXT_POLICY.searchCandidates);
+    if (request.workspaceId) q = q.eq("workspace_id", request.workspaceId);
+    const { data: recentRows, error: recentError } = await q;
+    if (recentError) failures.push("RECENT_WORK");
+    else {
+      for (const row of (recentRows ?? []) as Array<Record<string, any>>) {
+        candidates.push({
+          type: "TASK",
+          id: String(row["id"]),
+          title: String(row["title"] ?? "(không tiêu đề)"),
+          snippet: String(row["description"] ?? "").slice(0, 280),
+          updatedAt: (row["updated_at"] as string | null) ?? null,
+          lexical: 0.35,
+          relationship: "SEARCH_MATCH",
+          graphDistance: 2,
+        });
+      }
+      if (candidates.length) strategy = "MIXED";
+    }
+    timings["recentWork"] = Date.now() - tRecent;
+  }
 
   if (!root && searchItems.length) {
     const top = searchItems[0]!;
