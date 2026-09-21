@@ -150,7 +150,7 @@ export const setTaskDueAt = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const res = await context.supabase.rpc("set_task_due_at", {
       _task_id: data.taskId,
-      _due_at: data.dueAt,
+      _due_at: data.dueAt as string | undefined,
       _idempotency_key: data.idempotencyKey,
       _correlation_id: data.correlationId ?? undefined,
     });
