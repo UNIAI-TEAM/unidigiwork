@@ -79,16 +79,12 @@ export const listTaskOpsBoard = createServerFn({ method: "GET" })
     const wsName = new Map(workspaces.map((w) => [w.id, w.name]));
     const wsIds = workspaces.map((w) => w.id);
 
-    const statuses = data.includeDone ? [...OPEN_STATUSES, "done"] : OPEN_STATUSES;
-    const { data: taskRows, error: tErr } = await ctx.supabase
-      .from("tasks")
-      .select("id, title, status, priority, workspace_id, due_at, updated_at")
-      .in("workspace_id", wsIds)
-      .in("status", statuses)
-      .is("deleted_at", null)
-      .order("updated_at", { ascending: false })
-      .limit(300);
-    if (tErr) mapPgError(tErr);
+    const { data: taskRows, error: tErr } = await ctx.supabase.rpc("list_tenant_open_tasks", {
+      _tenant_id: tenantId,
+      _include_done: data.includeDone,
+      _limit: 300,
+    });
+    if (tErr) mapPgError(tErr, "TENANT_ACCESS_DENIED");
     const tasks = (taskRows ?? []) as Array<{
       id: string;
       title: string;
