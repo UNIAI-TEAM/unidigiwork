@@ -152,20 +152,10 @@ export async function pickHumanAssignee(args: {
     }
 
     // 2) Sổ đăng ký Human Agent (nếu tổ chức đã cấu hình): chỉ người đang nhận việc,
-    //    tôn trọng email nhận việc, lĩnh vực phụ trách và giới hạn tải.
-    const { data: agentRows } = await supabase
-      .from("human_agents")
-      .select("user_id, enabled, work_email, domains, max_open_tasks")
-      .in("user_id", memberIds);
-    const agents = (agentRows ?? []) as Array<{
-      user_id: string;
-      enabled: boolean;
-      work_email: string | null;
-      domains: string[] | null;
-      max_open_tasks: number | null;
-    }>;
-    const agentOf = new Map(agents.map((row) => [row.user_id, row]));
-    const registered = agents.filter((row) => row.enabled).map((row) => row.user_id);
+    //    vai trò được phép nhận việc, email nhận việc, lĩnh vực phụ trách và giới hạn tải.
+    const registered = agents
+      .filter((row) => row.enabled && roleAllowed(row.assign_role))
+      .map((row) => row.user_id);
     const pool = registered.length > 0 ? registered : memberIds;
 
     const ranked = pool
