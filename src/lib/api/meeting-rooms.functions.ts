@@ -542,7 +542,15 @@ export const getWorkspaceMeetingStats = createServerFn({ method: "POST" })
     const { data: rows, error } = await context.supabase.rpc("get_workspace_meeting_stats", {
       _workspace_id: data.workspaceId,
     });
-    if (error) mapPgError(error);
+    if (error) {
+      // Workspace cũ/không còn là thành viên: thống kê chỉ là widget phụ, không
+      // được làm sập cả trang Họp. Trả 0 thay vì ném lỗi ra UI.
+      const msg = error.message ?? "";
+      if (/FORBIDDEN|PERMISSION_DENIED|NOT_FOUND|ACCESS_DENIED/.test(msg)) {
+        return { today: 0, live: 0, recordings: 0, summaries: 0 };
+      }
+      mapPgError(error);
+    }
     const r = rows?.[0];
     return {
       today: Number(r?.today_count ?? 0),
