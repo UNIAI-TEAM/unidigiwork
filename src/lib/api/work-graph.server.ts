@@ -11,6 +11,8 @@ export interface ResolvedWorkEntity {
   subtitle?: string | null;
   href: string;
   updatedAt?: string | null;
+  /** Hạn hoàn thành (chỉ có với TASK) — dùng cho chỉ số thời gian còn lại. */
+  dueAt?: string | null;
 }
 
 type Client = SupabaseClient<any, any, any>;
