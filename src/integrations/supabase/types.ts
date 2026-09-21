@@ -10875,6 +10875,25 @@ export type Database = {
           workspace_id: string
         }[]
       }
+      list_tenant_tasks_page: {
+        Args: {
+          _limit?: number
+          _offset?: number
+          _search?: string
+          _statuses?: string[]
+          _tenant_id: string
+        }
+        Returns: {
+          due_at: string
+          id: string
+          priority: string
+          status: string
+          title: string
+          total_count: number
+          updated_at: string
+          workspace_id: string
+        }[]
+      }
       list_workflow_access_requests: {
         Args: { _limit?: number; _status?: string; _workspace_id: string }
         Returns: {
