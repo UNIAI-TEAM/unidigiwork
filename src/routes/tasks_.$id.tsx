@@ -33,6 +33,7 @@ import {
   addTaskAttachment,
   deleteTaskAttachment,
   updateTask,
+  setTaskDueAt,
   setTaskTags,
   assignTask,
 } from "@/lib/api/tasks.functions";
@@ -149,6 +150,17 @@ function TaskDetailPage() {
     onSuccess: () => {
       invalidate();
       toast.success("Đã cập nhật mức ưu tiên");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  // Sửa hạn chót ngay tại trang chi tiết — Work Graph tự cập nhật theo công việc
+  const saveDue = useMutation({
+    mutationFn: (dueAt: string | null) =>
+      setTaskDueAt({ data: { taskId: id, dueAt, idempotencyKey: crypto.randomUUID() } }),
+    onSuccess: () => {
+      invalidate();
+      toast.success("Đã cập nhật hạn chót");
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -699,9 +711,34 @@ function TaskDetailPage() {
                     </div>
                   </Field>
                   <Field icon={Calendar} label="Hạn chót">
-                    <span className={`text-sm ${dueState?.tone ?? ""}`}>
-                      {fmtDate(task.due_at)}
-                    </span>
+                    <div className="space-y-1.5">
+                      <input
+                        type="datetime-local"
+                        aria-label="Hạn chót"
+                        disabled={saveDue.isPending}
+                        value={
+                          task.due_at
+                            ? new Date(
+                                new Date(task.due_at).getTime() -
+                                  new Date().getTimezoneOffset() * 60000,
+                              )
+                                .toISOString()
+                                .slice(0, 16)
+                            : ""
+                        }
+                        onChange={(e) =>
+                          saveDue.mutate(
+                            e.target.value ? new Date(e.target.value).toISOString() : null,
+                          )
+                        }
+                        className="min-h-9 w-full rounded-lg border border-border bg-background px-2 py-1 text-xs outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                      />
+                      {task.due_at ? (
+                        <span className={`text-xs ${dueState?.tone ?? "text-muted-foreground"}`}>
+                          {fmtDate(task.due_at)}
+                        </span>
+                      ) : null}
+                    </div>
                   </Field>
                   <Field icon={Clock} label="Tạo lúc">
                     <span className="text-sm">{fmtDate(task.created_at)}</span>

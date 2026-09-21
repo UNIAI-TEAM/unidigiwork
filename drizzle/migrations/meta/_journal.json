@@ -218,6 +218,20 @@
       "when": 1790002380997,
       "tag": "0030_list_tenant_tasks_page",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1790003366909,
+      "tag": "0031_fix_task_due_reminders_graph",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1790003473226,
+      "tag": "0032_set_task_due_at",
+      "breakpoints": true
     }
   ]
 }

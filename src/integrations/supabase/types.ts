@@ -11854,6 +11854,49 @@ export type Database = {
         Args: { _experiment_id: string; _notes?: string; _response: string }
         Returns: undefined
       }
+      set_task_due_at: {
+        Args: {
+          _correlation_id?: string
+          _due_at?: string
+          _idempotency_key?: string
+          _task_id: string
+        }
+        Returns: {
+          acceptance_criteria: string | null
+          ai_execution_status: string
+          ai_worker_id: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          description: string | null
+          due_at: string | null
+          end_at: string | null
+          execution_mode: string
+          expected_deliverable: string | null
+          human_owner_id: string | null
+          id: string
+          parent_task_id: string | null
+          priority: Database["public"]["Enums"]["task_priority"]
+          progress_pct: number
+          project_id: string | null
+          row_version: number
+          start_at: string | null
+          status: Database["public"]["Enums"]["task_status"]
+          tags: string[]
+          tenant_id: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "tasks"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       set_task_tags: {
         Args: { _tags: string[]; _task_id: string }
         Returns: {

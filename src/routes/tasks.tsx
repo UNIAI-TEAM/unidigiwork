@@ -251,12 +251,13 @@ function TasksPage() {
   }, [activeWs, queryClient]);
 
   const createMutation = useMutation({
-    mutationFn: (p: { status: Status; title: string; priority: Priority }) =>
+    mutationFn: (p: { status: Status; title: string; priority: Priority; dueAt?: string }) =>
       createTask({
         data: {
           workspaceId: activeWs!,
           title: p.title,
           priority: p.priority,
+          ...(p.dueAt ? { dueAt: p.dueAt } : {}),
           idempotencyKey: crypto.randomUUID(),
         },
       }),
@@ -393,7 +394,6 @@ function TasksPage() {
             if (f) void handleImportFile(f);
           }}
         />
-
 
         <div className="flex flex-1 overflow-hidden">
           <main className="flex-1 overflow-y-auto px-4 py-5 sm:px-6 lg:px-8">
@@ -922,7 +922,7 @@ function KpiCard({
   );
 }
 
-type QuickAddPayload = { title: string; priority: Priority };
+type QuickAddPayload = { title: string; priority: Priority; dueAt?: string };
 
 function BoardSkeleton() {
   return (
@@ -1013,12 +1013,15 @@ function QuickAddForm({
   const { t } = useI18n();
   const [title, setTitle] = useState("");
   const [priority, setPriority] = useState<Priority>("normal");
+  const [due, setDue] = useState("");
 
   const submit = () => {
     const v = title.trim();
     if (!v) return;
-    onSubmit({ title: v, priority });
+    const dueAt = due ? new Date(due).toISOString() : undefined;
+    onSubmit({ title: v, priority, dueAt });
     setTitle("");
+    setDue("");
   };
 
   return (
@@ -1051,6 +1054,13 @@ function QuickAddForm({
           ))}
         </select>
       </div>
+      <input
+        type="datetime-local"
+        value={due}
+        onChange={(e) => setDue(e.target.value)}
+        aria-label="Hạn chót"
+        className="min-h-11 w-full rounded-md bg-surface-2 px-2 py-1 text-xs hover:bg-surface-3 focus:outline-none"
+      />
       <div className="flex items-center justify-end gap-2">
         <button
           onClick={onCancel}
