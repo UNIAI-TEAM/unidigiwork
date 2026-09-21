@@ -46,9 +46,7 @@ function titleFor(kind: WorkProductFeedbackKind): string {
   }
 }
 
-export async function notifyWorkProductFeedback(
-  input: NotifyInput,
-): Promise<{ notified: number }> {
+export async function notifyWorkProductFeedback(input: NotifyInput): Promise<{ notified: number }> {
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
