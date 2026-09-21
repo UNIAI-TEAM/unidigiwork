@@ -11,12 +11,16 @@ const ACTIVE_TENANT_COOKIE = "uniwork_active_tenant";
 const MANAGER_ROLES = ["tenant_owner", "tenant_admin"];
 const OPEN_STATUSES = ["todo", "in_progress", "blocked"];
 
+export const ASSIGN_ROLES = ["admin", "manager", "staff"] as const;
+export type AssignRole = (typeof ASSIGN_ROLES)[number];
+
 export type HumanAgentDTO = {
   userId: string;
   name: string;
   accountEmail: string;
   workEmail: string;
   role: string;
+  assignRole: AssignRole;
   memberStatus: string;
   registered: boolean;
   enabled: boolean;
@@ -31,9 +35,25 @@ export type HumanAgentsResult = {
   tenantId: string | null;
   canManage: boolean;
   agents: HumanAgentDTO[];
+  /** Vai trò nào được orchestration giao việc (mặc định tất cả đều được). */
+  rolePolicies: Record<AssignRole, boolean>;
 };
 
 type Ctx = { supabase: any; userId: string };
+
+async function loadRolePolicies(ctx: Ctx, tenantId: string): Promise<Record<AssignRole, boolean>> {
+  const { data } = await ctx.supabase
+    .from("human_agent_role_policies")
+    .select("role, can_receive_tasks")
+    .eq("tenant_id", tenantId);
+  const result = { admin: true, manager: true, staff: true } as Record<AssignRole, boolean>;
+  for (const row of (data ?? []) as Array<{ role: string; can_receive_tasks: boolean }>) {
+    if ((ASSIGN_ROLES as readonly string[]).includes(row.role)) {
+      result[row.role as AssignRole] = Boolean(row.can_receive_tasks);
+    }
+  }
+  return result;
+}
 
 async function resolveTenant(ctx: Ctx): Promise<{ tenantId: string; role: string } | null> {
   const { data, error } = await ctx.supabase
