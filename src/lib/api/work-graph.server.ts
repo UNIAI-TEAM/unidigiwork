@@ -73,11 +73,11 @@ export async function resolveWorkEntities(
         jobs.push(
           supabase
             .from("tasks")
-            .select("id,title,status,updated_at")
+            .select("id,title,status,updated_at,due_at")
             .in("id", ids)
             .then(({ data }) => {
               (data ?? []).forEach((r: any) =>
-                add("TASK", r.id, r.title ?? "Công việc", r.status, r.updated_at),
+                add("TASK", r.id, r.title ?? "Công việc", r.status, r.updated_at, r.due_at),
               );
             }),
         );
