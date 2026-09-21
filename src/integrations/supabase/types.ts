@@ -11032,6 +11032,49 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      reassign_task: {
+        Args: {
+          _assignee_id: string
+          _correlation_id?: string
+          _idempotency_key?: string
+          _task_id: string
+        }
+        Returns: {
+          acceptance_criteria: string | null
+          ai_execution_status: string
+          ai_worker_id: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          description: string | null
+          due_at: string | null
+          end_at: string | null
+          execution_mode: string
+          expected_deliverable: string | null
+          human_owner_id: string | null
+          id: string
+          parent_task_id: string | null
+          priority: Database["public"]["Enums"]["task_priority"]
+          progress_pct: number
+          project_id: string | null
+          row_version: number
+          start_at: string | null
+          status: Database["public"]["Enums"]["task_status"]
+          tags: string[]
+          tenant_id: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "tasks"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       rebuild_tenant_work_graph: { Args: { _tenant_id: string }; Returns: Json }
       recompute_ai_agent_performance: {
         Args: { _agent_id: string; _tenant_id: string }
