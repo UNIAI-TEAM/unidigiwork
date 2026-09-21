@@ -507,6 +507,7 @@ export const confirmAiAction = createServerFn({ method: "POST" })
               description: (payload["description"] as string) ?? null,
             },
             preferUserId: context.userId,
+            requestText: `${(row.title as string) ?? ""} ${(row.description as string) ?? ""}`,
           });
           if (human) {
             const { error: assignError } = await context.supabase.rpc("assign_task", {
@@ -518,6 +519,18 @@ export const confirmAiAction = createServerFn({ method: "POST" })
             if (!assignError) {
               final.assignedHuman = human;
               final.message = `${final.message} · Đã giao cho ${human.name}`;
+              // Kết nối thật với người được giao: phát email + push qua outbox.
+              const { error: notifyError } = await context.supabase.rpc(
+                "notify_human_task_assignment",
+                {
+                  _task_id: result.entityId,
+                  _assignee_id: human.userId,
+                  _idempotency_key: `${row.idempotency_key}-human-notify`,
+                },
+              );
+              if (!notifyError && human.email) {
+                final.message = `${final.message} (đã gửi email tới ${human.email})`;
+              }
             }
           }
         }
