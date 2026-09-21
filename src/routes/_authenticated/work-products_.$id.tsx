@@ -94,7 +94,10 @@ import {
   unshareWorkProduct,
   updateWorkProductShare,
 } from "@/lib/api/work-deliverables.functions";
-import { reviseWorkProductFromFeedback } from "@/lib/api/work-product-revise.functions";
+import {
+  reviseWorkProductFromFeedback,
+  listWorkProductRevisionFeedback,
+} from "@/lib/api/work-product-revise.functions";
 import { VersionCompare } from "@/components/work-products/version-compare";
 
 export const Route = createFileRoute("/_authenticated/work-products_/$id")({
