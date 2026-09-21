@@ -39,3 +39,12 @@
 - [x] Sắp xếp và chỉnh kích thước card Trang chủ, lưu theo người dùng
 - [x] Hoàn thiện kéo thả và kích thước card My Space trên desktop/tablet/mobile
 - [x] Xác minh hai cấu hình độc lập và giữ nguyên sau khi tải lại
+
+## PWA Native AI
+
+- [ ] Hợp nhất Home và My AI thành conversation/execution surface
+- [ ] Thay bottom navigation bằng header tối giản, drawer và composer cố định
+- [ ] Chuẩn hóa Add Context sheet: Photos & Files, Camera, From UniWork, People & AI, Connect apps
+- [ ] Chuyển My Box thành Inbox theo Needs attention / Working / In review
+- [ ] Hiển thị AI Team như execution layer theo tiến độ, không phải destination chính
+- [ ] Hoàn thiện luồng Intent → Context → Execution → Review → Work Product → Work Graph
