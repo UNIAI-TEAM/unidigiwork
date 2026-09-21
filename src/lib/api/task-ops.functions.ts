@@ -120,10 +120,10 @@ export const listTaskOpsBoard = createServerFn({ method: "GET" })
     );
     const people = new Map<string, TaskOpsPerson>();
     if (userIds.length > 0) {
-      const { data: users } = await ctx.supabase
-        .from("users")
-        .select("id, display_name, primary_email")
-        .in("id", userIds);
+      // Hồ sơ thành viên đọc qua RPC tenant-guarded: RLS bảng users chỉ cho xem chính mình.
+      const { data: users } = await ctx.supabase.rpc("list_tenant_member_profiles", {
+        _tenant_id: tenantId,
+      });
       for (const u of (users ?? []) as Array<{
         id: string;
         display_name: string | null;
