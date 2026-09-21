@@ -32,6 +32,7 @@ import { executionProgress, shouldObserveExecution } from "@/domain/ai-orchestra
 import { canRetryStepInPlace } from "@/domain/work-execution/contracts";
 import type { AiTaskExecutionRow } from "@/domain/ai-tasks/contracts";
 import type { WorkExecutionStepRow } from "@/domain/work-execution/contracts";
+import { getTaskDetail } from "@/lib/api/tasks.functions";
 import { useI18n } from "@/lib/i18n";
 
 function StepIcon({ status }: { status: string }) {
@@ -127,7 +128,9 @@ export function ExecutionObserver({
     onError: (error) => toast.error(error instanceof Error ? error.message : t("m.exec.failed")),
   });
 
-  if (!latest || !active) return null;
+  if (!latest || !active) {
+    return <HumanExecutionPanel taskId={taskId} humanName={humanName} />;
+  }
 
   const running = latest.status === "QUEUED" || latest.status === "RUNNING";
   const failed = latest.status === "FAILED";
@@ -329,6 +332,70 @@ export function ExecutionObserver({
           <ExternalLink className="mr-1.5 h-3.5 w-3.5" /> {t("m.exec.open")}
         </Button>
       )}
+    </section>
+  );
+}
+
+/**
+ * Quan sát việc do CON NGƯỜI thực hiện: ai đang phụ trách và tiến độ theo
+ * trạng thái thật của công việc. Không hiện khi việc đã xong hoặc đã huỷ.
+ */
+const HUMAN_PROGRESS: Record<string, number> = {
+  todo: 10,
+  blocked: 25,
+  in_progress: 60,
+  in_review: 85,
+  review: 85,
+};
+
+function HumanExecutionPanel({ taskId, humanName }: { taskId: string; humanName?: string }) {
+  const { t } = useI18n();
+  const navigate = useNavigate();
+  const detailFn = useServerFn(getTaskDetail);
+  const detail = useQuery({
+    queryKey: ["m-human-task", taskId],
+    queryFn: () => detailFn({ data: { taskId } }) as Promise<any>,
+    refetchInterval: 10000,
+  });
+
+  const task = detail.data?.task as { status?: string; title?: string } | undefined;
+  const status = task?.status ?? "";
+  const progress = HUMAN_PROGRESS[status];
+  if (!task || progress === undefined) return null;
+
+  return (
+    <section
+      aria-label={t("m.exec.title")}
+      className="rounded-xl border border-border bg-surface px-3 py-3 text-sm"
+    >
+      <header className="flex items-center gap-2">
+        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+          <User className="h-4 w-4" />
+        </span>
+        <span className="min-w-0 flex-1 truncate text-[13px] font-medium">
+          {humanName ?? t("m.exec.human")} · {t("m.exec.working")} · {progress}%
+        </span>
+      </header>
+      <div
+        role="progressbar"
+        aria-valuenow={progress}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        className="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-2"
+      >
+        <span
+          className="block h-full rounded-full bg-primary transition-all"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+      <Button
+        size="sm"
+        variant="outline"
+        className="mt-3 min-h-11 w-full"
+        onClick={() => void navigate({ to: "/tasks/$id", params: { id: taskId } })}
+      >
+        <ExternalLink className="mr-1.5 h-3.5 w-3.5" /> {t("m.exec.open")}
+      </Button>
     </section>
   );
 }

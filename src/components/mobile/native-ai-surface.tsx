@@ -48,7 +48,7 @@ type OrchestrationTurn = {
   note?: string;
   proposal?: ProposedAiAction;
   executor?: OrchestrationExecutor;
-  executed?: { taskId: string; agentName?: string };
+  executed?: { taskId: string; agentName?: string; humanName?: string };
 };
 
 type AddedContext = {
@@ -286,6 +286,7 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
                                 executed: {
                                   taskId: result.entityId,
                                   agentName: result.assignedAgent?.agentName,
+                                  humanName: result.assignedHuman?.name,
                                 },
                               }
                             : item,
@@ -298,7 +299,7 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
                   <ExecutionObserver
                     taskId={turn.executed.taskId}
                     agentName={turn.executed.agentName}
-                    humanName={identity.displayName}
+                    humanName={turn.executed.humanName ?? identity.displayName}
                   />
                 )}
               </div>

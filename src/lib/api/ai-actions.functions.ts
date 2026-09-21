@@ -496,6 +496,30 @@ export const confirmAiAction = createServerFn({ method: "POST" })
             reason: assigned.reason,
           };
           final.message = `${final.message} · Đã gán agent "${assigned.agentName}"`;
+        } else if (!payload["assigneeId"] && result.entityId) {
+          // Không có nhân sự AI phù hợp → giao cho người thật theo kinh nghiệm + tải việc.
+          const { pickHumanAssignee } = await import("./human-assignment.server");
+          const human = await pickHumanAssignee({
+            supabase: sb,
+            workspaceId: scope.workspaceId,
+            task: {
+              title: (payload["title"] as string) ?? null,
+              description: (payload["description"] as string) ?? null,
+            },
+            preferUserId: context.userId,
+          });
+          if (human) {
+            const { error: assignError } = await context.supabase.rpc("assign_task", {
+              _task_id: result.entityId,
+              _assignee_id: human.userId,
+              _role: "assignee",
+              _idempotency_key: `${row.idempotency_key}-human-assign`,
+            });
+            if (!assignError) {
+              final.assignedHuman = human;
+              final.message = `${final.message} · Đã giao cho ${human.name}`;
+            }
+          }
         }
       }
 
