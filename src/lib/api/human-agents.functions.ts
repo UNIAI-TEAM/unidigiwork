@@ -202,6 +202,7 @@ export const saveHumanAgent = createServerFn({ method: "POST" })
       _domains: data.domains ?? [],
       _max_open_tasks: data.maxOpenTasks,
       _note: data.note && data.note.length > 0 ? data.note : null,
+      _assign_role: data.assignRole ?? "staff",
     });
     if (error) mapPgError(error, "PERMISSION_DENIED");
 
