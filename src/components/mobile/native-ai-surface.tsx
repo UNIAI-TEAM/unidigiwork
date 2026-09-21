@@ -299,7 +299,7 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
                   <ExecutionObserver
                     taskId={turn.executed.taskId}
                     agentName={turn.executed.agentName}
-                    humanName={identity.displayName}
+                    humanName={turn.executed.humanName ?? identity.displayName}
                   />
                 )}
               </div>
