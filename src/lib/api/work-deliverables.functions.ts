@@ -609,7 +609,7 @@ export const decideWorkDeliverableReview = createServerFn({ method: "POST" })
         decided_at: new Date().toISOString(),
       })
       .eq("id", data.reviewId)
-      .select("work_product_id")
+      .select("work_product_id, requested_by")
       .maybeSingle();
     if (error) mapPgError(error);
     if (!review) throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "REVIEW_NOT_FOUND" });
