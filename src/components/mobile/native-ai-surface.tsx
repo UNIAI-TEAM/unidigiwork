@@ -283,10 +283,11 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
                           item.id === turn.id && result.entityType === "TASK" && result.entityId
                             ? {
                                 ...item,
-                                executed: {
-                                  taskId: result.entityId,
-                                  agentName: result.assignedAgent?.agentName,
-                                },
+                                 executed: {
+                                   taskId: result.entityId,
+                                   agentName: result.assignedAgent?.agentName,
+                                   humanName: result.assignedHuman?.name,
+                                 },
                               }
                             : item,
                         ),
