@@ -211,15 +211,21 @@ export function heuristicExtraction(query: string): ActionExtraction {
   const q = (query ?? "").trim();
   const assignee = q.match(/\bcho\s+([A-Za-zÀ-ỹ][A-Za-zÀ-ỹ\s]{1,30}?)\s+(?:xử lý|xu ly|làm|lam|sửa|sua|hoàn thiện|phụ trách|trước|truoc|vào|$)/i);
   const dueText = q.match(/(trước|truoc|vào|vao|hạn|han|deadline)\s+([^,.;]{2,40})/i);
+  // "giao cho tôi/mình" = tự giao cho người yêu cầu, không phải tên người khác.
+  const selfAssign = /\b(giao|gán|gan)\s+(cho\s+)?(tôi|toi|mình|minh|em)\b/i.test(q);
   const title = q
     .replace(/^(tạo|tao|thêm|them|lên lịch|len lich|đặt lịch|dat lich|soạn|soan|cập nhật|cap nhat)\s+/i, "")
     .replace(/^(task|công việc|cong viec|cuộc họp|cuoc hop|email|thư|thu)\s*/i, "")
+    // bỏ mệnh đề giao việc ở cuối câu để tiêu đề không còn "giao ."
+    .replace(/[,;.]?\s*\b(giao|gán|gan)\s+(cho\s+)?[A-Za-zÀ-ỹ\s]{1,30}\.?\s*$/i, "")
     .replace(/\bcho\s+[A-Za-zÀ-ỹ\s]{1,30}\b/i, " ")
+    .replace(/^[\s:–—-]+/, "")
     .replace(/\s+/g, " ")
+    .replace(/[\s.,;:]+$/, "")
     .trim();
   return {
     title: title.slice(0, 200) || q.slice(0, 200),
-    assigneeName: assignee?.[1]?.trim() ?? null,
+    assigneeName: selfAssign ? null : (assignee?.[1]?.trim() ?? null),
     dueText: dueText?.[2]?.trim() ?? (/(thu sau|thứ sáu|mai|thứ hai|thu hai)/i.test(q) ? q : null),
   };
 }
