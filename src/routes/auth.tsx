@@ -35,6 +35,7 @@ function AuthPage() {
   const [reset, setReset] = useState(false);
   const [codeSent, setCodeSent] = useState(false);
   const [code, setCode] = useState("");
+  const [signupSent, setSignupSent] = useState(false);
 
   useEffect(() => {
     setReady(true);
