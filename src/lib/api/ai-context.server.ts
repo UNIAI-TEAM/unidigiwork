@@ -611,6 +611,48 @@ export async function buildAiContextPack(
     strategy = "ROOT_CONTEXT";
   }
 
+  /* --- PHASE D2: thực thể người dùng đính kèm ở composer (Add Context) ---
+     Nạp qua Work Graph theo quyền actor; entity không thấy được sẽ bị loại. */
+  const pinnedInput = (request.pinnedEntities ?? []).slice(0, 8);
+  if (pinnedInput.length) {
+    const tPinned = Date.now();
+    const resolvedPinned = await resolveWorkEntities(
+      supabase,
+      pinnedInput.map((p) => ({ type: p.type, id: p.id })),
+    );
+    for (const pin of pinnedInput) {
+      const hit = resolvedPinned.get(entityKey(pin.type, pin.id));
+      if (!hit) continue;
+      if (!root) {
+        root = {
+          entityType: pin.type,
+          entityId: pin.id,
+          title: hit.title,
+          summary: hit.subtitle ?? null,
+          relationshipToRoot: "ROOT",
+          updatedAt: hit.updatedAt ?? null,
+          href: hit.href,
+          sourceRank: 1,
+        };
+        strategy = "ROOT_CONTEXT";
+        continue;
+      }
+      if (pin.type === root.entityType && pin.id === root.entityId) continue;
+      candidates.push({
+        type: pin.type,
+        id: pin.id,
+        title: hit.title,
+        snippet: hit.subtitle ?? "",
+        updatedAt: hit.updatedAt ?? null,
+        lexical: 1,
+        relationship: "SEARCH_MATCH",
+        graphDistance: 0,
+        intentPriority: 1,
+      });
+    }
+    timings["pinned"] = Date.now() - tPinned;
+  }
+
   /* --- PHASE E: Universal Search V2 reuse --- */
   const tSearch = Date.now();
   let searchItems: ReturnType<typeof mapRow>[] = [];
