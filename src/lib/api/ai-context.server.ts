@@ -268,7 +268,7 @@ async function hydrateSelected(
           assigneeCount.set(a.task_id, (assigneeCount.get(a.task_id) ?? 0) + 1);
         for (const t of (tasks ?? []) as Array<Record<string, any>>) {
           const overdue =
-            t["due_at"] && new Date(t["due_at"]).getTime() < Date.now() && t["status"] !== "DONE";
+            t["due_at"] && new Date(t["due_at"]).getTime() < Date.now() && t["status"] !== "done";
           put(
             "TASK",
             t["id"],
@@ -538,8 +538,8 @@ async function buildFacts(
       .eq("workspace_id", workspaceId)
       .is("deleted_at", null);
   const [overdue, open] = await Promise.all([
-    base().lt("due_at", nowIso).neq("status", "DONE"),
-    base().neq("status", "DONE"),
+    base().lt("due_at", nowIso).neq("status", "done"),
+    base().neq("status", "done"),
   ]);
   const facts: ContextFact[] = [];
   if (typeof overdue.count === "number")
@@ -698,7 +698,7 @@ export async function buildAiContextPack(
       .select("id,title,description,status,due_at,updated_at")
       .eq("tenant_id", tenantId)
       .is("deleted_at", null)
-      .neq("status", "DONE")
+      .neq("status", "done")
       .order("updated_at", { ascending: false })
       .limit(AI_CONTEXT_POLICY.searchCandidates);
     if (request.workspaceId) q = q.eq("workspace_id", request.workspaceId);
