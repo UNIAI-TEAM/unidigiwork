@@ -66,7 +66,11 @@ export async function listWorkspacePeople(
 }
 
 const normalize = (s: string) =>
-  s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
 
 /** Khớp tên người theo chuỗi tự do; trả nhiều ứng viên nếu mơ hồ (§20). */
 export function matchPeople(
@@ -78,7 +82,9 @@ export function matchPeople(
   if (n.length < 2) return [];
   const hits = people.filter((p) => {
     const l = normalize(p.label);
-    return l === n || l.split(/\s+/).includes(n) || l.includes(n) || normalize(p.email).startsWith(n);
+    return (
+      l === n || l.split(/\s+/).includes(n) || l.includes(n) || normalize(p.email).startsWith(n)
+    );
   });
   return hits.map((p) => ({ id: p.id, label: p.label }));
 }
@@ -86,13 +92,27 @@ export function matchPeople(
 /* ------------------------------ Ngày giờ ------------------------------ */
 
 const WEEKDAYS: Record<string, number> = {
-  "chu nhat": 0, "cn": 0, sunday: 0,
-  "thu hai": 1, "t2": 1, monday: 1,
-  "thu ba": 2, "t3": 2, tuesday: 2,
-  "thu tu": 3, "t4": 3, wednesday: 3,
-  "thu nam": 4, "t5": 4, thursday: 4,
-  "thu sau": 5, "t6": 5, friday: 5,
-  "thu bay": 6, "t7": 6, saturday: 6,
+  "chu nhat": 0,
+  cn: 0,
+  sunday: 0,
+  "thu hai": 1,
+  t2: 1,
+  monday: 1,
+  "thu ba": 2,
+  t3: 2,
+  tuesday: 2,
+  "thu tu": 3,
+  t4: 3,
+  wednesday: 3,
+  "thu nam": 4,
+  t5: 4,
+  thursday: 4,
+  "thu sau": 5,
+  t6: 5,
+  friday: 5,
+  "thu bay": 6,
+  t7: 6,
+  saturday: 6,
 };
 
 /**
@@ -109,7 +129,9 @@ export function resolveDueDate(text: string, now = new Date()): string | null {
   const set = (d: Date) => {
     const h = explicitHour ?? 17;
     // Giờ địa phương VN (UTC+7) → quy về UTC.
-    return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), h - 7, explicitMinute, 0)).toISOString();
+    return new Date(
+      Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), h - 7, explicitMinute, 0),
+    ).toISOString();
   };
 
   const dmy = t.match(/\b(\d{1,2})[/\-](\d{1,2})(?:[/\-](\d{4}))?\b/);
@@ -167,7 +189,10 @@ export async function extractActionFields(
   actionType: AiActionType,
   query: string,
   contextBlock: string,
-): Promise<{ fields: ActionExtraction; usage: { inputTokens: number; outputTokens: number; model: string } | null }> {
+): Promise<{
+  fields: ActionExtraction;
+  usage: { inputTokens: number; outputTokens: number; model: string } | null;
+}> {
   const fallback: ActionExtraction = heuristicExtraction(query);
   const apiKey = process.env["LOVABLE_API_KEY"];
   if (!apiKey) return { fields: fallback, usage: null };
@@ -188,7 +213,11 @@ export async function extractActionFields(
     const merged: ActionExtraction = { ...fallback, ...stripEmpty(parsed.data) };
     return {
       fields: merged,
-      usage: { inputTokens: res.usage?.inputTokens ?? 0, outputTokens: res.usage?.outputTokens ?? 0, model },
+      usage: {
+        inputTokens: res.usage?.inputTokens ?? 0,
+        outputTokens: res.usage?.outputTokens ?? 0,
+        model,
+      },
     };
   } catch {
     return { fields: fallback, usage: null };
@@ -209,12 +238,17 @@ function stripEmpty(o: ActionExtraction): ActionExtraction {
 /** Trích xuất tối thiểu không cần model (đảm bảo luôn có preview). */
 export function heuristicExtraction(query: string): ActionExtraction {
   const q = (query ?? "").trim();
-  const assignee = q.match(/\bcho\s+([A-Za-zÀ-ỹ][A-Za-zÀ-ỹ\s]{1,30}?)\s+(?:xử lý|xu ly|làm|lam|sửa|sua|hoàn thiện|phụ trách|trước|truoc|vào|$)/i);
+  const assignee = q.match(
+    /\bcho\s+([A-Za-zÀ-ỹ][A-Za-zÀ-ỹ\s]{1,30}?)\s+(?:xử lý|xu ly|làm|lam|sửa|sua|hoàn thiện|phụ trách|trước|truoc|vào|$)/i,
+  );
   const dueText = q.match(/(trước|truoc|vào|vao|hạn|han|deadline)\s+([^,.;]{2,40})/i);
   // "giao cho tôi/mình" = tự giao cho người yêu cầu, không phải tên người khác.
   const selfAssign = /\b(giao|gán|gan)\s+(cho\s+)?(tôi|toi|mình|minh|em)\b/i.test(q);
   const title = q
-    .replace(/^(tạo|tao|thêm|them|lên lịch|len lich|đặt lịch|dat lich|soạn|soan|cập nhật|cap nhat)\s+/i, "")
+    .replace(
+      /^(tạo|tao|thêm|them|lên lịch|len lich|đặt lịch|dat lich|soạn|soan|cập nhật|cap nhat)\s+/i,
+      "",
+    )
     .replace(/^(task|công việc|cong viec|cuộc họp|cuoc hop|email|thư|thu)\s*/i, "")
     // bỏ mệnh đề giao việc ở cuối câu để tiêu đề không còn "giao ."
     .replace(/[,;.]?\s*\b(giao|gán|gan)\s+(cho\s+)?[A-Za-zÀ-ỹ\s]{1,30}\.?\s*$/i, "")
@@ -240,7 +274,7 @@ export interface ExecutorInput {
   expectedRowVersion: number | null;
 }
 
-const first = <T,>(v: T | T[] | null): T | null => (Array.isArray(v) ? (v[0] ?? null) : v);
+const first = <T>(v: T | T[] | null): T | null => (Array.isArray(v) ? (v[0] ?? null) : v);
 
 async function createTaskExecutor(i: ExecutorInput): Promise<AiActionExecutionResult> {
   const p = parseActionPayload("CREATE_TASK", i.payload) as any;
@@ -347,7 +381,10 @@ async function createEmailDraftExecutor(i: ExecutorInput): Promise<AiActionExecu
   };
 }
 
-export const ACTION_EXECUTORS: Record<AiActionType, (i: ExecutorInput) => Promise<AiActionExecutionResult>> = {
+export const ACTION_EXECUTORS: Record<
+  AiActionType,
+  (i: ExecutorInput) => Promise<AiActionExecutionResult>
+> = {
   CREATE_TASK: createTaskExecutor,
   UPDATE_TASK_FIELDS: updateTaskExecutor,
   CREATE_MEETING: createMeetingExecutor,
@@ -367,7 +404,13 @@ export function buildPreviewRows(
   labels: { assignee?: string | null; workspace?: string | null; participants?: string[] },
 ): ProposedAiAction["preview"] {
   const fmt = (iso?: string | null) =>
-    iso ? new Intl.DateTimeFormat("vi-VN", { dateStyle: "full", timeStyle: "short", timeZone: "Asia/Ho_Chi_Minh" }).format(new Date(iso)) : "Chưa đặt";
+    iso
+      ? new Intl.DateTimeFormat("vi-VN", {
+          dateStyle: "full",
+          timeStyle: "short",
+          timeZone: "Asia/Ho_Chi_Minh",
+        }).format(new Date(iso))
+      : "Chưa đặt";
   switch (type) {
     case "CREATE_TASK":
       return [
