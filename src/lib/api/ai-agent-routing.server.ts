@@ -57,10 +57,9 @@ export async function autoAssignAgentForTask(args: {
         }
       }
     }
-    if (!chosen) {
-      chosen = pool[0];
-      reason = "Agent mặc định của không gian làm việc (không nhận diện được lĩnh vực)";
-    }
+    // Không nhận diện được lĩnh vực → KHÔNG gán agent mặc định.
+    // Việc này sẽ được chuyển sang người thật (xem pickHumanAssignee).
+    if (!chosen) return null;
 
     await supabase.from("workflow_agent_runs").insert({
       tenant_id: tenantId,
