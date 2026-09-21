@@ -387,7 +387,58 @@ export type WorkGraphBoardItem = {
   href: string;
   updatedAt: string | null;
   links: number;
+  /** Tiến độ 0–100, suy ra từ bước thực thi thật hoặc trạng thái nguồn. */
+  progress: number;
+  /** Hạn hoàn thành (nếu nguồn có) — UI tính thời gian còn lại. */
+  dueAt: string | null;
 };
+
+export type WorkGraphBoard = {
+  items: WorkGraphBoardItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+  counts: { all: number; running: number; done: number; products: number };
+};
+
+const RUNNING_TASK = new Set(["in_progress", "blocked"]);
+const RUNNING_EXEC = new Set(["QUEUED", "RUNNING", "WAITING_REVIEW", "CHANGES_REQUESTED"]);
+const DONE_EXEC = new Set(["ACCEPTED", "SUCCEEDED"]);
+
+function isRunningRow(type: string, status: string | null) {
+  if (type === "EXECUTION") return RUNNING_EXEC.has(status ?? "");
+  if (type === "TASK") return RUNNING_TASK.has((status ?? "").toLowerCase());
+  return (status ?? "") === "IN_REVIEW";
+}
+
+function isDoneRow(type: string, status: string | null) {
+  if (type === "EXECUTION") return DONE_EXEC.has(status ?? "");
+  if (type === "TASK") return (status ?? "").toLowerCase() === "done";
+  return status === "ACCEPTED" || status === "DELIVERED";
+}
+
+/** Tiến độ mặc định theo trạng thái nguồn (0–100) khi không có bước thực thi. */
+function statusProgress(type: string, status: string | null) {
+  const s = status ?? "";
+  if (isDoneRow(type, s)) return 100;
+  if (type === "TASK") {
+    const k = s.toLowerCase();
+    if (k === "in_progress") return 50;
+    if (k === "blocked") return 35;
+    if (k === "canceled") return 100;
+    return 5;
+  }
+  if (type === "EXECUTION") {
+    if (s === "RUNNING") return 50;
+    if (s === "WAITING_REVIEW") return 85;
+    if (s === "CHANGES_REQUESTED") return 70;
+    if (s === "FAILED") return 100;
+    return 10;
+  }
+  if (s === "IN_REVIEW") return 70;
+  if (s === "DRAFT") return 25;
+  return 10;
+}
 
 /**
  * Bảng Work Graph của tổ chức: công việc, lượt thực thi và kết quả công việc
