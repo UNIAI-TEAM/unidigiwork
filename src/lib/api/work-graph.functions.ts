@@ -387,7 +387,58 @@ export type WorkGraphBoardItem = {
   href: string;
   updatedAt: string | null;
   links: number;
+  /** Tiến độ 0–100, suy ra từ bước thực thi thật hoặc trạng thái nguồn. */
+  progress: number;
+  /** Hạn hoàn thành (nếu nguồn có) — UI tính thời gian còn lại. */
+  dueAt: string | null;
 };
+
+export type WorkGraphBoard = {
+  items: WorkGraphBoardItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+  counts: { all: number; running: number; done: number; products: number };
+};
+
+const RUNNING_TASK = new Set(["in_progress", "blocked"]);
+const RUNNING_EXEC = new Set(["QUEUED", "RUNNING", "WAITING_REVIEW", "CHANGES_REQUESTED"]);
+const DONE_EXEC = new Set(["ACCEPTED", "SUCCEEDED"]);
+
+function isRunningRow(type: string, status: string | null) {
+  if (type === "EXECUTION") return RUNNING_EXEC.has(status ?? "");
+  if (type === "TASK") return RUNNING_TASK.has((status ?? "").toLowerCase());
+  return (status ?? "") === "IN_REVIEW";
+}
+
+function isDoneRow(type: string, status: string | null) {
+  if (type === "EXECUTION") return DONE_EXEC.has(status ?? "");
+  if (type === "TASK") return (status ?? "").toLowerCase() === "done";
+  return status === "ACCEPTED" || status === "DELIVERED";
+}
+
+/** Tiến độ mặc định theo trạng thái nguồn (0–100) khi không có bước thực thi. */
+function statusProgress(type: string, status: string | null) {
+  const s = status ?? "";
+  if (isDoneRow(type, s)) return 100;
+  if (type === "TASK") {
+    const k = s.toLowerCase();
+    if (k === "in_progress") return 50;
+    if (k === "blocked") return 35;
+    if (k === "canceled") return 100;
+    return 5;
+  }
+  if (type === "EXECUTION") {
+    if (s === "RUNNING") return 50;
+    if (s === "WAITING_REVIEW") return 85;
+    if (s === "CHANGES_REQUESTED") return 70;
+    if (s === "FAILED") return 100;
+    return 10;
+  }
+  if (s === "IN_REVIEW") return 70;
+  if (s === "DRAFT") return 25;
+  return 10;
+}
 
 /**
  * Bảng Work Graph của tổ chức: công việc, lượt thực thi và kết quả công việc
@@ -396,13 +447,32 @@ export type WorkGraphBoardItem = {
  */
 export const listWorkGraphBoard = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<WorkGraphBoardItem[]> => {
+  .inputValidator((i) =>
+    z
+      .object({
+        tab: z.enum(["all", "running", "done", "products"]).default("all"),
+        search: z.string().max(200).default(""),
+        page: z.number().int().min(1).default(1),
+        pageSize: z.number().int().min(10).max(100).default(25),
+      })
+      .parse(i ?? {}),
+  )
+  .handler(async ({ data, context }): Promise<WorkGraphBoard> => {
+    const empty: WorkGraphBoard = {
+      items: [],
+      total: 0,
+      page: data.page,
+      pageSize: data.pageSize,
+      counts: { all: 0, running: 0, done: 0, products: 0 },
+    };
     const tenantId = await currentTenantId(context.supabase, context.userId);
+    const types =
+      data.tab === "products" ? ["WORK_PRODUCT"] : ["TASK", "EXECUTION", "WORK_PRODUCT"];
     const { data: nodes, error } = await context.supabase
       .from("work_nodes")
       .select("id, entity_type, entity_id, updated_at")
       .eq("tenant_id", tenantId)
-      .in("entity_type", ["TASK", "EXECUTION", "WORK_PRODUCT"])
+      .in("entity_type", types)
       .order("updated_at", { ascending: false })
       .limit(400);
     if (error) mapPgError(error);
@@ -412,42 +482,38 @@ export const listWorkGraphBoard = createServerFn({ method: "GET" })
       entity_id: string;
       updated_at: string;
     }[];
-    if (!list.length) return [];
+    if (!list.length) return empty;
 
-    const resolved = await resolveWorkEntities(
-      context.supabase,
-      list.map((n) => ({ type: n.entity_type, id: n.entity_id })),
-    );
-
-    // EXECUTION: subtitle là executor_type, cần trạng thái thật để phân nhóm.
+    // Title/status resolve + execution status: batched, RLS-scoped.
     const execIds = list.filter((n) => n.entity_type === "EXECUTION").map((n) => n.entity_id);
+    const [resolved, execRows] = await Promise.all([
+      resolveWorkEntities(
+        context.supabase,
+        list.map((n) => ({ type: n.entity_type, id: n.entity_id })),
+      ),
+      execIds.length
+        ? context.supabase.from("ai_task_executions").select("id,status").in("id", execIds)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
     const execStatus = new Map<string, string>();
-    if (execIds.length) {
-      const { data: ex } = await context.supabase
-        .from("ai_task_executions")
-        .select("id,status")
-        .in("id", execIds);
-      (ex ?? []).forEach((r: any) => execStatus.set(r.id, r.status));
-    }
+    ((execRows as any).data ?? []).forEach((r: any) => execStatus.set(r.id, r.status));
 
-    // Số liên kết của từng node (chỉ trong phạm vi node đang hiển thị).
-    const nodeIds = list.map((n) => n.id);
-    const linkCount = new Map<string, number>();
-    const { data: edges } = await context.supabase
-      .from("work_edges")
-      .select("source_node_id,target_node_id")
-      .eq("tenant_id", tenantId)
-      .or(`source_node_id.in.(${nodeIds.join(",")}),target_node_id.in.(${nodeIds.join(",")})`);
-    (edges ?? []).forEach((e: any) => {
-      linkCount.set(e.source_node_id, (linkCount.get(e.source_node_id) ?? 0) + 1);
-      linkCount.set(e.target_node_id, (linkCount.get(e.target_node_id) ?? 0) + 1);
-    });
-
-    const out: WorkGraphBoardItem[] = [];
+    type Row = {
+      nodeId: string;
+      type: WorkGraphBoardItem["type"];
+      id: string;
+      title: string;
+      status: string | null;
+      href: string;
+      updatedAt: string | null;
+      dueAt: string | null;
+    };
+    const rows: Row[] = [];
     for (const n of list) {
       const r = resolved.get(entityKey(n.entity_type, n.entity_id));
       if (!r) continue;
-      out.push({
+      rows.push({
+        nodeId: n.id,
         type: n.entity_type as WorkGraphBoardItem["type"],
         id: n.entity_id,
         title: r.title,
@@ -457,8 +523,85 @@ export const listWorkGraphBoard = createServerFn({ method: "GET" })
             : (r.subtitle ?? null),
         href: r.href,
         updatedAt: r.updatedAt ?? n.updated_at ?? null,
-        links: linkCount.get(n.id) ?? 0,
+        dueAt: r.dueAt ?? null,
       });
     }
-    return out;
+
+    const counts = {
+      all: rows.length,
+      running: rows.filter((r) => isRunningRow(r.type, r.status)).length,
+      done: rows.filter((r) => isDoneRow(r.type, r.status)).length,
+      products: rows.filter((r) => r.type === "WORK_PRODUCT").length,
+    };
+
+    const term = data.search.trim().toLowerCase();
+    let filtered = rows;
+    if (data.tab === "running") filtered = filtered.filter((r) => isRunningRow(r.type, r.status));
+    else if (data.tab === "done") filtered = filtered.filter((r) => isDoneRow(r.type, r.status));
+    else if (data.tab === "products") filtered = filtered.filter((r) => r.type === "WORK_PRODUCT");
+    if (term) filtered = filtered.filter((r) => r.title.toLowerCase().includes(term));
+
+    const total = filtered.length;
+    const start = (data.page - 1) * data.pageSize;
+    const pageRows = filtered.slice(start, start + data.pageSize);
+    if (!pageRows.length)
+      return { items: [], total, page: data.page, pageSize: data.pageSize, counts };
+
+    // Liên kết + tiến độ chỉ tính cho trang đang hiển thị (tránh quét toàn bộ graph).
+    const pageNodeIds = pageRows.map((r) => r.nodeId);
+    const pageExecIds = pageRows.filter((r) => r.type === "EXECUTION").map((r) => r.id);
+    const [srcEdges, tgtEdges, steps] = await Promise.all([
+      context.supabase
+        .from("work_edges")
+        .select("source_node_id")
+        .eq("tenant_id", tenantId)
+        .in("source_node_id", pageNodeIds),
+      context.supabase
+        .from("work_edges")
+        .select("target_node_id")
+        .eq("tenant_id", tenantId)
+        .in("target_node_id", pageNodeIds),
+      pageExecIds.length
+        ? context.supabase
+            .from("work_execution_steps")
+            .select("execution_id,status")
+            .in("execution_id", pageExecIds)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+    const linkCount = new Map<string, number>();
+    ((srcEdges as any).data ?? []).forEach((e: any) =>
+      linkCount.set(e.source_node_id, (linkCount.get(e.source_node_id) ?? 0) + 1),
+    );
+    ((tgtEdges as any).data ?? []).forEach((e: any) =>
+      linkCount.set(e.target_node_id, (linkCount.get(e.target_node_id) ?? 0) + 1),
+    );
+    const stepTotals = new Map<string, { done: number; total: number }>();
+    ((steps as any).data ?? []).forEach((s: any) => {
+      const cur = stepTotals.get(s.execution_id) ?? { done: 0, total: 0 };
+      cur.total += 1;
+      if (["SUCCEEDED", "DONE", "COMPLETED", "SKIPPED"].includes(String(s.status).toUpperCase()))
+        cur.done += 1;
+      stepTotals.set(s.execution_id, cur);
+    });
+
+    const items: WorkGraphBoardItem[] = pageRows.map((r) => {
+      const st = stepTotals.get(r.id);
+      const progress =
+        st && st.total > 0
+          ? Math.round((st.done / st.total) * 100)
+          : statusProgress(r.type, r.status);
+      return {
+        type: r.type,
+        id: r.id,
+        title: r.title,
+        status: r.status,
+        href: r.href,
+        updatedAt: r.updatedAt,
+        links: linkCount.get(r.nodeId) ?? 0,
+        progress,
+        dueAt: r.dueAt,
+      };
+    });
+
+    return { items, total, page: data.page, pageSize: data.pageSize, counts };
   });

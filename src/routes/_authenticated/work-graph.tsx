@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -12,6 +12,7 @@ import {
   Zap,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useI18n } from "@/lib/i18n";
 import { getWorkGraphOverview, listWorkGraphBoard } from "@/lib/api/work-graph.functions";
@@ -42,6 +43,7 @@ const RUNNING_TASK = new Set(["in_progress", "blocked"]);
 const RUNNING_EXEC = new Set(["QUEUED", "RUNNING", "WAITING_REVIEW", "CHANGES_REQUESTED"]);
 const DONE_TASK = new Set(["done"]);
 const DONE_EXEC = new Set(["ACCEPTED", "SUCCEEDED"]);
+const PAGE_SIZE = 25;
 
 function isRunning(i: WorkGraphBoardItem) {
   if (i.type === "EXECUTION") return RUNNING_EXEC.has(i.status ?? "");
@@ -61,37 +63,47 @@ function WorkGraphPage() {
   const { t, lang } = useI18n();
   const [tab, setTab] = useState<Tab>("all");
   const [q, setQ] = useState("");
+  const [term, setTerm] = useState("");
+  const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setTerm(q);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(id);
+  }, [q]);
 
   const overview = useQuery({
     queryKey: ["work-graph-overview"],
     queryFn: () => getWorkGraphOverview(),
   });
   const board = useQuery({
-    queryKey: ["work-graph-board"],
-    queryFn: () => listWorkGraphBoard(),
+    queryKey: ["work-graph-board", tab, term, page],
+    queryFn: () => listWorkGraphBoard({ data: { tab, search: term, page, pageSize: PAGE_SIZE } }),
+    placeholderData: (prev) => prev,
   });
 
-  const items = board.data ?? [];
+  const visible = board.data?.items ?? [];
+  const counts = board.data?.counts ?? { all: 0, running: 0, done: 0, products: 0 };
+  const total = board.data?.total ?? 0;
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
-  const counts = useMemo(
-    () => ({
-      all: items.length,
-      running: items.filter(isRunning).length,
-      done: items.filter(isDone).length,
-      products: items.filter((i) => i.type === "WORK_PRODUCT").length,
-    }),
-    [items],
-  );
-
-  const visible = useMemo(() => {
-    const term = q.trim().toLowerCase();
-    let list = items;
-    if (tab === "running") list = list.filter(isRunning);
-    else if (tab === "done") list = list.filter(isDone);
-    else if (tab === "products") list = list.filter((i) => i.type === "WORK_PRODUCT");
-    if (term) list = list.filter((i) => i.title.toLowerCase().includes(term));
-    return list;
-  }, [items, tab, q]);
+  /** Thời gian còn lại tới hạn, rút gọn theo ngày/giờ. */
+  const remaining = (due: string | null) => {
+    if (!due) return null;
+    const ms = new Date(due).getTime() - Date.now();
+    const overdue = ms < 0;
+    const abs = Math.abs(ms);
+    const days = Math.floor(abs / 86400000);
+    const hours = Math.floor((abs % 86400000) / 3600000);
+    const span =
+      days > 0 ? `${days}${t("wg.unitDay")}` : `${Math.max(1, hours)}${t("wg.unitHour")}`;
+    return {
+      text: overdue ? t("wg.overdueBy").replace("{v}", span) : t("wg.leftIn").replace("{v}", span),
+      overdue,
+    };
+  };
 
   const statusLabel = (i: WorkGraphBoardItem) => {
     const s = i.status ?? "";
@@ -139,7 +151,10 @@ function WorkGraphPage() {
             <button
               key={id}
               type="button"
-              onClick={() => setTab(id)}
+              onClick={() => {
+                setTab(id);
+                setPage(1);
+              }}
               className={`flex h-8 items-center gap-1.5 rounded-md px-3 text-sm font-medium transition-colors ${
                 tab === id
                   ? "bg-background text-foreground shadow-sm"
@@ -196,6 +211,32 @@ function WorkGraphPage() {
                             lang === "vi" ? "vi-VN" : "en-US",
                           )}`}
                       </span>
+                      <span className="mt-1.5 flex items-center gap-2">
+                        <span className="h-1.5 w-24 overflow-hidden rounded-full bg-muted">
+                          <span
+                            className={`block h-full rounded-full ${
+                              isDone(i) ? "bg-primary" : "bg-foreground/50"
+                            }`}
+                            style={{ width: `${Math.min(100, Math.max(0, i.progress))}%` }}
+                          />
+                        </span>
+                        <span className="text-[11px] text-muted-foreground">
+                          {t("wg.progress")} {i.progress}%
+                        </span>
+                        {(() => {
+                          const r = remaining(i.dueAt);
+                          if (!r || isDone(i)) return null;
+                          return (
+                            <span
+                              className={`text-[11px] ${
+                                r.overdue ? "text-destructive" : "text-muted-foreground"
+                              }`}
+                            >
+                              · {r.text}
+                            </span>
+                          );
+                        })()}
+                      </span>
                     </span>
                     {i.status && (
                       <Badge
@@ -211,6 +252,31 @@ function WorkGraphPage() {
             })}
           </ul>
         )}
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+        <span className="text-xs text-muted-foreground">
+          {t("wg.total").replace("{n}", String(total))} ·{" "}
+          {t("wg.pageOf").replace("{p}", String(page)).replace("{n}", String(pageCount))}
+        </span>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={page <= 1 || board.isFetching}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+          >
+            {t("wg.prev")}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={page >= pageCount || board.isFetching}
+            onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+          >
+            {t("wg.next")}
+          </Button>
+        </div>
       </div>
     </div>
   );

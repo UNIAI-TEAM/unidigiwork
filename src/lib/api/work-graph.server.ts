@@ -11,6 +11,8 @@ export interface ResolvedWorkEntity {
   subtitle?: string | null;
   href: string;
   updatedAt?: string | null;
+  /** Hạn hoàn thành (chỉ có với TASK) — dùng cho chỉ số thời gian còn lại. */
+  dueAt?: string | null;
 }
 
 type Client = SupabaseClient<any, any, any>;
@@ -51,6 +53,7 @@ export async function resolveWorkEntities(
     title: string,
     subtitle?: string | null,
     updatedAt?: string | null,
+    dueAt?: string | null,
   ) => {
     out.set(key(type, id), {
       type,
@@ -59,6 +62,7 @@ export async function resolveWorkEntities(
       subtitle: subtitle ?? null,
       href: workEntityHref(type, id),
       updatedAt: updatedAt ?? null,
+      dueAt: dueAt ?? null,
     });
   };
 
@@ -69,11 +73,11 @@ export async function resolveWorkEntities(
         jobs.push(
           supabase
             .from("tasks")
-            .select("id,title,status,updated_at")
+            .select("id,title,status,updated_at,due_at")
             .in("id", ids)
             .then(({ data }) => {
               (data ?? []).forEach((r: any) =>
-                add("TASK", r.id, r.title ?? "Công việc", r.status, r.updated_at),
+                add("TASK", r.id, r.title ?? "Công việc", r.status, r.updated_at, r.due_at),
               );
             }),
         );
