@@ -10758,6 +10758,18 @@ export type Database = {
         Returns: Json
       }
       list_meeting_guests: { Args: { _meeting_id: string }; Returns: Json }
+      list_tenant_open_tasks: {
+        Args: { _include_done?: boolean; _limit?: number; _tenant_id: string }
+        Returns: {
+          due_at: string
+          id: string
+          priority: Database["public"]["Enums"]["task_priority"]
+          status: Database["public"]["Enums"]["task_status"]
+          title: string
+          updated_at: string
+          workspace_id: string
+        }[]
+      }
       list_workflow_access_requests: {
         Args: { _limit?: number; _status?: string; _workspace_id: string }
         Returns: {

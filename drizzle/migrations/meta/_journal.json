@@ -183,6 +183,13 @@
       "when": 1789991974960,
       "tag": "0025_reassign_task_owner",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1789992266083,
+      "tag": "0026_list_tenant_open_tasks",
+      "breakpoints": true
     }
   ]
 }
