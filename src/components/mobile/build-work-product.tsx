@@ -103,7 +103,7 @@ export function WorkProductRun({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [buildFn]);
+  }, []);
 
   if (states.length === 0) return null;
 
