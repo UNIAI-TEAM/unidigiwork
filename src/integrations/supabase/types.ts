@@ -10758,6 +10758,14 @@ export type Database = {
         Returns: Json
       }
       list_meeting_guests: { Args: { _meeting_id: string }; Returns: Json }
+      list_tenant_member_profiles: {
+        Args: { _tenant_id: string }
+        Returns: {
+          display_name: string
+          id: string
+          primary_email: string
+        }[]
+      }
       list_tenant_open_tasks: {
         Args: { _include_done?: boolean; _limit?: number; _tenant_id: string }
         Returns: {
