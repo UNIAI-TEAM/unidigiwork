@@ -190,6 +190,13 @@
       "when": 1789992266083,
       "tag": "0026_list_tenant_open_tasks",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1790001193135,
+      "tag": "0027_list_tenant_member_profiles",
+      "breakpoints": true
     }
   ]
 }
