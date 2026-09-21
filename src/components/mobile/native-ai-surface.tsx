@@ -348,7 +348,7 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
             size="icon"
             className="h-11 w-11 shrink-0 rounded-xl"
             aria-label={t("m.ai.send")}
-            disabled={!input.trim() || send.isPending}
+            disabled={!input.trim() || send.isPending || proposing}
             onClick={() => submit(input)}
           >
             {send.isPending ? (
