@@ -473,31 +473,16 @@ export const confirmAiAction = createServerFn({ method: "POST" })
         expectedRowVersion: row.expected_row_version ?? null,
       });
       const final: AiActionExecutionResult = { ...result, actionId: row.id as string };
-      // Gán agent tự động theo lĩnh vực công việc — không cần người dùng chọn tay.
+      // Gán người thật / agent AI. Người được chỉ định đích danh trong yêu cầu
+      // (qua email) luôn thắng việc tự chọn nhân sự AI.
       if (row.action_type === "CREATE_TASK" && result.status === "SUCCEEDED") {
-        const { autoAssignAgentForTask } = await import("./ai-agent-routing.server");
-        const assigned = await autoAssignAgentForTask({
-          supabase: sb,
-          userId: context.userId,
-          tenantId: row.tenant_id as string,
-          workspaceId: scope.workspaceId,
-          proposalId: row.id as string,
-          actionType: row.action_type as string,
-          task: {
-            title: (payload["title"] as string) ?? null,
-            description: (payload["description"] as string) ?? null,
-          },
-        });
-        if (assigned) {
-          final.assignedAgent = {
-            agentId: assigned.agentId,
-            agentName: assigned.agentName,
-            profileName: assigned.profileName,
-            reason: assigned.reason,
-          };
-          final.message = `${final.message} · Đã gán agent "${assigned.agentName}"`;
-        } else if (!payload["assigneeId"] && result.entityId) {
-          // Không có nhân sự AI phù hợp → giao cho người thật theo kinh nghiệm + tải việc.
+        const requestText = `${(row.title as string) ?? ""} ${(row.description as string) ?? ""} ${
+          (payload["title"] as string) ?? ""
+        } ${(payload["description"] as string) ?? ""}`;
+        const mentionsEmail = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i.test(requestText);
+
+        const assignHuman = async (): Promise<boolean> => {
+          if (payload["assigneeId"] || !result.entityId) return false;
           const { pickHumanAssignee } = await import("./human-assignment.server");
           const human = await pickHumanAssignee({
             supabase: sb,
@@ -507,31 +492,59 @@ export const confirmAiAction = createServerFn({ method: "POST" })
               description: (payload["description"] as string) ?? null,
             },
             preferUserId: context.userId,
-            requestText: `${(row.title as string) ?? ""} ${(row.description as string) ?? ""}`,
+            requestText,
           });
-          if (human) {
-            const { error: assignError } = await context.supabase.rpc("assign_task", {
+          if (!human) return false;
+          const { error: assignError } = await context.supabase.rpc("assign_task", {
+            _task_id: result.entityId,
+            _assignee_id: human.userId,
+            _role: "assignee",
+            _idempotency_key: `${row.idempotency_key}-human-assign`,
+          });
+          if (assignError) return false;
+          final.assignedHuman = human;
+          final.message = `${final.message} · Đã giao cho ${human.name}`;
+          // Kết nối thật với người được giao: phát email + push qua outbox.
+          const { error: notifyError } = await context.supabase.rpc(
+            "notify_human_task_assignment",
+            {
               _task_id: result.entityId,
               _assignee_id: human.userId,
-              _role: "assignee",
-              _idempotency_key: `${row.idempotency_key}-human-assign`,
-            });
-            if (!assignError) {
-              final.assignedHuman = human;
-              final.message = `${final.message} · Đã giao cho ${human.name}`;
-              // Kết nối thật với người được giao: phát email + push qua outbox.
-              const { error: notifyError } = await context.supabase.rpc(
-                "notify_human_task_assignment",
-                {
-                  _task_id: result.entityId,
-                  _assignee_id: human.userId,
-                  _idempotency_key: `${row.idempotency_key}-human-notify`,
-                },
-              );
-              if (!notifyError && human.email) {
-                final.message = `${final.message} (đã gửi email tới ${human.email})`;
-              }
-            }
+              _idempotency_key: `${row.idempotency_key}-human-notify`,
+            },
+          );
+          if (!notifyError && human.email) {
+            final.message = `${final.message} (đã gửi email tới ${human.email})`;
+          }
+          return true;
+        };
+
+        const humanAssigned = mentionsEmail ? await assignHuman() : false;
+
+        if (!humanAssigned) {
+          const { autoAssignAgentForTask } = await import("./ai-agent-routing.server");
+          const assigned = await autoAssignAgentForTask({
+            supabase: sb,
+            userId: context.userId,
+            tenantId: row.tenant_id as string,
+            workspaceId: scope.workspaceId,
+            proposalId: row.id as string,
+            actionType: row.action_type as string,
+            task: {
+              title: (payload["title"] as string) ?? null,
+              description: (payload["description"] as string) ?? null,
+            },
+          });
+          if (assigned) {
+            final.assignedAgent = {
+              agentId: assigned.agentId,
+              agentName: assigned.agentName,
+              profileName: assigned.profileName,
+              reason: assigned.reason,
+            };
+            final.message = `${final.message} · Đã gán agent "${assigned.agentName}"`;
+          } else {
+            await assignHuman();
           }
         }
       }
