@@ -28,6 +28,9 @@ import {
   listHumanAgents,
   removeHumanAgent,
   saveHumanAgent,
+  setHumanAgentRolePolicy,
+  ASSIGN_ROLES,
+  type AssignRole,
   type HumanAgentDTO,
 } from "@/lib/api/human-agents.functions";
 
@@ -90,6 +93,7 @@ function HumanAgentsPage() {
           maxOpenTasks: Math.max(1, Math.min(200, Number(d.maxOpenTasks) || 10)),
           note: d.note.trim(),
           role: d.role,
+          assignRole: d.assignRole,
         },
       }),
     onSuccess: () => {
@@ -132,6 +136,7 @@ function HumanAgentsPage() {
       maxOpenTasks: String(a.maxOpenTasks),
       note: a.note,
       role: a.role,
+      assignRole: a.assignRole,
     });
 
   const editing = draft ? agents.find((a) => a.userId === draft.userId) : undefined;
@@ -216,6 +221,9 @@ function HumanAgentsPage() {
                           : t("ha.disabled")}
                     </Badge>
                     <Badge variant="outline">{a.role}</Badge>
+                    <Badge variant={rolePolicies[a.assignRole] ? "outline" : "destructive"}>
+                      {t(`ha.assignRole.${a.assignRole}`)}
+                    </Badge>
                   </span>
                   <span className="mt-0.5 block truncate text-xs text-muted-foreground">
                     {a.workEmail || a.accountEmail || "—"} · {a.openTasks}/{a.maxOpenTasks}{" "}
