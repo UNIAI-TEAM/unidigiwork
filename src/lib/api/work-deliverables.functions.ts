@@ -478,6 +478,14 @@ export const commentWorkDeliverable = createServerFn({ method: "POST" })
       author_id: context.userId,
     });
     if (error) mapPgError(error);
+    const { notifyWorkProductFeedback } = await import("./work-product-notify.server");
+    await notifyWorkProductFeedback({
+      workProductId: data.id,
+      actorId: context.userId,
+      kind: "COMMENT",
+      body: data.body,
+      status: "Chưa xử lý",
+    });
     return { added: true };
   });
 
