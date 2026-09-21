@@ -95,7 +95,38 @@ export async function pickHumanAssignee(args: {
       (profiles ?? []).map((p: any) => [p.id as string, (p.email ?? "") as string]),
     );
 
-    // 1) Người được chỉ định đích danh bằng email trong yêu cầu — ưu tiên tuyệt đối.
+    // Sổ đăng ký Human Agent + chính sách vai trò được phép nhận việc của tổ chức.
+    const { data: agentRows } = await supabase
+      .from("human_agents")
+      .select("user_id, tenant_id, enabled, work_email, domains, max_open_tasks, assign_role")
+      .in("user_id", memberIds);
+    const agents = (agentRows ?? []) as Array<{
+      user_id: string;
+      tenant_id: string;
+      enabled: boolean;
+      work_email: string | null;
+      domains: string[] | null;
+      max_open_tasks: number | null;
+      assign_role: string | null;
+    }>;
+    const agentOf = new Map(agents.map((row) => [row.user_id, row]));
+
+    const tenantIds = Array.from(new Set(agents.map((row) => row.tenant_id).filter(Boolean)));
+    const blockedRoles = new Set<string>();
+    if (tenantIds.length > 0) {
+      const { data: policyRows } = await supabase
+        .from("human_agent_role_policies")
+        .select("role, can_receive_tasks, tenant_id")
+        .in("tenant_id", tenantIds);
+      for (const row of (policyRows ?? []) as Array<{ role: string; can_receive_tasks: boolean }>) {
+        if (!row.can_receive_tasks) blockedRoles.add(row.role);
+      }
+    }
+    /** Vai trò chưa bị tắt thì được nhận việc (mặc định mở). */
+    const roleAllowed = (role: string | null | undefined) => !blockedRoles.has(role ?? "staff");
+
+    // 1) Người được chỉ định đích danh bằng email trong yêu cầu — ưu tiên tuyệt đối,
+    //    nhưng vẫn phải thuộc vai trò được phép nhận việc.
     const mentioned = `${requestText ?? ""} ${task.title ?? ""} ${task.description ?? ""}`
       .match(EMAIL_RE)
       ?.map((value) => value.toLowerCase());
