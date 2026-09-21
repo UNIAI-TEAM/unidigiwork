@@ -152,11 +152,22 @@ export const listHumanAgents = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<HumanAgentsResult> => {
     const ctx = context as unknown as Ctx;
     const tenant = await resolveTenant(ctx);
-    if (!tenant) return { tenantId: null, canManage: false, agents: [] };
+    if (!tenant)
+      return {
+        tenantId: null,
+        canManage: false,
+        agents: [],
+        rolePolicies: { admin: true, manager: true, staff: true },
+      };
+    const [agents, rolePolicies] = await Promise.all([
+      loadAgents(ctx, tenant.tenantId),
+      loadRolePolicies(ctx, tenant.tenantId),
+    ]);
     return {
       tenantId: tenant.tenantId,
       canManage: MANAGER_ROLES.includes(tenant.role),
-      agents: await loadAgents(ctx, tenant.tenantId),
+      agents,
+      rolePolicies,
     };
   });
 
