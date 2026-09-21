@@ -91,7 +91,15 @@ export const buildWorkProduct = createServerFn({ method: "POST" })
       activeTenant,
     );
 
-    // 1. Soạn nội dung qua AI Context Engine (ngữ cảnh theo quyền của actor).
+    // 1. Bài học từ góp ý & quyết định duyệt thật trước đó (vòng học của AI).
+    const { loadWorkProductGuidance } = await import("./work-product-learning.server");
+    const learned = await loadWorkProductGuidance(
+      context.supabase as never,
+      tenantId,
+      BUSINESS_TYPE[data.kind],
+    ).catch(() => ({ guidance: "", sampleCount: 0, refreshed: false }));
+
+    // 2. Soạn nội dung qua AI Context Engine (ngữ cảnh theo quyền của actor).
     const { answerWithContext } = await import("./ai-consumer.server");
     const result = await answerWithContext(context.supabase, context.userId, activeTenant, {
       consumer: "MY_AI",
@@ -106,9 +114,19 @@ export const buildWorkProduct = createServerFn({ method: "POST" })
       ].join(" "),
       promptSections: [
         `KHUÔN ĐẦU RA:\n${KIND_SPEC[data.kind]}`,
+        ...(learned.guidance
+          ? [
+              [
+                "BÀI HỌC TỪ GÓP Ý & DUYỆT TRƯỚC ĐÓ (bắt buộc tuân thủ,",
+                `rút từ ${learned.sampleCount} phản hồi thật của tổ chức):`,
+                learned.guidance,
+              ].join("\n"),
+            ]
+          : []),
         `YÊU CẦU CÔNG VIỆC:\n${data.brief}`,
       ],
     });
+
 
     const content = (result.text ?? "").trim();
     if (!content) {
