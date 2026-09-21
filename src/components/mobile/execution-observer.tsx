@@ -127,7 +127,9 @@ export function ExecutionObserver({
     onError: (error) => toast.error(error instanceof Error ? error.message : t("m.exec.failed")),
   });
 
-  if (!latest || !active) return null;
+  if (!latest || !active) {
+    return <HumanExecutionPanel taskId={taskId} humanName={humanName} />;
+  }
 
   const running = latest.status === "QUEUED" || latest.status === "RUNNING";
   const failed = latest.status === "FAILED";
