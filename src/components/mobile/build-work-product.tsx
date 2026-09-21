@@ -77,9 +77,9 @@ export function WorkProductRun({
             data: {
               idempotencyKey: crypto.randomUUID(),
               kind,
-              brief: brief.slice(0, 8000),
-              ...(workspaceId ? { workspaceId } : {}),
-              sourceEntities,
+              brief: briefText.slice(0, 8000),
+              ...(wsId ? { workspaceId: wsId } : {}),
+              sourceEntities: argsRef.current.sourceEntities,
             },
           });
           if (cancelled) return;
