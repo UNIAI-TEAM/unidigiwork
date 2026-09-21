@@ -9,7 +9,6 @@ import { ApiError } from "@/contracts/errors";
 import { mapPgError } from "./business.server";
 
 const ACTIVE_TENANT_COOKIE = "uniwork_active_tenant";
-const OPEN_STATUSES = ["todo", "in_progress", "blocked"];
 
 export type TaskOpsPerson = {
   userId: string;
