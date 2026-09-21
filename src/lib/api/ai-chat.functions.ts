@@ -81,6 +81,16 @@ const messageMetadataSchema = z.object({
   rangeDays: z.number().int().min(1).max(3650).optional(),
   openedLinks: z.array(openedLinkSchema).max(10).optional(),
   contextLabels: z.array(z.string().max(160)).max(12).optional(),
+  contextEntities: z
+    .array(
+      z.object({
+        type: z.enum(WORK_ENTITY_TYPES),
+        id: z.string().uuid(),
+        label: z.string().max(200).optional(),
+      }),
+    )
+    .max(8)
+    .optional(),
   sources: z
     .array(
       z.object({
