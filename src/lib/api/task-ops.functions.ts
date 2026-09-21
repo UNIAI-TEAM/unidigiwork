@@ -206,6 +206,9 @@ export const listTaskOpsBoard = createServerFn({ method: "GET" })
     return {
       tenantId,
       members,
+      total,
+      page,
+      pageSize,
       tasks: tasks.map((t) => ({
         id: t.id,
         title: t.title,
