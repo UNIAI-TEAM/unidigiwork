@@ -234,6 +234,16 @@ export const NAV_ITEMS: NavItem[] = [
     order: 1.5,
   },
   {
+    id: "task-ops",
+    labelKey: "nav.taskOps",
+    icon: UserCog,
+    href: "/task-ops",
+    group: "results",
+    match: ["/task-ops"],
+    visibility: "everyone",
+    order: 1.55,
+  },
+  {
     id: "work-graph",
     labelKey: "nav.workGraph",
     icon: Waypoints,
