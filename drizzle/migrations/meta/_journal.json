@@ -148,6 +148,13 @@
       "when": 1789967792180,
       "tag": "0020_work_products_allow_spreadsheet_type",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1789969838063,
+      "tag": "0021_notify_human_task_assignment",
+      "breakpoints": true
     }
   ]
 }
