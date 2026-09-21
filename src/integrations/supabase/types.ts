@@ -3260,8 +3260,79 @@ export type Database = {
           },
         ]
       }
+      meeting_guests: {
+        Row: {
+          created_at: string
+          display_name: string
+          expires_at: string
+          first_joined_at: string | null
+          id: string
+          invite_link_id: string
+          last_seen_at: string | null
+          meeting_id: string
+          revoked_at: string | null
+          row_version: number
+          session_token_hash: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name: string
+          expires_at: string
+          first_joined_at?: string | null
+          id?: string
+          invite_link_id: string
+          last_seen_at?: string | null
+          meeting_id: string
+          revoked_at?: string | null
+          row_version?: number
+          session_token_hash: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          expires_at?: string
+          first_joined_at?: string | null
+          id?: string
+          invite_link_id?: string
+          last_seen_at?: string | null
+          meeting_id?: string
+          revoked_at?: string | null
+          row_version?: number
+          session_token_hash?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_guests_invite_link_id_fkey"
+            columns: ["invite_link_id"]
+            isOneToOne: false
+            referencedRelation: "meeting_invite_links"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_guests_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_guests_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meeting_invite_links: {
         Row: {
+          allow_guests: boolean
           created_at: string
           created_by: string | null
           expires_at: string | null
@@ -3276,6 +3347,7 @@ export type Database = {
           used_count: number
         }
         Insert: {
+          allow_guests?: boolean
           created_at?: string
           created_by?: string | null
           expires_at?: string | null
@@ -3290,6 +3362,7 @@ export type Database = {
           used_count?: number
         }
         Update: {
+          allow_guests?: boolean
           created_at?: string
           created_by?: string | null
           expires_at?: string | null
@@ -3387,6 +3460,7 @@ export type Database = {
           expires_at: string
           id: string
           idempotency_key: string | null
+          is_guest: boolean
           issued_at: string
           meeting_id: string
           role: string
@@ -3400,6 +3474,7 @@ export type Database = {
           expires_at: string
           id?: string
           idempotency_key?: string | null
+          is_guest?: boolean
           issued_at?: string
           meeting_id: string
           role: string
@@ -3413,6 +3488,7 @@ export type Database = {
           expires_at?: string
           id?: string
           idempotency_key?: string | null
+          is_guest?: boolean
           issued_at?: string
           meeting_id?: string
           role?: string
@@ -3818,6 +3894,7 @@ export type Database = {
           department: string | null
           end_at: string
           id: string
+          idempotency_key: string | null
           location: string | null
           project_id: string | null
           row_version: number
@@ -3842,6 +3919,7 @@ export type Database = {
           department?: string | null
           end_at: string
           id?: string
+          idempotency_key?: string | null
           location?: string | null
           project_id?: string | null
           row_version?: number
@@ -3866,6 +3944,7 @@ export type Database = {
           department?: string | null
           end_at?: string
           id?: string
+          idempotency_key?: string | null
           location?: string | null
           project_id?: string | null
           row_version?: number
@@ -8849,6 +8928,7 @@ export type Database = {
           department: string | null
           end_at: string
           id: string
+          idempotency_key: string | null
           location: string | null
           project_id: string | null
           row_version: number
@@ -9378,6 +9458,7 @@ export type Database = {
           department: string | null
           end_at: string
           id: string
+          idempotency_key: string | null
           location: string | null
           project_id: string | null
           row_version: number
@@ -9808,6 +9889,7 @@ export type Database = {
       }
       create_meeting_invite_link: {
         Args: {
+          _allow_guests?: boolean
           _expires_in_minutes?: number
           _label?: string
           _max_uses?: number
@@ -10118,6 +10200,7 @@ export type Database = {
           department: string | null
           end_at: string
           id: string
+          idempotency_key: string | null
           location: string | null
           project_id: string | null
           row_version: number
@@ -10526,6 +10609,14 @@ export type Database = {
         Args: { _user_id: string; _workspace_id: string }
         Returns: boolean
       }
+      issue_meeting_guest_token: {
+        Args: {
+          _expires_at: string
+          _session_token: string
+          _token_fingerprint: string
+        }
+        Returns: Json
+      }
       issue_meeting_join_token: {
         Args: {
           _correlation_id?: string
@@ -10556,6 +10647,7 @@ export type Database = {
         }
         Returns: Json
       }
+      list_meeting_guests: { Args: { _meeting_id: string }; Returns: Json }
       list_workflow_access_requests: {
         Args: { _limit?: number; _status?: string; _workspace_id: string }
         Returns: {
@@ -10887,6 +10979,10 @@ export type Database = {
         Args: { _execution_id: string; _kind: string; _reason: string }
         Returns: Json
       }
+      record_meeting_guest_token_fingerprint: {
+        Args: { _session_token: string; _token_fingerprint: string }
+        Returns: undefined
+      }
       record_meeting_join_token_fingerprint: {
         Args: { _meeting_id: string; _token_fingerprint: string }
         Returns: Json
@@ -10979,6 +11075,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      redeem_meeting_guest_link: {
+        Args: { _display_name: string; _token: string }
+        Returns: Json
       }
       redeem_meeting_invite_link: { Args: { _token: string }; Returns: Json }
       refresh_entitlements: { Args: { _tenant_id: string }; Returns: undefined }
@@ -11193,6 +11293,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      revoke_meeting_guest: {
+        Args: { _correlation_id?: string; _guest_id: string }
+        Returns: Json
+      }
       revoke_tenant_invitation: {
         Args: { _correlation_id?: string; _invitation_id: string }
         Returns: {
@@ -11320,6 +11424,7 @@ export type Database = {
               department: string | null
               end_at: string
               id: string
+              idempotency_key: string | null
               location: string | null
               project_id: string | null
               row_version: number
@@ -11365,6 +11470,7 @@ export type Database = {
               department: string | null
               end_at: string
               id: string
+              idempotency_key: string | null
               location: string | null
               project_id: string | null
               row_version: number
@@ -11713,6 +11819,7 @@ export type Database = {
           department: string | null
           end_at: string
           id: string
+          idempotency_key: string | null
           location: string | null
           project_id: string | null
           row_version: number
@@ -11951,6 +12058,7 @@ export type Database = {
           department: string | null
           end_at: string
           id: string
+          idempotency_key: string | null
           location: string | null
           project_id: string | null
           row_version: number
