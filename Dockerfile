@@ -8,8 +8,8 @@ RUN npm install
 COPY . .
 # Tăng heap size để tránh lỗi "JavaScript heap out of memory" trong quá trình build
 ENV NODE_OPTIONS=--max-old-space-size=8192
-# Ngoài sandbox Lovable, vite.config.ts dùng nitro preset `node-server`,
-# nên build sinh ra server Node độc lập tại .output/
+# Bật preset `node-server` khi tự host: build sinh server Node tại dist/
+ENV UNIWORK_SELF_HOST=1
 RUN npm run build
 
 FROM node:22-alpine AS runtime
@@ -19,8 +19,8 @@ ENV NODE_ENV=production \
     HOST=0.0.0.0 \
     PORT=3000
 
-COPY --from=build /app/.output ./.output
+COPY --from=build /app/dist ./dist
 
 EXPOSE 3000
 
-CMD ["node", ".output/server/index.mjs"]
+CMD ["node", "dist/server/index.mjs"]
