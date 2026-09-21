@@ -88,14 +88,23 @@ export const listTaskOpsBoard = createServerFn({ method: "GET" })
       .limit(200);
     if (wsErr) mapPgError(wsErr);
     const workspaces = (wsRows ?? []) as Array<{ id: string; name: string }>;
-    if (workspaces.length === 0) return { tenantId, tasks: [], members: {} };
+    if (workspaces.length === 0) return { tenantId, ...empty };
     const wsName = new Map(workspaces.map((w) => [w.id, w.name]));
     const wsIds = workspaces.map((w) => w.id);
 
-    const { data: taskRows, error: tErr } = await ctx.supabase.rpc("list_tenant_open_tasks", {
+    const statuses =
+      data.statuses.length > 0
+        ? data.statuses
+        : data.includeDone
+          ? ["todo", "in_progress", "blocked", "done"]
+          : ["todo", "in_progress", "blocked"];
+
+    const { data: taskRows, error: tErr } = await ctx.supabase.rpc("list_tenant_tasks_page", {
       _tenant_id: tenantId,
-      _include_done: data.includeDone,
-      _limit: 300,
+      _statuses: statuses,
+      _search: data.search || null,
+      _limit: pageSize,
+      _offset: (page - 1) * pageSize,
     });
     if (tErr) mapPgError(tErr, "TENANT_ACCESS_DENIED");
     const tasks = (taskRows ?? []) as Array<{
@@ -106,8 +115,10 @@ export const listTaskOpsBoard = createServerFn({ method: "GET" })
       workspace_id: string;
       due_at: string | null;
       updated_at: string | null;
+      total_count: number;
     }>;
-    if (tasks.length === 0) return { tenantId, tasks: [], members: {} };
+    const total = Number(tasks[0]?.total_count ?? 0);
+    if (tasks.length === 0) return { tenantId, ...empty, total };
     const taskIds = tasks.map((t) => t.id);
 
     const [assignRes, memberRes, nodeRes] = await Promise.all([
