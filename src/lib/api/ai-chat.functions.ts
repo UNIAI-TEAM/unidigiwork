@@ -79,6 +79,19 @@ const messageMetadataSchema = z.object({
   rangeDays: z.number().int().min(1).max(3650).optional(),
   openedLinks: z.array(openedLinkSchema).max(10).optional(),
   contextLabels: z.array(z.string().max(160)).max(12).optional(),
+  sources: z
+    .array(
+      z.object({
+        sourceId: z.string().max(200),
+        entityType: z.string().max(40),
+        entityId: z.string().max(100),
+        title: z.string().max(300),
+        href: z.string().max(500),
+        updatedAt: z.string().nullable(),
+      }),
+    )
+    .max(8)
+    .optional(),
 });
 
 export type AiWorkspaceOption = { id: string; name: string };
@@ -344,8 +357,6 @@ export const sendAiMessage = createServerFn({ method: "POST" })
       context,
     }): Promise<{ conversationId: string; reply: string; inputTokens: number; outputTokens: number }> => {
       const ctx = context as unknown as Ctx;
-      const apiKey = process.env["LOVABLE_API_KEY"];
-      if (!apiKey) throw new ApiError({ code: "AI_GATEWAY_UNAVAILABLE", message: "Thiếu cấu hình AI" });
       const tenantId = await resolveTenant(ctx);
       if (!tenantId)
         throw new ApiError({ code: "TENANT_CONTEXT_REQUIRED", message: "Chưa có tổ chức hoạt động" });
@@ -410,6 +421,7 @@ export const sendAiMessage = createServerFn({ method: "POST" })
       let outputTokens = 0;
       let status = "succeeded";
       let errorMessage: string | null = null;
+       let sourceMetadata: NonNullable<AiMessageMetadata["sources"]> = [];
 
       try {
          const { answerWithContext } = await import("./ai-consumer.server");
@@ -432,7 +444,7 @@ export const sendAiMessage = createServerFn({ method: "POST" })
          reply = result.text;
          inputTokens = result.usage?.inputTokens ?? 0;
          outputTokens = result.usage?.outputTokens ?? 0;
-         const sourceMetadata = result.sources.slice(0, 8).map((source) => ({
+         sourceMetadata = result.sources.slice(0, 8).map((source) => ({
            sourceId: source.sourceId,
            entityType: source.entityType,
            entityId: source.entityId,
@@ -440,7 +452,6 @@ export const sendAiMessage = createServerFn({ method: "POST" })
            href: source.href,
            updatedAt: source.updatedAt,
          }));
-         (data as typeof data & { _sourceMetadata?: typeof sourceMetadata })._sourceMetadata = sourceMetadata;
       } catch (e) {
         status = "failed";
         errorMessage = e instanceof Error ? e.message : String(e);
@@ -462,7 +473,7 @@ export const sendAiMessage = createServerFn({ method: "POST" })
              metadata: {
                source: "NATIVE_AI",
                workspaceId,
-               sources: (data as typeof data & { _sourceMetadata?: AiMessageMetadata["sources"] })._sourceMetadata ?? [],
+               sources: sourceMetadata,
              },
           })
           .select("id")

@@ -1,293 +1,151 @@
-import { useActiveWorkspace } from "@/lib/active-workspace";
-import { BrandMark } from "@/components/brand-logo";
+import { useState } from "react";
 import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import {
-  Home,
-  MessageSquare,
-  Sparkles,
+  AlertCircle,
+  Bot,
+  CheckCircle2,
+  ChevronRight,
+  FileText,
   Inbox,
-  LayoutGrid,
+  Mail,
+  Menu,
+  MessageSquarePlus,
   Search,
-  Bell,
-  MoreHorizontal,
+  Settings,
+  Sparkles,
+  Video,
+  Workflow,
 } from "lucide-react";
+import { BrandMark } from "@/components/brand-logo";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { listAiConversations } from "@/lib/api/ai-chat.functions";
+import { useActiveWorkspace } from "@/lib/active-workspace";
+import { useCurrentIdentity } from "@/lib/use-current-identity";
+import { useI18n, type Key } from "@/lib/i18n";
 
-import { cn } from "@/lib/utils";
-import { useUnreadNotifications } from "@/lib/use-unread-notifications";
-import { useUnreadCounts } from "@/lib/use-unread-counts";
-import { ThemeToggle } from "@/lib/theme";
-import { useEffect, useRef, useState } from "react";
-
-const TABS = [
-  { id: "home", label: "Home", icon: Home, to: "/m/home" },
-  { id: "chat", label: "Chat", icon: MessageSquare, to: "/m/chat" },
-  // Nút W ở giữa: mở My AI (đội ngũ AI của bạn).
-  { id: "ai", label: "My AI", icon: Sparkles, to: "/m/ai" },
-  { id: "box", label: "Của tôi", icon: Inbox, to: "/m/box" },
-  { id: "more", label: "More", icon: MoreHorizontal, to: "/m/more" },
+const INBOX_LINKS = [
+  { label: "m.nav.attention" as Key, icon: AlertCircle },
+  { label: "m.nav.working" as Key, icon: Workflow },
+  { label: "m.nav.review" as Key, icon: CheckCircle2 },
 ];
 
-const SWIPE_THRESHOLD = 72;
+const LIBRARY_LINKS = [
+  { label: "nav.workProducts" as Key, icon: FileText, to: "/m/work-products" },
+  { label: "nav.meetings" as Key, icon: Video, to: "/m/meet" },
+  { label: "nav.email" as Key, icon: Mail, to: "/m/email" },
+  { label: "nav.documents" as Key, icon: FileText, to: "/documents" },
+];
 
 export function MobileShell() {
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { t } = useI18n();
+  const navigate = useNavigate();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const isNativeRoot = pathname === "/m" || pathname === "/m/" || pathname.startsWith("/m/c/");
 
-  const isCompose = pathname.startsWith("/m/compose") || pathname.startsWith("/m/email/");
-  const hideTabBar = pathname.startsWith("/m/meet/") || isCompose;
-  const activeTab = pathname.split("/")[2] || "home";
-  const isTab = TABS.some((t) => t.id === activeTab);
+  const startNew = () => void navigate({ to: "/m" as never });
 
   return (
-    <div className="flex min-h-dvh flex-col bg-surface">
-      <MobileTopbar />
-      <SwipeableMain className="flex-1" activeTab={activeTab} enabled={isTab && !hideTabBar}>
+    <div className="flex h-dvh min-h-dvh min-w-0 flex-col overflow-hidden bg-background">
+      <header className="z-40 flex min-h-16 shrink-0 items-center gap-2 border-b border-border bg-background px-[max(0.75rem,env(safe-area-inset-left))] pb-2 pt-[max(.5rem,env(safe-area-inset-top))]">
+        <Button variant="ghost" size="icon" className="h-11 w-11 shrink-0 rounded-xl" aria-label={t("m.nav.open")} onClick={() => setDrawerOpen(true)}>
+          <Menu className="h-5 w-5" />
+        </Button>
+        <button className="flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-xl px-1 text-left" onClick={startNew}>
+          <BrandMark className="h-7 w-7 shrink-0" />
+          <span className="truncate text-sm font-semibold tracking-tight">UniWork</span>
+        </button>
+        <Button variant="ghost" className="min-h-11 shrink-0 rounded-xl px-3 text-sm font-medium" onClick={startNew}>
+          <MessageSquarePlus className="h-4 w-4" />
+          {t("m.nav.new")}
+        </Button>
+      </header>
+
+      <main className={isNativeRoot ? "min-h-0 flex-1 overflow-hidden" : "min-h-0 flex-1 overflow-y-auto overflow-x-hidden"}>
         <Outlet />
-      </SwipeableMain>
-      {!hideTabBar && <BottomTabBar activeTab={activeTab} />}
+      </main>
+      <NativeDrawer open={drawerOpen} onOpenChange={setDrawerOpen} />
     </div>
   );
 }
 
-function SwipeableMain({
-  children,
-  className,
-  activeTab,
-  enabled,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  activeTab: string;
-  enabled: boolean;
-}) {
+function NativeDrawer({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  const { t } = useI18n();
   const navigate = useNavigate();
-  const [start, setStart] = useState<{ x: number; y: number; pointerId: number } | null>(null);
-  const [offset, setOffset] = useState(0);
-  const [isAnimating, setIsAnimating] = useState(false);
-  const directionRef = useRef<1 | -1 | null>(null);
-  const activeIndex = TABS.findIndex((t) => t.id === activeTab);
+  const listFn = useServerFn(listAiConversations);
+  const identity = useCurrentIdentity();
+  const { workspaces, workspaceId, select } = useActiveWorkspace();
+  const conversations = useQuery({
+    queryKey: ["mobile-ai-conversations", workspaceId],
+    queryFn: () => listFn({ data: { workspaceId: workspaceId ?? undefined, limit: 6, sort: "recent" } }),
+    enabled: open,
+  });
 
-  useEffect(() => {
-    setStart(null);
-    setOffset(0);
-    setIsAnimating(false);
-    directionRef.current = null;
-  }, [activeTab]);
-
-  const onPointerDown = (e: React.PointerEvent) => {
-    if (!enabled || isAnimating || e.button !== 0) return;
-    // Không capture ngay khi chạm: capture ở đây làm sự kiện click của nút bên trong bị chuyển
-    // sang <main>, khiến mọi thao tác chạm vào danh sách/nút trong tab không có tác dụng.
-    setStart({ x: e.clientX, y: e.clientY, pointerId: e.pointerId });
-    setOffset(0);
-    setIsAnimating(false);
-    directionRef.current = null;
-  };
-
-  const onPointerMove = (e: React.PointerEvent) => {
-    if (!enabled || !start || isAnimating || e.pointerId !== start.pointerId) return;
-    const dx = e.clientX - start.x;
-    const dy = e.clientY - start.y;
-
-    if (Math.abs(dx) > Math.abs(dy) * 1.2 && Math.abs(dx) > 8) {
-      if (directionRef.current === null) {
-        // Chỉ capture khi đã chắc là vuốt ngang: vẫn nhận pointerup dù ngón tay ra khỏi vùng,
-        // và click sau khi vuốt không rơi nhầm vào nút bên dưới.
-        try {
-          (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-        } catch {
-          // pointer có thể đã kết thúc
-        }
-      }
-      directionRef.current = dx > 0 ? -1 : 1;
-      setOffset(dx);
-    }
-  };
-
-  const reset = (target?: HTMLElement) => {
-    setIsAnimating(true);
-    setOffset(0);
-    setTimeout(() => {
-      setIsAnimating(false);
-      setStart(null);
-      directionRef.current = null;
-    }, 220);
-    if (target) {
-      try {
-        target.releasePointerCapture(start?.pointerId ?? -1);
-      } catch {
-        // capture may already be released
-      }
-    }
-  };
-
-  const onPointerUp = (e: React.PointerEvent) => {
-    if (!enabled || !start || e.pointerId !== start.pointerId) return;
-    const dir = directionRef.current;
-    if (dir && Math.abs(offset) > SWIPE_THRESHOLD) {
-      const targetIndex = dir === 1 ? activeIndex + 1 : activeIndex - 1;
-      if (targetIndex >= 0 && targetIndex < TABS.length) {
-        setIsAnimating(true);
-        setOffset(0);
-        navigate({ to: TABS[targetIndex].to, replace: true });
-      } else {
-        reset(e.currentTarget as HTMLElement);
-      }
-    } else {
-      reset(e.currentTarget as HTMLElement);
-    }
-  };
-
-  const onPointerCancel = (e: React.PointerEvent) => {
-    reset(e.currentTarget as HTMLElement);
+  const go = (to: string) => {
+    onOpenChange(false);
+    void navigate({ to: to as never });
   };
 
   return (
-    <main
-      className={cn("overflow-y-auto overflow-x-hidden relative", className)}
-      style={{ touchAction: "pan-y" }}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerCancel={onPointerCancel}
-    >
-      <div
-        className={cn("min-h-full", isAnimating && "transition-transform duration-200 ease-out")}
-        style={{
-          transform: offset || isAnimating ? `translateX(${offset}px)` : undefined,
-        }}
-      >
-        {children}
-      </div>
-    </main>
-  );
-}
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="left" className="flex w-[min(88vw,360px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-[360px]">
+        <SheetHeader className="border-b border-border px-4 pb-3 pt-[max(1rem,env(safe-area-inset-top))] text-left">
+          <SheetTitle className="flex items-center gap-2"><BrandMark className="h-7 w-7" /> UniWork</SheetTitle>
+          <SheetDescription>{t("m.nav.tagline")}</SheetDescription>
+        </SheetHeader>
 
-function MobileTopbar() {
-  const navigate = useNavigate();
-  const { workspaceName, isLoading } = useActiveWorkspace();
-  const { unreadCount } = useUnreadNotifications();
+        <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
+          <DrawerLink icon={MessageSquarePlus} label={t("m.nav.newWork")} onClick={() => go("/m")} strong />
+          <DrawerLink icon={Search} label={t("cmd.group.search")} onClick={() => go("/m/search")} />
+          <DrawerLink icon={Sparkles} label={t("m.nav.myAi")} onClick={() => go("/m")} />
 
-  return (
-    <header className="sticky top-0 z-40 grid min-h-16 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-border bg-background px-[max(1rem,env(safe-area-inset-left))] pb-3 pt-[max(.75rem,env(safe-area-inset-top))]">
-      <button
-        onClick={() => navigate({ to: "/m/more" })}
-        className="flex h-11 w-11 shrink-0 items-center justify-center gap-2"
-        aria-label="Menu"
-      >
-        <BrandMark className="h-8 w-8" />
-      </button>
-
-      <button
-        onClick={() => navigate({ to: "/workspace" })}
-        className="grid min-h-11 min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2 rounded-xl border border-border bg-background px-3 py-1.5 text-sm shadow-card"
-      >
-        <LayoutGrid className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-        <span className="min-w-0 truncate font-medium">
-          {isLoading ? "Đang tải…" : (workspaceName ?? "Workspace")}
-        </span>
-      </button>
-
-      <div className="flex items-center gap-1">
-        <ThemeToggle className="grid h-11 w-11 place-items-center p-0" />
-        <Link
-          to="/m/search"
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-muted-foreground hover:bg-surface-2"
-          aria-label="Tìm kiếm"
-        >
-          <Search className="h-4 w-4" />
-        </Link>
-        <Link
-          to="/notifications"
-          className="relative grid h-11 w-11 shrink-0 place-items-center rounded-xl text-muted-foreground hover:bg-surface-2"
-          aria-label="Thông báo"
-        >
-          <Bell className="h-4 w-4" />
-          {unreadCount > 0 && (
-            <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
-              {unreadCount > 9 ? "9+" : unreadCount}
-            </span>
+          {(conversations.data?.conversations.length ?? 0) > 0 && (
+            <div className="mt-2 space-y-0.5 border-l border-border pl-3">
+              {conversations.data?.conversations.map((conversation) => (
+                <button key={conversation.id} onClick={() => go(`/m/c/${conversation.id}`)} className="min-h-10 w-full truncate rounded-lg px-3 text-left text-xs text-muted-foreground hover:bg-surface-2 hover:text-foreground">
+                  {conversation.title}
+                </button>
+              ))}
+            </div>
           )}
-        </Link>
-      </div>
-    </header>
+
+          <DrawerSection label={t("m.nav.inbox")}>
+            {INBOX_LINKS.map((item) => <DrawerLink key={item.label} icon={item.icon} label={t(item.label)} onClick={() => go("/m/box")} />)}
+          </DrawerSection>
+
+          <DrawerSection label={t("m.nav.workspaces")}>
+            <DrawerLink icon={Bot} label={t("m.nav.allWorkspaces")} onClick={() => { select(null); onOpenChange(false); }} active={!workspaceId} />
+            {workspaces.slice(0, 8).map((workspace) => (
+              <button key={workspace.id} onClick={() => { select(workspace.id); onOpenChange(false); }} className={`flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm ${workspaceId === workspace.id ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"}`}>
+                <span className="h-2.5 w-2.5 shrink-0 rounded-sm bg-primary/70" />
+                <span className="truncate">{workspace.name}</span>
+              </button>
+            ))}
+          </DrawerSection>
+
+          <DrawerSection label={t("m.nav.library")}>
+            {LIBRARY_LINKS.map((item) => <DrawerLink key={item.to} icon={item.icon} label={t(item.label)} onClick={() => go(item.to)} />)}
+          </DrawerSection>
+        </nav>
+
+        <button onClick={() => go("/settings")} className="flex min-h-16 items-center gap-3 border-t border-border px-4 pb-[max(.75rem,env(safe-area-inset-bottom))] pt-3 text-left hover:bg-surface-2">
+          <Avatar className="h-9 w-9"><AvatarFallback>{identity.initials}</AvatarFallback></Avatar>
+          <span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium">{identity.displayName}</span><span className="block truncate text-xs text-muted-foreground">{identity.tenantName ?? identity.email}</span></span>
+          <Settings className="h-4 w-4 text-muted-foreground" />
+        </button>
+      </SheetContent>
+    </Sheet>
   );
 }
 
-function BottomTabBar({ activeTab }: { activeTab: string }) {
-  const { chatUnread, emailUnread, refreshUnread } = useUnreadCounts();
+function DrawerSection({ label, children }: { label: string; children: React.ReactNode }) {
+  return <section className="mt-6"><p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{label}</p><div className="space-y-0.5">{children}</div></section>;
+}
 
-  // Mở tab Chat/Email → làm mới badge ngay và sau khi trang kịp đánh dấu đã đọc.
-  useEffect(() => {
-    if (activeTab !== "chat" && activeTab !== "email") return;
-    refreshUnread();
-    const t = setTimeout(() => refreshUnread(), 2000);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab]);
-
-  const badgeFor = (id: string) => (id === "chat" ? chatUnread : id === "email" ? emailUnread : 0);
-  return (
-    <nav className="sticky bottom-0 z-50 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-1px_3px_color-mix(in_oklab,var(--color-foreground)_6%,transparent)] backdrop-blur-xl">
-      <div>
-        <ul className="grid h-[4.5rem] grid-cols-5 items-end px-1 pb-1">
-          {TABS.map((tab) => {
-            const active = activeTab === tab.id;
-            if (tab.id === "ai") {
-              return (
-                <li key={tab.id} className="relative flex min-w-0 justify-center">
-                  <Link
-                    to={tab.to}
-                    className="relative flex min-h-[68px] min-w-14 -translate-y-3 flex-col items-center justify-center gap-1"
-                    aria-label={tab.label}
-                  >
-                    <span
-                      className={cn(
-                        "relative flex h-14 w-14 items-center justify-center rounded-2xl border-4 border-background bg-primary text-primary-foreground shadow-panel transition-transform duration-150 active:scale-95",
-                        active && "ring-2 ring-primary/25 ring-offset-2 ring-offset-background",
-                      )}
-                    >
-                      <BrandMark className="h-8 w-8" />
-                    </span>
-                    <span className="text-[10px] font-bold text-primary">{tab.label}</span>
-                  </Link>
-                </li>
-              );
-            }
-            return (
-              <li key={tab.id} className="min-w-0">
-                <Link
-                  to={tab.to}
-                  className={cn(
-                    "relative flex min-h-14 w-full min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 transition-colors duration-150 active:scale-95",
-                    active
-                      ? "text-primary"
-                      : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
-                  )}
-                  aria-label={
-                    badgeFor(tab.id) > 0 ? `${tab.label}, ${badgeFor(tab.id)} chưa đọc` : tab.label
-                  }
-                >
-                  <span className="relative">
-                    <tab.icon
-                      className={cn(
-                        "h-6 w-6 transition-transform duration-200",
-                        active && "stroke-[2.5px]",
-                      )}
-                    />
-                    {badgeFor(tab.id) > 0 && (
-                      <span className="absolute -right-2.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full border border-surface bg-destructive px-1 text-[10px] font-bold leading-none text-destructive-foreground shadow-sm">
-                        {badgeFor(tab.id) > 99 ? "99+" : badgeFor(tab.id)}
-                      </span>
-                    )}
-                  </span>
-                  <span className="text-[10px] font-medium">{tab.label}</span>
-                  {active && <span className="h-0.5 w-5 rounded-full bg-primary" />}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
-    </nav>
-  );
+function DrawerLink({ icon: Icon, label, onClick, strong, active }: { icon: typeof Search; label: string; onClick: () => void; strong?: boolean; active?: boolean }) {
+  return <button onClick={onClick} className={`flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm transition-colors ${strong ? "bg-primary text-primary-foreground" : active ? "bg-primary/10 text-primary" : "text-foreground hover:bg-surface-2"}`}><Icon className="h-4 w-4 shrink-0" /><span className="min-w-0 flex-1 truncate font-medium">{label}</span><ChevronRight className="h-3.5 w-3.5 opacity-40" /></button>;
 }

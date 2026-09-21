@@ -33,7 +33,6 @@ import type { AiContextEntityType } from "@/domain/ai-context/contracts";
 import { useActiveWorkspace } from "@/lib/active-workspace";
 import { useCurrentIdentity } from "@/lib/use-current-identity";
 import { useI18n } from "@/lib/i18n";
-import { cn } from "@/lib/utils";
 
 type AddedContext = {
   id: string;
@@ -59,7 +58,6 @@ const ENTITY_MAP: Partial<Record<UniversalSearchItem["entityType"], AiContextEnt
   MEETING_ARTIFACT: "MEETING_ARTIFACT",
   PERSON: "PERSON",
   WORK_PRODUCT: "WORK_PRODUCT",
-  EXECUTION: "EXECUTION",
   DECISION: "DECISION",
 };
 
@@ -109,7 +107,7 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
       await queryClient.invalidateQueries({ queryKey: ["native-ai-messages", result.conversationId] });
       await queryClient.invalidateQueries({ queryKey: ["mobile-ai-conversations"] });
       if (!conversationId) {
-        await navigate({ to: "/m/c/$id", params: { id: result.conversationId }, replace: true });
+        await navigate({ to: "/m/c/$id" as never, params: { id: result.conversationId } as never, replace: true });
       }
     },
     onError: (error) => {
