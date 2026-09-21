@@ -369,6 +369,30 @@ function WorkProductDetail() {
     onError: () => toast.error(t("wp.saveFailed")),
   });
 
+  /** AI soạn lại toàn văn theo góp ý ĐÃ XỬ LÝ, giữ bản trước để so sánh. */
+  const revise = useMutation({
+    mutationFn: async () => {
+      if (dirty)
+        await updateWorkDeliverable({ data: { id, title: title.trim() || undefined, content } });
+      return reviseWorkProductFromFeedback({
+        data: { idempotencyKey: crypto.randomUUID(), id },
+      });
+    },
+    onSuccess: (res) => {
+      setDirty(false);
+      setCompare({ before: res.beforeVersion, after: res.afterVersion });
+      toast.success(t("wp.revise.done").replace("{n}", String(res.feedbackCount)));
+      invalidate();
+    },
+    onError: (e: any) => {
+      toast.error(
+        String(e?.message ?? "").includes("NO_PROCESSED_FEEDBACK")
+          ? t("wp.revise.none")
+          : t("wp.revise.failed"),
+      );
+    },
+  });
+
   const exportArtifact = useMutation({
     mutationFn: async (v: {
       format: "DOCX" | "XLSX" | "PPTX" | "PDF";
