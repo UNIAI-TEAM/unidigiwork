@@ -7716,6 +7716,56 @@ export type Database = {
           },
         ]
       }
+      work_product_revision_feedback: {
+        Row: {
+          after_version: number
+          before_version: number
+          body: string
+          created_at: string
+          created_by: string | null
+          feedback_at: string | null
+          feedback_status: string | null
+          id: string
+          kind: string
+          tenant_id: string
+          work_product_id: string
+        }
+        Insert: {
+          after_version: number
+          before_version: number
+          body: string
+          created_at?: string
+          created_by?: string | null
+          feedback_at?: string | null
+          feedback_status?: string | null
+          id?: string
+          kind: string
+          tenant_id: string
+          work_product_id: string
+        }
+        Update: {
+          after_version?: number
+          before_version?: number
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          feedback_at?: string | null
+          feedback_status?: string | null
+          id?: string
+          kind?: string
+          tenant_id?: string
+          work_product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_product_revision_feedback_work_product_id_fkey"
+            columns: ["work_product_id"]
+            isOneToOne: false
+            referencedRelation: "work_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_product_shares: {
         Row: {
           created_at: string
