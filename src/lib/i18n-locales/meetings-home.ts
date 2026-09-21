@@ -372,6 +372,8 @@ export const meetingsHomeEn: Partial<Record<keyof typeof meetingsHomeVi, string>
     "That start time is in the past. Pick a future time or tick \u201CStart now\u201D.",
   "mtg.create.noWorkspace":
     "You are not a member of any workspace, so there is nowhere to create the room.",
+  "mtg.create.wsForbidden":
+    "The selected workspace is no longer yours. Pick another workspace in the filter and try again.",
   "mtg.pin.filterCleared": "Filters cleared so the meeting you just created is visible.",
   "mtg.qr.errPastStart": "That start time is in the past. Pick a future time.",
   "mtg.qr.errStartInvalid": "That start time is not valid.",
