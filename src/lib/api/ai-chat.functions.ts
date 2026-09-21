@@ -363,6 +363,17 @@ export const sendAiMessage = createServerFn({ method: "POST" })
         contextNote: z.string().max(2000).optional(),
         metadata: messageMetadataSchema.optional(),
         rootEntity: z.object({ type: z.enum(WORK_ENTITY_TYPES), id: z.string().uuid() }).optional(),
+        /** Add Context: task / decision / document / work product... đính kèm từ composer. */
+        contextEntities: z
+          .array(
+            z.object({
+              type: z.enum(WORK_ENTITY_TYPES),
+              id: z.string().uuid(),
+              label: z.string().max(200).optional(),
+            }),
+          )
+          .max(8)
+          .optional(),
       })
       .parse(i),
   )
