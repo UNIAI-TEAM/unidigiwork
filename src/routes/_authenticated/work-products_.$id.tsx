@@ -1002,6 +1002,29 @@ function WorkProductDetail() {
 
                   {/* Phiên bản */}
                   <TabsContent value="versions" className="mt-0 space-y-2">
+                    {canEdit && (
+                      <div className="rounded-lg border bg-background p-3">
+                        <p className="text-sm font-medium">{t("wp.revise.action")}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">{t("wp.revise.hint")}</p>
+                        <Button
+                          size="sm"
+                          className="mt-2 gap-1"
+                          disabled={revise.isPending}
+                          onClick={() => revise.mutate()}
+                        >
+                          <Sparkles className="h-3.5 w-3.5" />
+                          {revise.isPending ? t("wp.revise.running") : t("wp.revise.action")}
+                        </Button>
+                      </div>
+                    )}
+                    {compare && (
+                      <VersionCompare
+                        id={id}
+                        beforeVersion={compare.before}
+                        afterVersion={compare.after}
+                        onClose={() => setCompare(null)}
+                      />
+                    )}
                     {data.versions.length === 0 && (
                       <p className="text-sm text-muted-foreground">{t("wp.versions.empty")}</p>
                     )}
