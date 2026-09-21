@@ -83,6 +83,8 @@ export interface AiConsumerRequest {
   /** Câu hỏi / mục tiêu — dùng cả cho truy xuất ngữ cảnh. */
   query: string;
   rootEntity?: { type: AiContextEntityType; id: string } | null;
+  /** Thực thể người dùng đính kèm ở composer (Add Context). */
+  pinnedEntities?: Array<{ type: AiContextEntityType; id: string }> | null;
   workspaceId?: string | null;
   /** Vai trò riêng của consumer, được nối với guardrails chung. */
   systemRole: string;
