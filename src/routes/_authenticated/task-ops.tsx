@@ -39,16 +39,40 @@ export const Route = createFileRoute("/_authenticated/task-ops")({
   component: TaskOpsPage,
 });
 
+const PAGE_SIZE = 25;
+const STATUS_OPTIONS = ["todo", "in_progress", "blocked", "done", "canceled"] as const;
+
 function TaskOpsPage() {
   const { t, lang } = useI18n();
   const qc = useQueryClient();
   const [q, setQ] = useState("");
+  const [term, setTerm] = useState("");
+  const [status, setStatus] = useState<string>("all");
   const [includeDone, setIncludeDone] = useState(false);
+  const [page, setPage] = useState(1);
   const [pending, setPending] = useState<string | null>(null);
 
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setTerm(q.trim());
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(id);
+  }, [q]);
+
   const board = useQuery({
-    queryKey: ["task-ops-board", includeDone],
-    queryFn: () => listTaskOpsBoard({ data: { includeDone } }),
+    queryKey: ["task-ops-board", includeDone, status, term, page],
+    queryFn: () =>
+      listTaskOpsBoard({
+        data: {
+          includeDone,
+          statuses: status === "all" ? [] : [status as (typeof STATUS_OPTIONS)[number]],
+          search: term,
+          page,
+          pageSize: PAGE_SIZE,
+        },
+      }),
+    placeholderData: (prev) => prev,
   });
 
   const reassign = useMutation({
