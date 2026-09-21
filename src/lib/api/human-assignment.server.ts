@@ -151,17 +151,47 @@ export async function pickHumanAssignee(args: {
       }
     }
 
-    const ranked = memberIds
-      .map((userId) => ({
-        userId,
-        name: nameOf.get(userId) ?? "Thành viên",
-        email: emailOf.get(userId) ?? "",
-        openTasks: load.get(userId) ?? 0,
-        experience: experience.get(userId) ?? 0,
-        preferred: preferUserId === userId ? 1 : 0,
-      }))
+    // 2) Sổ đăng ký Human Agent (nếu tổ chức đã cấu hình): chỉ người đang nhận việc,
+    //    tôn trọng email nhận việc, lĩnh vực phụ trách và giới hạn tải.
+    const { data: agentRows } = await supabase
+      .from("human_agents")
+      .select("user_id, enabled, work_email, domains, max_open_tasks")
+      .in("user_id", memberIds);
+    const agents = (agentRows ?? []) as Array<{
+      user_id: string;
+      enabled: boolean;
+      work_email: string | null;
+      domains: string[] | null;
+      max_open_tasks: number | null;
+    }>;
+    const agentOf = new Map(agents.map((row) => [row.user_id, row]));
+    const registered = agents.filter((row) => row.enabled).map((row) => row.user_id);
+    const pool = registered.length > 0 ? registered : memberIds;
+
+    const ranked = pool
+      .map((userId) => {
+        const agent = agentOf.get(userId);
+        const domains = (agent?.domains ?? []).map((value) => normalize(value)).filter(Boolean);
+        const domainHit = domains.filter((domain) =>
+          wanted.some((word) => domain.includes(word) || word.includes(domain)),
+        ).length;
+        const openTasks = load.get(userId) ?? 0;
+        const cap = agent?.max_open_tasks ?? null;
+        return {
+          userId,
+          name: nameOf.get(userId) ?? "Thành viên",
+          email: (agent?.work_email || emailOf.get(userId) || "") as string,
+          openTasks,
+          overloaded: cap !== null && openTasks >= cap ? 1 : 0,
+          domainHit,
+          experience: experience.get(userId) ?? 0,
+          preferred: preferUserId === userId ? 1 : 0,
+        };
+      })
       .sort(
         (a, b) =>
+          a.overloaded - b.overloaded ||
+          b.domainHit - a.domainHit ||
           b.experience - a.experience ||
           a.openTasks - b.openTasks ||
           b.preferred - a.preferred ||
@@ -171,9 +201,11 @@ export async function pickHumanAssignee(args: {
     const best = ranked.find((row) => row.email) ?? ranked[0];
     if (!best) return null;
     const reason =
-      best.experience > 0
-        ? `Đã xử lý ${best.experience} việc tương tự, đang mở ${best.openTasks} việc`
-        : `Đang mở ít việc nhất (${best.openTasks} việc) trong không gian làm việc`;
+      best.domainHit > 0
+        ? `Phụ trách lĩnh vực phù hợp, đang mở ${best.openTasks} việc`
+        : best.experience > 0
+          ? `Đã xử lý ${best.experience} việc tương tự, đang mở ${best.openTasks} việc`
+          : `Đang mở ít việc nhất (${best.openTasks} việc) trong không gian làm việc`;
     return {
       userId: best.userId,
       name: best.name,
