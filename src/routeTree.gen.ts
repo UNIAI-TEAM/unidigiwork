@@ -53,6 +53,7 @@ import { Route as AuthenticatedPeopleRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedMeetingsManageRouteImport } from './routes/_authenticated/meetings-manage'
 import { Route as AuthenticatedMRouteImport } from './routes/_authenticated/m'
+import { Route as AuthenticatedHumanAgentsRouteImport } from './routes/_authenticated/human-agents'
 import { Route as AuthenticatedHrRouteImport } from './routes/_authenticated/hr'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedHelpRouteImport } from './routes/_authenticated/help'
@@ -380,6 +381,12 @@ const AuthenticatedMRoute = AuthenticatedMRouteImport.update({
   path: '/m',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedHumanAgentsRoute =
+  AuthenticatedHumanAgentsRouteImport.update({
+    id: '/human-agents',
+    path: '/human-agents',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedHrRoute = AuthenticatedHrRouteImport.update({
   id: '/hr',
   path: '/hr',
@@ -978,6 +985,7 @@ export interface FileRoutesByFullPath {
   '/help': typeof AuthenticatedHelpRoute
   '/home': typeof AuthenticatedHomeRoute
   '/hr': typeof AuthenticatedHrRoute
+  '/human-agents': typeof AuthenticatedHumanAgentsRoute
   '/m': typeof AuthenticatedMRouteWithChildren
   '/meetings-manage': typeof AuthenticatedMeetingsManageRoute
   '/notifications': typeof AuthenticatedNotificationsRouteWithChildren
@@ -1123,6 +1131,7 @@ export interface FileRoutesByTo {
   '/help': typeof AuthenticatedHelpRoute
   '/home': typeof AuthenticatedHomeRoute
   '/hr': typeof AuthenticatedHrRoute
+  '/human-agents': typeof AuthenticatedHumanAgentsRoute
   '/meetings-manage': typeof AuthenticatedMeetingsManageRoute
   '/notifications': typeof AuthenticatedNotificationsRouteWithChildren
   '/people': typeof AuthenticatedPeopleRoute
@@ -1271,6 +1280,7 @@ export interface FileRoutesById {
   '/_authenticated/help': typeof AuthenticatedHelpRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/hr': typeof AuthenticatedHrRoute
+  '/_authenticated/human-agents': typeof AuthenticatedHumanAgentsRoute
   '/_authenticated/m': typeof AuthenticatedMRouteWithChildren
   '/_authenticated/meetings-manage': typeof AuthenticatedMeetingsManageRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRouteWithChildren
@@ -1420,6 +1430,7 @@ export interface FileRouteTypes {
     | '/help'
     | '/home'
     | '/hr'
+    | '/human-agents'
     | '/m'
     | '/meetings-manage'
     | '/notifications'
@@ -1565,6 +1576,7 @@ export interface FileRouteTypes {
     | '/help'
     | '/home'
     | '/hr'
+    | '/human-agents'
     | '/meetings-manage'
     | '/notifications'
     | '/people'
@@ -1712,6 +1724,7 @@ export interface FileRouteTypes {
     | '/_authenticated/help'
     | '/_authenticated/home'
     | '/_authenticated/hr'
+    | '/_authenticated/human-agents'
     | '/_authenticated/m'
     | '/_authenticated/meetings-manage'
     | '/_authenticated/notifications'
@@ -2182,6 +2195,13 @@ declare module '@tanstack/react-router' {
       path: '/m'
       fullPath: '/m'
       preLoaderRoute: typeof AuthenticatedMRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/human-agents': {
+      id: '/_authenticated/human-agents'
+      path: '/human-agents'
+      fullPath: '/human-agents'
+      preLoaderRoute: typeof AuthenticatedHumanAgentsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/hr': {
@@ -3060,6 +3080,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedHelpRoute: typeof AuthenticatedHelpRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedHrRoute: typeof AuthenticatedHrRoute
+  AuthenticatedHumanAgentsRoute: typeof AuthenticatedHumanAgentsRoute
   AuthenticatedMRoute: typeof AuthenticatedMRouteWithChildren
   AuthenticatedMeetingsManageRoute: typeof AuthenticatedMeetingsManageRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRouteWithChildren
@@ -3114,6 +3135,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHelpRoute: AuthenticatedHelpRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedHrRoute: AuthenticatedHrRoute,
+  AuthenticatedHumanAgentsRoute: AuthenticatedHumanAgentsRoute,
   AuthenticatedMRoute: AuthenticatedMRouteWithChildren,
   AuthenticatedMeetingsManageRoute: AuthenticatedMeetingsManageRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRouteWithChildren,

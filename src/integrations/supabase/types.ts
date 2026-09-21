@@ -2759,6 +2759,62 @@ export type Database = {
         }
         Relationships: []
       }
+      human_agents: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          domains: string[]
+          enabled: boolean
+          id: string
+          max_open_tasks: number
+          note: string | null
+          row_version: number
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+          work_email: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          domains?: string[]
+          enabled?: boolean
+          id?: string
+          max_open_tasks?: number
+          note?: string | null
+          row_version?: number
+          tenant_id: string
+          updated_at?: string
+          updated_by?: string | null
+          user_id: string
+          work_email?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          domains?: string[]
+          enabled?: boolean
+          id?: string
+          max_open_tasks?: number
+          note?: string | null
+          row_version?: number
+          tenant_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string
+          work_email?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "human_agents_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       human_cost_policies: {
         Row: {
           approval_event_cost: number
@@ -10196,6 +10252,10 @@ export type Database = {
         }
         Returns: Json
       }
+      delete_human_agent: {
+        Args: { _tenant_id: string; _user_id: string }
+        Returns: boolean
+      }
       delete_workflow: {
         Args: {
           _correlation_id?: string
@@ -12200,6 +12260,38 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "document_versions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      upsert_human_agent: {
+        Args: {
+          _domains?: string[]
+          _enabled?: boolean
+          _max_open_tasks?: number
+          _note?: string
+          _tenant_id: string
+          _user_id: string
+          _work_email?: string
+        }
+        Returns: {
+          created_at: string
+          created_by: string | null
+          domains: string[]
+          enabled: boolean
+          id: string
+          max_open_tasks: number
+          note: string | null
+          row_version: number
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+          work_email: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "human_agents"
           isOneToOne: true
           isSetofReturn: false
         }
