@@ -142,6 +142,7 @@ const AI_ACTIONS = [
 
 function WorkProductDetail() {
   const { id } = Route.useParams();
+  const search = Route.useSearch();
   const { t, lang } = useI18n();
   const [open, setOpen] = useSidebarState();
   const qc = useQueryClient();
