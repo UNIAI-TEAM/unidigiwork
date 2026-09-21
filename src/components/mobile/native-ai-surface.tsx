@@ -31,6 +31,7 @@ import { proposeAiAction } from "@/lib/api/ai-actions.functions";
 import { universalSearch } from "@/lib/api/search-universal.functions";
 import type { UniversalSearchItem } from "@/lib/api/search-universal.server";
 import type { AiContextEntityType } from "@/domain/ai-context/contracts";
+import { WORK_ENTITY_TYPES } from "@/domain/work-graph/relationship-types";
 import type { AiActionExecutionResult, ProposedAiAction } from "@/domain/ai-actions/contracts";
 import { routeRequest, type OrchestrationExecutor } from "@/domain/ai-orchestration/route";
 import { ActionProposalCard } from "@/components/ai/action-proposal-card";
