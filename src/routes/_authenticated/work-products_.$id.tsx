@@ -853,7 +853,7 @@ function WorkProductDetail() {
 
           {rightPanelOpen && (
             <aside className="fixed inset-x-0 bottom-0 top-28 z-40 w-full shrink-0 border-l bg-card shadow-md sm:left-auto sm:w-[360px] xl:static xl:z-auto xl:shadow-none">
-              <Tabs defaultValue="ai" className="flex h-full flex-col">
+              <Tabs defaultValue={search.tab ?? "ai"} className="flex h-full flex-col">
                 <div className="border-b px-4 py-4">
                   <div className="flex items-center gap-3">
                     <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
