@@ -126,6 +126,8 @@ export const meetingsHomeVi = {
   "mtg.create.pastStart":
     "Thời gian bắt đầu đã qua. Chọn lại mốc trong tương lai hoặc tick “Bắt đầu ngay”.",
   "mtg.create.noWorkspace": "Bạn chưa thuộc không gian làm việc nào để tạo phòng họp.",
+  "mtg.create.wsForbidden":
+    "Không gian làm việc đang chọn không còn thuộc về bạn. Hãy chọn lại không gian ở bộ lọc rồi tạo phòng.",
   "mtg.pin.filterCleared": "Đã gỡ bộ lọc để hiện cuộc họp vừa tạo.",
   "mtg.qr.title": "Bắt đầu họp ngay",
   "mtg.qr.desc": "Đặt tên và thời lượng cho phòng họp.",
@@ -370,6 +372,8 @@ export const meetingsHomeEn: Partial<Record<keyof typeof meetingsHomeVi, string>
     "That start time is in the past. Pick a future time or tick \u201CStart now\u201D.",
   "mtg.create.noWorkspace":
     "You are not a member of any workspace, so there is nowhere to create the room.",
+  "mtg.create.wsForbidden":
+    "The selected workspace is no longer yours. Pick another workspace in the filter and try again.",
   "mtg.pin.filterCleared": "Filters cleared so the meeting you just created is visible.",
   "mtg.qr.errPastStart": "That start time is in the past. Pick a future time.",
   "mtg.qr.errStartInvalid": "That start time is not valid.",
