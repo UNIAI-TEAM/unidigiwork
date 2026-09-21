@@ -67,6 +67,7 @@ import { Route as AuthenticatedAiWorkforceRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAiBrainRouteImport } from './routes/_authenticated/ai-brain'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedWorkspaceIndexRouteImport } from './routes/_authenticated/workspace.index'
+import { Route as AuthenticatedMIndexRouteImport } from './routes/_authenticated/m/index'
 import { Route as AuthenticatedAiMarketIndexRouteImport } from './routes/_authenticated/ai-market.index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as ShareWorkGraphTokenRouteImport } from './routes/share.work-graph.$token'
@@ -146,6 +147,7 @@ import { Route as ApiAdminTraceCorrelationIdRouteImport } from './routes/api/adm
 import { Route as AuthenticatedMWorkProductsIdRouteImport } from './routes/_authenticated/m/work-products.$id'
 import { Route as AuthenticatedMTasksIdRouteImport } from './routes/_authenticated/m/tasks_.$id'
 import { Route as AuthenticatedMEmailIdRouteImport } from './routes/_authenticated/m/email.$id'
+import { Route as AuthenticatedMCIdRouteImport } from './routes/_authenticated/m/c.$id'
 import { Route as AuthenticatedMAiWorkforceIdRouteImport } from './routes/_authenticated/m/ai-workforce.$id'
 import { Route as AuthenticatedMAiMarketIdRouteImport } from './routes/_authenticated/m/ai-market.$id'
 import { Route as AuthenticatedAdminSellWorkPilotsRouteImport } from './routes/_authenticated/admin.sell-work.pilots'
@@ -449,6 +451,11 @@ const AuthenticatedWorkspaceIndexRoute =
     path: '/workspace/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedMIndexRoute = AuthenticatedMIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedMRoute,
+} as any)
 const AuthenticatedAiMarketIndexRoute =
   AuthenticatedAiMarketIndexRouteImport.update({
     id: '/ai-market/',
@@ -890,6 +897,11 @@ const AuthenticatedMEmailIdRoute = AuthenticatedMEmailIdRouteImport.update({
   path: '/email/$id',
   getParentRoute: () => AuthenticatedMRoute,
 } as any)
+const AuthenticatedMCIdRoute = AuthenticatedMCIdRouteImport.update({
+  id: '/c/$id',
+  path: '/c/$id',
+  getParentRoute: () => AuthenticatedMRoute,
+} as any)
 const AuthenticatedMAiWorkforceIdRoute =
   AuthenticatedMAiWorkforceIdRouteImport.update({
     id: '/ai-workforce/$id',
@@ -1037,10 +1049,12 @@ export interface FileRoutesByFullPath {
   '/share/work-graph/$token': typeof ShareWorkGraphTokenRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/ai-market/': typeof AuthenticatedAiMarketIndexRoute
+  '/m/': typeof AuthenticatedMIndexRoute
   '/workspace/': typeof AuthenticatedWorkspaceIndexRoute
   '/admin/sell-work/pilots': typeof AuthenticatedAdminSellWorkPilotsRouteWithChildren
   '/m/ai-market/$id': typeof AuthenticatedMAiMarketIdRoute
   '/m/ai-workforce/$id': typeof AuthenticatedMAiWorkforceIdRoute
+  '/m/c/$id': typeof AuthenticatedMCIdRoute
   '/m/email/$id': typeof AuthenticatedMEmailIdRoute
   '/m/tasks/$id': typeof AuthenticatedMTasksIdRoute
   '/m/work-products/$id': typeof AuthenticatedMWorkProductsIdRoute
@@ -1094,7 +1108,6 @@ export interface FileRoutesByTo {
   '/help': typeof AuthenticatedHelpRoute
   '/home': typeof AuthenticatedHomeRoute
   '/hr': typeof AuthenticatedHrRoute
-  '/m': typeof AuthenticatedMRouteWithChildren
   '/meetings-manage': typeof AuthenticatedMeetingsManageRoute
   '/notifications': typeof AuthenticatedNotificationsRouteWithChildren
   '/people': typeof AuthenticatedPeopleRoute
@@ -1178,10 +1191,12 @@ export interface FileRoutesByTo {
   '/share/work-graph/$token': typeof ShareWorkGraphTokenRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/ai-market': typeof AuthenticatedAiMarketIndexRoute
+  '/m': typeof AuthenticatedMIndexRoute
   '/workspace': typeof AuthenticatedWorkspaceIndexRoute
   '/admin/sell-work/pilots': typeof AuthenticatedAdminSellWorkPilotsRouteWithChildren
   '/m/ai-market/$id': typeof AuthenticatedMAiMarketIdRoute
   '/m/ai-workforce/$id': typeof AuthenticatedMAiWorkforceIdRoute
+  '/m/c/$id': typeof AuthenticatedMCIdRoute
   '/m/email/$id': typeof AuthenticatedMEmailIdRoute
   '/m/tasks/$id': typeof AuthenticatedMTasksIdRoute
   '/m/work-products/$id': typeof AuthenticatedMWorkProductsIdRoute
@@ -1323,10 +1338,12 @@ export interface FileRoutesById {
   '/share/work-graph/$token': typeof ShareWorkGraphTokenRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/ai-market/': typeof AuthenticatedAiMarketIndexRoute
+  '/_authenticated/m/': typeof AuthenticatedMIndexRoute
   '/_authenticated/workspace/': typeof AuthenticatedWorkspaceIndexRoute
   '/_authenticated/admin/sell-work/pilots': typeof AuthenticatedAdminSellWorkPilotsRouteWithChildren
   '/_authenticated/m/ai-market/$id': typeof AuthenticatedMAiMarketIdRoute
   '/_authenticated/m/ai-workforce/$id': typeof AuthenticatedMAiWorkforceIdRoute
+  '/_authenticated/m/c/$id': typeof AuthenticatedMCIdRoute
   '/_authenticated/m/email/$id': typeof AuthenticatedMEmailIdRoute
   '/_authenticated/m/tasks_/$id': typeof AuthenticatedMTasksIdRoute
   '/_authenticated/m/work-products/$id': typeof AuthenticatedMWorkProductsIdRoute
@@ -1468,10 +1485,12 @@ export interface FileRouteTypes {
     | '/share/work-graph/$token'
     | '/admin/'
     | '/ai-market/'
+    | '/m/'
     | '/workspace/'
     | '/admin/sell-work/pilots'
     | '/m/ai-market/$id'
     | '/m/ai-workforce/$id'
+    | '/m/c/$id'
     | '/m/email/$id'
     | '/m/tasks/$id'
     | '/m/work-products/$id'
@@ -1525,7 +1544,6 @@ export interface FileRouteTypes {
     | '/help'
     | '/home'
     | '/hr'
-    | '/m'
     | '/meetings-manage'
     | '/notifications'
     | '/people'
@@ -1609,10 +1627,12 @@ export interface FileRouteTypes {
     | '/share/work-graph/$token'
     | '/admin'
     | '/ai-market'
+    | '/m'
     | '/workspace'
     | '/admin/sell-work/pilots'
     | '/m/ai-market/$id'
     | '/m/ai-workforce/$id'
+    | '/m/c/$id'
     | '/m/email/$id'
     | '/m/tasks/$id'
     | '/m/work-products/$id'
@@ -1753,10 +1773,12 @@ export interface FileRouteTypes {
     | '/share/work-graph/$token'
     | '/_authenticated/admin/'
     | '/_authenticated/ai-market/'
+    | '/_authenticated/m/'
     | '/_authenticated/workspace/'
     | '/_authenticated/admin/sell-work/pilots'
     | '/_authenticated/m/ai-market/$id'
     | '/_authenticated/m/ai-workforce/$id'
+    | '/_authenticated/m/c/$id'
     | '/_authenticated/m/email/$id'
     | '/_authenticated/m/tasks_/$id'
     | '/_authenticated/m/work-products/$id'
@@ -2234,6 +2256,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/workspace/'
       preLoaderRoute: typeof AuthenticatedWorkspaceIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/m/': {
+      id: '/_authenticated/m/'
+      path: '/'
+      fullPath: '/m/'
+      preLoaderRoute: typeof AuthenticatedMIndexRouteImport
+      parentRoute: typeof AuthenticatedMRoute
     }
     '/_authenticated/ai-market/': {
       id: '/_authenticated/ai-market/'
@@ -2788,6 +2817,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMEmailIdRouteImport
       parentRoute: typeof AuthenticatedMRoute
     }
+    '/_authenticated/m/c/$id': {
+      id: '/_authenticated/m/c/$id'
+      path: '/c/$id'
+      fullPath: '/m/c/$id'
+      preLoaderRoute: typeof AuthenticatedMCIdRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
     '/_authenticated/m/ai-workforce/$id': {
       id: '/_authenticated/m/ai-workforce/$id'
       path: '/ai-workforce/$id'
@@ -2915,8 +2951,10 @@ interface AuthenticatedMRouteChildren {
   AuthenticatedMMoreRoute: typeof AuthenticatedMMoreRoute
   AuthenticatedMSearchRoute: typeof AuthenticatedMSearchRoute
   AuthenticatedMTasksRoute: typeof AuthenticatedMTasksRoute
+  AuthenticatedMIndexRoute: typeof AuthenticatedMIndexRoute
   AuthenticatedMAiMarketIdRoute: typeof AuthenticatedMAiMarketIdRoute
   AuthenticatedMAiWorkforceIdRoute: typeof AuthenticatedMAiWorkforceIdRoute
+  AuthenticatedMCIdRoute: typeof AuthenticatedMCIdRoute
   AuthenticatedMEmailIdRoute: typeof AuthenticatedMEmailIdRoute
   AuthenticatedMTasksIdRoute: typeof AuthenticatedMTasksIdRoute
   AuthenticatedMWorkProductsIdRoute: typeof AuthenticatedMWorkProductsIdRoute
@@ -2936,8 +2974,10 @@ const AuthenticatedMRouteChildren: AuthenticatedMRouteChildren = {
   AuthenticatedMMoreRoute: AuthenticatedMMoreRoute,
   AuthenticatedMSearchRoute: AuthenticatedMSearchRoute,
   AuthenticatedMTasksRoute: AuthenticatedMTasksRoute,
+  AuthenticatedMIndexRoute: AuthenticatedMIndexRoute,
   AuthenticatedMAiMarketIdRoute: AuthenticatedMAiMarketIdRoute,
   AuthenticatedMAiWorkforceIdRoute: AuthenticatedMAiWorkforceIdRoute,
+  AuthenticatedMCIdRoute: AuthenticatedMCIdRoute,
   AuthenticatedMEmailIdRoute: AuthenticatedMEmailIdRoute,
   AuthenticatedMTasksIdRoute: AuthenticatedMTasksIdRoute,
   AuthenticatedMWorkProductsIdRoute: AuthenticatedMWorkProductsIdRoute,
