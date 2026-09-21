@@ -134,11 +134,34 @@ function TaskOpsPage() {
       </div>
 
       <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-3">
           <Switch id="tops-done" checked={includeDone} onCheckedChange={setIncludeDone} />
           <Label htmlFor="tops-done" className="text-sm text-muted-foreground">
             {t("tops.includeDone")}
           </Label>
+          <Select
+            value={status}
+            onValueChange={(v) => {
+              setStatus(v);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger className="h-9 w-44" aria-label={t("tops.statusFilter")}>
+              <SelectValue placeholder={t("tops.statusAll")} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("tops.statusAll")}</SelectItem>
+              {STATUS_OPTIONS.map((s) => {
+                const key = `tops.status.${s}` as Parameters<typeof t>[0];
+                const label = t(key);
+                return (
+                  <SelectItem key={s} value={s}>
+                    {label === key ? s : label}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
         </div>
         <div className="relative sm:w-72">
           <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
