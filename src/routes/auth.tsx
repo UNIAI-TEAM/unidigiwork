@@ -83,18 +83,24 @@ function AuthPage() {
         return;
       }
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: { emailRedirectTo: window.location.origin, data: { display_name: name } },
         });
         if (error) throw error;
+        if (!data.session) {
+          setSignupSent(true);
+          toast.success(t("ac.9"));
+          return;
+        }
         toast.success(t("ac.9"));
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       }
       navigate({ to: "/tasks" });
+
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : t("ac.10"));
     } finally {
