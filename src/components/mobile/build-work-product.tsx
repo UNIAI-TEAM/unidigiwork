@@ -64,6 +64,7 @@ export function WorkProductRun({
     const { kinds: kindList, brief: briefText, workspaceId: wsId } = argsRef.current;
     if (started.current || kindList.length === 0) return;
     started.current = true;
+    console.log("WPRUN mount+start", kindList.join(","));
     let cancelled = false;
 
     void (async () => {
