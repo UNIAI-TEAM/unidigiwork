@@ -169,6 +169,13 @@
       "when": 1789974290485,
       "tag": "0023_human_agents_registry",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1789983919984,
+      "tag": "0024_outbox_delivery_inapp_channel",
+      "breakpoints": true
     }
   ]
 }
