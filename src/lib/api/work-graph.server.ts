@@ -53,6 +53,7 @@ export async function resolveWorkEntities(
     title: string,
     subtitle?: string | null,
     updatedAt?: string | null,
+    dueAt?: string | null,
   ) => {
     out.set(key(type, id), {
       type,
@@ -61,6 +62,7 @@ export async function resolveWorkEntities(
       subtitle: subtitle ?? null,
       href: workEntityHref(type, id),
       updatedAt: updatedAt ?? null,
+      dueAt: dueAt ?? null,
     });
   };
 
