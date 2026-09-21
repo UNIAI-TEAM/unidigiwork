@@ -127,6 +127,13 @@
       "when": 1789916655221,
       "tag": "0017_meeting_lobby_and_join_rate_limit",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1789956638896,
+      "tag": "0018_fix_schedule_meeting_ambiguous_overload",
+      "breakpoints": true
     }
   ]
 }

@@ -11398,99 +11398,52 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      schedule_meeting:
-        | {
-            Args: {
-              _agenda: string
-              _correlation_id: string
-              _end_at: string
-              _idempotency_key: string
-              _location: string
-              _participant_ids: string[]
-              _rrule: string
-              _start_at: string
-              _timezone: string
-              _title: string
-              _workspace_id: string
-            }
-            Returns: {
-              access_policy: string
-              agenda: string | null
-              conference_provider: string | null
-              conference_ref: Json | null
-              created_at: string
-              created_by: string | null
-              deleted_at: string | null
-              department: string | null
-              end_at: string
-              id: string
-              idempotency_key: string | null
-              location: string | null
-              project_id: string | null
-              row_version: number
-              rrule: string | null
-              start_at: string
-              status: Database["public"]["Enums"]["meeting_status"]
-              tenant_id: string
-              timezone: string
-              title: string
-              updated_at: string
-              updated_by: string | null
-              workspace_id: string
-            }
-            SetofOptions: {
-              from: "*"
-              to: "meetings"
-              isOneToOne: true
-              isSetofReturn: false
-            }
-          }
-        | {
-            Args: {
-              _agenda?: string
-              _correlation_id?: string
-              _end_at: string
-              _idempotency_key?: string
-              _location?: string
-              _participant_ids?: string[]
-              _rrule?: string
-              _start_at: string
-              _timezone?: string
-              _title: string
-              _workspace_id: string
-            }
-            Returns: {
-              access_policy: string
-              agenda: string | null
-              conference_provider: string | null
-              conference_ref: Json | null
-              created_at: string
-              created_by: string | null
-              deleted_at: string | null
-              department: string | null
-              end_at: string
-              id: string
-              idempotency_key: string | null
-              location: string | null
-              project_id: string | null
-              row_version: number
-              rrule: string | null
-              start_at: string
-              status: Database["public"]["Enums"]["meeting_status"]
-              tenant_id: string
-              timezone: string
-              title: string
-              updated_at: string
-              updated_by: string | null
-              workspace_id: string
-            }
-            SetofOptions: {
-              from: "*"
-              to: "meetings"
-              isOneToOne: true
-              isSetofReturn: false
-            }
-          }
+      schedule_meeting: {
+        Args: {
+          _agenda?: string
+          _correlation_id?: string
+          _end_at: string
+          _idempotency_key?: string
+          _location?: string
+          _participant_ids?: string[]
+          _rrule?: string
+          _start_at: string
+          _timezone?: string
+          _title: string
+          _workspace_id: string
+        }
+        Returns: {
+          access_policy: string
+          agenda: string | null
+          conference_provider: string | null
+          conference_ref: Json | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          department: string | null
+          end_at: string
+          id: string
+          idempotency_key: string | null
+          location: string | null
+          project_id: string | null
+          row_version: number
+          rrule: string | null
+          start_at: string
+          status: Database["public"]["Enums"]["meeting_status"]
+          tenant_id: string
+          timezone: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "meetings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       search_norm: { Args: { _t: string }; Returns: string }
       search_universal: {
         Args: {
