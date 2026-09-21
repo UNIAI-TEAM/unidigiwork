@@ -60,16 +60,16 @@ export function WorkProductRun({
   const argsRef = useRef({ kinds, brief, workspaceId, sourceEntities, buildFn });
   argsRef.current = { kinds, brief, workspaceId, sourceEntities, buildFn };
 
+  // Không dùng cờ `cancelled` theo vòng đời effect: ở StrictMode effect bị
+  // tháo/gắn lại ngay, làm mất kết quả trả về trong khi `started` chặn chạy lại
+  // → tiến trình kẹt ở "đang soạn". Chỉ chạy đúng một lần cho mỗi lượt.
   useEffect(() => {
     const { kinds: kindList, brief: briefText, workspaceId: wsId } = argsRef.current;
     if (started.current || kindList.length === 0) return;
     started.current = true;
-    console.log("WPRUN mount+start", kindList.join(","));
-    let cancelled = false;
 
     void (async () => {
       for (const kind of kindList) {
-        if (cancelled) return;
         setStates((current) =>
           current.map((item) => (item.kind === kind ? { ...item, status: "RUNNING" } : item)),
         );
@@ -83,8 +83,6 @@ export function WorkProductRun({
               sourceEntities: argsRef.current.sourceEntities,
             },
           });
-          console.log("WPRUN resolved", kind, JSON.stringify(result).slice(0, 200), cancelled);
-          if (cancelled) return;
           setStates((current) =>
             current.map((item) =>
               item.kind === kind
@@ -92,19 +90,13 @@ export function WorkProductRun({
                 : item,
             ),
           );
-        } catch (err) {
-          console.log("WPRUN failed", kind, String(err).slice(0, 300), cancelled);
-          if (cancelled) return;
+        } catch {
           setStates((current) =>
             current.map((item) => (item.kind === kind ? { ...item, status: "FAILED" } : item)),
           );
         }
       }
     })();
-
-    return () => {
-      cancelled = true;
-    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
