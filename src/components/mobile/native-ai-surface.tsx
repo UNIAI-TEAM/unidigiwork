@@ -237,6 +237,15 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
             {displayMessages.map((message) => (
               <Message key={message.id} message={message} />
             ))}
+            {canBuildWorkProduct && (
+              <BuildWorkProductBar
+                key={lastMessage?.id}
+                brief={buildBrief}
+                workspaceId={workspaceId}
+                conversationId={conversationId ?? null}
+                sourceEntities={buildSources}
+              />
+            )}
             {turns.map((turn) => (
               <div key={turn.id} className="space-y-3">
                 <UserMessage content={turn.user} />
