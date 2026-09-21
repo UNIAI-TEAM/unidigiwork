@@ -92,7 +92,8 @@ export function WorkProductRun({
                 : item,
             ),
           );
-        } catch {
+        } catch (err) {
+          console.log("WPRUN failed", kind, String(err).slice(0, 300), cancelled);
           if (cancelled) return;
           setStates((current) =>
             current.map((item) => (item.kind === kind ? { ...item, status: "FAILED" } : item)),
