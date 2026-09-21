@@ -91,7 +91,15 @@ export const buildWorkProduct = createServerFn({ method: "POST" })
       activeTenant,
     );
 
-    // 1. Soạn nội dung qua AI Context Engine (ngữ cảnh theo quyền của actor).
+    // 1. Bài học từ góp ý & quyết định duyệt thật trước đó (vòng học của AI).
+    const { loadWorkProductGuidance } = await import("./work-product-learning.server");
+    const learned = await loadWorkProductGuidance(
+      context.supabase as never,
+      tenantId,
+      BUSINESS_TYPE[data.kind],
+    ).catch(() => ({ guidance: "", sampleCount: 0, refreshed: false }));
+
+    // 2. Soạn nội dung qua AI Context Engine (ngữ cảnh theo quyền của actor).
     const { answerWithContext } = await import("./ai-consumer.server");
     const result = await answerWithContext(context.supabase, context.userId, activeTenant, {
       consumer: "MY_AI",
@@ -106,6 +114,15 @@ export const buildWorkProduct = createServerFn({ method: "POST" })
       ].join(" "),
       promptSections: [
         `KHUÔN ĐẦU RA:\n${KIND_SPEC[data.kind]}`,
+        ...(learned.guidance
+          ? [
+              [
+                "BÀI HỌC TỪ GÓP Ý & DUYỆT TRƯỚC ĐÓ (bắt buộc tuân thủ,",
+                `rút từ ${learned.sampleCount} phản hồi thật của tổ chức):`,
+                learned.guidance,
+              ].join("\n"),
+            ]
+          : []),
         `YÊU CẦU CÔNG VIỆC:\n${data.brief}`,
       ],
     });
@@ -126,7 +143,7 @@ export const buildWorkProduct = createServerFn({ method: "POST" })
       data.brief.slice(0, 120)
     ).slice(0, 300);
 
-    // 2. Ghi vào bảng nguồn — trigger Work Graph chiếu bản ghi này thành node WORK_PRODUCT.
+    // 3. Ghi vào bảng nguồn — trigger Work Graph chiếu bản ghi này thành node WORK_PRODUCT.
     const { data: row, error } = await context.supabase
       .from("work_products")
       .insert({
@@ -146,7 +163,7 @@ export const buildWorkProduct = createServerFn({ method: "POST" })
     if (error) mapPgError(error);
     const workProductId = row.id as string;
 
-    // 3. Provenance: liên kết với thực thể actor đính kèm VÀ nguồn thật mà bản
+    // 4. Provenance: liên kết với thực thể actor đính kèm VÀ nguồn thật mà bản
     //    soạn đã trích dẫn (lịch họp, tài liệu, công việc) — không suy diễn.
     const LINKABLE = new Set(["TASK", "DOCUMENT", "MEETING", "MEETING_ARTIFACT"]);
     const linkedSources: Array<{ type: string; id: string }> = [];
@@ -182,5 +199,6 @@ export const buildWorkProduct = createServerFn({ method: "POST" })
       href: `/work-products/${workProductId}`,
       citedSources: result.citedSources?.length ?? 0,
       linkedSources,
+      learnedFromFeedback: learned.sampleCount,
     };
   });

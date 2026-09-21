@@ -7021,6 +7021,56 @@ export type Database = {
           },
         ]
       }
+      work_product_ai_guidance: {
+        Row: {
+          business_type: string
+          created_at: string
+          created_by: string | null
+          feedback_fingerprint: string
+          guidance: string
+          id: string
+          row_version: number
+          sample_count: number
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          business_type: string
+          created_at?: string
+          created_by?: string | null
+          feedback_fingerprint?: string
+          guidance?: string
+          id?: string
+          row_version?: number
+          sample_count?: number
+          tenant_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          business_type?: string
+          created_at?: string
+          created_by?: string | null
+          feedback_fingerprint?: string
+          guidance?: string
+          id?: string
+          row_version?: number
+          sample_count?: number
+          tenant_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_product_ai_guidance_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_product_ai_proposals: {
         Row: {
           agent_id: string | null
@@ -12167,6 +12217,16 @@ export type Database = {
           _success_criteria?: string
           _target_problem?: string
           _version?: number
+        }
+        Returns: string
+      }
+      upsert_work_product_ai_guidance: {
+        Args: {
+          _business_type: string
+          _fingerprint: string
+          _guidance: string
+          _sample_count: number
+          _tenant_id: string
         }
         Returns: string
       }
