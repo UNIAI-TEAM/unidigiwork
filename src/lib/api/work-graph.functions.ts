@@ -376,3 +376,89 @@ export const listWorkGraphTargets = createServerFn({ method: "GET" })
               : null,
     }));
   });
+
+/* ---------------- Trang Work Graph: bảng tổng hợp theo trạng thái ---------------- */
+
+export type WorkGraphBoardItem = {
+  type: "TASK" | "EXECUTION" | "WORK_PRODUCT";
+  id: string;
+  title: string;
+  status: string | null;
+  href: string;
+  updatedAt: string | null;
+  links: number;
+};
+
+/**
+ * Bảng Work Graph của tổ chức: công việc, lượt thực thi và kết quả công việc
+ * đã được chiếu vào graph. Đọc từ projection work_nodes/work_edges và resolve
+ * qua bảng nguồn bằng client theo phiên — RLS loại bỏ thực thể không được xem.
+ */
+export const listWorkGraphBoard = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<WorkGraphBoardItem[]> => {
+    const tenantId = await currentTenantId(context.supabase, context.userId);
+    const { data: nodes, error } = await context.supabase
+      .from("work_nodes")
+      .select("id, entity_type, entity_id, updated_at")
+      .eq("tenant_id", tenantId)
+      .in("entity_type", ["TASK", "EXECUTION", "WORK_PRODUCT"])
+      .order("updated_at", { ascending: false })
+      .limit(400);
+    if (error) mapPgError(error);
+    const list = (nodes ?? []) as {
+      id: string;
+      entity_type: string;
+      entity_id: string;
+      updated_at: string;
+    }[];
+    if (!list.length) return [];
+
+    const resolved = await resolveWorkEntities(
+      context.supabase,
+      list.map((n) => ({ type: n.entity_type, id: n.entity_id })),
+    );
+
+    // EXECUTION: subtitle là executor_type, cần trạng thái thật để phân nhóm.
+    const execIds = list.filter((n) => n.entity_type === "EXECUTION").map((n) => n.entity_id);
+    const execStatus = new Map<string, string>();
+    if (execIds.length) {
+      const { data: ex } = await context.supabase
+        .from("ai_task_executions")
+        .select("id,status")
+        .in("id", execIds);
+      (ex ?? []).forEach((r: any) => execStatus.set(r.id, r.status));
+    }
+
+    // Số liên kết của từng node (chỉ trong phạm vi node đang hiển thị).
+    const nodeIds = list.map((n) => n.id);
+    const linkCount = new Map<string, number>();
+    const { data: edges } = await context.supabase
+      .from("work_edges")
+      .select("source_node_id,target_node_id")
+      .eq("tenant_id", tenantId)
+      .or(`source_node_id.in.(${nodeIds.join(",")}),target_node_id.in.(${nodeIds.join(",")})`);
+    (edges ?? []).forEach((e: any) => {
+      linkCount.set(e.source_node_id, (linkCount.get(e.source_node_id) ?? 0) + 1);
+      linkCount.set(e.target_node_id, (linkCount.get(e.target_node_id) ?? 0) + 1);
+    });
+
+    return list
+      .map((n) => {
+        const r = resolved.get(entityKey(n.entity_type, n.entity_id));
+        if (!r) return null;
+        return {
+          type: n.entity_type as WorkGraphBoardItem["type"],
+          id: n.entity_id,
+          title: r.title,
+          status:
+            n.entity_type === "EXECUTION"
+              ? (execStatus.get(n.entity_id) ?? null)
+              : (r.subtitle ?? null),
+          href: r.href,
+          updatedAt: r.updatedAt ?? n.updated_at,
+          links: linkCount.get(n.id) ?? 0,
+        } satisfies WorkGraphBoardItem;
+      })
+      .filter((x): x is WorkGraphBoardItem => x !== null);
+  });
