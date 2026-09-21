@@ -224,10 +224,11 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
   // Chips trong composer đã bị xoá sau khi gửi, nên lấy lại ngữ cảnh đã lưu
   // của lượt hỏi gần nhất để giữ provenance cho Work Product.
   const lastUserMessage = [...displayMessages].reverse().find((m) => m.role === "user");
-  const persistedSources = (lastUserMessage?.metadata?.contextEntities ?? []).map((item) => ({
-    type: item.type,
-    id: item.id,
-  }));
+  const persistedSources = (lastUserMessage?.metadata?.contextEntities ?? []).flatMap((item) =>
+    (WORK_ENTITY_TYPES as readonly string[]).includes(item.type)
+      ? [{ type: item.type as AiContextEntityType, id: item.id }]
+      : [],
+  );
   const composerSources = contexts
     .filter((item) => item.root)
     .map((item) => ({ type: item.root!.type, id: item.root!.id }));
