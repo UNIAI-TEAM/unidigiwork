@@ -27,12 +27,30 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { getAiConversation, sendAiMessage, type AiMessageDTO } from "@/lib/api/ai-chat.functions";
+import { proposeAiAction } from "@/lib/api/ai-actions.functions";
 import { universalSearch } from "@/lib/api/search-universal.functions";
 import type { UniversalSearchItem } from "@/lib/api/search-universal.server";
 import type { AiContextEntityType } from "@/domain/ai-context/contracts";
+import type {
+  AiActionExecutionResult,
+  ProposedAiAction,
+} from "@/domain/ai-actions/contracts";
+import { routeRequest, type OrchestrationExecutor } from "@/domain/ai-orchestration/route";
+import { ActionProposalCard } from "@/components/ai/action-proposal-card";
+import { ExecutionObserver } from "@/components/mobile/execution-observer";
 import { useActiveWorkspace } from "@/lib/active-workspace";
 import { useCurrentIdentity } from "@/lib/use-current-identity";
 import { useI18n } from "@/lib/i18n";
+
+/** Lượt điều phối cục bộ: yêu cầu → đề xuất hành động → quan sát thực thi. */
+type OrchestrationTurn = {
+  id: string;
+  user: string;
+  note?: string;
+  proposal?: ProposedAiAction;
+  executor?: OrchestrationExecutor;
+  executed?: { taskId: string; agentName?: string };
+};
 
 type AddedContext = {
   id: string;
