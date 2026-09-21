@@ -813,7 +813,6 @@ export async function buildAiContextPack(
     timings["recentWork"] = Date.now() - tRecent;
   }
 
-
   if (!root && searchItems.length) {
     const top = searchItems[0]!;
     const second = searchItems[1];
