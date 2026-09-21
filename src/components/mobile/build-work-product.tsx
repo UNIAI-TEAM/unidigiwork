@@ -102,7 +102,8 @@ export function WorkProductRun({
     return () => {
       cancelled = true;
     };
-  }, [brief, buildFn, kinds, sourceEntities, workspaceId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [buildFn]);
 
   if (states.length === 0) return null;
 
