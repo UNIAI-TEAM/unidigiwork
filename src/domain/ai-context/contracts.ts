@@ -14,6 +14,11 @@ export type AiRetrievalStrategy =
 export interface AiContextRequest {
   query: string;
   rootEntity?: { type: AiContextEntityType; id: string } | null;
+  /**
+   * Thực thể người dùng chủ động đính kèm (Add Context). Luôn được nạp qua Work Graph
+   * theo quyền của actor và đứng đầu ngữ cảnh; không suy diễn thêm.
+   */
+  pinnedEntities?: Array<{ type: AiContextEntityType; id: string }> | null;
   workspaceId?: string | null;
   timeRange?: { from: string; to: string; label: string } | null;
   requestedEntityTypes?: AiContextEntityType[] | null;

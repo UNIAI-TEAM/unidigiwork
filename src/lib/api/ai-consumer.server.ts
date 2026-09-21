@@ -97,6 +97,7 @@ export async function answerWithContext(
       (await buildAiContextPack(supabase, userId, tenantHint, {
         query: request.query.slice(0, 500),
         rootEntity: request.rootEntity ?? null,
+        pinnedEntities: request.pinnedEntities ?? null,
         workspaceId: request.workspaceId ?? null,
         maxSources: policy.maxSources,
         maxTokens: policy.maxTokens,
@@ -159,7 +160,9 @@ export async function recordConsumerTelemetry(
   operation: string,
 ): Promise<void> {
   try {
-    await (supabase as never as { from: (t: string) => { insert: (v: unknown) => Promise<unknown> } })
+    await (
+      supabase as never as { from: (t: string) => { insert: (v: unknown) => Promise<unknown> } }
+    )
       .from("ai_context_metrics")
       .insert({
         tenant_id: result.pack.tenantId || null,
