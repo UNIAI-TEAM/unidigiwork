@@ -177,8 +177,8 @@ function AuthPage() {
               </button>
             ))}
           </div>
-        )}
-        {!reset && mode === "code" && (
+        ))}
+        {!signupSent && !reset && mode === "code" && (
           <p className="mb-3 text-xs text-muted-foreground">{t("otp.2")}</p>
         )}
         <form onSubmit={submit} noValidate={false} className="space-y-3">
