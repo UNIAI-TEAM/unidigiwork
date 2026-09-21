@@ -261,6 +261,13 @@ export interface AiActionExecutionResult {
     profileName: string | null;
     reason: string;
   } | null;
+  /** Người thật được giao khi không có nhân sự AI phù hợp. */
+  assignedHuman?: {
+    userId: string;
+    name: string;
+    reason: string;
+    openTasks: number;
+  } | null;
 }
 
 export const ACTION_ERROR_MESSAGE: Record<string, string> = {
