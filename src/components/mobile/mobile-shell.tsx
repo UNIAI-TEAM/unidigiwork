@@ -210,7 +210,6 @@ function NativeDrawer({
         <nav className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-3">
           <DrawerLink icon={Plus} label={t("m.nav.newWork")} onClick={() => go("/m")} />
 
-
           <DrawerSection label={t("m.nav.inbox")}>
             {INBOX_LINKS.map((item, index) => (
               <DrawerLink
