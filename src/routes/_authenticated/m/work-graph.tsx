@@ -72,8 +72,51 @@ function MobileWorkGraphPage() {
 
 function WorkGraphRow({ item }: { item: WorkGraphBoardItem }) {
   const Icon = item.type === "WORK_PRODUCT" ? FileText : ListChecks;
-  return <li><Link to={toMobileHref(item.href) as never} className="block min-w-0 rounded-xl border border-border bg-card p-4 shadow-card"><div className="flex items-start gap-3"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary"><Icon className="h-4 w-4"/></span><span className="min-w-0 flex-1"><span className="line-clamp-2 text-sm font-semibold leading-5">{item.title}</span><span className="mt-1 flex flex-wrap gap-1.5"><Badge variant="outline" className="text-[10px]">{item.type === "WORK_PRODUCT" ? "Work Product" : "Task"}</Badge>{item.ownerName ? <Badge variant="secondary" className="max-w-full truncate text-[10px]">{item.ownerName}</Badge> : null}</span></span>{item.status ? <Badge variant="secondary" className="max-w-24 shrink-0 truncate text-[10px]">{item.status}</Badge> : null}</div><div className="mt-3 flex items-center gap-2"><span className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-surface-2"><span className="block h-full rounded-full bg-primary" style={{ width: `${Math.min(100, Math.max(0, item.progress))}%` }}/></span><span className="shrink-0 text-xs text-muted-foreground">{item.progress}%</span></div>{item.dueAt ? <p className="mt-2 text-xs text-muted-foreground">Hạn {new Date(item.dueAt).toLocaleString("vi-VN", { dateStyle: "short", timeStyle: "short" })}</p> : null}</Link></li>;
-      </div>
-    </div>
+  return (
+    <li>
+      <Link
+        to={toMobileHref(item.href) as never}
+        className="block min-w-0 rounded-xl border border-border bg-card p-4 shadow-card"
+      >
+        <div className="flex items-start gap-3">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+            <Icon className="h-4 w-4" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="line-clamp-2 text-sm font-semibold leading-5">{item.title}</span>
+            <span className="mt-1 flex flex-wrap gap-1.5">
+              <Badge variant="outline" className="text-[10px]">
+                {item.type === "WORK_PRODUCT" ? "Work Product" : "Task"}
+              </Badge>
+              {item.ownerName ? (
+                <Badge variant="secondary" className="max-w-full truncate text-[10px]">
+                  {item.ownerName}
+                </Badge>
+              ) : null}
+            </span>
+          </span>
+          {item.status ? (
+            <Badge variant="secondary" className="max-w-24 shrink-0 truncate text-[10px]">
+              {item.status}
+            </Badge>
+          ) : null}
+        </div>
+        <div className="mt-3 flex items-center gap-2">
+          <span className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-surface-2">
+            <span
+              className="block h-full rounded-full bg-primary"
+              style={{ width: `${Math.min(100, Math.max(0, item.progress))}%` }}
+            />
+          </span>
+          <span className="shrink-0 text-xs text-muted-foreground">{item.progress}%</span>
+        </div>
+        {item.dueAt ? (
+          <p className="mt-2 text-xs text-muted-foreground">
+            Hạn {new Date(item.dueAt).toLocaleString("vi-VN", { dateStyle: "short", timeStyle: "short" })}
+          </p>
+        ) : null}
+      </Link>
+    </li>
+  );
   );
 }
