@@ -11078,6 +11078,10 @@ export type Database = {
         }
         Returns: string
       }
+      mark_task_message_notifications_read: {
+        Args: { _task_id: string }
+        Returns: number
+      }
       notify_human_task_assignment: {
         Args: {
           _assignee_id: string
