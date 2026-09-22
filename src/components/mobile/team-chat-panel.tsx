@@ -166,10 +166,10 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack: () => v
               ) : null}
               <p className="whitespace-pre-wrap break-words text-sm leading-6">{message.body}</p>
               <p className="mt-1 text-[11px] text-muted-foreground">
-                {new Date(message.createdAt).toLocaleTimeString(
-                  lang === "vi" ? "vi-VN" : "en-US",
-                  { hour: "2-digit", minute: "2-digit" },
-                )}
+                {new Date(message.createdAt).toLocaleTimeString(lang === "vi" ? "vi-VN" : "en-US", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
               </p>
             </div>
           ))
