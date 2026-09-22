@@ -49,6 +49,7 @@ import { parseChatSource, stripChatSource } from "@/lib/chat-task-link";
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const Route = createFileRoute("/tasks_/$id")({
+  ssr: false,
   // Chỉ khớp id dạng UUID để không bao giờ rơi về bảng công việc do khớp nhầm.
   beforeLoad: ({ params }) => {
     if (!UUID_RE.test(params.id)) throw notFound();
