@@ -1164,11 +1164,14 @@ function WorkProductDetail() {
                         size="sm"
                         disabled={!comment.trim()}
                         onClick={() =>
-                          commentWorkDeliverable({
-                            data: { idempotencyKey: crypto.randomUUID(), id, body: comment.trim() },
-                          }).then(() => {
+                          runOrQueue("wp.comment", {
+                            idempotencyKey: crypto.randomUUID(),
+                            id,
+                            body: comment.trim(),
+                          }).then((sent) => {
                             setComment("");
-                            invalidate();
+                            if (sent) invalidate();
+                            else toast.message(t("offline.queued"));
                           })
                         }
                       >
