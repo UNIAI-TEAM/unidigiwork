@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { listMeetingHistory } from "@/lib/api/meeting-rooms.functions";
 import { localeTag, useI18n } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n-interpolate";
 
 const PAGE_SIZE = 20;
 
@@ -81,7 +82,7 @@ function MobileMeetingHistory() {
               key={meeting.id}
               title={meeting.title}
               subtitle={new Date(meeting.startAt).toLocaleString(localeTag(lang))}
-              meta={`${meeting.durationMinutes} phút · ${meeting.participantCount} người`}
+              meta={`${fmt(t("mtg.dur.min"), { m: meeting.durationMinutes })} · ${fmt(t("mtg.m.participants"), { n: meeting.participantCount })}`}
               icon={<CalendarClock className="h-5 w-5" />}
               badge={
                 <Badge variant="secondary">
