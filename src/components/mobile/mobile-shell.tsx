@@ -91,6 +91,16 @@ export function MobileShell() {
           variant="ghost"
           size="icon"
           className="h-11 w-11 shrink-0 rounded-full hover:bg-surface-2"
+          onClick={() => void navigate({ to: "/m/search" as never })}
+          aria-label={t("cmd.group.search")}
+          title={t("cmd.group.search")}
+        >
+          <Search className="h-6 w-6" strokeWidth={2.25} />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-11 w-11 shrink-0 rounded-full hover:bg-surface-2"
           onClick={startNew}
           aria-label={t("m.nav.newWork")}
           title={t("m.nav.newWork")}
@@ -199,7 +209,7 @@ function NativeDrawer({
 
         <nav className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-3">
           <DrawerLink icon={Plus} label={t("m.nav.newWork")} onClick={() => go("/m")} />
-          <DrawerLink icon={Search} label={t("cmd.group.search")} onClick={() => go("/m/search")} />
+
 
           <DrawerSection label={t("m.nav.inbox")}>
             {INBOX_LINKS.map((item, index) => (
