@@ -404,6 +404,7 @@ function AddContextDrawer({
     if (!open) {
       setMode("menu");
       setQuery("");
+      setChatChannelId(null);
     }
   }, [open]);
 
