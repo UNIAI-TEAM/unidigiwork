@@ -157,8 +157,8 @@ function WorkGraphPage() {
               }}
               className={`flex h-11 shrink-0 items-center gap-1.5 rounded-lg border px-3 text-sm font-medium transition-colors sm:h-8 sm:rounded-md sm:border-0 ${
                 tab === id
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "border-primary/40 bg-background text-foreground shadow-sm"
+                  : "border-transparent bg-muted text-muted-foreground hover:text-foreground sm:bg-transparent"
               }`}
             >
               <Icon className="h-3.5 w-3.5" />
