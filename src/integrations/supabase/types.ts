@@ -9945,6 +9945,33 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      comment_task_to_assignee: {
+        Args: {
+          _body: string
+          _correlation_id?: string
+          _idempotency_key: string
+          _recipient_id: string
+          _task_id: string
+        }
+        Returns: {
+          author_id: string
+          body: string
+          created_at: string
+          deleted_at: string | null
+          edited_at: string | null
+          id: string
+          row_version: number
+          task_id: string
+          tenant_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "task_comments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       complete_outbox_event: {
         Args: { _id: string; _worker: string }
         Returns: boolean
@@ -10869,6 +10896,14 @@ export type Database = {
         Args: { _limit?: number; _task_id: string }
         Returns: {
           conversation_id: string
+        }[]
+      }
+      list_task_message_recipients: {
+        Args: { _task_id: string }
+        Returns: {
+          display_name: string
+          id: string
+          primary_email: string
         }[]
       }
       list_tenant_member_profiles: {

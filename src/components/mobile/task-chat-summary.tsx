@@ -25,11 +25,22 @@ import {
   PromptInputTextarea,
 } from "@/components/ai-elements/prompt-input";
 import { getTaskConversations, sendAiMessage } from "@/lib/api/ai-chat.functions";
-import { commentTask, getTaskDetail } from "@/lib/api/tasks.functions";
+import {
+  getTaskDetail,
+  listTaskMessageRecipients,
+  sendTaskMessage,
+} from "@/lib/api/tasks.functions";
 import { getWorkContext, listWorkGraphBoard } from "@/lib/api/work-graph.functions";
 import { localeTag, useI18n } from "@/lib/i18n";
 import { CollapsibleChatContent } from "@/components/mobile/collapsible-chat-content";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useCurrentIdentity } from "@/lib/use-current-identity";
 
 export function TaskChatHub() {
@@ -103,8 +114,10 @@ export function TaskChatSummary({ taskId, taskTitle }: { taskId: string; taskTit
   const detailFn = useServerFn(getTaskDetail);
   const graphFn = useServerFn(getWorkContext);
   const sendAiFn = useServerFn(sendAiMessage);
-  const commentFn = useServerFn(commentTask);
+  const recipientsFn = useServerFn(listTaskMessageRecipients);
+  const sendTeamFn = useServerFn(sendTaskMessage);
   const [draft, setDraft] = useState("");
+  const [recipientId, setRecipientId] = useState("");
   const chats = useQuery({
     queryKey: ["task-conversations", taskId],
     queryFn: () => chatFn({ data: { taskId } }),
@@ -117,6 +130,10 @@ export function TaskChatSummary({ taskId, taskTitle }: { taskId: string; taskTit
     queryKey: ["task-chat-graph", taskId],
     queryFn: () => graphFn({ data: { entityType: "TASK", entityId: taskId, limit: 30 } }),
   });
+  const recipients = useQuery({
+    queryKey: ["task-message-recipients", taskId],
+    queryFn: () => recipientsFn({ data: { taskId } }),
+  });
   const title = taskTitle ?? detail.data?.task?.title ?? t("m.taskChat.task");
   const comments = detail.data?.comments ?? [];
   const related = graph.data?.relationships ?? [];
@@ -124,12 +141,19 @@ export function TaskChatSummary({ taskId, taskTitle }: { taskId: string; taskTit
   const latestConversation = chats.data?.[0] ?? null;
 
   const sendTeam = useMutation({
-    mutationFn: (body: string) =>
-      commentFn({ data: { taskId, body, idempotencyKey: crypto.randomUUID() } }),
+    mutationFn: ({ body, recipientId }: { body: string; recipientId: string }) =>
+      sendTeamFn({
+        data: { taskId, recipientId, body, idempotencyKey: crypto.randomUUID() },
+      }),
     onSuccess: async () => {
       setDraft("");
-      await queryClient.invalidateQueries({ queryKey: ["task-chat-detail", taskId] });
-      await queryClient.invalidateQueries({ queryKey: ["m-task-detail", taskId] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["task-chat-detail", taskId] }),
+        queryClient.invalidateQueries({ queryKey: ["m-task-detail", taskId] }),
+        queryClient.invalidateQueries({ queryKey: ["work-graph-board"] }),
+        queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+      ]);
+      toast.success(t("m.taskChat.messageSent"));
     },
     onError: (error) =>
       toast.error(error instanceof Error ? error.message : t("m.taskChat.sendError")),
@@ -216,10 +240,18 @@ export function TaskChatSummary({ taskId, taskTitle }: { taskId: string; taskTit
               <TaskMessageComposer
                 value={draft}
                 onChange={setDraft}
-                onSubmit={(text) => sendTeam.mutate(text)}
+                onSubmit={(text) => {
+                  if (recipientId) sendTeam.mutate({ body: text, recipientId });
+                }}
                 pending={sendTeam.isPending}
                 placeholder={t("m.taskChat.teamPlaceholder")}
                 sendLabel={t("m.taskChat.sendTeam")}
+                recipients={recipients.data ?? []}
+                recipientId={recipientId}
+                onRecipientChange={setRecipientId}
+                recipientPlaceholder={t("m.taskChat.selectRecipient")}
+                noRecipientsLabel={t("m.taskChat.noRecipients")}
+                recipientsLoading={recipients.isLoading}
               />
             </TabsContent>
             <TabsContent value="ai" className="mt-3 min-w-0">
@@ -359,6 +391,12 @@ function TaskMessageComposer({
   pending,
   placeholder,
   sendLabel,
+  recipients,
+  recipientId,
+  onRecipientChange,
+  recipientPlaceholder,
+  noRecipientsLabel,
+  recipientsLoading,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -366,7 +404,14 @@ function TaskMessageComposer({
   pending: boolean;
   placeholder: string;
   sendLabel: string;
+  recipients?: Array<{ id: string; name: string; email: string }>;
+  recipientId?: string;
+  onRecipientChange?: (value: string) => void;
+  recipientPlaceholder?: string;
+  noRecipientsLabel?: string;
+  recipientsLoading?: boolean;
 }) {
+  const needsRecipient = Boolean(recipients);
   return (
     <PromptInput
       className="mt-2 rounded-xl border-border bg-surface"
@@ -382,10 +427,36 @@ function TaskMessageComposer({
         aria-label={placeholder}
         className="max-h-28 min-h-14 px-3 pt-3 text-base leading-6"
       />
-      <PromptInputFooter className="justify-end px-1.5 pb-1.5">
+      <PromptInputFooter className="flex-col items-stretch gap-2 px-1.5 pb-1.5 sm:flex-row sm:items-center sm:justify-between">
+        {recipients ? (
+          recipientsLoading ? (
+            <span className="flex min-h-11 items-center gap-2 text-xs text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> {recipientPlaceholder}
+            </span>
+          ) : recipients.length ? (
+            <Select value={recipientId} onValueChange={onRecipientChange}>
+              <SelectTrigger className="h-11 min-w-0 sm:max-w-64">
+                <SelectValue placeholder={recipientPlaceholder} />
+              </SelectTrigger>
+              <SelectContent>
+                {recipients.map((person) => (
+                  <SelectItem key={person.id} value={person.id} className="min-h-11">
+                    {person.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <span className="flex min-h-11 items-center text-xs text-muted-foreground">
+              {noRecipientsLabel}
+            </span>
+          )
+        ) : (
+          <span />
+        )}
         <PromptInputSubmit
           status={pending ? "submitted" : "ready"}
-          disabled={!value.trim() || pending}
+          disabled={!value.trim() || pending || (needsRecipient && !recipientId)}
           aria-label={sendLabel}
           className="h-10 w-10"
         >
