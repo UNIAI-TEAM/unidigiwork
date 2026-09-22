@@ -452,6 +452,11 @@ const dict = {
     "offline.pending": "{n} thay đổi chờ gửi",
     "offline.synced": "Đã đồng bộ {n} thay đổi",
     "offline.queued": "Đang ngoại tuyến · đã lưu, sẽ gửi khi có mạng",
+    "guard.maintenanceTitle": "UniWork đang tạm dừng",
+    "guard.upgradeTitle": "Cần cập nhật ứng dụng",
+    "guard.upgradeBody":
+      "Bản cài trên máy ({current}) đã cũ. Vui lòng cài bản {required} trở lên để dùng tiếp.",
+    "guard.retry": "Thử lại",
     "wg.prev": "Trước",
     "wg.next": "Sau",
     "wg.type.task": "Công việc",
@@ -2667,6 +2672,11 @@ const dict = {
     "offline.pending": "{n} change(s) waiting",
     "offline.synced": "Synced {n} change(s)",
     "offline.queued": "Offline · saved, will send when back online",
+    "guard.maintenanceTitle": "UniWork is paused",
+    "guard.upgradeTitle": "App update required",
+    "guard.upgradeBody":
+      "Installed build ({current}) is outdated. Please install {required} or newer to continue.",
+    "guard.retry": "Try again",
     "wg.prev": "Previous",
     "wg.next": "Next",
     "wg.type.task": "Task",

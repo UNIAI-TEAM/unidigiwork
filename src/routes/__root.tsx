@@ -17,6 +17,7 @@ import { LanguageProvider } from "@/lib/i18n";
 import { setupOfflineSupport } from "@/lib/pwa";
 import { setupOfflinePersistence } from "@/lib/offline/persist";
 import { OfflineStatus } from "@/components/offline-status";
+import { NativeGuard } from "@/components/native-guard";
 import { setupNativeShell } from "@/lib/native/bridge";
 
 function NotFoundComponent() {
@@ -184,6 +185,7 @@ function RootComponent() {
           {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
           <Outlet />
           <OfflineStatus />
+          <NativeGuard />
           <Toaster />
         </LanguageProvider>
       </ThemeProvider>
