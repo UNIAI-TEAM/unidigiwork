@@ -130,6 +130,14 @@ export interface MeetingSummary {
   followUp: MeetingFollowUp | null;
   transcriptChecksum: string | null;
   version: number;
+  report: {
+    workProductId: string | null;
+    status: "PENDING" | "GENERATING" | "READY" | "FAILED";
+    error: string | null;
+    generatedAt: string | null;
+    href: string | null;
+    mobileHref: string | null;
+  };
 }
 
 /* ------------------------------- Budget ------------------------------- */
