@@ -21,45 +21,51 @@ export function MobileAdminHubNative() {
   const access = useQuery({ queryKey: ["m-admin-access"], queryFn: () => accessFn() });
   const tenant = useActiveTenant();
 
-  if (access.isLoading)
+  if (access.isLoading || tenant.isLoading)
     return (
       <MobileAdminLayout title={t("m.admin.title")} subtitle={t("m.admin.subtitle")}>
         <MobileAdminLoading />
       </MobileAdminLayout>
     );
-  if (!access.data?.canRead)
+  const tenantCanManage =
+    tenant.data?.role === "tenant_owner" || tenant.data?.role === "tenant_admin";
+  if (!access.data?.canRead && !tenantCanManage)
     return (
       <MobileAdminLayout title={t("m.admin.title")} subtitle={t("m.admin.subtitle")}>
         <MobileAdminMessage>{t("m.admin.denied")}</MobileAdminMessage>
       </MobileAdminLayout>
     );
 
-  const tenantCanManage =
-    tenant.data?.role === "tenant_owner" || tenant.data?.role === "tenant_admin";
   return (
     <MobileAdminLayout title={t("m.admin.title")} subtitle={t("m.admin.subtitle")}>
-      {!access.data.canWrite ? <ReadOnlyNotice /> : null}
+      {access.data?.canRead && !access.data.canWrite ? <ReadOnlyNotice /> : null}
       <div className="flex flex-wrap gap-2">
-        <Badge variant="outline">
-          {access.data.isAdmin ? t("m.admin.role.admin") : t("m.admin.role.moderator")}
-        </Badge>
+        {access.data?.canRead ? (
+          <Badge variant="outline">
+            {access.data.isAdmin ? t("m.admin.role.admin") : t("m.admin.role.moderator")}
+          </Badge>
+        ) : null}
         {tenant.data ? (
           <Badge variant="outline">{t(`m.admin.role.${tenant.data.role}` as never)}</Badge>
         ) : null}
       </div>
       <div className="grid gap-2">
-        <MobileListItem
-          title={t("m.admin.overview")}
-          subtitle={t("m.admin.overviewHint")}
-          icon={<Gauge className="h-5 w-5" />}
-          onClick={() => void navigate({ to: "/m/admin/overview" })}
-        />
-        <MobileListItem
-          title={t("m.admin.accounts")}
-          subtitle={t("m.admin.accountsHint")}
-          icon={<Users className="h-5 w-5" />}
-          onClick={() => void navigate({ to: "/m/admin/accounts" })}
-        />
+        {access.data?.canRead ? (
+          <>
+            <MobileListItem
+              title={t("m.admin.overview")}
+              subtitle={t("m.admin.overviewHint")}
+              icon={<Gauge className="h-5 w-5" />}
+              onClick={() => void navigate({ to: "/m/admin/overview" })}
+            />
+            <MobileListItem
+              title={t("m.admin.accounts")}
+              subtitle={t("m.admin.accountsHint")}
+              icon={<Users className="h-5 w-5" />}
+              onClick={() => void navigate({ to: "/m/admin/accounts" })}
+            />
+          </>
+        ) : null}
         <MobileListItem
           title={t("m.admin.organization")}
           subtitle={t("m.admin.organizationHint")}
@@ -69,12 +75,14 @@ export function MobileAdminHubNative() {
           }
           onClick={() => void navigate({ to: "/m/admin/organization" })}
         />
-        <MobileListItem
-          title={t("m.admin.limits")}
-          subtitle={t("m.admin.limitsHint")}
-          icon={<ShieldCheck className="h-5 w-5" />}
-          onClick={() => void navigate({ to: "/m/admin/limits" })}
-        />
+        {access.data?.canRead ? (
+          <MobileListItem
+            title={t("m.admin.limits")}
+            subtitle={t("m.admin.limitsHint")}
+            icon={<ShieldCheck className="h-5 w-5" />}
+            onClick={() => void navigate({ to: "/m/admin/limits" })}
+          />
+        ) : null}
         <MobileListItem
           title={t("m.admin.personalPassword")}
           subtitle={t("m.admin.personalPasswordHint")}
