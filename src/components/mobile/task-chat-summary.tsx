@@ -163,7 +163,7 @@ export function TaskChatSummary({ taskId, taskTitle }: { taskId: string; taskTit
     return t("m.taskChat.classification.failed");
   };
   const related = graph.data?.relationships ?? [];
-  const loading = chats.isLoading || detail.isLoading || graph.isLoading;
+  const loading = chats.isLoading || detail.isLoading || graph.isLoading || permissions.isLoading;
   const latestConversation = chats.data?.[0] ?? null;
 
   useEffect(() => {
