@@ -10910,6 +10910,20 @@ export type Database = {
           workspace_id: string
         }[]
       }
+      list_work_graph_board_page: {
+        Args: {
+          _assignee_id?: string
+          _due_filter?: string
+          _limit?: number
+          _offset?: number
+          _search?: string
+          _tab?: string
+          _task_id?: string
+          _tenant_id: string
+          _unassigned?: boolean
+        }
+        Returns: Json
+      }
       list_workflow_access_requests: {
         Args: { _limit?: number; _status?: string; _workspace_id: string }
         Returns: {
