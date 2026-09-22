@@ -46,7 +46,6 @@ import {
   Sparkles,
   UserCheck,
 } from "lucide-react";
-import { format } from "date-fns";
 import { toast } from "sonner";
 
 const TASK_STATUS_LABEL: Record<string, string> = {
@@ -276,9 +275,11 @@ function MobileWorkProductDetail() {
           <h1 className="break-words text-xl font-semibold leading-tight">{product.title}</h1>
           <p className="mt-1 text-xs text-muted-foreground">
             {product.business_type} · v{product.current_version ?? 1} ·{" "}
-            {format(new Date(product.updated_at ?? product.created_at), "d MMM yyyy", {
-              locale: lang === "vi" ? undefined : undefined,
-            })}
+            {new Intl.DateTimeFormat(localeTag(lang), {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            }).format(new Date(product.updated_at ?? product.created_at))}
           </p>
         </div>
         <Badge variant="secondary" className="col-span-2 w-fit">
