@@ -18,14 +18,19 @@ export default defineConfig({
     // Dự phòng: nếu bản build chỉ có biến không mang tiền tố VITE_, vẫn nhúng
     // đúng thông tin kết nối vào gói trình duyệt để trang không sập khi phát hành.
     define: {
-      ...(process.env.VITE_SUPABASE_URL || !process.env.SUPABASE_URL
+      ...(process.env.VITE_SUPABASE_URL
         ? {}
-        : { "import.meta.env.VITE_SUPABASE_URL": JSON.stringify(process.env.SUPABASE_URL) }),
-      ...(process.env.VITE_SUPABASE_PUBLISHABLE_KEY || !process.env.SUPABASE_PUBLISHABLE_KEY
+        : {
+            "import.meta.env.VITE_SUPABASE_URL": JSON.stringify(
+              process.env.SUPABASE_URL || "https://wjqsthhtadtbpophgclg.supabase.co",
+            ),
+          }),
+      ...(process.env.VITE_SUPABASE_PUBLISHABLE_KEY
         ? {}
         : {
             "import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY": JSON.stringify(
-              process.env.SUPABASE_PUBLISHABLE_KEY,
+              process.env.SUPABASE_PUBLISHABLE_KEY ||
+                "sb_publishable_pwW7T3_WTiQU8XIza4q1BQ_3_XeRyxG",
             ),
           }),
     },
