@@ -15,6 +15,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/lib/theme";
 import { LanguageProvider } from "@/lib/i18n";
 import { setupOfflineSupport } from "@/lib/pwa";
+import { setupOfflinePersistence } from "@/lib/offline/persist";
+import { OfflineStatus } from "@/components/offline-status";
 
 function NotFoundComponent() {
   return (
@@ -164,7 +166,8 @@ function RootComponent() {
 
   useEffect(() => {
     setupOfflineSupport();
-  }, []);
+    return setupOfflinePersistence(queryClient);
+  }, [queryClient]);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -172,6 +175,7 @@ function RootComponent() {
         <LanguageProvider>
           {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
           <Outlet />
+          <OfflineStatus />
           <Toaster />
         </LanguageProvider>
       </ThemeProvider>

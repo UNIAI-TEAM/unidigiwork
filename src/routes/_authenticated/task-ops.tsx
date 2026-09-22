@@ -16,7 +16,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useI18n } from "@/lib/i18n";
-import { listTaskOpsBoard, reassignTaskOwner } from "@/lib/api/task-ops.functions";
+import { listTaskOpsBoard } from "@/lib/api/task-ops.functions";
+import { runOrQueue } from "@/lib/offline/queue";
 import type { TaskOpsItem } from "@/lib/api/task-ops.functions";
 
 export const Route = createFileRoute("/_authenticated/task-ops")({
@@ -78,16 +79,18 @@ function TaskOpsPage() {
 
   const reassign = useMutation({
     mutationFn: (v: { taskId: string; assigneeId: string }) =>
-      reassignTaskOwner({
-        data: {
-          taskId: v.taskId,
-          assigneeId: v.assigneeId,
-          idempotencyKey: crypto.randomUUID(),
-        },
+      runOrQueue("task.reassign", {
+        taskId: v.taskId,
+        assigneeId: v.assigneeId,
+        idempotencyKey: crypto.randomUUID(),
       }),
     onMutate: (v) => setPending(v.taskId),
     onSettled: () => setPending(null),
-    onSuccess: () => {
+    onSuccess: (sent) => {
+      if (!sent) {
+        toast.message(t("offline.queued"));
+        return;
+      }
       toast.success(t("tops.reassigned"));
       void qc.invalidateQueries({ queryKey: ["task-ops-board"] });
       void qc.invalidateQueries({ queryKey: ["work-graph-board"] });
