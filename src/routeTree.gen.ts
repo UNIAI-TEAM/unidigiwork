@@ -181,6 +181,7 @@ import { Route as AuthenticatedMMeetIdRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedMKnowledgeSlugRouteImport } from './routes/_authenticated/m/knowledge.$slug'
 import { Route as AuthenticatedMEmailIdRouteImport } from './routes/_authenticated/m/email.$id'
 import { Route as AuthenticatedMDocumentsIdRouteImport } from './routes/_authenticated/m/documents.$id'
+import { Route as AuthenticatedMChatIdRouteImport } from './routes/_authenticated/m/chat.$id'
 import { Route as AuthenticatedMCIdRouteImport } from './routes/_authenticated/m/c.$id'
 import { Route as AuthenticatedMAiWorkforceIdRouteImport } from './routes/_authenticated/m/ai-workforce.$id'
 import { Route as AuthenticatedMAiMarketIdRouteImport } from './routes/_authenticated/m/ai-market.$id'
@@ -1127,6 +1128,11 @@ const AuthenticatedMDocumentsIdRoute =
     path: '/documents/$id',
     getParentRoute: () => AuthenticatedMRoute,
   } as any)
+const AuthenticatedMChatIdRoute = AuthenticatedMChatIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthenticatedMChatRoute,
+} as any)
 const AuthenticatedMCIdRoute = AuthenticatedMCIdRouteImport.update({
   id: '/c/$id',
   path: '/c/$id',
@@ -1386,6 +1392,7 @@ export interface FileRoutesByFullPath {
   '/m/ai-market/$id': typeof AuthenticatedMAiMarketIdRoute
   '/m/ai-workforce/$id': typeof AuthenticatedMAiWorkforceIdRoute
   '/m/c/$id': typeof AuthenticatedMCIdRoute
+  '/m/chat/$id': typeof AuthenticatedMChatIdRoute
   '/m/documents/$id': typeof AuthenticatedMDocumentsIdRoute
   '/m/email/$id': typeof AuthenticatedMEmailIdRoute
   '/m/knowledge/$slug': typeof AuthenticatedMKnowledgeSlugRoute
@@ -1572,6 +1579,7 @@ export interface FileRoutesByTo {
   '/m/ai-market/$id': typeof AuthenticatedMAiMarketIdRoute
   '/m/ai-workforce/$id': typeof AuthenticatedMAiWorkforceIdRoute
   '/m/c/$id': typeof AuthenticatedMCIdRoute
+  '/m/chat/$id': typeof AuthenticatedMChatIdRoute
   '/m/documents/$id': typeof AuthenticatedMDocumentsIdRoute
   '/m/email/$id': typeof AuthenticatedMEmailIdRoute
   '/m/knowledge/$slug': typeof AuthenticatedMKnowledgeSlugRoute
@@ -1765,6 +1773,7 @@ export interface FileRoutesById {
   '/_authenticated/m/ai-market/$id': typeof AuthenticatedMAiMarketIdRoute
   '/_authenticated/m/ai-workforce/$id': typeof AuthenticatedMAiWorkforceIdRoute
   '/_authenticated/m/c/$id': typeof AuthenticatedMCIdRoute
+  '/_authenticated/m/chat/$id': typeof AuthenticatedMChatIdRoute
   '/_authenticated/m/documents/$id': typeof AuthenticatedMDocumentsIdRoute
   '/_authenticated/m/email/$id': typeof AuthenticatedMEmailIdRoute
   '/_authenticated/m/knowledge/$slug': typeof AuthenticatedMKnowledgeSlugRoute
@@ -1958,6 +1967,7 @@ export interface FileRouteTypes {
     | '/m/ai-market/$id'
     | '/m/ai-workforce/$id'
     | '/m/c/$id'
+    | '/m/chat/$id'
     | '/m/documents/$id'
     | '/m/email/$id'
     | '/m/knowledge/$slug'
@@ -2144,6 +2154,7 @@ export interface FileRouteTypes {
     | '/m/ai-market/$id'
     | '/m/ai-workforce/$id'
     | '/m/c/$id'
+    | '/m/chat/$id'
     | '/m/documents/$id'
     | '/m/email/$id'
     | '/m/knowledge/$slug'
@@ -2336,6 +2347,7 @@ export interface FileRouteTypes {
     | '/_authenticated/m/ai-market/$id'
     | '/_authenticated/m/ai-workforce/$id'
     | '/_authenticated/m/c/$id'
+    | '/_authenticated/m/chat/$id'
     | '/_authenticated/m/documents/$id'
     | '/_authenticated/m/email/$id'
     | '/_authenticated/m/knowledge/$slug'
@@ -3631,6 +3643,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMDocumentsIdRouteImport
       parentRoute: typeof AuthenticatedMRoute
     }
+    '/_authenticated/m/chat/$id': {
+      id: '/_authenticated/m/chat/$id'
+      path: '/$id'
+      fullPath: '/m/chat/$id'
+      preLoaderRoute: typeof AuthenticatedMChatIdRouteImport
+      parentRoute: typeof AuthenticatedMChatRoute
+    }
     '/_authenticated/m/c/$id': {
       id: '/_authenticated/m/c/$id'
       path: '/c/$id'
@@ -3840,10 +3859,12 @@ const AuthenticatedDocumentsRouteWithChildren =
   )
 
 interface AuthenticatedMChatRouteChildren {
+  AuthenticatedMChatIdRoute: typeof AuthenticatedMChatIdRoute
   AuthenticatedMChatIndexRoute: typeof AuthenticatedMChatIndexRoute
 }
 
 const AuthenticatedMChatRouteChildren: AuthenticatedMChatRouteChildren = {
+  AuthenticatedMChatIdRoute: AuthenticatedMChatIdRoute,
   AuthenticatedMChatIndexRoute: AuthenticatedMChatIndexRoute,
 }
 

@@ -28,6 +28,11 @@ export function TeamChatPanel({
   return <ChannelRoom channelId={channelId} onBack={onBack} />;
 }
 
+/** Phòng trò chuyện dùng chung cho panel dấu cộng và các màn /m/chat, /m/meet. */
+export function ChatRoomView({ channelId }: { channelId: string }) {
+  return <ChannelRoom channelId={channelId} />;
+}
+
 function ChannelList({ onOpenChannel }: { onOpenChannel: (channel: ChatChannelDTO) => void }) {
   const { t, lang } = useI18n();
   const listFn = useServerFn(listChatChannels);
