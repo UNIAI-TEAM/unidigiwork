@@ -93,17 +93,31 @@ import { Route as AuthenticatedWorkCatalogCodeRouteImport } from './routes/_auth
 import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects_.$id'
 import { Route as AuthenticatedPeopleIdRouteImport } from './routes/_authenticated/people_.$id'
 import { Route as AuthenticatedNotificationsIdRouteImport } from './routes/_authenticated/notifications.$id'
+import { Route as AuthenticatedMWorkflowsRouteImport } from './routes/_authenticated/m/workflows'
+import { Route as AuthenticatedMWorkflowAgentsRouteImport } from './routes/_authenticated/m/workflow-agents'
 import { Route as AuthenticatedMWorkGraphRouteImport } from './routes/_authenticated/m/work-graph'
+import { Route as AuthenticatedMWorkApprovalsRouteImport } from './routes/_authenticated/m/work-approvals'
 import { Route as AuthenticatedMTasksRouteImport } from './routes/_authenticated/m/tasks'
 import { Route as AuthenticatedMSettingsRouteImport } from './routes/_authenticated/m/settings'
 import { Route as AuthenticatedMSearchRouteImport } from './routes/_authenticated/m/search'
+import { Route as AuthenticatedMReportsRouteImport } from './routes/_authenticated/m/reports'
 import { Route as AuthenticatedMMoreRouteImport } from './routes/_authenticated/m/more'
+import { Route as AuthenticatedMMeetingsManageRouteImport } from './routes/_authenticated/m/meetings-manage'
 import { Route as AuthenticatedMMeetRouteImport } from './routes/_authenticated/m/meet'
+import { Route as AuthenticatedMKnowledgeRouteImport } from './routes/_authenticated/m/knowledge'
+import { Route as AuthenticatedMHumanAgentsRouteImport } from './routes/_authenticated/m/human-agents'
+import { Route as AuthenticatedMHrRouteImport } from './routes/_authenticated/m/hr'
 import { Route as AuthenticatedMHomeRouteImport } from './routes/_authenticated/m/home'
 import { Route as AuthenticatedMDocumentsRouteImport } from './routes/_authenticated/m/documents'
+import { Route as AuthenticatedMDecisionsRouteImport } from './routes/_authenticated/m/decisions'
 import { Route as AuthenticatedMComposeRouteImport } from './routes/_authenticated/m/compose'
 import { Route as AuthenticatedMChatRouteImport } from './routes/_authenticated/m/chat'
+import { Route as AuthenticatedMCeoRouteImport } from './routes/_authenticated/m/ceo'
+import { Route as AuthenticatedMCalendarRouteImport } from './routes/_authenticated/m/calendar'
 import { Route as AuthenticatedMBoxRouteImport } from './routes/_authenticated/m/box'
+import { Route as AuthenticatedMBillingRouteImport } from './routes/_authenticated/m/billing'
+import { Route as AuthenticatedMAiSkillsRouteImport } from './routes/_authenticated/m/ai-skills'
+import { Route as AuthenticatedMAiBrainRouteImport } from './routes/_authenticated/m/ai-brain'
 import { Route as AuthenticatedMAiRouteImport } from './routes/_authenticated/m/ai'
 import { Route as AuthenticatedEmailComposeRouteImport } from './routes/_authenticated/email_.compose'
 import { Route as AuthenticatedEmailIdRouteImport } from './routes/_authenticated/email_.$id'
@@ -136,9 +150,12 @@ import { Route as AuthenticatedAdminAiContextRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminAiActionsRouteImport } from './routes/_authenticated/admin.ai-actions'
 import { Route as AuthenticatedAdminAccountsRouteImport } from './routes/_authenticated/admin.accounts'
 import { Route as AuthenticatedMWorkProductsIndexRouteImport } from './routes/_authenticated/m/work-products.index'
+import { Route as AuthenticatedMProjectsIndexRouteImport } from './routes/_authenticated/m/projects.index'
+import { Route as AuthenticatedMPeopleIndexRouteImport } from './routes/_authenticated/m/people.index'
 import { Route as AuthenticatedMEmailIndexRouteImport } from './routes/_authenticated/m/email.index'
 import { Route as AuthenticatedMAiWorkforceIndexRouteImport } from './routes/_authenticated/m/ai-workforce.index'
 import { Route as AuthenticatedMAiMarketIndexRouteImport } from './routes/_authenticated/m/ai-market.index'
+import { Route as AuthenticatedMAdminIndexRouteImport } from './routes/_authenticated/m/admin.index'
 import { Route as ApiPublicWorkGraphTokenRouteImport } from './routes/api/public/work-graph/$token'
 import { Route as ApiPublicHooksProcessQuotaExportsRouteImport } from './routes/api/public/hooks/process-quota-exports'
 import { Route as ApiPublicHooksProcessOutboxRouteImport } from './routes/api/public/hooks/process-outbox'
@@ -154,12 +171,15 @@ import { Route as ApiOfficeSaveCompleteRouteImport } from './routes/api/office/s
 import { Route as ApiAdminTraceCorrelationIdRouteImport } from './routes/api/admin/trace.$correlationId'
 import { Route as AuthenticatedMWorkProductsIdRouteImport } from './routes/_authenticated/m/work-products.$id'
 import { Route as AuthenticatedMTasksIdRouteImport } from './routes/_authenticated/m/tasks_.$id'
+import { Route as AuthenticatedMProjectsIdRouteImport } from './routes/_authenticated/m/projects.$id'
+import { Route as AuthenticatedMPeopleIdRouteImport } from './routes/_authenticated/m/people.$id'
 import { Route as AuthenticatedMMeetIdRouteImport } from './routes/_authenticated/m/meet.$id'
 import { Route as AuthenticatedMEmailIdRouteImport } from './routes/_authenticated/m/email.$id'
 import { Route as AuthenticatedMDocumentsIdRouteImport } from './routes/_authenticated/m/documents.$id'
 import { Route as AuthenticatedMCIdRouteImport } from './routes/_authenticated/m/c.$id'
 import { Route as AuthenticatedMAiWorkforceIdRouteImport } from './routes/_authenticated/m/ai-workforce.$id'
 import { Route as AuthenticatedMAiMarketIdRouteImport } from './routes/_authenticated/m/ai-market.$id'
+import { Route as AuthenticatedMAdminOverviewRouteImport } from './routes/_authenticated/m/admin.overview'
 import { Route as AuthenticatedAdminSellWorkPilotsRouteImport } from './routes/_authenticated/admin.sell-work.pilots'
 import { Route as ApiInternalOfficeV1RenderRouteImport } from './routes/api/internal/office/v1/render'
 import { Route as AuthenticatedAdminSellWorkPilotsPilotIdRouteImport } from './routes/_authenticated/admin.sell-work.pilots.$pilotId'
@@ -604,11 +624,28 @@ const AuthenticatedNotificationsIdRoute =
     path: '/$id',
     getParentRoute: () => AuthenticatedNotificationsRoute,
   } as any)
+const AuthenticatedMWorkflowsRoute = AuthenticatedMWorkflowsRouteImport.update({
+  id: '/workflows',
+  path: '/workflows',
+  getParentRoute: () => AuthenticatedMRoute,
+} as any)
+const AuthenticatedMWorkflowAgentsRoute =
+  AuthenticatedMWorkflowAgentsRouteImport.update({
+    id: '/workflow-agents',
+    path: '/workflow-agents',
+    getParentRoute: () => AuthenticatedMRoute,
+  } as any)
 const AuthenticatedMWorkGraphRoute = AuthenticatedMWorkGraphRouteImport.update({
   id: '/work-graph',
   path: '/work-graph',
   getParentRoute: () => AuthenticatedMRoute,
 } as any)
+const AuthenticatedMWorkApprovalsRoute =
+  AuthenticatedMWorkApprovalsRouteImport.update({
+    id: '/work-approvals',
+    path: '/work-approvals',
+    getParentRoute: () => AuthenticatedMRoute,
+  } as any)
 const AuthenticatedMTasksRoute = AuthenticatedMTasksRouteImport.update({
   id: '/tasks',
   path: '/tasks',
@@ -624,14 +661,41 @@ const AuthenticatedMSearchRoute = AuthenticatedMSearchRouteImport.update({
   path: '/search',
   getParentRoute: () => AuthenticatedMRoute,
 } as any)
+const AuthenticatedMReportsRoute = AuthenticatedMReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AuthenticatedMRoute,
+} as any)
 const AuthenticatedMMoreRoute = AuthenticatedMMoreRouteImport.update({
   id: '/more',
   path: '/more',
   getParentRoute: () => AuthenticatedMRoute,
 } as any)
+const AuthenticatedMMeetingsManageRoute =
+  AuthenticatedMMeetingsManageRouteImport.update({
+    id: '/meetings-manage',
+    path: '/meetings-manage',
+    getParentRoute: () => AuthenticatedMRoute,
+  } as any)
 const AuthenticatedMMeetRoute = AuthenticatedMMeetRouteImport.update({
   id: '/meet',
   path: '/meet',
+  getParentRoute: () => AuthenticatedMRoute,
+} as any)
+const AuthenticatedMKnowledgeRoute = AuthenticatedMKnowledgeRouteImport.update({
+  id: '/knowledge',
+  path: '/knowledge',
+  getParentRoute: () => AuthenticatedMRoute,
+} as any)
+const AuthenticatedMHumanAgentsRoute =
+  AuthenticatedMHumanAgentsRouteImport.update({
+    id: '/human-agents',
+    path: '/human-agents',
+    getParentRoute: () => AuthenticatedMRoute,
+  } as any)
+const AuthenticatedMHrRoute = AuthenticatedMHrRouteImport.update({
+  id: '/hr',
+  path: '/hr',
   getParentRoute: () => AuthenticatedMRoute,
 } as any)
 const AuthenticatedMHomeRoute = AuthenticatedMHomeRouteImport.update({
@@ -644,6 +708,11 @@ const AuthenticatedMDocumentsRoute = AuthenticatedMDocumentsRouteImport.update({
   path: '/documents',
   getParentRoute: () => AuthenticatedMRoute,
 } as any)
+const AuthenticatedMDecisionsRoute = AuthenticatedMDecisionsRouteImport.update({
+  id: '/decisions',
+  path: '/decisions',
+  getParentRoute: () => AuthenticatedMRoute,
+} as any)
 const AuthenticatedMComposeRoute = AuthenticatedMComposeRouteImport.update({
   id: '/compose',
   path: '/compose',
@@ -654,9 +723,34 @@ const AuthenticatedMChatRoute = AuthenticatedMChatRouteImport.update({
   path: '/chat',
   getParentRoute: () => AuthenticatedMRoute,
 } as any)
+const AuthenticatedMCeoRoute = AuthenticatedMCeoRouteImport.update({
+  id: '/ceo',
+  path: '/ceo',
+  getParentRoute: () => AuthenticatedMRoute,
+} as any)
+const AuthenticatedMCalendarRoute = AuthenticatedMCalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => AuthenticatedMRoute,
+} as any)
 const AuthenticatedMBoxRoute = AuthenticatedMBoxRouteImport.update({
   id: '/box',
   path: '/box',
+  getParentRoute: () => AuthenticatedMRoute,
+} as any)
+const AuthenticatedMBillingRoute = AuthenticatedMBillingRouteImport.update({
+  id: '/billing',
+  path: '/billing',
+  getParentRoute: () => AuthenticatedMRoute,
+} as any)
+const AuthenticatedMAiSkillsRoute = AuthenticatedMAiSkillsRouteImport.update({
+  id: '/ai-skills',
+  path: '/ai-skills',
+  getParentRoute: () => AuthenticatedMRoute,
+} as any)
+const AuthenticatedMAiBrainRoute = AuthenticatedMAiBrainRouteImport.update({
+  id: '/ai-brain',
+  path: '/ai-brain',
   getParentRoute: () => AuthenticatedMRoute,
 } as any)
 const AuthenticatedMAiRoute = AuthenticatedMAiRouteImport.update({
@@ -840,6 +934,18 @@ const AuthenticatedMWorkProductsIndexRoute =
     path: '/work-products/',
     getParentRoute: () => AuthenticatedMRoute,
   } as any)
+const AuthenticatedMProjectsIndexRoute =
+  AuthenticatedMProjectsIndexRouteImport.update({
+    id: '/projects/',
+    path: '/projects/',
+    getParentRoute: () => AuthenticatedMRoute,
+  } as any)
+const AuthenticatedMPeopleIndexRoute =
+  AuthenticatedMPeopleIndexRouteImport.update({
+    id: '/people/',
+    path: '/people/',
+    getParentRoute: () => AuthenticatedMRoute,
+  } as any)
 const AuthenticatedMEmailIndexRoute =
   AuthenticatedMEmailIndexRouteImport.update({
     id: '/email/',
@@ -856,6 +962,12 @@ const AuthenticatedMAiMarketIndexRoute =
   AuthenticatedMAiMarketIndexRouteImport.update({
     id: '/ai-market/',
     path: '/ai-market/',
+    getParentRoute: () => AuthenticatedMRoute,
+  } as any)
+const AuthenticatedMAdminIndexRoute =
+  AuthenticatedMAdminIndexRouteImport.update({
+    id: '/admin/',
+    path: '/admin/',
     getParentRoute: () => AuthenticatedMRoute,
   } as any)
 const ApiPublicWorkGraphTokenRoute = ApiPublicWorkGraphTokenRouteImport.update({
@@ -943,6 +1055,17 @@ const AuthenticatedMTasksIdRoute = AuthenticatedMTasksIdRouteImport.update({
   path: '/tasks/$id',
   getParentRoute: () => AuthenticatedMRoute,
 } as any)
+const AuthenticatedMProjectsIdRoute =
+  AuthenticatedMProjectsIdRouteImport.update({
+    id: '/projects/$id',
+    path: '/projects/$id',
+    getParentRoute: () => AuthenticatedMRoute,
+  } as any)
+const AuthenticatedMPeopleIdRoute = AuthenticatedMPeopleIdRouteImport.update({
+  id: '/people/$id',
+  path: '/people/$id',
+  getParentRoute: () => AuthenticatedMRoute,
+} as any)
 const AuthenticatedMMeetIdRoute = AuthenticatedMMeetIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -974,6 +1097,12 @@ const AuthenticatedMAiMarketIdRoute =
   AuthenticatedMAiMarketIdRouteImport.update({
     id: '/ai-market/$id',
     path: '/ai-market/$id',
+    getParentRoute: () => AuthenticatedMRoute,
+  } as any)
+const AuthenticatedMAdminOverviewRoute =
+  AuthenticatedMAdminOverviewRouteImport.update({
+    id: '/admin/overview',
+    path: '/admin/overview',
     getParentRoute: () => AuthenticatedMRoute,
   } as any)
 const AuthenticatedAdminSellWorkPilotsRoute =
@@ -1087,17 +1216,31 @@ export interface FileRoutesByFullPath {
   '/email/$id': typeof AuthenticatedEmailIdRoute
   '/email/compose': typeof AuthenticatedEmailComposeRoute
   '/m/ai': typeof AuthenticatedMAiRoute
+  '/m/ai-brain': typeof AuthenticatedMAiBrainRoute
+  '/m/ai-skills': typeof AuthenticatedMAiSkillsRoute
+  '/m/billing': typeof AuthenticatedMBillingRoute
   '/m/box': typeof AuthenticatedMBoxRoute
+  '/m/calendar': typeof AuthenticatedMCalendarRoute
+  '/m/ceo': typeof AuthenticatedMCeoRoute
   '/m/chat': typeof AuthenticatedMChatRoute
   '/m/compose': typeof AuthenticatedMComposeRoute
+  '/m/decisions': typeof AuthenticatedMDecisionsRoute
   '/m/documents': typeof AuthenticatedMDocumentsRouteWithChildren
   '/m/home': typeof AuthenticatedMHomeRoute
+  '/m/hr': typeof AuthenticatedMHrRoute
+  '/m/human-agents': typeof AuthenticatedMHumanAgentsRoute
+  '/m/knowledge': typeof AuthenticatedMKnowledgeRoute
   '/m/meet': typeof AuthenticatedMMeetRouteWithChildren
+  '/m/meetings-manage': typeof AuthenticatedMMeetingsManageRoute
   '/m/more': typeof AuthenticatedMMoreRoute
+  '/m/reports': typeof AuthenticatedMReportsRoute
   '/m/search': typeof AuthenticatedMSearchRoute
   '/m/settings': typeof AuthenticatedMSettingsRoute
   '/m/tasks': typeof AuthenticatedMTasksRoute
+  '/m/work-approvals': typeof AuthenticatedMWorkApprovalsRoute
   '/m/work-graph': typeof AuthenticatedMWorkGraphRoute
+  '/m/workflow-agents': typeof AuthenticatedMWorkflowAgentsRoute
+  '/m/workflows': typeof AuthenticatedMWorkflowsRoute
   '/notifications/$id': typeof AuthenticatedNotificationsIdRoute
   '/people/$id': typeof AuthenticatedPeopleIdRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
@@ -1122,12 +1265,15 @@ export interface FileRoutesByFullPath {
   '/m/': typeof AuthenticatedMIndexRoute
   '/workspace/': typeof AuthenticatedWorkspaceIndexRoute
   '/admin/sell-work/pilots': typeof AuthenticatedAdminSellWorkPilotsRouteWithChildren
+  '/m/admin/overview': typeof AuthenticatedMAdminOverviewRoute
   '/m/ai-market/$id': typeof AuthenticatedMAiMarketIdRoute
   '/m/ai-workforce/$id': typeof AuthenticatedMAiWorkforceIdRoute
   '/m/c/$id': typeof AuthenticatedMCIdRoute
   '/m/documents/$id': typeof AuthenticatedMDocumentsIdRoute
   '/m/email/$id': typeof AuthenticatedMEmailIdRoute
   '/m/meet/$id': typeof AuthenticatedMMeetIdRoute
+  '/m/people/$id': typeof AuthenticatedMPeopleIdRoute
+  '/m/projects/$id': typeof AuthenticatedMProjectsIdRoute
   '/m/tasks/$id': typeof AuthenticatedMTasksIdRoute
   '/m/work-products/$id': typeof AuthenticatedMWorkProductsIdRoute
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
@@ -1143,9 +1289,12 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/process-outbox': typeof ApiPublicHooksProcessOutboxRoute
   '/api/public/hooks/process-quota-exports': typeof ApiPublicHooksProcessQuotaExportsRoute
   '/api/public/work-graph/$token': typeof ApiPublicWorkGraphTokenRoute
+  '/m/admin/': typeof AuthenticatedMAdminIndexRoute
   '/m/ai-market/': typeof AuthenticatedMAiMarketIndexRoute
   '/m/ai-workforce/': typeof AuthenticatedMAiWorkforceIndexRoute
   '/m/email/': typeof AuthenticatedMEmailIndexRoute
+  '/m/people/': typeof AuthenticatedMPeopleIndexRoute
+  '/m/projects/': typeof AuthenticatedMProjectsIndexRoute
   '/m/work-products/': typeof AuthenticatedMWorkProductsIndexRoute
   '/admin/sell-work/pilots/$pilotId': typeof AuthenticatedAdminSellWorkPilotsPilotIdRoute
   '/api/internal/office/v1/render': typeof ApiInternalOfficeV1RenderRoute
@@ -1239,17 +1388,31 @@ export interface FileRoutesByTo {
   '/email/$id': typeof AuthenticatedEmailIdRoute
   '/email/compose': typeof AuthenticatedEmailComposeRoute
   '/m/ai': typeof AuthenticatedMAiRoute
+  '/m/ai-brain': typeof AuthenticatedMAiBrainRoute
+  '/m/ai-skills': typeof AuthenticatedMAiSkillsRoute
+  '/m/billing': typeof AuthenticatedMBillingRoute
   '/m/box': typeof AuthenticatedMBoxRoute
+  '/m/calendar': typeof AuthenticatedMCalendarRoute
+  '/m/ceo': typeof AuthenticatedMCeoRoute
   '/m/chat': typeof AuthenticatedMChatRoute
   '/m/compose': typeof AuthenticatedMComposeRoute
+  '/m/decisions': typeof AuthenticatedMDecisionsRoute
   '/m/documents': typeof AuthenticatedMDocumentsRouteWithChildren
   '/m/home': typeof AuthenticatedMHomeRoute
+  '/m/hr': typeof AuthenticatedMHrRoute
+  '/m/human-agents': typeof AuthenticatedMHumanAgentsRoute
+  '/m/knowledge': typeof AuthenticatedMKnowledgeRoute
   '/m/meet': typeof AuthenticatedMMeetRouteWithChildren
+  '/m/meetings-manage': typeof AuthenticatedMMeetingsManageRoute
   '/m/more': typeof AuthenticatedMMoreRoute
+  '/m/reports': typeof AuthenticatedMReportsRoute
   '/m/search': typeof AuthenticatedMSearchRoute
   '/m/settings': typeof AuthenticatedMSettingsRoute
   '/m/tasks': typeof AuthenticatedMTasksRoute
+  '/m/work-approvals': typeof AuthenticatedMWorkApprovalsRoute
   '/m/work-graph': typeof AuthenticatedMWorkGraphRoute
+  '/m/workflow-agents': typeof AuthenticatedMWorkflowAgentsRoute
+  '/m/workflows': typeof AuthenticatedMWorkflowsRoute
   '/notifications/$id': typeof AuthenticatedNotificationsIdRoute
   '/people/$id': typeof AuthenticatedPeopleIdRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
@@ -1274,12 +1437,15 @@ export interface FileRoutesByTo {
   '/m': typeof AuthenticatedMIndexRoute
   '/workspace': typeof AuthenticatedWorkspaceIndexRoute
   '/admin/sell-work/pilots': typeof AuthenticatedAdminSellWorkPilotsRouteWithChildren
+  '/m/admin/overview': typeof AuthenticatedMAdminOverviewRoute
   '/m/ai-market/$id': typeof AuthenticatedMAiMarketIdRoute
   '/m/ai-workforce/$id': typeof AuthenticatedMAiWorkforceIdRoute
   '/m/c/$id': typeof AuthenticatedMCIdRoute
   '/m/documents/$id': typeof AuthenticatedMDocumentsIdRoute
   '/m/email/$id': typeof AuthenticatedMEmailIdRoute
   '/m/meet/$id': typeof AuthenticatedMMeetIdRoute
+  '/m/people/$id': typeof AuthenticatedMPeopleIdRoute
+  '/m/projects/$id': typeof AuthenticatedMProjectsIdRoute
   '/m/tasks/$id': typeof AuthenticatedMTasksIdRoute
   '/m/work-products/$id': typeof AuthenticatedMWorkProductsIdRoute
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
@@ -1295,9 +1461,12 @@ export interface FileRoutesByTo {
   '/api/public/hooks/process-outbox': typeof ApiPublicHooksProcessOutboxRoute
   '/api/public/hooks/process-quota-exports': typeof ApiPublicHooksProcessQuotaExportsRoute
   '/api/public/work-graph/$token': typeof ApiPublicWorkGraphTokenRoute
+  '/m/admin': typeof AuthenticatedMAdminIndexRoute
   '/m/ai-market': typeof AuthenticatedMAiMarketIndexRoute
   '/m/ai-workforce': typeof AuthenticatedMAiWorkforceIndexRoute
   '/m/email': typeof AuthenticatedMEmailIndexRoute
+  '/m/people': typeof AuthenticatedMPeopleIndexRoute
+  '/m/projects': typeof AuthenticatedMProjectsIndexRoute
   '/m/work-products': typeof AuthenticatedMWorkProductsIndexRoute
   '/admin/sell-work/pilots/$pilotId': typeof AuthenticatedAdminSellWorkPilotsPilotIdRoute
   '/api/internal/office/v1/render': typeof ApiInternalOfficeV1RenderRoute
@@ -1396,17 +1565,31 @@ export interface FileRoutesById {
   '/_authenticated/email_/$id': typeof AuthenticatedEmailIdRoute
   '/_authenticated/email_/compose': typeof AuthenticatedEmailComposeRoute
   '/_authenticated/m/ai': typeof AuthenticatedMAiRoute
+  '/_authenticated/m/ai-brain': typeof AuthenticatedMAiBrainRoute
+  '/_authenticated/m/ai-skills': typeof AuthenticatedMAiSkillsRoute
+  '/_authenticated/m/billing': typeof AuthenticatedMBillingRoute
   '/_authenticated/m/box': typeof AuthenticatedMBoxRoute
+  '/_authenticated/m/calendar': typeof AuthenticatedMCalendarRoute
+  '/_authenticated/m/ceo': typeof AuthenticatedMCeoRoute
   '/_authenticated/m/chat': typeof AuthenticatedMChatRoute
   '/_authenticated/m/compose': typeof AuthenticatedMComposeRoute
+  '/_authenticated/m/decisions': typeof AuthenticatedMDecisionsRoute
   '/_authenticated/m/documents': typeof AuthenticatedMDocumentsRouteWithChildren
   '/_authenticated/m/home': typeof AuthenticatedMHomeRoute
+  '/_authenticated/m/hr': typeof AuthenticatedMHrRoute
+  '/_authenticated/m/human-agents': typeof AuthenticatedMHumanAgentsRoute
+  '/_authenticated/m/knowledge': typeof AuthenticatedMKnowledgeRoute
   '/_authenticated/m/meet': typeof AuthenticatedMMeetRouteWithChildren
+  '/_authenticated/m/meetings-manage': typeof AuthenticatedMMeetingsManageRoute
   '/_authenticated/m/more': typeof AuthenticatedMMoreRoute
+  '/_authenticated/m/reports': typeof AuthenticatedMReportsRoute
   '/_authenticated/m/search': typeof AuthenticatedMSearchRoute
   '/_authenticated/m/settings': typeof AuthenticatedMSettingsRoute
   '/_authenticated/m/tasks': typeof AuthenticatedMTasksRoute
+  '/_authenticated/m/work-approvals': typeof AuthenticatedMWorkApprovalsRoute
   '/_authenticated/m/work-graph': typeof AuthenticatedMWorkGraphRoute
+  '/_authenticated/m/workflow-agents': typeof AuthenticatedMWorkflowAgentsRoute
+  '/_authenticated/m/workflows': typeof AuthenticatedMWorkflowsRoute
   '/_authenticated/notifications/$id': typeof AuthenticatedNotificationsIdRoute
   '/_authenticated/people_/$id': typeof AuthenticatedPeopleIdRoute
   '/_authenticated/projects_/$id': typeof AuthenticatedProjectsIdRoute
@@ -1431,12 +1614,15 @@ export interface FileRoutesById {
   '/_authenticated/m/': typeof AuthenticatedMIndexRoute
   '/_authenticated/workspace/': typeof AuthenticatedWorkspaceIndexRoute
   '/_authenticated/admin/sell-work/pilots': typeof AuthenticatedAdminSellWorkPilotsRouteWithChildren
+  '/_authenticated/m/admin/overview': typeof AuthenticatedMAdminOverviewRoute
   '/_authenticated/m/ai-market/$id': typeof AuthenticatedMAiMarketIdRoute
   '/_authenticated/m/ai-workforce/$id': typeof AuthenticatedMAiWorkforceIdRoute
   '/_authenticated/m/c/$id': typeof AuthenticatedMCIdRoute
   '/_authenticated/m/documents/$id': typeof AuthenticatedMDocumentsIdRoute
   '/_authenticated/m/email/$id': typeof AuthenticatedMEmailIdRoute
   '/_authenticated/m/meet/$id': typeof AuthenticatedMMeetIdRoute
+  '/_authenticated/m/people/$id': typeof AuthenticatedMPeopleIdRoute
+  '/_authenticated/m/projects/$id': typeof AuthenticatedMProjectsIdRoute
   '/_authenticated/m/tasks_/$id': typeof AuthenticatedMTasksIdRoute
   '/_authenticated/m/work-products/$id': typeof AuthenticatedMWorkProductsIdRoute
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
@@ -1452,9 +1638,12 @@ export interface FileRoutesById {
   '/api/public/hooks/process-outbox': typeof ApiPublicHooksProcessOutboxRoute
   '/api/public/hooks/process-quota-exports': typeof ApiPublicHooksProcessQuotaExportsRoute
   '/api/public/work-graph/$token': typeof ApiPublicWorkGraphTokenRoute
+  '/_authenticated/m/admin/': typeof AuthenticatedMAdminIndexRoute
   '/_authenticated/m/ai-market/': typeof AuthenticatedMAiMarketIndexRoute
   '/_authenticated/m/ai-workforce/': typeof AuthenticatedMAiWorkforceIndexRoute
   '/_authenticated/m/email/': typeof AuthenticatedMEmailIndexRoute
+  '/_authenticated/m/people/': typeof AuthenticatedMPeopleIndexRoute
+  '/_authenticated/m/projects/': typeof AuthenticatedMProjectsIndexRoute
   '/_authenticated/m/work-products/': typeof AuthenticatedMWorkProductsIndexRoute
   '/_authenticated/admin/sell-work/pilots/$pilotId': typeof AuthenticatedAdminSellWorkPilotsPilotIdRoute
   '/api/internal/office/v1/render': typeof ApiInternalOfficeV1RenderRoute
@@ -1553,17 +1742,31 @@ export interface FileRouteTypes {
     | '/email/$id'
     | '/email/compose'
     | '/m/ai'
+    | '/m/ai-brain'
+    | '/m/ai-skills'
+    | '/m/billing'
     | '/m/box'
+    | '/m/calendar'
+    | '/m/ceo'
     | '/m/chat'
     | '/m/compose'
+    | '/m/decisions'
     | '/m/documents'
     | '/m/home'
+    | '/m/hr'
+    | '/m/human-agents'
+    | '/m/knowledge'
     | '/m/meet'
+    | '/m/meetings-manage'
     | '/m/more'
+    | '/m/reports'
     | '/m/search'
     | '/m/settings'
     | '/m/tasks'
+    | '/m/work-approvals'
     | '/m/work-graph'
+    | '/m/workflow-agents'
+    | '/m/workflows'
     | '/notifications/$id'
     | '/people/$id'
     | '/projects/$id'
@@ -1588,12 +1791,15 @@ export interface FileRouteTypes {
     | '/m/'
     | '/workspace/'
     | '/admin/sell-work/pilots'
+    | '/m/admin/overview'
     | '/m/ai-market/$id'
     | '/m/ai-workforce/$id'
     | '/m/c/$id'
     | '/m/documents/$id'
     | '/m/email/$id'
     | '/m/meet/$id'
+    | '/m/people/$id'
+    | '/m/projects/$id'
     | '/m/tasks/$id'
     | '/m/work-products/$id'
     | '/api/admin/trace/$correlationId'
@@ -1609,9 +1815,12 @@ export interface FileRouteTypes {
     | '/api/public/hooks/process-outbox'
     | '/api/public/hooks/process-quota-exports'
     | '/api/public/work-graph/$token'
+    | '/m/admin/'
     | '/m/ai-market/'
     | '/m/ai-workforce/'
     | '/m/email/'
+    | '/m/people/'
+    | '/m/projects/'
     | '/m/work-products/'
     | '/admin/sell-work/pilots/$pilotId'
     | '/api/internal/office/v1/render'
@@ -1705,17 +1914,31 @@ export interface FileRouteTypes {
     | '/email/$id'
     | '/email/compose'
     | '/m/ai'
+    | '/m/ai-brain'
+    | '/m/ai-skills'
+    | '/m/billing'
     | '/m/box'
+    | '/m/calendar'
+    | '/m/ceo'
     | '/m/chat'
     | '/m/compose'
+    | '/m/decisions'
     | '/m/documents'
     | '/m/home'
+    | '/m/hr'
+    | '/m/human-agents'
+    | '/m/knowledge'
     | '/m/meet'
+    | '/m/meetings-manage'
     | '/m/more'
+    | '/m/reports'
     | '/m/search'
     | '/m/settings'
     | '/m/tasks'
+    | '/m/work-approvals'
     | '/m/work-graph'
+    | '/m/workflow-agents'
+    | '/m/workflows'
     | '/notifications/$id'
     | '/people/$id'
     | '/projects/$id'
@@ -1740,12 +1963,15 @@ export interface FileRouteTypes {
     | '/m'
     | '/workspace'
     | '/admin/sell-work/pilots'
+    | '/m/admin/overview'
     | '/m/ai-market/$id'
     | '/m/ai-workforce/$id'
     | '/m/c/$id'
     | '/m/documents/$id'
     | '/m/email/$id'
     | '/m/meet/$id'
+    | '/m/people/$id'
+    | '/m/projects/$id'
     | '/m/tasks/$id'
     | '/m/work-products/$id'
     | '/api/admin/trace/$correlationId'
@@ -1761,9 +1987,12 @@ export interface FileRouteTypes {
     | '/api/public/hooks/process-outbox'
     | '/api/public/hooks/process-quota-exports'
     | '/api/public/work-graph/$token'
+    | '/m/admin'
     | '/m/ai-market'
     | '/m/ai-workforce'
     | '/m/email'
+    | '/m/people'
+    | '/m/projects'
     | '/m/work-products'
     | '/admin/sell-work/pilots/$pilotId'
     | '/api/internal/office/v1/render'
@@ -1861,17 +2090,31 @@ export interface FileRouteTypes {
     | '/_authenticated/email_/$id'
     | '/_authenticated/email_/compose'
     | '/_authenticated/m/ai'
+    | '/_authenticated/m/ai-brain'
+    | '/_authenticated/m/ai-skills'
+    | '/_authenticated/m/billing'
     | '/_authenticated/m/box'
+    | '/_authenticated/m/calendar'
+    | '/_authenticated/m/ceo'
     | '/_authenticated/m/chat'
     | '/_authenticated/m/compose'
+    | '/_authenticated/m/decisions'
     | '/_authenticated/m/documents'
     | '/_authenticated/m/home'
+    | '/_authenticated/m/hr'
+    | '/_authenticated/m/human-agents'
+    | '/_authenticated/m/knowledge'
     | '/_authenticated/m/meet'
+    | '/_authenticated/m/meetings-manage'
     | '/_authenticated/m/more'
+    | '/_authenticated/m/reports'
     | '/_authenticated/m/search'
     | '/_authenticated/m/settings'
     | '/_authenticated/m/tasks'
+    | '/_authenticated/m/work-approvals'
     | '/_authenticated/m/work-graph'
+    | '/_authenticated/m/workflow-agents'
+    | '/_authenticated/m/workflows'
     | '/_authenticated/notifications/$id'
     | '/_authenticated/people_/$id'
     | '/_authenticated/projects_/$id'
@@ -1896,12 +2139,15 @@ export interface FileRouteTypes {
     | '/_authenticated/m/'
     | '/_authenticated/workspace/'
     | '/_authenticated/admin/sell-work/pilots'
+    | '/_authenticated/m/admin/overview'
     | '/_authenticated/m/ai-market/$id'
     | '/_authenticated/m/ai-workforce/$id'
     | '/_authenticated/m/c/$id'
     | '/_authenticated/m/documents/$id'
     | '/_authenticated/m/email/$id'
     | '/_authenticated/m/meet/$id'
+    | '/_authenticated/m/people/$id'
+    | '/_authenticated/m/projects/$id'
     | '/_authenticated/m/tasks_/$id'
     | '/_authenticated/m/work-products/$id'
     | '/api/admin/trace/$correlationId'
@@ -1917,9 +2163,12 @@ export interface FileRouteTypes {
     | '/api/public/hooks/process-outbox'
     | '/api/public/hooks/process-quota-exports'
     | '/api/public/work-graph/$token'
+    | '/_authenticated/m/admin/'
     | '/_authenticated/m/ai-market/'
     | '/_authenticated/m/ai-workforce/'
     | '/_authenticated/m/email/'
+    | '/_authenticated/m/people/'
+    | '/_authenticated/m/projects/'
     | '/_authenticated/m/work-products/'
     | '/_authenticated/admin/sell-work/pilots/$pilotId'
     | '/api/internal/office/v1/render'
@@ -2563,11 +2812,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedNotificationsIdRouteImport
       parentRoute: typeof AuthenticatedNotificationsRoute
     }
+    '/_authenticated/m/workflows': {
+      id: '/_authenticated/m/workflows'
+      path: '/workflows'
+      fullPath: '/m/workflows'
+      preLoaderRoute: typeof AuthenticatedMWorkflowsRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
+    '/_authenticated/m/workflow-agents': {
+      id: '/_authenticated/m/workflow-agents'
+      path: '/workflow-agents'
+      fullPath: '/m/workflow-agents'
+      preLoaderRoute: typeof AuthenticatedMWorkflowAgentsRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
     '/_authenticated/m/work-graph': {
       id: '/_authenticated/m/work-graph'
       path: '/work-graph'
       fullPath: '/m/work-graph'
       preLoaderRoute: typeof AuthenticatedMWorkGraphRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
+    '/_authenticated/m/work-approvals': {
+      id: '/_authenticated/m/work-approvals'
+      path: '/work-approvals'
+      fullPath: '/m/work-approvals'
+      preLoaderRoute: typeof AuthenticatedMWorkApprovalsRouteImport
       parentRoute: typeof AuthenticatedMRoute
     }
     '/_authenticated/m/tasks': {
@@ -2591,6 +2861,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMSearchRouteImport
       parentRoute: typeof AuthenticatedMRoute
     }
+    '/_authenticated/m/reports': {
+      id: '/_authenticated/m/reports'
+      path: '/reports'
+      fullPath: '/m/reports'
+      preLoaderRoute: typeof AuthenticatedMReportsRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
     '/_authenticated/m/more': {
       id: '/_authenticated/m/more'
       path: '/more'
@@ -2598,11 +2875,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMMoreRouteImport
       parentRoute: typeof AuthenticatedMRoute
     }
+    '/_authenticated/m/meetings-manage': {
+      id: '/_authenticated/m/meetings-manage'
+      path: '/meetings-manage'
+      fullPath: '/m/meetings-manage'
+      preLoaderRoute: typeof AuthenticatedMMeetingsManageRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
     '/_authenticated/m/meet': {
       id: '/_authenticated/m/meet'
       path: '/meet'
       fullPath: '/m/meet'
       preLoaderRoute: typeof AuthenticatedMMeetRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
+    '/_authenticated/m/knowledge': {
+      id: '/_authenticated/m/knowledge'
+      path: '/knowledge'
+      fullPath: '/m/knowledge'
+      preLoaderRoute: typeof AuthenticatedMKnowledgeRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
+    '/_authenticated/m/human-agents': {
+      id: '/_authenticated/m/human-agents'
+      path: '/human-agents'
+      fullPath: '/m/human-agents'
+      preLoaderRoute: typeof AuthenticatedMHumanAgentsRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
+    '/_authenticated/m/hr': {
+      id: '/_authenticated/m/hr'
+      path: '/hr'
+      fullPath: '/m/hr'
+      preLoaderRoute: typeof AuthenticatedMHrRouteImport
       parentRoute: typeof AuthenticatedMRoute
     }
     '/_authenticated/m/home': {
@@ -2619,6 +2924,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMDocumentsRouteImport
       parentRoute: typeof AuthenticatedMRoute
     }
+    '/_authenticated/m/decisions': {
+      id: '/_authenticated/m/decisions'
+      path: '/decisions'
+      fullPath: '/m/decisions'
+      preLoaderRoute: typeof AuthenticatedMDecisionsRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
     '/_authenticated/m/compose': {
       id: '/_authenticated/m/compose'
       path: '/compose'
@@ -2633,11 +2945,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMChatRouteImport
       parentRoute: typeof AuthenticatedMRoute
     }
+    '/_authenticated/m/ceo': {
+      id: '/_authenticated/m/ceo'
+      path: '/ceo'
+      fullPath: '/m/ceo'
+      preLoaderRoute: typeof AuthenticatedMCeoRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
+    '/_authenticated/m/calendar': {
+      id: '/_authenticated/m/calendar'
+      path: '/calendar'
+      fullPath: '/m/calendar'
+      preLoaderRoute: typeof AuthenticatedMCalendarRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
     '/_authenticated/m/box': {
       id: '/_authenticated/m/box'
       path: '/box'
       fullPath: '/m/box'
       preLoaderRoute: typeof AuthenticatedMBoxRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
+    '/_authenticated/m/billing': {
+      id: '/_authenticated/m/billing'
+      path: '/billing'
+      fullPath: '/m/billing'
+      preLoaderRoute: typeof AuthenticatedMBillingRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
+    '/_authenticated/m/ai-skills': {
+      id: '/_authenticated/m/ai-skills'
+      path: '/ai-skills'
+      fullPath: '/m/ai-skills'
+      preLoaderRoute: typeof AuthenticatedMAiSkillsRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
+    '/_authenticated/m/ai-brain': {
+      id: '/_authenticated/m/ai-brain'
+      path: '/ai-brain'
+      fullPath: '/m/ai-brain'
+      preLoaderRoute: typeof AuthenticatedMAiBrainRouteImport
       parentRoute: typeof AuthenticatedMRoute
     }
     '/_authenticated/m/ai': {
@@ -2864,6 +3211,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMWorkProductsIndexRouteImport
       parentRoute: typeof AuthenticatedMRoute
     }
+    '/_authenticated/m/projects/': {
+      id: '/_authenticated/m/projects/'
+      path: '/projects'
+      fullPath: '/m/projects/'
+      preLoaderRoute: typeof AuthenticatedMProjectsIndexRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
+    '/_authenticated/m/people/': {
+      id: '/_authenticated/m/people/'
+      path: '/people'
+      fullPath: '/m/people/'
+      preLoaderRoute: typeof AuthenticatedMPeopleIndexRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
     '/_authenticated/m/email/': {
       id: '/_authenticated/m/email/'
       path: '/email'
@@ -2883,6 +3244,13 @@ declare module '@tanstack/react-router' {
       path: '/ai-market'
       fullPath: '/m/ai-market/'
       preLoaderRoute: typeof AuthenticatedMAiMarketIndexRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
+    '/_authenticated/m/admin/': {
+      id: '/_authenticated/m/admin/'
+      path: '/admin'
+      fullPath: '/m/admin/'
+      preLoaderRoute: typeof AuthenticatedMAdminIndexRouteImport
       parentRoute: typeof AuthenticatedMRoute
     }
     '/api/public/work-graph/$token': {
@@ -2990,6 +3358,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMTasksIdRouteImport
       parentRoute: typeof AuthenticatedMRoute
     }
+    '/_authenticated/m/projects/$id': {
+      id: '/_authenticated/m/projects/$id'
+      path: '/projects/$id'
+      fullPath: '/m/projects/$id'
+      preLoaderRoute: typeof AuthenticatedMProjectsIdRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
+    '/_authenticated/m/people/$id': {
+      id: '/_authenticated/m/people/$id'
+      path: '/people/$id'
+      fullPath: '/m/people/$id'
+      preLoaderRoute: typeof AuthenticatedMPeopleIdRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
     '/_authenticated/m/meet/$id': {
       id: '/_authenticated/m/meet/$id'
       path: '/$id'
@@ -3030,6 +3412,13 @@ declare module '@tanstack/react-router' {
       path: '/ai-market/$id'
       fullPath: '/m/ai-market/$id'
       preLoaderRoute: typeof AuthenticatedMAiMarketIdRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
+    '/_authenticated/m/admin/overview': {
+      id: '/_authenticated/m/admin/overview'
+      path: '/admin/overview'
+      fullPath: '/m/admin/overview'
+      preLoaderRoute: typeof AuthenticatedMAdminOverviewRouteImport
       parentRoute: typeof AuthenticatedMRoute
     }
     '/_authenticated/admin/sell-work/pilots': {
@@ -3162,53 +3551,93 @@ const AuthenticatedMMeetRouteWithChildren =
 
 interface AuthenticatedMRouteChildren {
   AuthenticatedMAiRoute: typeof AuthenticatedMAiRoute
+  AuthenticatedMAiBrainRoute: typeof AuthenticatedMAiBrainRoute
+  AuthenticatedMAiSkillsRoute: typeof AuthenticatedMAiSkillsRoute
+  AuthenticatedMBillingRoute: typeof AuthenticatedMBillingRoute
   AuthenticatedMBoxRoute: typeof AuthenticatedMBoxRoute
+  AuthenticatedMCalendarRoute: typeof AuthenticatedMCalendarRoute
+  AuthenticatedMCeoRoute: typeof AuthenticatedMCeoRoute
   AuthenticatedMChatRoute: typeof AuthenticatedMChatRoute
   AuthenticatedMComposeRoute: typeof AuthenticatedMComposeRoute
+  AuthenticatedMDecisionsRoute: typeof AuthenticatedMDecisionsRoute
   AuthenticatedMDocumentsRoute: typeof AuthenticatedMDocumentsRouteWithChildren
   AuthenticatedMHomeRoute: typeof AuthenticatedMHomeRoute
+  AuthenticatedMHrRoute: typeof AuthenticatedMHrRoute
+  AuthenticatedMHumanAgentsRoute: typeof AuthenticatedMHumanAgentsRoute
+  AuthenticatedMKnowledgeRoute: typeof AuthenticatedMKnowledgeRoute
   AuthenticatedMMeetRoute: typeof AuthenticatedMMeetRouteWithChildren
+  AuthenticatedMMeetingsManageRoute: typeof AuthenticatedMMeetingsManageRoute
   AuthenticatedMMoreRoute: typeof AuthenticatedMMoreRoute
+  AuthenticatedMReportsRoute: typeof AuthenticatedMReportsRoute
   AuthenticatedMSearchRoute: typeof AuthenticatedMSearchRoute
   AuthenticatedMSettingsRoute: typeof AuthenticatedMSettingsRoute
   AuthenticatedMTasksRoute: typeof AuthenticatedMTasksRoute
+  AuthenticatedMWorkApprovalsRoute: typeof AuthenticatedMWorkApprovalsRoute
   AuthenticatedMWorkGraphRoute: typeof AuthenticatedMWorkGraphRoute
+  AuthenticatedMWorkflowAgentsRoute: typeof AuthenticatedMWorkflowAgentsRoute
+  AuthenticatedMWorkflowsRoute: typeof AuthenticatedMWorkflowsRoute
   AuthenticatedMIndexRoute: typeof AuthenticatedMIndexRoute
+  AuthenticatedMAdminOverviewRoute: typeof AuthenticatedMAdminOverviewRoute
   AuthenticatedMAiMarketIdRoute: typeof AuthenticatedMAiMarketIdRoute
   AuthenticatedMAiWorkforceIdRoute: typeof AuthenticatedMAiWorkforceIdRoute
   AuthenticatedMCIdRoute: typeof AuthenticatedMCIdRoute
   AuthenticatedMEmailIdRoute: typeof AuthenticatedMEmailIdRoute
+  AuthenticatedMPeopleIdRoute: typeof AuthenticatedMPeopleIdRoute
+  AuthenticatedMProjectsIdRoute: typeof AuthenticatedMProjectsIdRoute
   AuthenticatedMTasksIdRoute: typeof AuthenticatedMTasksIdRoute
   AuthenticatedMWorkProductsIdRoute: typeof AuthenticatedMWorkProductsIdRoute
+  AuthenticatedMAdminIndexRoute: typeof AuthenticatedMAdminIndexRoute
   AuthenticatedMAiMarketIndexRoute: typeof AuthenticatedMAiMarketIndexRoute
   AuthenticatedMAiWorkforceIndexRoute: typeof AuthenticatedMAiWorkforceIndexRoute
   AuthenticatedMEmailIndexRoute: typeof AuthenticatedMEmailIndexRoute
+  AuthenticatedMPeopleIndexRoute: typeof AuthenticatedMPeopleIndexRoute
+  AuthenticatedMProjectsIndexRoute: typeof AuthenticatedMProjectsIndexRoute
   AuthenticatedMWorkProductsIndexRoute: typeof AuthenticatedMWorkProductsIndexRoute
 }
 
 const AuthenticatedMRouteChildren: AuthenticatedMRouteChildren = {
   AuthenticatedMAiRoute: AuthenticatedMAiRoute,
+  AuthenticatedMAiBrainRoute: AuthenticatedMAiBrainRoute,
+  AuthenticatedMAiSkillsRoute: AuthenticatedMAiSkillsRoute,
+  AuthenticatedMBillingRoute: AuthenticatedMBillingRoute,
   AuthenticatedMBoxRoute: AuthenticatedMBoxRoute,
+  AuthenticatedMCalendarRoute: AuthenticatedMCalendarRoute,
+  AuthenticatedMCeoRoute: AuthenticatedMCeoRoute,
   AuthenticatedMChatRoute: AuthenticatedMChatRoute,
   AuthenticatedMComposeRoute: AuthenticatedMComposeRoute,
+  AuthenticatedMDecisionsRoute: AuthenticatedMDecisionsRoute,
   AuthenticatedMDocumentsRoute: AuthenticatedMDocumentsRouteWithChildren,
   AuthenticatedMHomeRoute: AuthenticatedMHomeRoute,
+  AuthenticatedMHrRoute: AuthenticatedMHrRoute,
+  AuthenticatedMHumanAgentsRoute: AuthenticatedMHumanAgentsRoute,
+  AuthenticatedMKnowledgeRoute: AuthenticatedMKnowledgeRoute,
   AuthenticatedMMeetRoute: AuthenticatedMMeetRouteWithChildren,
+  AuthenticatedMMeetingsManageRoute: AuthenticatedMMeetingsManageRoute,
   AuthenticatedMMoreRoute: AuthenticatedMMoreRoute,
+  AuthenticatedMReportsRoute: AuthenticatedMReportsRoute,
   AuthenticatedMSearchRoute: AuthenticatedMSearchRoute,
   AuthenticatedMSettingsRoute: AuthenticatedMSettingsRoute,
   AuthenticatedMTasksRoute: AuthenticatedMTasksRoute,
+  AuthenticatedMWorkApprovalsRoute: AuthenticatedMWorkApprovalsRoute,
   AuthenticatedMWorkGraphRoute: AuthenticatedMWorkGraphRoute,
+  AuthenticatedMWorkflowAgentsRoute: AuthenticatedMWorkflowAgentsRoute,
+  AuthenticatedMWorkflowsRoute: AuthenticatedMWorkflowsRoute,
   AuthenticatedMIndexRoute: AuthenticatedMIndexRoute,
+  AuthenticatedMAdminOverviewRoute: AuthenticatedMAdminOverviewRoute,
   AuthenticatedMAiMarketIdRoute: AuthenticatedMAiMarketIdRoute,
   AuthenticatedMAiWorkforceIdRoute: AuthenticatedMAiWorkforceIdRoute,
   AuthenticatedMCIdRoute: AuthenticatedMCIdRoute,
   AuthenticatedMEmailIdRoute: AuthenticatedMEmailIdRoute,
+  AuthenticatedMPeopleIdRoute: AuthenticatedMPeopleIdRoute,
+  AuthenticatedMProjectsIdRoute: AuthenticatedMProjectsIdRoute,
   AuthenticatedMTasksIdRoute: AuthenticatedMTasksIdRoute,
   AuthenticatedMWorkProductsIdRoute: AuthenticatedMWorkProductsIdRoute,
+  AuthenticatedMAdminIndexRoute: AuthenticatedMAdminIndexRoute,
   AuthenticatedMAiMarketIndexRoute: AuthenticatedMAiMarketIndexRoute,
   AuthenticatedMAiWorkforceIndexRoute: AuthenticatedMAiWorkforceIndexRoute,
   AuthenticatedMEmailIndexRoute: AuthenticatedMEmailIndexRoute,
+  AuthenticatedMPeopleIndexRoute: AuthenticatedMPeopleIndexRoute,
+  AuthenticatedMProjectsIndexRoute: AuthenticatedMProjectsIndexRoute,
   AuthenticatedMWorkProductsIndexRoute: AuthenticatedMWorkProductsIndexRoute,
 }
 
