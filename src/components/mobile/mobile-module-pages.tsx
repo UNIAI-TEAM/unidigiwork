@@ -32,7 +32,7 @@ import { getMyAdminAccess, getAdminStats } from "@/lib/api/admin.functions";
 import { listPlans, getActiveSubscription } from "@/lib/api/billing.functions";
 import { useI18n } from "@/lib/i18n";
 
-type Copy = { title: string; subtitle: string; search: string; empty: string; loading: string; noWorkspace: string };
+type Copy = { search: string; empty: string; loading: string; noWorkspace: string };
 const copy = {
   vi: { search: "Tìm kiếm…", empty: "Chưa có dữ liệu phù hợp.", loading: "Đang tải…", noWorkspace: "Hãy chọn một không gian làm việc." },
   en: { search: "Search…", empty: "No matching data.", loading: "Loading…", noWorkspace: "Select a workspace first." },
