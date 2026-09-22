@@ -287,12 +287,11 @@ export const sendTaskMessage = createServerFn({ method: "POST" })
       _limit: 20,
     });
     if (candidateResult.error) mapPgError(candidateResult.error);
-    const candidates = ((candidateResult.data ?? []) as Array<{ id: string; title: string }>).filter(
-      (candidate) => candidate.id !== data.taskId,
-    );
+    const allCandidates = (candidateResult.data ?? []) as Array<{ id: string; title: string }>;
+    const candidates = allCandidates.filter((candidate) => candidate.id !== data.taskId);
     try {
       const { classifyTaskMessage } = await import("./task-message-classifier.server");
-      const parent = candidates.find((candidate) => candidate.id === data.taskId);
+      const parent = allCandidates.find((candidate) => candidate.id === data.taskId);
       const classification = await classifyTaskMessage({
         body: data.body,
         parentTitle: parent?.title ?? "Công việc hiện tại",
@@ -303,12 +302,12 @@ export const sendTaskMessage = createServerFn({ method: "POST" })
         _comment_id: comment.id,
         _label: classification.label,
         _confidence: classification.confidence,
-        _task_title: classification.taskTitle ?? undefined,
-        _related_task_id: classification.relatedTaskId ?? undefined,
+        _task_title: classification.taskTitle,
+        _related_task_id: classification.relatedTaskId,
         _model: classification.model,
         _classifier_version: classification.version,
         _idempotency_key: `${data.idempotencyKey}:classification`,
-        _correlation_id: data.correlationId ?? undefined,
+        _correlation_id: data.correlationId ?? null,
       });
       if (applied.error) mapPgError(applied.error);
       return { ...comment, classification: applied.data };
@@ -317,10 +316,12 @@ export const sendTaskMessage = createServerFn({ method: "POST" })
         _comment_id: comment.id,
         _label: "FAILED",
         _confidence: 0,
+        _task_title: null,
+        _related_task_id: null,
         _model: "openai/gpt-6-astra",
         _classifier_version: "task-message-v1",
         _idempotency_key: `${data.idempotencyKey}:classification-failed`,
-        _correlation_id: data.correlationId ?? undefined,
+        _correlation_id: data.correlationId ?? null,
       });
       if (failed.error) mapPgError(failed.error);
       return { ...comment, classification: failed.data };

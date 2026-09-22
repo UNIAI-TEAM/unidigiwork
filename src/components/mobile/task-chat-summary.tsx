@@ -138,6 +138,10 @@ export function TaskChatSummary({ taskId, taskTitle }: { taskId: string; taskTit
   });
   const title = taskTitle ?? detail.data?.task?.title ?? t("m.taskChat.task");
   const comments = detail.data?.comments ?? [];
+  const workGraphComments = comments.filter(
+    (comment: any) => comment.metadata?.source === "WORK_GRAPH",
+  );
+  const teamComments = comments.filter((comment: any) => comment.metadata?.source !== "WORK_GRAPH");
   const related = graph.data?.relationships ?? [];
   const loading = chats.isLoading || detail.isLoading || graph.isLoading;
   const latestConversation = chats.data?.[0] ?? null;
@@ -212,12 +216,15 @@ export function TaskChatSummary({ taskId, taskTitle }: { taskId: string; taskTit
       ) : (
         <>
           <Tabs defaultValue="team" className="min-w-0">
-            <TabsList className="grid h-11 w-full grid-cols-2">
+            <TabsList className="grid h-11 w-full grid-cols-3">
               <TabsTrigger value="team" className="min-h-9 gap-2">
                 <Users className="h-4 w-4" /> {t("m.taskChat.team")}
               </TabsTrigger>
               <TabsTrigger value="ai" className="min-h-9 gap-2">
                 <Bot className="h-4 w-4" /> {t("m.taskChat.askAi")}
+              </TabsTrigger>
+              <TabsTrigger value="management" className="min-h-9 gap-2">
+                <Waypoints className="h-4 w-4" /> {t("m.taskChat.management")}
               </TabsTrigger>
             </TabsList>
             <TabsContent value="team" className="mt-3 min-w-0">
@@ -301,6 +308,23 @@ export function TaskChatSummary({ taskId, taskTitle }: { taskId: string; taskTit
                 sendLabel={t("m.taskChat.sendAi")}
               />
             </TabsContent>
+            <TabsContent value="management" className="mt-3 min-w-0">
+              <div className="max-h-80 space-y-3 overflow-y-auto rounded-xl border border-border bg-background p-3">
+                {workGraphComments.length ? (
+                  workGraphComments.map((comment: any) => (
+                    <Message key={comment.id} from={comment.author_id === identity.userId ? "user" : "assistant"}>
+                      <MessageContent className="max-w-[92%]">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span className="font-semibold text-foreground">{comment.author_name ?? t("m.taskChat.member")}</span>
+                          <Badge variant="secondary">{t("m.taskChat.fromWorkGraph")}</Badge>
+                        </div>
+                        <p className="whitespace-pre-wrap break-words leading-6">{comment.body}</p>
+                      </MessageContent>
+                    </Message>
+                  ))
+                ) : <Empty text={t("m.taskChat.noManagementMessages")} />}
+              </div>
+            </TabsContent>
           </Tabs>
           <SummarySection title={t("m.taskChat.history")} count={chats.data?.length ?? 0}>
             {(chats.data ?? []).length ? (
@@ -343,10 +367,10 @@ export function TaskChatSummary({ taskId, taskTitle }: { taskId: string; taskTit
               <Empty text={t("m.taskChat.noHistory")} />
             )}
           </SummarySection>
-          <SummarySection title={t("m.taskChat.feedback")} count={comments.length}>
-            {comments.length ? (
+          <SummarySection title={t("m.taskChat.feedback")} count={teamComments.filter((comment: any) => comment.metadata?.classification?.label === "FEEDBACK").length}>
+            {teamComments.some((comment: any) => comment.metadata?.classification?.label === "FEEDBACK") ? (
               <ul className="grid gap-2">
-                {comments.map((comment: any) => (
+                {teamComments.filter((comment: any) => comment.metadata?.classification?.label === "FEEDBACK").map((comment: any) => (
                   <li key={comment.id} className="rounded-xl border border-border bg-surface p-3">
                     <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
                       <span className="truncate font-semibold text-foreground">

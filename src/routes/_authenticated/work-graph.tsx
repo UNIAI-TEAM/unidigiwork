@@ -37,6 +37,7 @@ import {
 } from "@/lib/api/work-graph.functions";
 import type { WorkGraphBoardItem } from "@/lib/api/work-graph.functions";
 import {
+  canSendWorkGraphMessage,
   listTaskMessageRecipients,
   sendTaskMessage,
   setTaskDueAt,
@@ -87,6 +88,10 @@ function WorkGraphMessageForm({ taskId }: { taskId: string }) {
   const queryClient = useQueryClient();
   const [body, setBody] = useState("");
   const [recipientId, setRecipientId] = useState("");
+  const permission = useQuery({
+    queryKey: ["work-graph-message-permission", taskId],
+    queryFn: () => canSendWorkGraphMessage({ data: { taskId } }),
+  });
   const recipients = useQuery({
     queryKey: ["task-message-recipients", taskId],
     queryFn: () => listTaskMessageRecipients({ data: { taskId } }),
@@ -94,7 +99,13 @@ function WorkGraphMessageForm({ taskId }: { taskId: string }) {
   const send = useMutation({
     mutationFn: () =>
       sendTaskMessage({
-        data: { taskId, recipientId, body: body.trim(), idempotencyKey: crypto.randomUUID() },
+        data: {
+          taskId,
+          recipientId,
+          body: body.trim(),
+          source: "WORK_GRAPH",
+          idempotencyKey: crypto.randomUUID(),
+        },
       }),
     onSuccess: async () => {
       setBody("");
@@ -107,6 +118,8 @@ function WorkGraphMessageForm({ taskId }: { taskId: string }) {
     },
     onError: () => toast.error(t("wg.messageError")),
   });
+
+  if (permission.isLoading || !permission.data) return null;
 
   return (
     <form
