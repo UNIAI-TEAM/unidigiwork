@@ -17,11 +17,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import {
-  Message,
-  MessageContent,
-  MessageResponse,
-} from "@/components/ai-elements/message";
+import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
 import {
   PromptInput,
   PromptInputFooter,
@@ -178,86 +174,86 @@ export function TaskChatSummary({ taskId, taskTitle }: { taskId: string; taskTit
         </div>
       ) : (
         <>
-           <Tabs defaultValue="team" className="min-w-0">
-             <TabsList className="grid h-11 w-full grid-cols-2">
-               <TabsTrigger value="team" className="min-h-9 gap-2">
-                 <Users className="h-4 w-4" /> {t("m.taskChat.team")}
-               </TabsTrigger>
-               <TabsTrigger value="ai" className="min-h-9 gap-2">
-                 <Bot className="h-4 w-4" /> {t("m.taskChat.askAi")}
-               </TabsTrigger>
-             </TabsList>
-             <TabsContent value="team" className="mt-3 min-w-0">
-               <div className="max-h-80 space-y-3 overflow-y-auto rounded-xl border border-border bg-background p-3">
-                 {comments.length ? (
-                   comments.map((comment: any) => (
-                     <Message key={comment.id} from={comment.author_id ? "user" : "assistant"}>
-                       <MessageContent className="max-w-[92%]">
-                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                           <span className="font-semibold text-foreground">
-                             {comment.author_name ?? t("m.taskChat.member")}
-                           </span>
-                           <span>
-                             {new Date(comment.created_at).toLocaleString(localeTag(lang), {
-                               dateStyle: "short",
-                               timeStyle: "short",
-                             })}
-                           </span>
-                         </div>
-                         <p className="whitespace-pre-wrap break-words leading-6">{comment.body}</p>
-                       </MessageContent>
-                     </Message>
-                   ))
-                 ) : (
-                   <Empty text={t("m.taskChat.noTeamMessages")} />
-                 )}
-               </div>
-               <TaskMessageComposer
-                 value={draft}
-                 onChange={setDraft}
-                 onSubmit={(text) => sendTeam.mutate(text)}
-                 pending={sendTeam.isPending}
-                 placeholder={t("m.taskChat.teamPlaceholder")}
-                 sendLabel={t("m.taskChat.sendTeam")}
-               />
-             </TabsContent>
-             <TabsContent value="ai" className="mt-3 min-w-0">
-               <div className="max-h-80 space-y-3 overflow-y-auto rounded-xl border border-border bg-background p-3">
-                 {latestConversation?.messages.length ? (
-                   latestConversation.messages.map((message) => (
-                     <Message key={message.id} from={message.role}>
-                       <MessageContent className="max-w-[92%]">
-                         {message.role === "assistant" ? (
-                           <MessageResponse className="text-sm leading-6 [&_h2]:my-2 [&_h2]:text-xs [&_h2]:uppercase [&_h2]:text-muted-foreground">
-                             {message.content}
-                           </MessageResponse>
-                         ) : (
-                           <p className="whitespace-pre-wrap break-words leading-6">
-                             {message.content}
-                           </p>
-                         )}
-                       </MessageContent>
-                     </Message>
-                   ))
-                 ) : (
-                   <Empty text={t("m.taskChat.noAiMessages")} />
-                 )}
-                 {sendAi.isPending ? (
-                   <div className="flex min-h-11 items-center gap-2 text-sm text-muted-foreground">
-                     <Loader2 className="h-4 w-4 animate-spin" /> {t("m.ai.working")}
-                   </div>
-                 ) : null}
-               </div>
-               <TaskMessageComposer
-                 value={draft}
-                 onChange={setDraft}
-                 onSubmit={(text) => sendAi.mutate(text)}
-                 pending={sendAi.isPending}
-                 placeholder={t("m.taskChat.aiPlaceholder")}
-                 sendLabel={t("m.taskChat.sendAi")}
-               />
-             </TabsContent>
-           </Tabs>
+          <Tabs defaultValue="team" className="min-w-0">
+            <TabsList className="grid h-11 w-full grid-cols-2">
+              <TabsTrigger value="team" className="min-h-9 gap-2">
+                <Users className="h-4 w-4" /> {t("m.taskChat.team")}
+              </TabsTrigger>
+              <TabsTrigger value="ai" className="min-h-9 gap-2">
+                <Bot className="h-4 w-4" /> {t("m.taskChat.askAi")}
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="team" className="mt-3 min-w-0">
+              <div className="max-h-80 space-y-3 overflow-y-auto rounded-xl border border-border bg-background p-3">
+                {comments.length ? (
+                  comments.map((comment: any) => (
+                    <Message key={comment.id} from={comment.author_id ? "user" : "assistant"}>
+                      <MessageContent className="max-w-[92%]">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span className="font-semibold text-foreground">
+                            {comment.author_name ?? t("m.taskChat.member")}
+                          </span>
+                          <span>
+                            {new Date(comment.created_at).toLocaleString(localeTag(lang), {
+                              dateStyle: "short",
+                              timeStyle: "short",
+                            })}
+                          </span>
+                        </div>
+                        <p className="whitespace-pre-wrap break-words leading-6">{comment.body}</p>
+                      </MessageContent>
+                    </Message>
+                  ))
+                ) : (
+                  <Empty text={t("m.taskChat.noTeamMessages")} />
+                )}
+              </div>
+              <TaskMessageComposer
+                value={draft}
+                onChange={setDraft}
+                onSubmit={(text) => sendTeam.mutate(text)}
+                pending={sendTeam.isPending}
+                placeholder={t("m.taskChat.teamPlaceholder")}
+                sendLabel={t("m.taskChat.sendTeam")}
+              />
+            </TabsContent>
+            <TabsContent value="ai" className="mt-3 min-w-0">
+              <div className="max-h-80 space-y-3 overflow-y-auto rounded-xl border border-border bg-background p-3">
+                {latestConversation?.messages.length ? (
+                  latestConversation.messages.map((message) => (
+                    <Message key={message.id} from={message.role}>
+                      <MessageContent className="max-w-[92%]">
+                        {message.role === "assistant" ? (
+                          <MessageResponse className="text-sm leading-6 [&_h2]:my-2 [&_h2]:text-xs [&_h2]:uppercase [&_h2]:text-muted-foreground">
+                            {message.content}
+                          </MessageResponse>
+                        ) : (
+                          <p className="whitespace-pre-wrap break-words leading-6">
+                            {message.content}
+                          </p>
+                        )}
+                      </MessageContent>
+                    </Message>
+                  ))
+                ) : (
+                  <Empty text={t("m.taskChat.noAiMessages")} />
+                )}
+                {sendAi.isPending ? (
+                  <div className="flex min-h-11 items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" /> {t("m.ai.working")}
+                  </div>
+                ) : null}
+              </div>
+              <TaskMessageComposer
+                value={draft}
+                onChange={setDraft}
+                onSubmit={(text) => sendAi.mutate(text)}
+                pending={sendAi.isPending}
+                placeholder={t("m.taskChat.aiPlaceholder")}
+                sendLabel={t("m.taskChat.sendAi")}
+              />
+            </TabsContent>
+          </Tabs>
           <SummarySection title={t("m.taskChat.history")} count={chats.data?.length ?? 0}>
             {(chats.data ?? []).length ? (
               chats.data?.map((conversation) => (
