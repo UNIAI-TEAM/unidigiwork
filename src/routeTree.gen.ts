@@ -174,6 +174,7 @@ import { Route as AuthenticatedMWorkProductsIdRouteImport } from './routes/_auth
 import { Route as AuthenticatedMTasksIdRouteImport } from './routes/_authenticated/m/tasks_.$id'
 import { Route as AuthenticatedMProjectsIdRouteImport } from './routes/_authenticated/m/projects.$id'
 import { Route as AuthenticatedMPeopleIdRouteImport } from './routes/_authenticated/m/people.$id'
+import { Route as AuthenticatedMMeetHistoryRouteImport } from './routes/_authenticated/m/meet_.history'
 import { Route as AuthenticatedMMeetIdRouteImport } from './routes/_authenticated/m/meet.$id'
 import { Route as AuthenticatedMEmailIdRouteImport } from './routes/_authenticated/m/email.$id'
 import { Route as AuthenticatedMDocumentsIdRouteImport } from './routes/_authenticated/m/documents.$id'
@@ -183,6 +184,7 @@ import { Route as AuthenticatedMAiMarketIdRouteImport } from './routes/_authenti
 import { Route as AuthenticatedMAdminOverviewRouteImport } from './routes/_authenticated/m/admin.overview'
 import { Route as AuthenticatedAdminSellWorkPilotsRouteImport } from './routes/_authenticated/admin.sell-work.pilots'
 import { Route as ApiInternalOfficeV1RenderRouteImport } from './routes/api/internal/office/v1/render'
+import { Route as AuthenticatedMMeetIdRoomRouteImport } from './routes/_authenticated/m/meet.$id_.room'
 import { Route as AuthenticatedAdminSellWorkPilotsPilotIdRouteImport } from './routes/_authenticated/admin.sell-work.pilots.$pilotId'
 
 const WorkflowsRoute = WorkflowsRouteImport.update({
@@ -1072,6 +1074,12 @@ const AuthenticatedMPeopleIdRoute = AuthenticatedMPeopleIdRouteImport.update({
   path: '/people/$id',
   getParentRoute: () => AuthenticatedMRoute,
 } as any)
+const AuthenticatedMMeetHistoryRoute =
+  AuthenticatedMMeetHistoryRouteImport.update({
+    id: '/meet_/history',
+    path: '/meet/history',
+    getParentRoute: () => AuthenticatedMRoute,
+  } as any)
 const AuthenticatedMMeetIdRoute = AuthenticatedMMeetIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -1122,6 +1130,12 @@ const ApiInternalOfficeV1RenderRoute =
     id: '/api/internal/office/v1/render',
     path: '/api/internal/office/v1/render',
     getParentRoute: () => rootRouteImport,
+  } as any)
+const AuthenticatedMMeetIdRoomRoute =
+  AuthenticatedMMeetIdRoomRouteImport.update({
+    id: '/$id_/room',
+    path: '/$id/room',
+    getParentRoute: () => AuthenticatedMMeetRoute,
   } as any)
 const AuthenticatedAdminSellWorkPilotsPilotIdRoute =
   AuthenticatedAdminSellWorkPilotsPilotIdRouteImport.update({
@@ -1279,6 +1293,7 @@ export interface FileRoutesByFullPath {
   '/m/documents/$id': typeof AuthenticatedMDocumentsIdRoute
   '/m/email/$id': typeof AuthenticatedMEmailIdRoute
   '/m/meet/$id': typeof AuthenticatedMMeetIdRoute
+  '/m/meet/history': typeof AuthenticatedMMeetHistoryRoute
   '/m/people/$id': typeof AuthenticatedMPeopleIdRoute
   '/m/projects/$id': typeof AuthenticatedMProjectsIdRoute
   '/m/tasks/$id': typeof AuthenticatedMTasksIdRoute
@@ -1304,6 +1319,7 @@ export interface FileRoutesByFullPath {
   '/m/projects/': typeof AuthenticatedMProjectsIndexRoute
   '/m/work-products/': typeof AuthenticatedMWorkProductsIndexRoute
   '/admin/sell-work/pilots/$pilotId': typeof AuthenticatedAdminSellWorkPilotsPilotIdRoute
+  '/m/meet/$id/room': typeof AuthenticatedMMeetIdRoomRoute
   '/api/internal/office/v1/render': typeof ApiInternalOfficeV1RenderRoute
 }
 export interface FileRoutesByTo {
@@ -1452,6 +1468,7 @@ export interface FileRoutesByTo {
   '/m/documents/$id': typeof AuthenticatedMDocumentsIdRoute
   '/m/email/$id': typeof AuthenticatedMEmailIdRoute
   '/m/meet/$id': typeof AuthenticatedMMeetIdRoute
+  '/m/meet/history': typeof AuthenticatedMMeetHistoryRoute
   '/m/people/$id': typeof AuthenticatedMPeopleIdRoute
   '/m/projects/$id': typeof AuthenticatedMProjectsIdRoute
   '/m/tasks/$id': typeof AuthenticatedMTasksIdRoute
@@ -1477,6 +1494,7 @@ export interface FileRoutesByTo {
   '/m/projects': typeof AuthenticatedMProjectsIndexRoute
   '/m/work-products': typeof AuthenticatedMWorkProductsIndexRoute
   '/admin/sell-work/pilots/$pilotId': typeof AuthenticatedAdminSellWorkPilotsPilotIdRoute
+  '/m/meet/$id/room': typeof AuthenticatedMMeetIdRoomRoute
   '/api/internal/office/v1/render': typeof ApiInternalOfficeV1RenderRoute
 }
 export interface FileRoutesById {
@@ -1630,6 +1648,7 @@ export interface FileRoutesById {
   '/_authenticated/m/documents/$id': typeof AuthenticatedMDocumentsIdRoute
   '/_authenticated/m/email/$id': typeof AuthenticatedMEmailIdRoute
   '/_authenticated/m/meet/$id': typeof AuthenticatedMMeetIdRoute
+  '/_authenticated/m/meet_/history': typeof AuthenticatedMMeetHistoryRoute
   '/_authenticated/m/people/$id': typeof AuthenticatedMPeopleIdRoute
   '/_authenticated/m/projects/$id': typeof AuthenticatedMProjectsIdRoute
   '/_authenticated/m/tasks_/$id': typeof AuthenticatedMTasksIdRoute
@@ -1655,6 +1674,7 @@ export interface FileRoutesById {
   '/_authenticated/m/projects/': typeof AuthenticatedMProjectsIndexRoute
   '/_authenticated/m/work-products/': typeof AuthenticatedMWorkProductsIndexRoute
   '/_authenticated/admin/sell-work/pilots/$pilotId': typeof AuthenticatedAdminSellWorkPilotsPilotIdRoute
+  '/_authenticated/m/meet/$id_/room': typeof AuthenticatedMMeetIdRoomRoute
   '/api/internal/office/v1/render': typeof ApiInternalOfficeV1RenderRoute
 }
 export interface FileRouteTypes {
@@ -1808,6 +1828,7 @@ export interface FileRouteTypes {
     | '/m/documents/$id'
     | '/m/email/$id'
     | '/m/meet/$id'
+    | '/m/meet/history'
     | '/m/people/$id'
     | '/m/projects/$id'
     | '/m/tasks/$id'
@@ -1833,6 +1854,7 @@ export interface FileRouteTypes {
     | '/m/projects/'
     | '/m/work-products/'
     | '/admin/sell-work/pilots/$pilotId'
+    | '/m/meet/$id/room'
     | '/api/internal/office/v1/render'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -1981,6 +2003,7 @@ export interface FileRouteTypes {
     | '/m/documents/$id'
     | '/m/email/$id'
     | '/m/meet/$id'
+    | '/m/meet/history'
     | '/m/people/$id'
     | '/m/projects/$id'
     | '/m/tasks/$id'
@@ -2006,6 +2029,7 @@ export interface FileRouteTypes {
     | '/m/projects'
     | '/m/work-products'
     | '/admin/sell-work/pilots/$pilotId'
+    | '/m/meet/$id/room'
     | '/api/internal/office/v1/render'
   id:
     | '__root__'
@@ -2158,6 +2182,7 @@ export interface FileRouteTypes {
     | '/_authenticated/m/documents/$id'
     | '/_authenticated/m/email/$id'
     | '/_authenticated/m/meet/$id'
+    | '/_authenticated/m/meet_/history'
     | '/_authenticated/m/people/$id'
     | '/_authenticated/m/projects/$id'
     | '/_authenticated/m/tasks_/$id'
@@ -2183,6 +2208,7 @@ export interface FileRouteTypes {
     | '/_authenticated/m/projects/'
     | '/_authenticated/m/work-products/'
     | '/_authenticated/admin/sell-work/pilots/$pilotId'
+    | '/_authenticated/m/meet/$id_/room'
     | '/api/internal/office/v1/render'
   fileRoutesById: FileRoutesById
 }
@@ -3391,6 +3417,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMPeopleIdRouteImport
       parentRoute: typeof AuthenticatedMRoute
     }
+    '/_authenticated/m/meet_/history': {
+      id: '/_authenticated/m/meet_/history'
+      path: '/meet/history'
+      fullPath: '/m/meet/history'
+      preLoaderRoute: typeof AuthenticatedMMeetHistoryRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
     '/_authenticated/m/meet/$id': {
       id: '/_authenticated/m/meet/$id'
       path: '/$id'
@@ -3453,6 +3486,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/internal/office/v1/render'
       preLoaderRoute: typeof ApiInternalOfficeV1RenderRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/m/meet/$id_/room': {
+      id: '/_authenticated/m/meet/$id_/room'
+      path: '/$id/room'
+      fullPath: '/m/meet/$id/room'
+      preLoaderRoute: typeof AuthenticatedMMeetIdRoomRouteImport
+      parentRoute: typeof AuthenticatedMMeetRoute
     }
     '/_authenticated/admin/sell-work/pilots/$pilotId': {
       id: '/_authenticated/admin/sell-work/pilots/$pilotId'
@@ -3559,10 +3599,12 @@ const AuthenticatedMDocumentsRouteWithChildren =
 
 interface AuthenticatedMMeetRouteChildren {
   AuthenticatedMMeetIdRoute: typeof AuthenticatedMMeetIdRoute
+  AuthenticatedMMeetIdRoomRoute: typeof AuthenticatedMMeetIdRoomRoute
 }
 
 const AuthenticatedMMeetRouteChildren: AuthenticatedMMeetRouteChildren = {
   AuthenticatedMMeetIdRoute: AuthenticatedMMeetIdRoute,
+  AuthenticatedMMeetIdRoomRoute: AuthenticatedMMeetIdRoomRoute,
 }
 
 const AuthenticatedMMeetRouteWithChildren =
@@ -3602,6 +3644,7 @@ interface AuthenticatedMRouteChildren {
   AuthenticatedMAiWorkforceIdRoute: typeof AuthenticatedMAiWorkforceIdRoute
   AuthenticatedMCIdRoute: typeof AuthenticatedMCIdRoute
   AuthenticatedMEmailIdRoute: typeof AuthenticatedMEmailIdRoute
+  AuthenticatedMMeetHistoryRoute: typeof AuthenticatedMMeetHistoryRoute
   AuthenticatedMPeopleIdRoute: typeof AuthenticatedMPeopleIdRoute
   AuthenticatedMProjectsIdRoute: typeof AuthenticatedMProjectsIdRoute
   AuthenticatedMTasksIdRoute: typeof AuthenticatedMTasksIdRoute
@@ -3649,6 +3692,7 @@ const AuthenticatedMRouteChildren: AuthenticatedMRouteChildren = {
   AuthenticatedMAiWorkforceIdRoute: AuthenticatedMAiWorkforceIdRoute,
   AuthenticatedMCIdRoute: AuthenticatedMCIdRoute,
   AuthenticatedMEmailIdRoute: AuthenticatedMEmailIdRoute,
+  AuthenticatedMMeetHistoryRoute: AuthenticatedMMeetHistoryRoute,
   AuthenticatedMPeopleIdRoute: AuthenticatedMPeopleIdRoute,
   AuthenticatedMProjectsIdRoute: AuthenticatedMProjectsIdRoute,
   AuthenticatedMTasksIdRoute: AuthenticatedMTasksIdRoute,

@@ -84,7 +84,10 @@ function MobileMeetingDetail() {
           {meeting.agenda || "Chưa có nội dung."}
         </p>
       </section>
-      <Button className="min-h-11 w-full" onClick={() => void navigate({ href: `/meeting/${id}` })}>
+      <Button
+        className="min-h-11 w-full"
+        onClick={() => void navigate({ to: "/m/meet/$id/room", params: { id } })}
+      >
         <Video className="mr-2 h-4 w-4" />
         Vào phòng họp
       </Button>
