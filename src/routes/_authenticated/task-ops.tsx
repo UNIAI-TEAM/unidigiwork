@@ -16,7 +16,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useI18n } from "@/lib/i18n";
-import { listTaskOpsBoard, reassignTaskOwner } from "@/lib/api/task-ops.functions";
+import { listTaskOpsBoard } from "@/lib/api/task-ops.functions";
+import { runOrQueue } from "@/lib/offline/queue";
 import type { TaskOpsItem } from "@/lib/api/task-ops.functions";
 
 export const Route = createFileRoute("/_authenticated/task-ops")({
