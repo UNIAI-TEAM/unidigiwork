@@ -66,3 +66,6 @@
 - [x] Show task interaction counts/latest activity and enable direct team messaging from Work Graph.
 - [x] Let senders choose a real task assignee and notify that person directly.
 - [x] Notify task assignees of new messages and show per-user unread badges in Work Graph.
+
+- [ ] Restrict Work Graph messaging to superiors and show those messages in a separate task-chat summary tab.
+- [ ] Automatically classify task-team messages as task, feedback, or related work; create task immediately when classified as task.
