@@ -113,7 +113,6 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
   const [contextOpen, setContextOpen] = useState(false);
   const [turns, setTurns] = useState<OrchestrationTurn[]>([]);
   const [proposing, setProposing] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
@@ -226,10 +225,6 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
   };
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages.data?.length, pendingText, turns.length]);
-
-  useEffect(() => {
     composerRef.current?.focus();
   }, [conversationId, send.isPending]);
 
@@ -265,7 +260,7 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
 
   return (
     <div className="mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col overflow-hidden">
-      <Conversation ref={scrollRef} className="min-h-0 flex-1">
+      <Conversation className="min-h-0 flex-1">
         <ConversationContent className="min-h-full gap-6 px-4 pb-6 pt-4 sm:px-6">
         {messages.isLoading ? (
           <div className="flex min-h-72 items-center justify-center text-muted-foreground">
