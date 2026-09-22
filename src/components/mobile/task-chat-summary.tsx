@@ -143,6 +143,12 @@ export function TaskChatSummary({ taskId, taskTitle }: { taskId: string; taskTit
     (comment: any) => comment.metadata?.source === "WORK_GRAPH",
   );
   const teamComments = comments.filter((comment: any) => comment.metadata?.source !== "WORK_GRAPH");
+  const classificationLabel = (label: string) => {
+    if (label === "TASK") return t("m.taskChat.classification.task");
+    if (label === "FEEDBACK") return t("m.taskChat.classification.feedback");
+    if (label === "RELATED_WORK") return t("m.taskChat.classification.related_work");
+    return t("m.taskChat.classification.failed");
+  };
   const related = graph.data?.relationships ?? [];
   const loading = chats.isLoading || detail.isLoading || graph.isLoading;
   const latestConversation = chats.data?.[0] ?? null;
@@ -250,9 +256,7 @@ export function TaskChatSummary({ taskId, taskTitle }: { taskId: string; taskTit
                           {comment.metadata?.classification?.label &&
                           comment.metadata.classification.label !== "OTHER" ? (
                             <Badge variant="secondary">
-                              {t(
-                                `m.taskChat.classification.${String(comment.metadata.classification.label).toLowerCase()}`,
-                              )}
+                              {classificationLabel(String(comment.metadata.classification.label))}
                             </Badge>
                           ) : null}
                         </div>
