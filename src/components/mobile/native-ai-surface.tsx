@@ -60,6 +60,8 @@ import { detectWorkProductKinds } from "@/domain/ai-orchestration/work-product-i
 import { useActiveWorkspace } from "@/lib/active-workspace";
 import { useCurrentIdentity } from "@/lib/use-current-identity";
 import { useI18n } from "@/lib/i18n";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TaskChatHub } from "@/components/mobile/task-chat-summary";
 
 /** Lượt điều phối cục bộ: yêu cầu → đề xuất hành động → quan sát thực thi. */
 type OrchestrationTurn = {
@@ -113,6 +115,7 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
   const [contextOpen, setContextOpen] = useState(false);
   const [turns, setTurns] = useState<OrchestrationTurn[]>([]);
   const [proposing, setProposing] = useState(false);
+  const [surfaceTab, setSurfaceTab] = useState("chat");
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
@@ -185,6 +188,7 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
           workspaceId: workspaceId ?? null,
           rootEntity: root ? { type: root.type, id: root.id } : null,
           targetTaskId: root?.type === "TASK" ? root.id : null,
+          conversationId: conversationId ?? null,
         },
       } as never)) as ProposedAiAction;
       setTurns((current) => [
@@ -260,171 +264,198 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
 
   return (
     <div className="mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col overflow-hidden">
-      <Conversation className="min-h-0 flex-1">
-        <ConversationContent className="min-h-full gap-6 px-4 pb-6 pt-4 sm:px-6">
-          {messages.isLoading ? (
-            <div className="flex min-h-72 items-center justify-center text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin" />
-              <span className="ml-2 text-sm">{t("m.ai.loading")}</span>
-            </div>
-          ) : isEmpty ? (
-            <EmptyState firstName={firstName} onPick={submit} />
-          ) : (
-            <div className="space-y-6 pb-4">
-              {displayMessages.map((message) => (
-                <Message key={message.id} message={message} />
-              ))}
-              {canBuildWorkProduct && (
-                <WorkProductRun
-                  key={lastMessage?.id}
-                  kinds={requestedKinds}
-                  brief={buildBrief}
-                  workspaceId={workspaceId}
-                  sourceEntities={buildSources}
-                />
-              )}
-              {turns.map((turn) => (
-                <div key={turn.id} className="space-y-3">
-                  <UserMessage content={turn.user} />
-                  {turn.note && (
-                    <p className="rounded-xl border border-border bg-surface px-3 py-2 text-[13px] text-muted-foreground">
-                      {turn.note}
-                    </p>
-                  )}
-                  {turn.executor && (
-                    <p className="text-xs text-muted-foreground">
-                      {turn.executor.kind === "AI"
-                        ? t("m.ai.assign.ai").replace("{name}", turn.executor.profileName ?? "")
-                        : t("m.ai.assign.human")}
-                    </p>
-                  )}
-                  {turn.proposal && (
-                    <ActionProposalCard
-                      proposal={turn.proposal}
-                      onExecuted={(result: AiActionExecutionResult) =>
-                        setTurns((current) =>
-                          current.map((item) =>
-                            item.id === turn.id && result.entityType === "TASK" && result.entityId
-                              ? {
-                                  ...item,
-                                  executed: {
-                                    taskId: result.entityId,
-                                    agentName: result.assignedAgent?.agentName,
-                                    humanName: result.assignedHuman?.name,
-                                  },
-                                }
-                              : item,
-                          ),
-                        )
-                      }
+      <Tabs
+        value={surfaceTab}
+        onValueChange={setSurfaceTab}
+        className="flex min-h-0 flex-1 flex-col overflow-hidden"
+      >
+        <div className="shrink-0 px-4 pt-2 sm:px-6">
+          <TabsList className="grid h-11 w-full grid-cols-2">
+            <TabsTrigger value="chat" className="min-h-9">
+              {t("m.taskChat.tab.chat")}
+            </TabsTrigger>
+            <TabsTrigger value="tasks" className="min-h-9">
+              {t("m.taskChat.tab.tasks")}
+            </TabsTrigger>
+          </TabsList>
+        </div>
+        <TabsContent value="chat" className="mt-0 flex min-h-0 flex-1 flex-col overflow-hidden">
+          <Conversation className="min-h-0 flex-1">
+            <ConversationContent className="min-h-full gap-6 px-4 pb-6 pt-4 sm:px-6">
+              {messages.isLoading ? (
+                <div className="flex min-h-72 items-center justify-center text-muted-foreground">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span className="ml-2 text-sm">{t("m.ai.loading")}</span>
+                </div>
+              ) : isEmpty ? (
+                <EmptyState firstName={firstName} onPick={submit} />
+              ) : (
+                <div className="space-y-6 pb-4">
+                  {displayMessages.map((message) => (
+                    <Message key={message.id} message={message} />
+                  ))}
+                  {canBuildWorkProduct && (
+                    <WorkProductRun
+                      key={lastMessage?.id}
+                      kinds={requestedKinds}
+                      brief={buildBrief}
+                      workspaceId={workspaceId}
+                      sourceEntities={buildSources}
                     />
                   )}
-                  {turn.executed && (
-                    <ExecutionObserver
-                      taskId={turn.executed.taskId}
-                      agentName={turn.executed.agentName}
-                      humanName={turn.executed.humanName ?? identity.displayName}
-                    />
+                  {turns.map((turn) => (
+                    <div key={turn.id} className="space-y-3">
+                      <UserMessage content={turn.user} />
+                      {turn.note && (
+                        <p className="rounded-xl border border-border bg-surface px-3 py-2 text-[13px] text-muted-foreground">
+                          {turn.note}
+                        </p>
+                      )}
+                      {turn.executor && (
+                        <p className="text-xs text-muted-foreground">
+                          {turn.executor.kind === "AI"
+                            ? t("m.ai.assign.ai").replace("{name}", turn.executor.profileName ?? "")
+                            : t("m.ai.assign.human")}
+                        </p>
+                      )}
+                      {turn.proposal && (
+                        <ActionProposalCard
+                          proposal={turn.proposal}
+                          onExecuted={(result: AiActionExecutionResult) =>
+                            setTurns((current) =>
+                              current.map((item) =>
+                                item.id === turn.id &&
+                                result.entityType === "TASK" &&
+                                result.entityId
+                                  ? {
+                                      ...item,
+                                      executed: {
+                                        taskId: result.entityId,
+                                        agentName: result.assignedAgent?.agentName,
+                                        humanName: result.assignedHuman?.name,
+                                      },
+                                    }
+                                  : item,
+                              ),
+                            )
+                          }
+                        />
+                      )}
+                      {turn.executed && (
+                        <ExecutionObserver
+                          taskId={turn.executed.taskId}
+                          agentName={turn.executed.agentName}
+                          humanName={turn.executed.humanName ?? identity.displayName}
+                        />
+                      )}
+                    </div>
+                  ))}
+                  {pendingText && (
+                    <>
+                      <UserMessage content={pendingText} />
+                      <div
+                        className="flex items-center gap-3 text-sm text-muted-foreground"
+                        role="status"
+                      >
+                        <BrandMark className="h-8 w-8" />
+                        <Shimmer className="text-sm">{t("m.ai.working")}</Shimmer>
+                      </div>
+                    </>
                   )}
                 </div>
-              ))}
-              {pendingText && (
-                <>
-                  <UserMessage content={pendingText} />
-                  <div
-                    className="flex items-center gap-3 text-sm text-muted-foreground"
-                    role="status"
-                  >
-                    <BrandMark className="h-8 w-8" />
-                    <Shimmer className="text-sm">{t("m.ai.working")}</Shimmer>
-                  </div>
-                </>
               )}
+            </ConversationContent>
+            <ConversationScrollButton aria-label={t("m.ai.scrollLatest")} />
+          </Conversation>
+        </TabsContent>
+        <TabsContent value="tasks" className="mt-0 flex min-h-0 flex-1 flex-col overflow-hidden">
+          <TaskChatHub />
+        </TabsContent>
+      </Tabs>
+
+      {surfaceTab === "chat" && (
+        <div className="shrink-0 bg-background px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 sm:px-6">
+          {contexts.length > 0 && (
+            <div className="mb-2 flex gap-2 overflow-x-auto pb-1">
+              {contexts.map((item) => (
+                <span
+                  key={item.id}
+                  className="flex min-h-9 shrink-0 items-center gap-2 rounded-lg border border-border bg-surface px-3 text-xs"
+                >
+                  {item.kind === "file" ? (
+                    <Paperclip className="h-3.5 w-3.5" />
+                  ) : (
+                    <Sparkles className="h-3.5 w-3.5 text-primary" />
+                  )}
+                  <span className="max-w-48 truncate">{item.label}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    className="h-7 w-7"
+                    aria-label={t("m.ai.removeContext")}
+                    onClick={() =>
+                      setContexts((current) => current.filter((context) => context.id !== item.id))
+                    }
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </span>
+              ))}
             </div>
           )}
-        </ConversationContent>
-        <ConversationScrollButton aria-label={t("m.ai.scrollLatest")} />
-      </Conversation>
-
-      <div className="shrink-0 bg-background px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 sm:px-6">
-        {contexts.length > 0 && (
-          <div className="mb-2 flex gap-2 overflow-x-auto pb-1">
-            {contexts.map((item) => (
-              <span
-                key={item.id}
-                className="flex min-h-9 shrink-0 items-center gap-2 rounded-lg border border-border bg-surface px-3 text-xs"
-              >
-                {item.kind === "file" ? (
-                  <Paperclip className="h-3.5 w-3.5" />
-                ) : (
-                  <Sparkles className="h-3.5 w-3.5 text-primary" />
-                )}
-                <span className="max-w-48 truncate">{item.label}</span>
+          <PromptInput
+            className="rounded-2xl border-border bg-surface shadow-panel"
+            onSubmit={({ text }) => submit(text)}
+          >
+            <PromptInputTextarea
+              ref={composerRef}
+              value={input}
+              aria-label={t("m.ai.composer")}
+              placeholder={t("m.ai.composer")}
+              onChange={(event) => setInput(event.currentTarget.value)}
+              className="max-h-32 min-h-14 px-4 pt-3 text-base leading-6"
+            />
+            <PromptInputFooter className="px-1.5 pb-1.5">
+              <PromptInputTools>
                 <Button
+                  type="button"
                   variant="ghost"
-                  size="icon-sm"
-                  className="h-7 w-7"
-                  aria-label={t("m.ai.removeContext")}
-                  onClick={() =>
-                    setContexts((current) => current.filter((context) => context.id !== item.id))
-                  }
+                  size="icon"
+                  className="h-11 w-11 shrink-0 rounded-xl"
+                  aria-label={t("m.ai.addContext")}
+                  onClick={() => setContextOpen(true)}
                 >
-                  <X className="h-3.5 w-3.5" />
+                  <Plus className="h-5 w-5" />
                 </Button>
-              </span>
-            ))}
-          </div>
-        )}
-        <PromptInput
-          className="rounded-2xl border-border bg-surface shadow-panel"
-          onSubmit={({ text }) => submit(text)}
-        >
-          <PromptInputTextarea
-            ref={composerRef}
-            value={input}
-            aria-label={t("m.ai.composer")}
-            placeholder={t("m.ai.composer")}
-            onChange={(event) => setInput(event.currentTarget.value)}
-            className="max-h-32 min-h-14 px-4 pt-3 text-base leading-6"
-          />
-          <PromptInputFooter className="px-1.5 pb-1.5">
-            <PromptInputTools>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-11 w-11 shrink-0 rounded-xl"
+                  aria-label={t("m.ai.voice")}
+                >
+                  <Mic className="h-4 w-4" />
+                </Button>
+              </PromptInputTools>
+              <PromptInputSubmit
                 className="h-11 w-11 shrink-0 rounded-xl"
-                aria-label={t("m.ai.addContext")}
-                onClick={() => setContextOpen(true)}
+                aria-label={t("m.ai.send")}
+                disabled={!input.trim() || send.isPending || proposing}
+                status={send.isPending || proposing ? "submitted" : "ready"}
               >
-                <Plus className="h-5 w-5" />
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-11 w-11 shrink-0 rounded-xl"
-                aria-label={t("m.ai.voice")}
-              >
-                <Mic className="h-4 w-4" />
-              </Button>
-            </PromptInputTools>
-            <PromptInputSubmit
-              className="h-11 w-11 shrink-0 rounded-xl"
-              aria-label={t("m.ai.send")}
-              disabled={!input.trim() || send.isPending || proposing}
-              status={send.isPending || proposing ? "submitted" : "ready"}
-            >
-              {send.isPending || proposing ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <ArrowUp className="h-4 w-4" />
-              )}
-            </PromptInputSubmit>
-          </PromptInputFooter>
-        </PromptInput>
-        <p className="mt-2 text-center text-[11px] text-muted-foreground">{t("m.ai.disclaimer")}</p>
-      </div>
+                {send.isPending || proposing ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ArrowUp className="h-4 w-4" />
+                )}
+              </PromptInputSubmit>
+            </PromptInputFooter>
+          </PromptInput>
+          <p className="mt-2 text-center text-[11px] text-muted-foreground">
+            {t("m.ai.disclaimer")}
+          </p>
+        </div>
+      )}
 
       <input
         ref={fileRef}
