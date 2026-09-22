@@ -247,6 +247,7 @@ export const NAV_ITEMS: NavItem[] = [
     match: ["/task-ops"],
     visibility: "everyone",
     order: 1.55,
+    mobile: { placement: "more", href: "/m/task-ops", order: 3.25 },
   },
   {
     id: "work-graph",

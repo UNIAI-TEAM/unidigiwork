@@ -21,6 +21,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { MobileListItem } from "@/components/mobile/mobile-list-item";
 import { getMyAdminAccess, getAdminStats, listAllUsers } from "@/lib/api/admin.functions";
 import { listNotifications } from "@/lib/api/notifications.functions";
+import { getAiBrainOverview } from "@/lib/api/ai-brain.functions";
+import { getCeoOverview } from "@/lib/api/ceo.functions";
+import { getReportOverview } from "@/lib/api/reports.functions";
+import { listTaskOpsBoard } from "@/lib/api/task-ops.functions";
 import {
   listWorkspaceAuditEvents,
   listWorkspaces,
@@ -319,6 +323,42 @@ function AdminView({ section }: { section?: string }) {
   );
 }
 
+function TaskOpsView() {
+  const fn = useServerFn(listTaskOpsBoard);
+  const navigate = useNavigate();
+  const query = useQuery({
+    queryKey: ["m-task-ops"],
+    queryFn: () => fn({ data: { includeDone: true, statuses: [], search: "", page: 1, pageSize: 25 } }),
+  });
+  if (query.isLoading) return <NativePage title="Vận hành công việc"><LoadingRows /></NativePage>;
+  return <NativePage title="Vận hành công việc"><p className="text-xs text-muted-foreground">{query.data?.total ?? 0} công việc trong tổ chức</p><div className="grid gap-2">{(query.data?.tasks ?? []).map((task) => <MobileListItem key={task.id} title={task.title} subtitle={`${task.workspaceName} · ${task.assignees.map((person) => person.name).join(", ") || "Chưa phân công"}`} meta={task.dueAt ? `Hạn ${new Date(task.dueAt).toLocaleDateString("vi-VN")}` : "Chưa có hạn"} priorityBar={task.priority as "low" | "normal" | "high" | "urgent"} badge={task.overdue ? <Badge variant="destructive">Quá hạn</Badge> : <Badge variant="outline">{task.status}</Badge>} onClick={() => void navigate({ to: `/m/tasks/${task.id}` as never })} />)}</div></NativePage>;
+}
+
+function AiTrackingView() {
+  const fn = useServerFn(getAiBrainOverview);
+  const query = useQuery({ queryKey: ["m-ai-tracking"], queryFn: () => fn({ data: { workspaceId: null } }) });
+  if (query.isLoading) return <NativePage title="Theo dõi AI"><LoadingRows /></NativePage>;
+  const metrics = query.data?.metrics;
+  return <NativePage title="Theo dõi AI">{metrics ? <div className="grid grid-cols-2 gap-2">{[["Đang chờ", metrics.pending], ["Đã duyệt", metrics.approvedThisWeek], ["Đã từ chối", metrics.rejectedThisWeek], ["Tỷ lệ chấp nhận", `${metrics.acceptanceRate}%`]].map(([label, value]) => <div key={String(label)} className="rounded-xl border border-border bg-card p-4"><p className="text-xs text-muted-foreground">{label}</p><p className="mt-2 text-xl font-semibold">{value}</p></div>)}</div> : null}<div className="grid gap-2">{(query.data?.log ?? []).map((entry) => <MobileListItem key={entry.id} title={entry.title} subtitle={entry.description ?? entry.actionType} meta={new Date(entry.createdAt).toLocaleString("vi-VN")} icon={<Bot className="h-5 w-5" />} badge={<Badge variant="outline">{entry.status}</Badge>} />)}</div></NativePage>;
+}
+
+function ExecutiveView({ section }: { section?: string }) {
+  const fn = useServerFn(getCeoOverview);
+  const query = useQuery({ queryKey: ["m-ceo-manage", section], queryFn: () => fn({ data: { period: "month", workspaceId: null } }) });
+  if (query.isLoading) return <NativePage title="Điều hành"><LoadingRows /></NativePage>;
+  const data = query.data;
+  const entries = section === "proposal-tracking" ? data?.proposalLog ?? [] : data?.issues ?? [];
+  return <NativePage title={sectionNames[section ?? ""] ?? "Điều hành"}><div className="grid gap-2">{entries.map((entry) => <MobileListItem key={entry.id} title={entry.title} subtitle={"description" in entry ? entry.description ?? undefined : undefined} meta={"status" in entry ? entry.status : undefined} icon={<ChartNoAxesCombined className="h-5 w-5" />} />)}</div>{!entries.length ? <p className="py-12 text-center text-sm text-muted-foreground">Không có mục cần xử lý trong kỳ này.</p> : null}</NativePage>;
+}
+
+function ReportsView() {
+  const fn = useServerFn(getReportOverview);
+  const query = useQuery({ queryKey: ["m-report-detail"], queryFn: () => fn({ data: {} }) });
+  if (query.isLoading) return <NativePage title="Báo cáo"><LoadingRows /></NativePage>;
+  const data = query.data;
+  return <NativePage title="Báo cáo"><div className="grid grid-cols-2 gap-2">{data ? [["Công việc", data.kpis.tasks], ["Cuộc họp", data.kpis.meetings], ["Tài liệu", data.kpis.documents], ["Đã hoàn thành", data.tasks_by_status.done]].map(([label, value]) => <div key={String(label)} className="rounded-xl border border-border bg-card p-4"><p className="text-xs text-muted-foreground">{label}</p><p className="mt-2 text-xl font-semibold">{value}</p></div>) : null}</div><div className="grid gap-2">{(data?.workspaces ?? []).map((workspace) => <MobileListItem key={workspace.id} title={workspace.name} subtitle={`${workspace.tasks} công việc · ${workspace.members} thành viên`} meta={`Tiến độ ${workspace.progress}%`} badge={<Badge variant="outline">{workspace.status}</Badge>} />)}</div></NativePage>;
+}
+
 function RegistryHub({ title }: { title: string }) {
   const navigate = useNavigate();
   return (
@@ -354,22 +394,18 @@ export function MobileNativeRegistryPage() {
   if (root === "notifications") return <NotificationsView detailId={section} />;
   if (root === "workspace") return <WorkspaceView section={section} />;
   if (root === "admin") return <AdminView section={section} />;
+  if (root === "task-ops" || root === "work-board" || root === "work-catalog") return <TaskOpsView />;
+  if (root === "ai-brain" && section === "tracking") return <AiTrackingView />;
+  if (root === "ceo") return <ExecutiveView section={section} />;
+  if (root === "reports") return <ReportsView />;
   const title =
     root === "email"
       ? "Email"
       : root === "ai-market"
         ? "Chợ AI"
-        : root === "ceo"
-          ? (sectionNames[section ?? ""] ?? "Điều hành")
-          : root === "ai-brain"
+    : root === "ai-brain"
             ? (sectionNames[section ?? ""] ?? "Bộ não AI")
-            : root === "task-ops" || root === "work-board"
-              ? "Vận hành công việc"
-              : root === "work-catalog"
-                ? "Danh mục công việc"
-                : root === "reports"
-                  ? "Báo cáo"
-                  : lang === "en"
+          : lang === "en"
                     ? "Explore"
                     : "Khám phá";
   return <RegistryHub title={title} />;
