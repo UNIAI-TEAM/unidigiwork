@@ -4,6 +4,7 @@ import { getCookie } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { ApiError } from "@/contracts/errors";
+import type { AiContextPack } from "@/domain/ai-context/contracts";
 import { WORK_ENTITY_TYPES } from "@/domain/work-graph/relationship-types";
 
 const ACTIVE_TENANT_COOKIE = "uniwork_active_tenant";
@@ -15,6 +16,16 @@ const SYSTEM_PROMPT = [
   "Mỗi câu trả lời là một Executive Brief cho đúng một nhiệm vụ và bắt buộc có đúng bốn mục Markdown theo thứ tự: ## Kết luận, ## Việc cần làm, ## Hạn, ## Người phụ trách.",
   "Kết luận gồm tối đa 3 câu. Việc cần làm gồm tối đa 3 gạch đầu dòng, ưu tiên động từ hành động. Hạn dùng ngày giờ cụ thể nếu dữ liệu có; nếu chưa có ghi Chưa xác định. Người phụ trách dùng tên người hoặc AI Agent có căn cứ; nếu chưa có ghi Chưa xác định.",
   "Không dùng bảng Markdown, không lặp lại tiêu đề nhiệm vụ, không bịa hạn hoặc người phụ trách. Gắn rõ Đã xác nhận, Đang chờ hoặc AI đề xuất khi trạng thái chưa chắc chắn.",
+  "Ưu tiên tiếng Việt trừ khi người dùng dùng ngôn ngữ khác.",
+].join(" ");
+
+const FULL_REPORT_SYSTEM_PROMPT = [
+  "Bạn là UNI, chuyên gia lập báo cáo điều hành của UNIWORK.",
+  "Từ Executive Brief và ngữ cảnh đã được cấp, soạn một báo cáo Markdown đầy đủ cho đúng một nhiệm vụ.",
+  "Bắt buộc có đúng các mục theo thứ tự: # Báo cáo công việc, ## Tóm tắt điều hành, ## Mục tiêu, ## Chỉ tiêu / KPI, ## Kế hoạch hành động, ## Deadline, ## Phân công, ## Tiến độ Work Graph, ## Rủi ro và kiến nghị, ## Nguồn.",
+  "Mục Chỉ tiêu / KPI phải nêu giá trị hiện tại, mục tiêu và cách đo nếu dữ liệu có. Mục Tiến độ Work Graph phải nêu phần trăm, số bước hoàn tất/tổng số bước và trạng thái nếu dữ liệu có.",
+  "Không bịa số liệu, deadline hoặc người phụ trách. Dữ liệu chưa có phải ghi Chưa xác định; đề xuất của AI phải ghi rõ AI đề xuất.",
+  "Nguồn phải liệt kê mã nguồn [S1], [S2] có trong ngữ cảnh; không tạo mã nguồn mới. Không dùng bảng Markdown.",
   "Ưu tiên tiếng Việt trừ khi người dùng dùng ngôn ngữ khác.",
 ].join(" ");
 
@@ -456,6 +467,90 @@ function titleFrom(text: string) {
   return t.length > 60 ? `${t.slice(0, 60)}…` : t || "Cuộc hội thoại mới";
 }
 
+type WorkGraphReportSnapshot = {
+  title: string;
+  status: string | null;
+  dueAt: string | null;
+  owner: string | null;
+  progress: number;
+  completedSteps: number;
+  totalSteps: number;
+};
+
+async function loadWorkGraphReportSnapshot(
+  supabase: any,
+  tenantId: string,
+  taskId: string | null,
+): Promise<WorkGraphReportSnapshot | null> {
+  if (!taskId) return null;
+  const { data, error } = await supabase.rpc("list_work_graph_board_page", {
+    _tenant_id: tenantId,
+    _tab: "all",
+    _search: undefined,
+    _assignee_id: undefined,
+    _unassigned: false,
+    _due_filter: "all",
+    _task_id: taskId,
+    _limit: 10,
+    _offset: 0,
+  });
+  if (error) return null;
+  const item = (data as { items?: Array<Record<string, unknown>> } | null)?.items?.[0];
+  if (!item) return null;
+
+  const ownerId = typeof item["owner_id"] === "string" ? item["owner_id"] : null;
+  let owner: string | null = null;
+  if (ownerId) {
+    const { data: members } = await supabase.rpc("list_tenant_member_profiles", {
+      _tenant_id: tenantId,
+    });
+    const match = (members as Array<Record<string, unknown>> | null)?.find(
+      (member) => member["id"] === ownerId,
+    );
+    owner =
+      (typeof match?.["display_name"] === "string" && match["display_name"]) ||
+      (typeof match?.["primary_email"] === "string" && match["primary_email"]) ||
+      null;
+  }
+
+  return {
+    title: String(item["title"] ?? "Công việc"),
+    status: typeof item["status"] === "string" ? item["status"] : null,
+    dueAt: typeof item["due_at"] === "string" ? item["due_at"] : null,
+    owner,
+    progress: Number(item["progress"] ?? 0),
+    completedSteps: Number(item["completed_steps"] ?? 0),
+    totalSteps: Number(item["total_steps"] ?? 0),
+  };
+}
+
+function fallbackFullReport(brief: string, snapshot: WorkGraphReportSnapshot | null): string {
+  const progress = snapshot
+    ? `${snapshot.progress}% (${snapshot.completedSteps}/${snapshot.totalSteps} bước) — ${snapshot.status ?? "Chưa xác định"}`
+    : "Chưa có dữ liệu tiến độ Work Graph.";
+  return [
+    "# Báo cáo công việc",
+    "## Tóm tắt điều hành",
+    brief,
+    "## Mục tiêu",
+    "Chưa xác định ngoài nội dung Executive Brief.",
+    "## Chỉ tiêu / KPI",
+    "Chưa xác định.",
+    "## Kế hoạch hành động",
+    "Thực hiện các việc đã nêu trong Executive Brief và cập nhật kết quả theo từng bước.",
+    "## Deadline",
+    snapshot?.dueAt ?? "Chưa xác định.",
+    "## Phân công",
+    snapshot?.owner ?? "Chưa xác định.",
+    "## Tiến độ Work Graph",
+    progress,
+    "## Rủi ro và kiến nghị",
+    "AI đề xuất: xác nhận KPI, deadline và người phụ trách còn thiếu trước khi thực hiện.",
+    "## Nguồn",
+    "Executive Brief và ngữ cảnh UNIWORK đã được lọc theo quyền truy cập.",
+  ].join("\n\n");
+}
+
 export const sendAiMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
@@ -580,6 +675,9 @@ export const sendAiMessage = createServerFn({ method: "POST" })
       let status = "succeeded";
       let errorMessage: string | null = null;
       let sourceMetadata: NonNullable<AiMessageMetadata["sources"]> = [];
+      let reportContent = "";
+      let reportSnapshot: WorkGraphReportSnapshot | null = null;
+      let contextPack: AiContextPack | null = null;
 
       try {
         const { answerWithContext } = await import("./ai-consumer.server");
@@ -619,6 +717,42 @@ export const sendAiMessage = createServerFn({ method: "POST" })
           href: source.href,
           updatedAt: source.updatedAt,
         }));
+        contextPack = result.pack;
+
+        const taskId =
+          data.rootEntity?.type === "TASK"
+            ? data.rootEntity.id
+            : (sourceMetadata.find((source) => source.entityType === "TASK")?.entityId ?? null);
+        reportSnapshot = await loadWorkGraphReportSnapshot(ctx.supabase, tenantId, taskId);
+        try {
+          const fullReport = await answerWithContext(
+            ctx.supabase,
+            ctx.userId,
+            getCookie(ACTIVE_TENANT_COOKIE) ?? null,
+            {
+              consumer: "MY_AI",
+              query: data.text,
+              workspaceId,
+              rootEntity: data.rootEntity ?? null,
+              pinnedEntities:
+                data.contextEntities?.map((item) => ({ type: item.type, id: item.id })) ?? null,
+              systemRole: FULL_REPORT_SYSTEM_PROMPT,
+              prebuiltPack: contextPack,
+              promptSections: [
+                `YÊU CẦU GỐC:\n${data.text}`,
+                `EXECUTIVE BRIEF ĐÃ XÁC NHẬN:\n${reply}`,
+                reportSnapshot
+                  ? `ẢNH CHỤP TIẾN ĐỘ WORK GRAPH:\n${JSON.stringify(reportSnapshot)}`
+                  : "ẢNH CHỤP TIẾN ĐỘ WORK GRAPH: Chưa có dữ liệu.",
+              ],
+            },
+          );
+          reportContent = fullReport.text.trim();
+          inputTokens += fullReport.usage?.inputTokens ?? 0;
+          outputTokens += fullReport.usage?.outputTokens ?? 0;
+        } catch {
+          reportContent = fallbackFullReport(reply, reportSnapshot);
+        }
       } catch (e) {
         status = "failed";
         errorMessage = e instanceof Error ? e.message : String(e);
@@ -663,6 +797,13 @@ export const sendAiMessage = createServerFn({ method: "POST" })
         const { error: workProductError } = await ctx.supabase.rpc("persist_chat_executive_brief", {
           _assistant_message_id: assistantMessageId,
           _title: `${titleFrom(data.text)} — Executive Brief`,
+          _report_content: reportContent || fallbackFullReport(reply, reportSnapshot),
+          _report_metadata: {
+            generator: "executive-report-v1",
+            executiveBrief: reply,
+            workGraph: reportSnapshot,
+            sourceCount: sourceMetadata.length,
+          },
           _root_type: supportedRoot?.type ?? null,
           _root_id: supportedRoot?.id ?? null,
           _sources: sourceMetadata,
