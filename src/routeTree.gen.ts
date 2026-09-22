@@ -119,6 +119,7 @@ import { Route as AuthenticatedMBillingRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedMAiSkillsRouteImport } from './routes/_authenticated/m/ai-skills'
 import { Route as AuthenticatedMAiBrainRouteImport } from './routes/_authenticated/m/ai-brain'
 import { Route as AuthenticatedMAiRouteImport } from './routes/_authenticated/m/ai'
+import { Route as AuthenticatedMSplatRouteImport } from './routes/_authenticated/m.$'
 import { Route as AuthenticatedEmailComposeRouteImport } from './routes/_authenticated/email_.compose'
 import { Route as AuthenticatedEmailIdRouteImport } from './routes/_authenticated/email_.$id'
 import { Route as AuthenticatedDocumentsIdRouteImport } from './routes/_authenticated/documents.$id'
@@ -758,6 +759,11 @@ const AuthenticatedMAiRoute = AuthenticatedMAiRouteImport.update({
   path: '/ai',
   getParentRoute: () => AuthenticatedMRoute,
 } as any)
+const AuthenticatedMSplatRoute = AuthenticatedMSplatRouteImport.update({
+  id: '/$',
+  path: '/$',
+  getParentRoute: () => AuthenticatedMRoute,
+} as any)
 const AuthenticatedEmailComposeRoute =
   AuthenticatedEmailComposeRouteImport.update({
     id: '/email_/compose',
@@ -1215,6 +1221,7 @@ export interface FileRoutesByFullPath {
   '/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/email/$id': typeof AuthenticatedEmailIdRoute
   '/email/compose': typeof AuthenticatedEmailComposeRoute
+  '/m/$': typeof AuthenticatedMSplatRoute
   '/m/ai': typeof AuthenticatedMAiRoute
   '/m/ai-brain': typeof AuthenticatedMAiBrainRoute
   '/m/ai-skills': typeof AuthenticatedMAiSkillsRoute
@@ -1387,6 +1394,7 @@ export interface FileRoutesByTo {
   '/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/email/$id': typeof AuthenticatedEmailIdRoute
   '/email/compose': typeof AuthenticatedEmailComposeRoute
+  '/m/$': typeof AuthenticatedMSplatRoute
   '/m/ai': typeof AuthenticatedMAiRoute
   '/m/ai-brain': typeof AuthenticatedMAiBrainRoute
   '/m/ai-skills': typeof AuthenticatedMAiSkillsRoute
@@ -1564,6 +1572,7 @@ export interface FileRoutesById {
   '/_authenticated/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/_authenticated/email_/$id': typeof AuthenticatedEmailIdRoute
   '/_authenticated/email_/compose': typeof AuthenticatedEmailComposeRoute
+  '/_authenticated/m/$': typeof AuthenticatedMSplatRoute
   '/_authenticated/m/ai': typeof AuthenticatedMAiRoute
   '/_authenticated/m/ai-brain': typeof AuthenticatedMAiBrainRoute
   '/_authenticated/m/ai-skills': typeof AuthenticatedMAiSkillsRoute
@@ -1741,6 +1750,7 @@ export interface FileRouteTypes {
     | '/documents/$id'
     | '/email/$id'
     | '/email/compose'
+    | '/m/$'
     | '/m/ai'
     | '/m/ai-brain'
     | '/m/ai-skills'
@@ -1913,6 +1923,7 @@ export interface FileRouteTypes {
     | '/documents/$id'
     | '/email/$id'
     | '/email/compose'
+    | '/m/$'
     | '/m/ai'
     | '/m/ai-brain'
     | '/m/ai-skills'
@@ -2089,6 +2100,7 @@ export interface FileRouteTypes {
     | '/_authenticated/documents/$id'
     | '/_authenticated/email_/$id'
     | '/_authenticated/email_/compose'
+    | '/_authenticated/m/$'
     | '/_authenticated/m/ai'
     | '/_authenticated/m/ai-brain'
     | '/_authenticated/m/ai-skills'
@@ -2994,6 +3006,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMAiRouteImport
       parentRoute: typeof AuthenticatedMRoute
     }
+    '/_authenticated/m/$': {
+      id: '/_authenticated/m/$'
+      path: '/$'
+      fullPath: '/m/$'
+      preLoaderRoute: typeof AuthenticatedMSplatRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
     '/_authenticated/email_/compose': {
       id: '/_authenticated/email_/compose'
       path: '/email/compose'
@@ -3550,6 +3569,7 @@ const AuthenticatedMMeetRouteWithChildren =
   AuthenticatedMMeetRoute._addFileChildren(AuthenticatedMMeetRouteChildren)
 
 interface AuthenticatedMRouteChildren {
+  AuthenticatedMSplatRoute: typeof AuthenticatedMSplatRoute
   AuthenticatedMAiRoute: typeof AuthenticatedMAiRoute
   AuthenticatedMAiBrainRoute: typeof AuthenticatedMAiBrainRoute
   AuthenticatedMAiSkillsRoute: typeof AuthenticatedMAiSkillsRoute
@@ -3596,6 +3616,7 @@ interface AuthenticatedMRouteChildren {
 }
 
 const AuthenticatedMRouteChildren: AuthenticatedMRouteChildren = {
+  AuthenticatedMSplatRoute: AuthenticatedMSplatRoute,
   AuthenticatedMAiRoute: AuthenticatedMAiRoute,
   AuthenticatedMAiBrainRoute: AuthenticatedMAiBrainRoute,
   AuthenticatedMAiSkillsRoute: AuthenticatedMAiSkillsRoute,
