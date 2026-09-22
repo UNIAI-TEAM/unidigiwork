@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { SettingsPage } from "../settings";
+import { MobileSettings, type MobileSettingsTab } from "@/components/mobile/mobile-settings";
 
 const mobileSettingsSearchSchema = z.object({
   tab: z
@@ -35,5 +35,10 @@ export const Route = createFileRoute("/_authenticated/m/settings")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: SettingsPage,
+  component: MobileSettingsRoute,
 });
+
+function MobileSettingsRoute() {
+  const search = Route.useSearch();
+  return <MobileSettings tab={search.tab as MobileSettingsTab | undefined} />;
+}
