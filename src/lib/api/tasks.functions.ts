@@ -265,6 +265,7 @@ export const sendTaskMessage = createServerFn({ method: "POST" })
         taskId: z.string().uuid(),
         recipientId: z.string().uuid(),
         body: z.string().min(1).max(10000),
+        source: z.enum(["TASK_CHAT", "WORK_GRAPH"]).default("TASK_CHAT"),
       })
       .parse(i),
   )
@@ -275,8 +276,67 @@ export const sendTaskMessage = createServerFn({ method: "POST" })
       _body: data.body,
       _idempotency_key: data.idempotencyKey,
       _correlation_id: data.correlationId ?? undefined,
+      _source: data.source,
     });
-    return ensureOk(res, "TASK_NOT_FOUND");
+    const comment = ensureOk(res, "TASK_NOT_FOUND") as { id: string };
+    const apiKey = process.env["LOVABLE_API_KEY"];
+    if (!apiKey) return comment;
+
+    const candidateResult = await context.supabase.rpc("list_task_classification_candidates", {
+      _task_id: data.taskId,
+      _limit: 20,
+    });
+    if (candidateResult.error) mapPgError(candidateResult.error);
+    const allCandidates = (candidateResult.data ?? []) as Array<{ id: string; title: string }>;
+    const candidates = allCandidates.filter((candidate) => candidate.id !== data.taskId);
+    try {
+      const { classifyTaskMessage } = await import("./task-message-classifier.server");
+      const parent = allCandidates.find((candidate) => candidate.id === data.taskId);
+      const classification = await classifyTaskMessage({
+        body: data.body,
+        parentTitle: parent?.title ?? "Công việc hiện tại",
+        candidates,
+        apiKey,
+      });
+      const applied = await (context.supabase as any).rpc("apply_task_message_classification", {
+        _comment_id: comment.id,
+        _label: classification.label,
+        _confidence: classification.confidence,
+        _task_title: classification.taskTitle,
+        _related_task_id: classification.relatedTaskId,
+        _model: classification.model,
+        _classifier_version: classification.version,
+        _idempotency_key: `${data.idempotencyKey}:classification`,
+        _correlation_id: data.correlationId ?? null,
+      });
+      if (applied.error) mapPgError(applied.error);
+      return { ...comment, classification: applied.data };
+    } catch {
+      const failed = await (context.supabase as any).rpc("apply_task_message_classification", {
+        _comment_id: comment.id,
+        _label: "FAILED",
+        _confidence: 0,
+        _task_title: null,
+        _related_task_id: null,
+        _model: "openai/gpt-6-astra",
+        _classifier_version: "task-message-v1",
+        _idempotency_key: `${data.idempotencyKey}:classification-failed`,
+        _correlation_id: data.correlationId ?? null,
+      });
+      if (failed.error) mapPgError(failed.error);
+      return { ...comment, classification: failed.data };
+    }
+  });
+
+export const canSendWorkGraphMessage = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ taskId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { data: allowed, error } = await context.supabase.rpc("can_send_work_graph_message", {
+      _task_id: data.taskId,
+    });
+    if (error) mapPgError(error);
+    return Boolean(allowed);
   });
 
 /** Đánh dấu đã đọc riêng các thông báo tin nhắn của task hiện tại. */

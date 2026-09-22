@@ -5582,6 +5582,7 @@ export type Database = {
           deleted_at: string | null
           edited_at: string | null
           id: string
+          metadata: Json
           row_version: number
           task_id: string
           tenant_id: string
@@ -5594,6 +5595,7 @@ export type Database = {
           deleted_at?: string | null
           edited_at?: string | null
           id?: string
+          metadata?: Json
           row_version?: number
           task_id: string
           tenant_id: string
@@ -5606,6 +5608,7 @@ export type Database = {
           deleted_at?: string | null
           edited_at?: string | null
           id?: string
+          metadata?: Json
           row_version?: number
           task_id?: string
           tenant_id?: string
@@ -9432,6 +9435,20 @@ export type Database = {
         Args: { _meeting_id: string; _segments: Json; _source?: string }
         Returns: number
       }
+      apply_task_message_classification: {
+        Args: {
+          _classifier_version: string
+          _comment_id: string
+          _confidence: number
+          _correlation_id: string
+          _idempotency_key: string
+          _label: string
+          _model: string
+          _related_task_id: string
+          _task_title: string
+        }
+        Returns: Json
+      }
       archive_document: {
         Args: {
           _correlation_id?: string
@@ -9641,6 +9658,10 @@ export type Database = {
       }
       can_manage_workflow_permissions: {
         Args: { _workspace_id: string }
+        Returns: boolean
+      }
+      can_send_work_graph_message: {
+        Args: { _task_id: string }
         Returns: boolean
       }
       can_view_chat_channel: {
@@ -9933,6 +9954,7 @@ export type Database = {
           deleted_at: string | null
           edited_at: string | null
           id: string
+          metadata: Json
           row_version: number
           task_id: string
           tenant_id: string
@@ -9945,33 +9967,64 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      comment_task_to_assignee: {
-        Args: {
-          _body: string
-          _correlation_id?: string
-          _idempotency_key: string
-          _recipient_id: string
-          _task_id: string
-        }
-        Returns: {
-          author_id: string
-          body: string
-          created_at: string
-          deleted_at: string | null
-          edited_at: string | null
-          id: string
-          row_version: number
-          task_id: string
-          tenant_id: string
-          updated_at: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "task_comments"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
+      comment_task_to_assignee:
+        | {
+            Args: {
+              _body: string
+              _correlation_id?: string
+              _idempotency_key: string
+              _recipient_id: string
+              _task_id: string
+            }
+            Returns: {
+              author_id: string
+              body: string
+              created_at: string
+              deleted_at: string | null
+              edited_at: string | null
+              id: string
+              metadata: Json
+              row_version: number
+              task_id: string
+              tenant_id: string
+              updated_at: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "task_comments"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: {
+              _body: string
+              _correlation_id: string
+              _idempotency_key: string
+              _recipient_id: string
+              _source: string
+              _task_id: string
+            }
+            Returns: {
+              author_id: string
+              body: string
+              created_at: string
+              deleted_at: string | null
+              edited_at: string | null
+              id: string
+              metadata: Json
+              row_version: number
+              task_id: string
+              tenant_id: string
+              updated_at: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "task_comments"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
       complete_outbox_event: {
         Args: { _id: string; _worker: string }
         Returns: boolean
@@ -10892,6 +10945,13 @@ export type Database = {
         Returns: Json
       }
       list_meeting_guests: { Args: { _meeting_id: string }; Returns: Json }
+      list_task_classification_candidates: {
+        Args: { _limit?: number; _task_id: string }
+        Returns: {
+          id: string
+          title: string
+        }[]
+      }
       list_task_conversation_ids: {
         Args: { _limit?: number; _task_id: string }
         Returns: {
