@@ -56,7 +56,10 @@ export function MobileTaskList() {
       listTaskOpsBoard({
         data: {
           includeDone: status === "all" || status === "done",
-          statuses: status === "all" ? [] : [status as "todo" | "in_progress" | "blocked" | "done" | "canceled"],
+          statuses:
+            status === "all"
+              ? []
+              : [status as "todo" | "in_progress" | "blocked" | "done" | "canceled"],
           search: debounced,
           page,
           pageSize: PAGE_SIZE,
@@ -105,7 +108,8 @@ export function MobileTaskList() {
       setCreateOpen(false);
       toast.success(t("m.tasks.created"));
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : t("m.tasks.createError")),
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : t("m.tasks.createError")),
   });
 
   const pages = Math.max(1, Math.ceil((board.data?.total ?? 0) / PAGE_SIZE));
@@ -121,21 +125,44 @@ export function MobileTaskList() {
       <div className="flex gap-2">
         <div className="relative min-w-0 flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t("m.tasks.search")} className="h-11 pl-9 pr-11" />
+          <Input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder={t("m.tasks.search")}
+            className="h-11 pl-9 pr-11"
+          />
           {search ? (
-            <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-11 w-11" onClick={() => setSearch("")} aria-label={t("m.tasks.clearSearch")}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="absolute right-0 top-0 h-11 w-11"
+              onClick={() => setSearch("")}
+              aria-label={t("m.tasks.clearSearch")}
+            >
               <X className="h-4 w-4" />
             </Button>
           ) : null}
         </div>
-        <Button variant={priority !== "all" || due !== "all" ? "default" : "outline"} size="icon" className="h-11 w-11 shrink-0" onClick={() => setFiltersOpen((value) => !value)} aria-label={t("m.tasks.filters")}>
+        <Button
+          variant={priority !== "all" || due !== "all" ? "default" : "outline"}
+          size="icon"
+          className="h-11 w-11 shrink-0"
+          onClick={() => setFiltersOpen((value) => !value)}
+          aria-label={t("m.tasks.filters")}
+        >
           <SlidersHorizontal className="h-4 w-4" />
         </Button>
       </div>
 
       <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
         {statusOptions.map((value) => (
-          <Button key={value} variant={status === value ? "default" : "outline"} className="min-h-11 shrink-0 rounded-full" onClick={() => setStatus(value)}>
+          <Button
+            key={value}
+            variant={status === value ? "default" : "outline"}
+            className="min-h-11 shrink-0 rounded-full"
+            onClick={() => setStatus(value)}
+          >
             {t(`m.tasks.status.${value}` as never)}
           </Button>
         ))}
@@ -145,26 +172,50 @@ export function MobileTaskList() {
         <section className="grid gap-3 border-y border-border py-4 sm:grid-cols-2">
           <label className="grid gap-1.5 text-xs font-medium text-muted-foreground">
             {t("m.tasks.priority")}
-            <select value={priority} onChange={(event) => setPriority(event.target.value as Priority)} className="h-11 rounded-lg border border-border bg-background px-3 text-sm text-foreground">
-              {["all", "low", "normal", "high", "urgent"].map((value) => <option key={value} value={value}>{t(`m.tasks.priority.${value}` as never)}</option>)}
+            <select
+              value={priority}
+              onChange={(event) => setPriority(event.target.value as Priority)}
+              className="h-11 rounded-lg border border-border bg-background px-3 text-sm text-foreground"
+            >
+              {["all", "low", "normal", "high", "urgent"].map((value) => (
+                <option key={value} value={value}>
+                  {t(`m.tasks.priority.${value}` as never)}
+                </option>
+              ))}
             </select>
           </label>
           <label className="grid gap-1.5 text-xs font-medium text-muted-foreground">
             {t("m.tasks.deadline")}
-            <select value={due} onChange={(event) => setDue(event.target.value as DueFilter)} className="h-11 rounded-lg border border-border bg-background px-3 text-sm text-foreground">
-              {["all", "overdue", "today", "week", "none"].map((value) => <option key={value} value={value}>{t(`m.tasks.due.${value}` as never)}</option>)}
+            <select
+              value={due}
+              onChange={(event) => setDue(event.target.value as DueFilter)}
+              className="h-11 rounded-lg border border-border bg-background px-3 text-sm text-foreground"
+            >
+              {["all", "overdue", "today", "week", "none"].map((value) => (
+                <option key={value} value={value}>
+                  {t(`m.tasks.due.${value}` as never)}
+                </option>
+              ))}
             </select>
           </label>
         </section>
       ) : null}
 
-      <p className="text-xs text-muted-foreground">{t("m.tasks.total").replace("{n}", String(board.data?.total ?? 0))}</p>
+      <p className="text-xs text-muted-foreground">
+        {t("m.tasks.total").replace("{n}", String(board.data?.total ?? 0))}
+      </p>
       {board.isLoading ? (
-        <div className="grid gap-2">{[0, 1, 2, 3].map((value) => <Skeleton key={value} className="h-20 rounded-xl" />)}</div>
+        <div className="grid gap-2">
+          {[0, 1, 2, 3].map((value) => (
+            <Skeleton key={value} className="h-20 rounded-xl" />
+          ))}
+        </div>
       ) : board.isError ? (
         <div className="border-y border-border py-8 text-center">
           <p className="text-sm text-muted-foreground">{t("m.tasks.loadError")}</p>
-          <Button variant="outline" className="mt-3 min-h-11" onClick={() => void board.refetch()}>{t("m.tasks.retry")}</Button>
+          <Button variant="outline" className="mt-3 min-h-11" onClick={() => void board.refetch()}>
+            {t("m.tasks.retry")}
+          </Button>
         </div>
       ) : tasks.length === 0 ? (
         <div className="border-y border-dashed border-border py-10 text-center">
@@ -175,33 +226,117 @@ export function MobileTaskList() {
         <div className="grid gap-2">
           {tasks.map((task) => {
             const assignee = task.assignees[0]?.name ?? t("tops.unassigned");
-            const dueLabel = task.dueAt ? new Date(task.dueAt).toLocaleDateString(lang === "vi" ? "vi-VN" : "en-US") : t("m.tasks.noDeadline");
-            return <MobileListItem key={task.id} title={task.title} subtitle={`${t(`m.tasks.status.${task.status}` as never)} · ${assignee}`} meta={`${task.workspaceName} · ${task.overdue ? t("m.tasks.due.overdue") : dueLabel}`} priorityBar={task.priority as Exclude<Priority, "all">} badge={task.overdue ? <Badge variant="destructive">{t("m.tasks.due.overdue")}</Badge> : undefined} onClick={() => navigate({ to: "/m/tasks/$id", params: { id: task.id } })} />;
+            const dueLabel = task.dueAt
+              ? new Date(task.dueAt).toLocaleDateString(lang === "vi" ? "vi-VN" : "en-US")
+              : t("m.tasks.noDeadline");
+            return (
+              <MobileListItem
+                key={task.id}
+                title={task.title}
+                subtitle={`${t(`m.tasks.status.${task.status}` as never)} · ${assignee}`}
+                meta={`${task.workspaceName} · ${task.overdue ? t("m.tasks.due.overdue") : dueLabel}`}
+                priorityBar={task.priority as Exclude<Priority, "all">}
+                badge={
+                  task.overdue ? (
+                    <Badge variant="destructive">{t("m.tasks.due.overdue")}</Badge>
+                  ) : undefined
+                }
+                onClick={() => navigate({ to: "/m/tasks/$id", params: { id: task.id } })}
+              />
+            );
           })}
         </div>
       )}
 
       <footer className="flex min-h-11 items-center justify-between gap-3">
-        <span className="text-xs text-muted-foreground">{t("m.tasks.page").replace("{p}", String(page)).replace("{n}", String(pages))}</span>
+        <span className="text-xs text-muted-foreground">
+          {t("m.tasks.page").replace("{p}", String(page)).replace("{n}", String(pages))}
+        </span>
         <div className="flex gap-2">
-          <Button size="icon" variant="outline" className="h-11 w-11" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))} aria-label={t("tops.prev")}><ChevronLeft className="h-4 w-4" /></Button>
-          <Button size="icon" variant="outline" className="h-11 w-11" disabled={page >= pages} onClick={() => setPage((value) => Math.min(pages, value + 1))} aria-label={t("tops.next")}><ChevronRight className="h-4 w-4" /></Button>
+          <Button
+            size="icon"
+            variant="outline"
+            className="h-11 w-11"
+            disabled={page <= 1}
+            onClick={() => setPage((value) => Math.max(1, value - 1))}
+            aria-label={t("tops.prev")}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            size="icon"
+            variant="outline"
+            className="h-11 w-11"
+            disabled={page >= pages}
+            onClick={() => setPage((value) => Math.min(pages, value + 1))}
+            aria-label={t("tops.next")}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
         </div>
       </footer>
 
       <MobileFAB label={t("m.tasks.create")} onClick={() => setCreateOpen(true)} />
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="w-[calc(100vw-2rem)] max-w-md rounded-2xl">
-          <DialogHeader><DialogTitle>{t("m.tasks.create")}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>{t("m.tasks.create")}</DialogTitle>
+          </DialogHeader>
           <div className="grid gap-3">
-            <label className="grid gap-1.5 text-xs font-medium text-muted-foreground">{t("m.tasks.taskTitle")}<Input value={title} onChange={(event) => setTitle(event.target.value)} className="h-11" autoFocus /></label>
-            <label className="grid gap-1.5 text-xs font-medium text-muted-foreground">{t("m.tasks.description")}<Textarea value={description} onChange={(event) => setDescription(event.target.value)} className="min-h-24" /></label>
-            <label className="grid gap-1.5 text-xs font-medium text-muted-foreground">{t("m.tasks.priority")}<select value={createPriority} onChange={(event) => setCreatePriority(event.target.value as Exclude<Priority, "all">)} className="h-11 rounded-lg border border-border bg-background px-3 text-sm text-foreground">{["low", "normal", "high", "urgent"].map((value) => <option key={value} value={value}>{t(`m.tasks.priority.${value}` as never)}</option>)}</select></label>
-            <label className="grid gap-1.5 text-xs font-medium text-muted-foreground">{t("m.tasks.deadline")}<Input type="datetime-local" value={dueAt} onChange={(event) => setDueAt(event.target.value)} className="h-11" /></label>
+            <label className="grid gap-1.5 text-xs font-medium text-muted-foreground">
+              {t("m.tasks.taskTitle")}
+              <Input
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                className="h-11"
+                autoFocus
+              />
+            </label>
+            <label className="grid gap-1.5 text-xs font-medium text-muted-foreground">
+              {t("m.tasks.description")}
+              <Textarea
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+                className="min-h-24"
+              />
+            </label>
+            <label className="grid gap-1.5 text-xs font-medium text-muted-foreground">
+              {t("m.tasks.priority")}
+              <select
+                value={createPriority}
+                onChange={(event) =>
+                  setCreatePriority(event.target.value as Exclude<Priority, "all">)
+                }
+                className="h-11 rounded-lg border border-border bg-background px-3 text-sm text-foreground"
+              >
+                {["low", "normal", "high", "urgent"].map((value) => (
+                  <option key={value} value={value}>
+                    {t(`m.tasks.priority.${value}` as never)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="grid gap-1.5 text-xs font-medium text-muted-foreground">
+              {t("m.tasks.deadline")}
+              <Input
+                type="datetime-local"
+                value={dueAt}
+                onChange={(event) => setDueAt(event.target.value)}
+                className="h-11"
+              />
+            </label>
           </div>
           <DialogFooter className="grid grid-cols-2 gap-2 sm:grid-cols-2">
-            <Button variant="outline" className="min-h-11" onClick={() => setCreateOpen(false)}>{t("m.tasks.cancel")}</Button>
-            <Button className="min-h-11" disabled={!title.trim() || createMutation.isPending} onClick={() => createMutation.mutate()}>{t("m.tasks.createAction")}</Button>
+            <Button variant="outline" className="min-h-11" onClick={() => setCreateOpen(false)}>
+              {t("m.tasks.cancel")}
+            </Button>
+            <Button
+              className="min-h-11"
+              disabled={!title.trim() || createMutation.isPending}
+              onClick={() => createMutation.mutate()}
+            >
+              {t("m.tasks.createAction")}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -6,22 +6,43 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
-  Link2, Plus, X, Search, Loader2, CheckSquare, FolderKanban,
-  Video, FileText, Mail, MessageSquare, User, Lock,
+  Link2,
+  Plus,
+  X,
+  Search,
+  Loader2,
+  CheckSquare,
+  FolderKanban,
+  Video,
+  FileText,
+  Mail,
+  MessageSquare,
+  User,
+  Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
-  getWorkContext, linkWorkEntities, unlinkWorkEntities, searchLinkableEntities,
+  getWorkContext,
+  linkWorkEntities,
+  unlinkWorkEntities,
+  searchLinkableEntities,
 } from "@/lib/api/work-graph.functions";
 import { FreshnessBadge } from "@/components/work-graph/freshness-badge";
 import { toMobileHref } from "@/lib/mobile-routes";
 import {
-  entityTypeLabel, relationshipLabel, userCreatableFrom, linkableTargetTypes,
+  entityTypeLabel,
+  relationshipLabel,
+  userCreatableFrom,
+  linkableTargetTypes,
   type WorkEntityType,
 } from "@/domain/work-graph/relationship-types";
 
@@ -52,7 +73,12 @@ export interface RelatedWorkPanelProps {
 }
 
 export function RelatedWorkPanel({
-  entityType, entityId, canLink = true, className, collapsible = false, mobileLinks = false,
+  entityType,
+  entityId,
+  canLink = true,
+  className,
+  collapsible = false,
+  mobileLinks = false,
 }: RelatedWorkPanelProps) {
   const qc = useQueryClient();
   const fetchContext = useServerFn(getWorkContext);
@@ -108,7 +134,12 @@ export function RelatedWorkPanel({
           )}
         </button>
         {canLink && (
-          <Button variant="outline" size="sm" onClick={() => setPickerOpen(true)} className="h-8 gap-1.5">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPickerOpen(true)}
+            className="h-8 gap-1.5"
+          >
             <Plus size={14} strokeWidth={2} />
             Liên kết
           </Button>
@@ -131,7 +162,12 @@ export function RelatedWorkPanel({
             <div className="rounded-xl border border-dashed border-border px-4 py-6 text-center">
               <p className="text-sm text-muted-foreground">Chưa có nội dung liên quan.</p>
               {canLink && (
-                <Button variant="ghost" size="sm" className="mt-2 gap-1.5" onClick={() => setPickerOpen(true)}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="mt-2 gap-1.5"
+                  onClick={() => setPickerOpen(true)}
+                >
                   <Plus size={14} /> Liên kết công việc
                 </Button>
               )}
@@ -151,8 +187,15 @@ export function RelatedWorkPanel({
                       className="group flex items-center gap-2.5 rounded-lg border border-border bg-card px-3 py-2 transition-colors hover:bg-muted/50"
                     >
                       <EntityIcon type={it.entity.type} />
-                      <Link {...({ to: mobileLinks ? toMobileHref(it.entity.href) : it.entity.href } as any)} className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-foreground">{it.entity.title}</p>
+                      <Link
+                        {...({
+                          to: mobileLinks ? toMobileHref(it.entity.href) : it.entity.href,
+                        } as any)}
+                        className="min-w-0 flex-1"
+                      >
+                        <p className="truncate text-sm font-medium text-foreground">
+                          {it.entity.title}
+                        </p>
                         <p className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 truncate text-xs text-muted-foreground">
                           <span className="truncate">
                             {relationshipLabel(it.relationship, it.direction)}
@@ -229,7 +272,10 @@ function LinkPicker({ open, onOpenChange, sourceType, onPick }: PickerProps) {
   const [debounced, setDebounced] = useState("");
   const [pending, setPending] = useState<string | null>(null);
 
-  const types = useMemo(() => linkableTargetTypes(sourceType).filter((t) => t !== "PERSON"), [sourceType]);
+  const types = useMemo(
+    () => linkableTargetTypes(sourceType).filter((t) => t !== "PERSON"),
+    [sourceType],
+  );
   const rules = useMemo(() => userCreatableFrom(sourceType), [sourceType]);
 
   // debounce 300ms, tối thiểu 2 ký tự
@@ -253,10 +299,15 @@ function LinkPicker({ open, onOpenChange, sourceType, onPick }: PickerProps) {
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Liên kết công việc</DialogTitle>
-          <DialogDescription>Tìm công việc, dự án, cuộc họp, tài liệu hoặc email liên quan.</DialogDescription>
+          <DialogDescription>
+            Tìm công việc, dự án, cuộc họp, tài liệu hoặc email liên quan.
+          </DialogDescription>
         </DialogHeader>
         <div className="relative">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+          />
           <Input
             autoFocus
             value={term}
@@ -273,7 +324,9 @@ function LinkPicker({ open, onOpenChange, sourceType, onPick }: PickerProps) {
             </p>
           )}
           {!results.isFetching && debounced.length >= 2 && (results.data?.length ?? 0) === 0 && (
-            <p className="px-1 py-3 text-sm text-muted-foreground">Không tìm thấy kết quả phù hợp.</p>
+            <p className="px-1 py-3 text-sm text-muted-foreground">
+              Không tìm thấy kết quả phù hợp.
+            </p>
           )}
           {(results.data ?? []).map((r) => (
             <button
@@ -289,10 +342,16 @@ function LinkPicker({ open, onOpenChange, sourceType, onPick }: PickerProps) {
             >
               <EntityIcon type={r.type} />
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-medium text-foreground">{r.title}</span>
-                <span className="block truncate text-xs text-muted-foreground">{entityTypeLabel(r.type)}</span>
+                <span className="block truncate text-sm font-medium text-foreground">
+                  {r.title}
+                </span>
+                <span className="block truncate text-xs text-muted-foreground">
+                  {entityTypeLabel(r.type)}
+                </span>
               </span>
-              {pending === r.id && <Loader2 size={14} className="animate-spin text-muted-foreground" />}
+              {pending === r.id && (
+                <Loader2 size={14} className="animate-spin text-muted-foreground" />
+              )}
             </button>
           ))}
         </div>
