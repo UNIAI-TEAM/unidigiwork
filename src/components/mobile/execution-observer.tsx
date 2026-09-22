@@ -327,7 +327,7 @@ export function ExecutionObserver({
           size="sm"
           variant="outline"
           className="mt-2 min-h-11 w-full"
-          onClick={() => void navigate({ to: "/tasks/$id", params: { id: taskId } })}
+          onClick={() => void navigate({ to: "/m/tasks/$id", params: { id: taskId } })}
         >
           <ExternalLink className="mr-1.5 h-3.5 w-3.5" /> {t("m.exec.open")}
         </Button>
@@ -392,7 +392,7 @@ function HumanExecutionPanel({ taskId, humanName }: { taskId: string; humanName?
         size="sm"
         variant="outline"
         className="mt-3 min-h-11 w-full"
-        onClick={() => void navigate({ to: "/tasks/$id", params: { id: taskId } })}
+        onClick={() => void navigate({ to: "/m/tasks/$id", params: { id: taskId } })}
       >
         <ExternalLink className="mr-1.5 h-3.5 w-3.5" /> {t("m.exec.open")}
       </Button>

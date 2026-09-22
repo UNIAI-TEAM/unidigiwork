@@ -436,7 +436,7 @@ function AddContextDrawer({
       id: "apps",
       label: t("m.ai.context.apps"),
       icon: Zap,
-      action: () => void navigate({ to: "/settings", search: { tab: "integrations" } as never }),
+      action: () => void navigate({ to: "/m/settings", search: { tab: "integrations" } as never }),
     },
   ];
 

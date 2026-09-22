@@ -180,7 +180,7 @@ function MobileMeetPage() {
                   </Badge>
                 ) : null
               }
-              onClick={() => void navigate({ to: "/meeting/$id", params: { id: m.id } })}
+              onClick={() => void navigate({ to: "/m/meet/$id", params: { id: m.id } })}
             />
           ))}
         </div>

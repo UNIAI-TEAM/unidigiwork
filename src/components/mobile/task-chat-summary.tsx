@@ -38,6 +38,7 @@ import {
 import { getWorkContext, listWorkGraphBoard } from "@/lib/api/work-graph.functions";
 import { localeTag, useI18n } from "@/lib/i18n";
 import { CollapsibleChatContent } from "@/components/mobile/collapsible-chat-content";
+import { toMobileHref } from "@/lib/mobile-routes";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
@@ -233,7 +234,7 @@ export function TaskChatSummary({ taskId, taskTitle }: { taskId: string; taskTit
           <h2 className="mt-1 break-words text-lg font-semibold">{title}</h2>
         </div>
         <Button asChild variant="outline" className="min-h-11 shrink-0 px-3">
-          <Link to="/work-graph" search={{ task: taskId }}>
+          <Link to="/m/work-graph" search={{ task: taskId }}>
             <ExternalLink className="h-4 w-4" /> {t("m.taskChat.graph")}
           </Link>
         </Button>
@@ -293,7 +294,7 @@ export function TaskChatSummary({ taskId, taskTitle }: { taskId: string; taskTit
                             {comment.metadata?.classification?.work_product_href ? (
                               <Button asChild variant="ghost" size="sm" className="min-h-9 px-2">
                                 <Link
-                                  to="/work-products/$id"
+                                  to="/m/work-products/$id"
                                   params={{
                                     id: String(
                                       comment.metadata.classification.created_work_product_id,
@@ -502,7 +503,7 @@ export function TaskChatSummary({ taskId, taskTitle }: { taskId: string; taskTit
                 {related.map((item) => (
                   <Link
                     key={item.edgeId}
-                    to={item.entity.href as never}
+                    to={toMobileHref(item.entity.href) as never}
                     className="flex min-h-14 items-center gap-3 rounded-xl border border-border bg-surface px-3"
                   >
                     <Link2 className="h-4 w-4 shrink-0 text-primary" />

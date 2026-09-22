@@ -90,7 +90,7 @@ function MorePage() {
             </span>
           </li>
           <li>
-            <Row to="/settings" label={t("nav.settings")} icon={Settings} />
+            <Row to="/m/settings" label={t("nav.settings")} icon={Settings} />
           </li>
           <li>
             <Row to="/help" label={t("nav.help")} icon={HelpCircle} />

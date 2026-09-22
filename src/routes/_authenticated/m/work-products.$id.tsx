@@ -258,10 +258,14 @@ function MobileWorkProductDetail() {
           {following ? <BellOff className="mr-2 h-4 w-4" /> : <Bell className="mr-2 h-4 w-4" />}
           {following ? "Bỏ theo dõi" : "Theo dõi"}
         </Button>
-        <Button asChild variant="outline" className="min-h-11">
-          <Link to="/work-products/$id" params={{ id }}>
-            <ExternalLink className="mr-2 h-4 w-4" /> Bản đầy đủ
-          </Link>
+        <Button
+          variant="outline"
+          className="min-h-11"
+          onClick={() =>
+            document.querySelector("[data-mobile-work-product-content]")?.scrollIntoView()
+          }
+        >
+          <ExternalLink className="mr-2 h-4 w-4" /> Xem nội dung
         </Button>
       </div>
 
@@ -278,7 +282,7 @@ function MobileWorkProductDetail() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="content" className="mt-4 space-y-3">
+        <TabsContent value="content" className="mt-4 space-y-3" data-mobile-work-product-content>
           {canEdit && (
             <div className="flex flex-wrap gap-2">
               {editing ? (
@@ -441,7 +445,7 @@ function MobileWorkProductDetail() {
             items={tasks}
             render={(t) => (
               <Link
-                to="/tasks/$id"
+                to="/m/tasks/$id"
                 params={{ id: t.entityId }}
                 className="flex min-h-11 items-center gap-2 rounded-xl bg-surface-2 px-3 py-2 text-sm"
               >
@@ -460,7 +464,7 @@ function MobileWorkProductDetail() {
             items={documents}
             render={(d) => (
               <Link
-                to="/documents/$id"
+                to="/m/documents/$id"
                 params={{ id: d.entityId }}
                 className="flex min-h-11 items-center gap-2 rounded-xl bg-surface-2 px-3 py-2 text-sm"
               >
@@ -475,7 +479,7 @@ function MobileWorkProductDetail() {
             items={meetings}
             render={(m) => (
               <Link
-                to="/meeting/$id"
+                to="/m/meet/$id"
                 params={{ id: m.entityId }}
                 className="flex min-h-11 items-center gap-2 rounded-xl bg-surface-2 px-3 py-2 text-sm"
               >

@@ -93,11 +93,14 @@ import { Route as AuthenticatedWorkCatalogCodeRouteImport } from './routes/_auth
 import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects_.$id'
 import { Route as AuthenticatedPeopleIdRouteImport } from './routes/_authenticated/people_.$id'
 import { Route as AuthenticatedNotificationsIdRouteImport } from './routes/_authenticated/notifications.$id'
+import { Route as AuthenticatedMWorkGraphRouteImport } from './routes/_authenticated/m/work-graph'
 import { Route as AuthenticatedMTasksRouteImport } from './routes/_authenticated/m/tasks'
+import { Route as AuthenticatedMSettingsRouteImport } from './routes/_authenticated/m/settings'
 import { Route as AuthenticatedMSearchRouteImport } from './routes/_authenticated/m/search'
 import { Route as AuthenticatedMMoreRouteImport } from './routes/_authenticated/m/more'
 import { Route as AuthenticatedMMeetRouteImport } from './routes/_authenticated/m/meet'
 import { Route as AuthenticatedMHomeRouteImport } from './routes/_authenticated/m/home'
+import { Route as AuthenticatedMDocumentsRouteImport } from './routes/_authenticated/m/documents'
 import { Route as AuthenticatedMComposeRouteImport } from './routes/_authenticated/m/compose'
 import { Route as AuthenticatedMChatRouteImport } from './routes/_authenticated/m/chat'
 import { Route as AuthenticatedMBoxRouteImport } from './routes/_authenticated/m/box'
@@ -151,7 +154,9 @@ import { Route as ApiOfficeSaveCompleteRouteImport } from './routes/api/office/s
 import { Route as ApiAdminTraceCorrelationIdRouteImport } from './routes/api/admin/trace.$correlationId'
 import { Route as AuthenticatedMWorkProductsIdRouteImport } from './routes/_authenticated/m/work-products.$id'
 import { Route as AuthenticatedMTasksIdRouteImport } from './routes/_authenticated/m/tasks_.$id'
+import { Route as AuthenticatedMMeetIdRouteImport } from './routes/_authenticated/m/meet.$id'
 import { Route as AuthenticatedMEmailIdRouteImport } from './routes/_authenticated/m/email.$id'
+import { Route as AuthenticatedMDocumentsIdRouteImport } from './routes/_authenticated/m/documents.$id'
 import { Route as AuthenticatedMCIdRouteImport } from './routes/_authenticated/m/c.$id'
 import { Route as AuthenticatedMAiWorkforceIdRouteImport } from './routes/_authenticated/m/ai-workforce.$id'
 import { Route as AuthenticatedMAiMarketIdRouteImport } from './routes/_authenticated/m/ai-market.$id'
@@ -599,9 +604,19 @@ const AuthenticatedNotificationsIdRoute =
     path: '/$id',
     getParentRoute: () => AuthenticatedNotificationsRoute,
   } as any)
+const AuthenticatedMWorkGraphRoute = AuthenticatedMWorkGraphRouteImport.update({
+  id: '/work-graph',
+  path: '/work-graph',
+  getParentRoute: () => AuthenticatedMRoute,
+} as any)
 const AuthenticatedMTasksRoute = AuthenticatedMTasksRouteImport.update({
   id: '/tasks',
   path: '/tasks',
+  getParentRoute: () => AuthenticatedMRoute,
+} as any)
+const AuthenticatedMSettingsRoute = AuthenticatedMSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => AuthenticatedMRoute,
 } as any)
 const AuthenticatedMSearchRoute = AuthenticatedMSearchRouteImport.update({
@@ -622,6 +637,11 @@ const AuthenticatedMMeetRoute = AuthenticatedMMeetRouteImport.update({
 const AuthenticatedMHomeRoute = AuthenticatedMHomeRouteImport.update({
   id: '/home',
   path: '/home',
+  getParentRoute: () => AuthenticatedMRoute,
+} as any)
+const AuthenticatedMDocumentsRoute = AuthenticatedMDocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
   getParentRoute: () => AuthenticatedMRoute,
 } as any)
 const AuthenticatedMComposeRoute = AuthenticatedMComposeRouteImport.update({
@@ -923,11 +943,22 @@ const AuthenticatedMTasksIdRoute = AuthenticatedMTasksIdRouteImport.update({
   path: '/tasks/$id',
   getParentRoute: () => AuthenticatedMRoute,
 } as any)
+const AuthenticatedMMeetIdRoute = AuthenticatedMMeetIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthenticatedMMeetRoute,
+} as any)
 const AuthenticatedMEmailIdRoute = AuthenticatedMEmailIdRouteImport.update({
   id: '/email/$id',
   path: '/email/$id',
   getParentRoute: () => AuthenticatedMRoute,
 } as any)
+const AuthenticatedMDocumentsIdRoute =
+  AuthenticatedMDocumentsIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedMDocumentsRoute,
+  } as any)
 const AuthenticatedMCIdRoute = AuthenticatedMCIdRouteImport.update({
   id: '/c/$id',
   path: '/c/$id',
@@ -1059,11 +1090,14 @@ export interface FileRoutesByFullPath {
   '/m/box': typeof AuthenticatedMBoxRoute
   '/m/chat': typeof AuthenticatedMChatRoute
   '/m/compose': typeof AuthenticatedMComposeRoute
+  '/m/documents': typeof AuthenticatedMDocumentsRouteWithChildren
   '/m/home': typeof AuthenticatedMHomeRoute
-  '/m/meet': typeof AuthenticatedMMeetRoute
+  '/m/meet': typeof AuthenticatedMMeetRouteWithChildren
   '/m/more': typeof AuthenticatedMMoreRoute
   '/m/search': typeof AuthenticatedMSearchRoute
+  '/m/settings': typeof AuthenticatedMSettingsRoute
   '/m/tasks': typeof AuthenticatedMTasksRoute
+  '/m/work-graph': typeof AuthenticatedMWorkGraphRoute
   '/notifications/$id': typeof AuthenticatedNotificationsIdRoute
   '/people/$id': typeof AuthenticatedPeopleIdRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
@@ -1091,7 +1125,9 @@ export interface FileRoutesByFullPath {
   '/m/ai-market/$id': typeof AuthenticatedMAiMarketIdRoute
   '/m/ai-workforce/$id': typeof AuthenticatedMAiWorkforceIdRoute
   '/m/c/$id': typeof AuthenticatedMCIdRoute
+  '/m/documents/$id': typeof AuthenticatedMDocumentsIdRoute
   '/m/email/$id': typeof AuthenticatedMEmailIdRoute
+  '/m/meet/$id': typeof AuthenticatedMMeetIdRoute
   '/m/tasks/$id': typeof AuthenticatedMTasksIdRoute
   '/m/work-products/$id': typeof AuthenticatedMWorkProductsIdRoute
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
@@ -1206,11 +1242,14 @@ export interface FileRoutesByTo {
   '/m/box': typeof AuthenticatedMBoxRoute
   '/m/chat': typeof AuthenticatedMChatRoute
   '/m/compose': typeof AuthenticatedMComposeRoute
+  '/m/documents': typeof AuthenticatedMDocumentsRouteWithChildren
   '/m/home': typeof AuthenticatedMHomeRoute
-  '/m/meet': typeof AuthenticatedMMeetRoute
+  '/m/meet': typeof AuthenticatedMMeetRouteWithChildren
   '/m/more': typeof AuthenticatedMMoreRoute
   '/m/search': typeof AuthenticatedMSearchRoute
+  '/m/settings': typeof AuthenticatedMSettingsRoute
   '/m/tasks': typeof AuthenticatedMTasksRoute
+  '/m/work-graph': typeof AuthenticatedMWorkGraphRoute
   '/notifications/$id': typeof AuthenticatedNotificationsIdRoute
   '/people/$id': typeof AuthenticatedPeopleIdRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
@@ -1238,7 +1277,9 @@ export interface FileRoutesByTo {
   '/m/ai-market/$id': typeof AuthenticatedMAiMarketIdRoute
   '/m/ai-workforce/$id': typeof AuthenticatedMAiWorkforceIdRoute
   '/m/c/$id': typeof AuthenticatedMCIdRoute
+  '/m/documents/$id': typeof AuthenticatedMDocumentsIdRoute
   '/m/email/$id': typeof AuthenticatedMEmailIdRoute
+  '/m/meet/$id': typeof AuthenticatedMMeetIdRoute
   '/m/tasks/$id': typeof AuthenticatedMTasksIdRoute
   '/m/work-products/$id': typeof AuthenticatedMWorkProductsIdRoute
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
@@ -1358,11 +1399,14 @@ export interface FileRoutesById {
   '/_authenticated/m/box': typeof AuthenticatedMBoxRoute
   '/_authenticated/m/chat': typeof AuthenticatedMChatRoute
   '/_authenticated/m/compose': typeof AuthenticatedMComposeRoute
+  '/_authenticated/m/documents': typeof AuthenticatedMDocumentsRouteWithChildren
   '/_authenticated/m/home': typeof AuthenticatedMHomeRoute
-  '/_authenticated/m/meet': typeof AuthenticatedMMeetRoute
+  '/_authenticated/m/meet': typeof AuthenticatedMMeetRouteWithChildren
   '/_authenticated/m/more': typeof AuthenticatedMMoreRoute
   '/_authenticated/m/search': typeof AuthenticatedMSearchRoute
+  '/_authenticated/m/settings': typeof AuthenticatedMSettingsRoute
   '/_authenticated/m/tasks': typeof AuthenticatedMTasksRoute
+  '/_authenticated/m/work-graph': typeof AuthenticatedMWorkGraphRoute
   '/_authenticated/notifications/$id': typeof AuthenticatedNotificationsIdRoute
   '/_authenticated/people_/$id': typeof AuthenticatedPeopleIdRoute
   '/_authenticated/projects_/$id': typeof AuthenticatedProjectsIdRoute
@@ -1390,7 +1434,9 @@ export interface FileRoutesById {
   '/_authenticated/m/ai-market/$id': typeof AuthenticatedMAiMarketIdRoute
   '/_authenticated/m/ai-workforce/$id': typeof AuthenticatedMAiWorkforceIdRoute
   '/_authenticated/m/c/$id': typeof AuthenticatedMCIdRoute
+  '/_authenticated/m/documents/$id': typeof AuthenticatedMDocumentsIdRoute
   '/_authenticated/m/email/$id': typeof AuthenticatedMEmailIdRoute
+  '/_authenticated/m/meet/$id': typeof AuthenticatedMMeetIdRoute
   '/_authenticated/m/tasks_/$id': typeof AuthenticatedMTasksIdRoute
   '/_authenticated/m/work-products/$id': typeof AuthenticatedMWorkProductsIdRoute
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
@@ -1510,11 +1556,14 @@ export interface FileRouteTypes {
     | '/m/box'
     | '/m/chat'
     | '/m/compose'
+    | '/m/documents'
     | '/m/home'
     | '/m/meet'
     | '/m/more'
     | '/m/search'
+    | '/m/settings'
     | '/m/tasks'
+    | '/m/work-graph'
     | '/notifications/$id'
     | '/people/$id'
     | '/projects/$id'
@@ -1542,7 +1591,9 @@ export interface FileRouteTypes {
     | '/m/ai-market/$id'
     | '/m/ai-workforce/$id'
     | '/m/c/$id'
+    | '/m/documents/$id'
     | '/m/email/$id'
+    | '/m/meet/$id'
     | '/m/tasks/$id'
     | '/m/work-products/$id'
     | '/api/admin/trace/$correlationId'
@@ -1657,11 +1708,14 @@ export interface FileRouteTypes {
     | '/m/box'
     | '/m/chat'
     | '/m/compose'
+    | '/m/documents'
     | '/m/home'
     | '/m/meet'
     | '/m/more'
     | '/m/search'
+    | '/m/settings'
     | '/m/tasks'
+    | '/m/work-graph'
     | '/notifications/$id'
     | '/people/$id'
     | '/projects/$id'
@@ -1689,7 +1743,9 @@ export interface FileRouteTypes {
     | '/m/ai-market/$id'
     | '/m/ai-workforce/$id'
     | '/m/c/$id'
+    | '/m/documents/$id'
     | '/m/email/$id'
+    | '/m/meet/$id'
     | '/m/tasks/$id'
     | '/m/work-products/$id'
     | '/api/admin/trace/$correlationId'
@@ -1808,11 +1864,14 @@ export interface FileRouteTypes {
     | '/_authenticated/m/box'
     | '/_authenticated/m/chat'
     | '/_authenticated/m/compose'
+    | '/_authenticated/m/documents'
     | '/_authenticated/m/home'
     | '/_authenticated/m/meet'
     | '/_authenticated/m/more'
     | '/_authenticated/m/search'
+    | '/_authenticated/m/settings'
     | '/_authenticated/m/tasks'
+    | '/_authenticated/m/work-graph'
     | '/_authenticated/notifications/$id'
     | '/_authenticated/people_/$id'
     | '/_authenticated/projects_/$id'
@@ -1840,7 +1899,9 @@ export interface FileRouteTypes {
     | '/_authenticated/m/ai-market/$id'
     | '/_authenticated/m/ai-workforce/$id'
     | '/_authenticated/m/c/$id'
+    | '/_authenticated/m/documents/$id'
     | '/_authenticated/m/email/$id'
+    | '/_authenticated/m/meet/$id'
     | '/_authenticated/m/tasks_/$id'
     | '/_authenticated/m/work-products/$id'
     | '/api/admin/trace/$correlationId'
@@ -2502,11 +2563,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedNotificationsIdRouteImport
       parentRoute: typeof AuthenticatedNotificationsRoute
     }
+    '/_authenticated/m/work-graph': {
+      id: '/_authenticated/m/work-graph'
+      path: '/work-graph'
+      fullPath: '/m/work-graph'
+      preLoaderRoute: typeof AuthenticatedMWorkGraphRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
     '/_authenticated/m/tasks': {
       id: '/_authenticated/m/tasks'
       path: '/tasks'
       fullPath: '/m/tasks'
       preLoaderRoute: typeof AuthenticatedMTasksRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
+    '/_authenticated/m/settings': {
+      id: '/_authenticated/m/settings'
+      path: '/settings'
+      fullPath: '/m/settings'
+      preLoaderRoute: typeof AuthenticatedMSettingsRouteImport
       parentRoute: typeof AuthenticatedMRoute
     }
     '/_authenticated/m/search': {
@@ -2535,6 +2610,13 @@ declare module '@tanstack/react-router' {
       path: '/home'
       fullPath: '/m/home'
       preLoaderRoute: typeof AuthenticatedMHomeRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
+    '/_authenticated/m/documents': {
+      id: '/_authenticated/m/documents'
+      path: '/documents'
+      fullPath: '/m/documents'
+      preLoaderRoute: typeof AuthenticatedMDocumentsRouteImport
       parentRoute: typeof AuthenticatedMRoute
     }
     '/_authenticated/m/compose': {
@@ -2908,12 +2990,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMTasksIdRouteImport
       parentRoute: typeof AuthenticatedMRoute
     }
+    '/_authenticated/m/meet/$id': {
+      id: '/_authenticated/m/meet/$id'
+      path: '/$id'
+      fullPath: '/m/meet/$id'
+      preLoaderRoute: typeof AuthenticatedMMeetIdRouteImport
+      parentRoute: typeof AuthenticatedMMeetRoute
+    }
     '/_authenticated/m/email/$id': {
       id: '/_authenticated/m/email/$id'
       path: '/email/$id'
       fullPath: '/m/email/$id'
       preLoaderRoute: typeof AuthenticatedMEmailIdRouteImport
       parentRoute: typeof AuthenticatedMRoute
+    }
+    '/_authenticated/m/documents/$id': {
+      id: '/_authenticated/m/documents/$id'
+      path: '/$id'
+      fullPath: '/m/documents/$id'
+      preLoaderRoute: typeof AuthenticatedMDocumentsIdRouteImport
+      parentRoute: typeof AuthenticatedMDocumentsRoute
     }
     '/_authenticated/m/c/$id': {
       id: '/_authenticated/m/c/$id'
@@ -3039,16 +3135,44 @@ const AuthenticatedDocumentsRouteWithChildren =
     AuthenticatedDocumentsRouteChildren,
   )
 
+interface AuthenticatedMDocumentsRouteChildren {
+  AuthenticatedMDocumentsIdRoute: typeof AuthenticatedMDocumentsIdRoute
+}
+
+const AuthenticatedMDocumentsRouteChildren: AuthenticatedMDocumentsRouteChildren =
+  {
+    AuthenticatedMDocumentsIdRoute: AuthenticatedMDocumentsIdRoute,
+  }
+
+const AuthenticatedMDocumentsRouteWithChildren =
+  AuthenticatedMDocumentsRoute._addFileChildren(
+    AuthenticatedMDocumentsRouteChildren,
+  )
+
+interface AuthenticatedMMeetRouteChildren {
+  AuthenticatedMMeetIdRoute: typeof AuthenticatedMMeetIdRoute
+}
+
+const AuthenticatedMMeetRouteChildren: AuthenticatedMMeetRouteChildren = {
+  AuthenticatedMMeetIdRoute: AuthenticatedMMeetIdRoute,
+}
+
+const AuthenticatedMMeetRouteWithChildren =
+  AuthenticatedMMeetRoute._addFileChildren(AuthenticatedMMeetRouteChildren)
+
 interface AuthenticatedMRouteChildren {
   AuthenticatedMAiRoute: typeof AuthenticatedMAiRoute
   AuthenticatedMBoxRoute: typeof AuthenticatedMBoxRoute
   AuthenticatedMChatRoute: typeof AuthenticatedMChatRoute
   AuthenticatedMComposeRoute: typeof AuthenticatedMComposeRoute
+  AuthenticatedMDocumentsRoute: typeof AuthenticatedMDocumentsRouteWithChildren
   AuthenticatedMHomeRoute: typeof AuthenticatedMHomeRoute
-  AuthenticatedMMeetRoute: typeof AuthenticatedMMeetRoute
+  AuthenticatedMMeetRoute: typeof AuthenticatedMMeetRouteWithChildren
   AuthenticatedMMoreRoute: typeof AuthenticatedMMoreRoute
   AuthenticatedMSearchRoute: typeof AuthenticatedMSearchRoute
+  AuthenticatedMSettingsRoute: typeof AuthenticatedMSettingsRoute
   AuthenticatedMTasksRoute: typeof AuthenticatedMTasksRoute
+  AuthenticatedMWorkGraphRoute: typeof AuthenticatedMWorkGraphRoute
   AuthenticatedMIndexRoute: typeof AuthenticatedMIndexRoute
   AuthenticatedMAiMarketIdRoute: typeof AuthenticatedMAiMarketIdRoute
   AuthenticatedMAiWorkforceIdRoute: typeof AuthenticatedMAiWorkforceIdRoute
@@ -3067,11 +3191,14 @@ const AuthenticatedMRouteChildren: AuthenticatedMRouteChildren = {
   AuthenticatedMBoxRoute: AuthenticatedMBoxRoute,
   AuthenticatedMChatRoute: AuthenticatedMChatRoute,
   AuthenticatedMComposeRoute: AuthenticatedMComposeRoute,
+  AuthenticatedMDocumentsRoute: AuthenticatedMDocumentsRouteWithChildren,
   AuthenticatedMHomeRoute: AuthenticatedMHomeRoute,
-  AuthenticatedMMeetRoute: AuthenticatedMMeetRoute,
+  AuthenticatedMMeetRoute: AuthenticatedMMeetRouteWithChildren,
   AuthenticatedMMoreRoute: AuthenticatedMMoreRoute,
   AuthenticatedMSearchRoute: AuthenticatedMSearchRoute,
+  AuthenticatedMSettingsRoute: AuthenticatedMSettingsRoute,
   AuthenticatedMTasksRoute: AuthenticatedMTasksRoute,
+  AuthenticatedMWorkGraphRoute: AuthenticatedMWorkGraphRoute,
   AuthenticatedMIndexRoute: AuthenticatedMIndexRoute,
   AuthenticatedMAiMarketIdRoute: AuthenticatedMAiMarketIdRoute,
   AuthenticatedMAiWorkforceIdRoute: AuthenticatedMAiWorkforceIdRoute,

@@ -140,9 +140,10 @@ export function WorkProductRun({
                   variant="outline"
                   size="sm"
                   className="min-h-11 shrink-0"
-                  onClick={() =>
-                    void navigate({ to: "/work-products/$id", params: { id: state.id! } })
-                  }
+                  onClick={() => {
+                    if (!state.id) return;
+                    void navigate({ to: "/m/work-products/$id", params: { id: state.id } });
+                  }}
                 >
                   {t("m.wp.open")}
                 </Button>
