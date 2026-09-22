@@ -61,27 +61,26 @@ export function MobileShell() {
 
   return (
     <div className="flex h-dvh min-h-dvh min-w-0 flex-col overflow-hidden bg-background">
-      <header className="z-40 flex min-h-16 shrink-0 items-center gap-2 border-b border-border bg-background px-[max(0.75rem,env(safe-area-inset-left))] pb-2 pt-[max(.5rem,env(safe-area-inset-top))]">
+      <header className="z-40 flex min-h-16 shrink-0 items-center gap-2 bg-background px-[max(0.75rem,env(safe-area-inset-left))] pb-2 pt-[max(.5rem,env(safe-area-inset-top))]">
         <Button
           variant="ghost"
           size="icon"
-          className="h-11 w-11 shrink-0 rounded-xl"
+          className="h-11 w-11 shrink-0 rounded-full"
           aria-label={t("m.nav.open")}
           onClick={() => setDrawerOpen(true)}
         >
           <Menu className="h-5 w-5" />
         </Button>
         <button
-          className="flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-xl px-1 text-left"
+          className="flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-xl px-1 text-center"
           onClick={startNew}
         >
-          <BrandMark className="h-7 w-7 shrink-0" />
-          <span className="truncate text-sm font-semibold tracking-tight">UniWork</span>
+          <span className="truncate text-base font-semibold">UniWork</span>
         </button>
         <Button
           variant="ghost"
           size="icon"
-          className="h-11 w-11 shrink-0 rounded-full border border-border bg-surface-2 shadow-card hover:bg-surface-3"
+          className="h-11 w-11 shrink-0 rounded-full hover:bg-surface-2"
           onClick={startNew}
           aria-label={t("m.nav.newWork")}
           title={t("m.nav.newWork")}

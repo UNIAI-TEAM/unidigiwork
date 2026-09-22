@@ -12,7 +12,6 @@ import {
   Paperclip,
   Plus,
   Search,
-  Sparkles,
   Users,
   X,
   Zap,
@@ -38,7 +37,6 @@ import {
   PromptInputTools,
 } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
-import { BrandMark } from "@/components/brand-logo";
 import {
   Drawer,
   DrawerContent,
@@ -54,8 +52,6 @@ import { WORK_ENTITY_TYPES } from "@/domain/work-graph/relationship-types";
 import { useActiveWorkspace } from "@/lib/active-workspace";
 import { useCurrentIdentity } from "@/lib/use-current-identity";
 import { useI18n } from "@/lib/i18n";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TaskChatHub } from "@/components/mobile/task-chat-summary";
 import { CollapsibleChatContent } from "@/components/mobile/collapsible-chat-content";
 
 type AddedContext = {
@@ -64,13 +60,6 @@ type AddedContext = {
   kind: "file" | "entity";
   root?: { type: AiContextEntityType; id: string };
 };
-
-const STARTERS = [
-  { key: "plan", icon: Sparkles },
-  { key: "catchup", icon: Zap },
-  { key: "prepare", icon: Users },
-  { key: "create", icon: FileText },
-] as const;
 
 const ENTITY_MAP: Partial<Record<UniversalSearchItem["entityType"], AiContextEntityType>> = {
   PROJECT: "WORKSPACE",
@@ -97,7 +86,6 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
   const [pendingText, setPendingText] = useState<string | null>(null);
   const [contexts, setContexts] = useState<AddedContext[]>([]);
   const [contextOpen, setContextOpen] = useState(false);
-  const [surfaceTab, setSurfaceTab] = useState("chat");
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
@@ -173,24 +161,8 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
 
   return (
     <div className="mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col overflow-hidden">
-      <Tabs
-        value={surfaceTab}
-        onValueChange={setSurfaceTab}
-        className="flex min-h-0 flex-1 flex-col overflow-hidden"
-      >
-        <div className="shrink-0 px-4 pt-3 sm:px-6">
-          <TabsList className="grid h-11 w-full grid-cols-2 rounded-full bg-surface p-1">
-            <TabsTrigger value="chat" className="min-h-9 rounded-full">
-              {t("m.taskChat.tab.chat")}
-            </TabsTrigger>
-            <TabsTrigger value="tasks" className="min-h-9 rounded-full">
-              {t("m.taskChat.tab.tasks")}
-            </TabsTrigger>
-          </TabsList>
-        </div>
-        <TabsContent value="chat" className="mt-0 flex min-h-0 flex-1 flex-col overflow-hidden">
-          <Conversation className="min-h-0 flex-1">
-            <ConversationContent className="min-h-full gap-6 px-4 pb-6 pt-5 sm:px-6">
+      <Conversation className="min-h-0 flex-1">
+        <ConversationContent className="min-h-full gap-6 px-4 pb-6 pt-3 sm:px-6">
               {messages.isLoading ? (
                 <div className="flex min-h-72 items-center justify-center text-muted-foreground">
                   <Loader2 className="h-5 w-5 animate-spin" />
@@ -199,7 +171,7 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
               ) : isEmpty ? (
                 <EmptyState firstName={firstName} onPick={submit} />
               ) : (
-                <div className="space-y-6 pb-4">
+                  <div className="mx-auto w-full max-w-2xl space-y-7 pb-4">
                   {displayMessages.map((message, index) => (
                     <Message
                       key={message.id}
@@ -210,28 +182,19 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
                   {pendingText && (
                     <>
                       <UserMessage content={pendingText} />
-                      <div
-                        className="flex items-center gap-3 text-sm text-muted-foreground"
-                        role="status"
-                      >
-                        <BrandMark className="h-8 w-8" />
+                      <div className="text-sm text-muted-foreground" role="status">
                         <Shimmer className="text-sm">{t("m.ai.working")}</Shimmer>
                       </div>
                     </>
                   )}
                 </div>
               )}
-            </ConversationContent>
-            <ConversationScrollButton aria-label={t("m.ai.scrollLatest")} />
-          </Conversation>
-        </TabsContent>
-        <TabsContent value="tasks" className="mt-0 flex min-h-0 flex-1 flex-col overflow-hidden">
-          <TaskChatHub />
-        </TabsContent>
-      </Tabs>
+        </ConversationContent>
+        <ConversationScrollButton aria-label={t("m.ai.scrollLatest")} />
+      </Conversation>
 
-      {surfaceTab === "chat" && (
-        <div className="shrink-0 bg-background px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 sm:px-6">
+      <div className="shrink-0 bg-background px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 sm:px-6">
+        <div className="mx-auto w-full max-w-2xl">
           {contexts.length > 0 && (
             <div className="mb-2 flex gap-2 overflow-x-auto pb-1">
               {contexts.map((item) => (
@@ -242,7 +205,7 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
                   {item.kind === "file" ? (
                     <Paperclip className="h-3.5 w-3.5" />
                   ) : (
-                    <Sparkles className="h-3.5 w-3.5 text-primary" />
+                     <FileText className="h-3.5 w-3.5 text-primary" />
                   )}
                   <span className="max-w-48 truncate">{item.label}</span>
                   <Button
@@ -260,8 +223,8 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
               ))}
             </div>
           )}
-          <PromptInput
-            className="rounded-[1.75rem] border-border bg-surface shadow-panel"
+           <PromptInput
+             className="rounded-[1.75rem] border-border-strong bg-surface shadow-card"
             onSubmit={({ text }) => submit(text)}
           >
             <PromptInputTextarea
@@ -270,7 +233,7 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
               aria-label={t("m.ai.composer")}
               placeholder={t("m.ai.composer")}
               onChange={(event) => setInput(event.currentTarget.value)}
-              className="max-h-32 min-h-14 px-5 pt-3.5 text-base leading-6"
+               className="max-h-40 min-h-20 px-5 pt-4 text-base leading-6"
             />
             <PromptInputFooter className="px-1.5 pb-1.5">
               <PromptInputTools>
@@ -308,11 +271,11 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
               </PromptInputSubmit>
             </PromptInputFooter>
           </PromptInput>
-          <p className="mt-2 text-center text-[11px] text-muted-foreground">
+           <p className="mt-2 text-center text-xs text-muted-foreground">
             {t("m.ai.disclaimer")}
           </p>
-        </div>
-      )}
+         </div>
+       </div>
 
       <input
         ref={fileRef}
@@ -347,33 +310,12 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
 function EmptyState({ firstName, onPick }: { firstName: string; onPick: (value: string) => void }) {
   const { t } = useI18n();
   return (
-    <section className="flex min-h-full flex-col justify-center py-8 sm:py-16">
+    <section className="flex min-h-full flex-col justify-end pb-6 sm:justify-center sm:pb-0">
       <div className="mx-auto w-full max-w-xl text-center">
-        <span className="mx-auto grid h-12 w-12 place-items-center rounded-full border border-border bg-surface text-primary shadow-card">
-          <Sparkles className="h-5 w-5" />
-        </span>
-        <h1 className="mt-6 text-3xl font-semibold leading-tight">
+        <h1 className="text-2xl font-semibold leading-tight">
           {t("m.ai.greeting").replace("{name}", firstName)}
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">{t("m.ai.question")}</p>
-      </div>
-      <div className="mx-auto mt-10 grid w-full max-w-xl grid-cols-2 gap-3">
-        {STARTERS.map(({ key, icon: Icon }) => (
-          <Button
-            key={key}
-            variant="outline"
-            className="h-auto min-h-28 items-start justify-start whitespace-normal rounded-2xl p-4 text-left shadow-card"
-            onClick={() => onPick(t(`m.ai.starter.${key}.prompt` as never))}
-          >
-            <span className="flex h-full flex-col items-start gap-2">
-              <Icon className="h-5 w-5 text-primary" />
-              <span className="text-sm font-semibold">{t(`m.ai.starter.${key}` as never)}</span>
-              <span className="text-xs font-normal leading-relaxed text-muted-foreground">
-                {t(`m.ai.starter.${key}.desc` as never)}
-              </span>
-            </span>
-          </Button>
-        ))}
       </div>
     </section>
   );
@@ -383,13 +325,8 @@ function Message({ message, latest = false }: { message: AiMessageDTO; latest?: 
   const { t } = useI18n();
   if (message.role === "user") return <UserMessage content={message.content} />;
   return (
-    <AiMessage
-      from="assistant"
-      className={latest ? "max-w-full" : "max-w-full border-t border-border/60 pt-5"}
-    >
-      <div className="flex items-start gap-3">
-        <BrandMark className="mt-0.5 h-8 w-8" />
-        <MessageContent className="min-w-0 flex-1 overflow-visible">
+    <AiMessage from="assistant" className={latest ? "max-w-full" : "max-w-full"}>
+      <MessageContent className="min-w-0 flex-1 overflow-visible">
           <CollapsibleChatContent content={message.content}>
             <MessageResponse className="executive-brief text-sm leading-7 [&_h2]:mb-2 [&_h2]:mt-5 [&_h2]:text-xs [&_h2]:font-semibold [&_h2]:uppercase [&_h2]:text-muted-foreground [&_li]:my-1 [&_ul]:my-2">
               {message.content}
@@ -423,8 +360,7 @@ function Message({ message, latest = false }: { message: AiMessageDTO; latest?: 
               {t("m.ai.executiveBriefFailed")}
             </p>
           ) : null}
-        </MessageContent>
-      </div>
+      </MessageContent>
     </AiMessage>
   );
 }
