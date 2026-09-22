@@ -80,3 +80,5 @@
 - [x] Add an assignee picker for direct task messages from Work Graph.
 - [x] Auto-create a deadline-bound child task and Work Product from each newly classified employee request.
 - [x] Turn every persisted Executive Brief into a directly readable report within its Work Product.
+
+- [ ] Đợt 3: tách Cài đặt PWA thành màn mobile-native độc lập, chỉ hiển thị dữ liệu và thao tác thật.
