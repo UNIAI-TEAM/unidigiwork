@@ -55,4 +55,4 @@
 - [ ] Chạy E2E thật: Home → Kết quả công việc → gửi góp ý → soạn lại xem AI có cải thiện
 - [ ] Tạo tài khoản nhân viên thật, chạy giao việc admin → inbox nhân viên, kiểm tra email nhận được
 ## Current task
-- [ ] Add a task-centric chat summary tab with chat history, feedback, related work, and Work Graph deep links.
+- [x] Add a task-centric chat summary tab with chat history, feedback, related work, and Work Graph deep links.
