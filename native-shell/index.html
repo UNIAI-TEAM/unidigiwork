@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>UniWork</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #0b0d12;
+        color: #e8ecf4;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+        padding: 24px;
+      }
+      .card {
+        max-width: 380px;
+        width: 100%;
+        text-align: center;
+      }
+      h1 {
+        font-size: 18px;
+        margin: 0 0 8px;
+      }
+      p {
+        font-size: 14px;
+        line-height: 1.5;
+        color: #9aa4b8;
+        margin: 0 0 20px;
+      }
+      button {
+        width: 100%;
+        min-height: 44px;
+        border-radius: 10px;
+        border: 0;
+        font-size: 15px;
+        font-weight: 600;
+        background: #2563eb;
+        color: #fff;
+        margin-bottom: 10px;
+      }
+      button.secondary {
+        background: transparent;
+        border: 1px solid #263048;
+        color: #9aa4b8;
+      }
+      pre {
+        text-align: left;
+        font-size: 12px;
+        color: #7c879e;
+        background: #11151d;
+        border: 1px solid #1c2334;
+        border-radius: 10px;
+        padding: 12px;
+        white-space: pre-wrap;
+        display: none;
+      }
+      .spinner {
+        width: 28px;
+        height: 28px;
+        margin: 0 auto 16px;
+        border: 3px solid #1c2334;
+        border-top-color: #2563eb;
+        border-radius: 50%;
+        animation: spin 0.9s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="spinner" id="spinner"></div>
+      <h1 id="title">Đang kết nối UniWork…</h1>
+      <p id="body">Kiểm tra máy chủ trước khi mở ứng dụng.</p>
+      <button id="retry" style="display: none">Thử lại</button>
+      <button id="diag" class="secondary" style="display: none">Chẩn đoán mạng</button>
+      <pre id="log"></pre>
+    </div>
+
+    <script>
+      // Guardrail 1-2: health-check trước khi bootstrap, có màn hình dự phòng tử tế.
+      var REMOTE = "https://unidigiwork.lovable.app";
+      var HEALTH = REMOTE + "/api/public/app-health";
+      var TIMEOUT = 8000;
+
+      var $ = function (id) {
+        return document.getElementById(id);
+      };
+      var diagnostics = [];
+
+      function note(line) {
+        diagnostics.push(new Date().toISOString() + "  " + line);
+      }
+
+      function fail(title, body) {
+        $("spinner").style.display = "none";
+        $("title").textContent = title;
+        $("body").textContent = body;
+        $("retry").style.display = "block";
+        $("diag").style.display = "block";
+      }
+
+      function fetchWithTimeout(url) {
+        var ctrl = new AbortController();
+        var timer = setTimeout(function () {
+          ctrl.abort();
+        }, TIMEOUT);
+        return fetch(url, { cache: "no-store", signal: ctrl.signal }).finally(function () {
+          clearTimeout(timer);
+        });
+      }
+
+      function nativeVersion() {
+        try {
+          return (window.Capacitor && window.Capacitor.appVersion) || "0.0.0";
+        } catch (e) {
+          return "0.0.0";
+        }
+      }
+
+      function cmp(a, b) {
+        var pa = String(a).split(/[-+]/)[0].split(".");
+        var pb = String(b).split(/[-+]/)[0].split(".");
+        for (var i = 0; i < Math.max(pa.length, pb.length); i++) {
+          var d = (parseInt(pa[i], 10) || 0) - (parseInt(pb[i], 10) || 0);
+          if (d !== 0) return d > 0 ? 1 : -1;
+        }
+        return 0;
+      }
+
+      function boot() {
+        $("spinner").style.display = "block";
+        $("title").textContent = "Đang kết nối UniWork…";
+        $("body").textContent = "Kiểm tra máy chủ trước khi mở ứng dụng.";
+        $("retry").style.display = "none";
+        $("diag").style.display = "none";
+        $("log").style.display = "none";
+        note("online=" + navigator.onLine + " native=" + nativeVersion());
+
+        if (!navigator.onLine) {
+          note("thiết bị báo mất mạng");
+          fail("Không có kết nối mạng", "Bật Wi-Fi hoặc dữ liệu di động rồi bấm Thử lại.");
+          return;
+        }
+
+        fetchWithTimeout(HEALTH)
+          .then(function (res) {
+            note("health HTTP " + res.status);
+            if (!res.ok) throw new Error("HTTP " + res.status);
+            return res.json();
+          })
+          .then(function (h) {
+            note("webVersion=" + h.webVersion + " minNative=" + h.minNativeVersion);
+            // Guardrail 5: kill-switch từ xa.
+            if (h.killSwitch) {
+              fail("UniWork đang bảo trì", h.message || "Vui lòng thử lại sau ít phút.");
+              return;
+            }
+            // Guardrail 3: version handshake — binary cũ không được vào.
+            if (cmp(nativeVersion(), h.minNativeVersion) < 0) {
+              fail(
+                "Cần cập nhật ứng dụng",
+                "Bản cài " + nativeVersion() + " đã cũ. Cài bản " + h.minNativeVersion + " trở lên.",
+              );
+              return;
+            }
+            // Guardrail 4: nạp bản web mới, kèm dấu phiên bản để tránh asset cũ.
+            window.location.replace(REMOTE + "/m?v=" + encodeURIComponent(h.webVersion));
+          })
+          .catch(function (err) {
+            note("health lỗi: " + (err && err.message ? err.message : err));
+            fail(
+              "Không kết nối được máy chủ",
+              "UniWork chưa phản hồi. Kiểm tra mạng rồi bấm Thử lại.",
+            );
+          });
+      }
+
+      $("retry").onclick = boot;
+      $("diag").onclick = function () {
+        var log = $("log");
+        note("userAgent=" + navigator.userAgent);
+        log.textContent = diagnostics.join("\n");
+        log.style.display = "block";
+      };
+
+      boot();
+    </script>
+  </body>
+</html>
