@@ -11035,6 +11035,16 @@ export type Database = {
         }
         Returns: Json
       }
+      list_work_graph_task_response_sources: {
+        Args: { _task_ids: string[]; _tenant_id: string }
+        Returns: {
+          ai_last_response_at: string
+          ai_response_count: number
+          task_id: string
+          team_last_response_at: string
+          team_response_count: number
+        }[]
+      }
       list_workflow_access_requests: {
         Args: { _limit?: number; _status?: string; _workspace_id: string }
         Returns: {

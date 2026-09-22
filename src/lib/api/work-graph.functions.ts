@@ -399,6 +399,10 @@ export type WorkGraphBoardItem = {
   /** Tổng bình luận nhóm và tin nhắn AI trong các hội thoại gắn task. */
   interactionCount: number;
   lastInteractionAt: string | null;
+  teamResponseCount: number;
+  teamLastResponseAt: string | null;
+  aiResponseCount: number;
+  aiLastResponseAt: string | null;
   /** Số thông báo tin nhắn task chưa đọc của người đang xem. */
   unreadMessageCount: number;
 };
@@ -531,25 +535,51 @@ export const listWorkGraphBoard = createServerFn({ method: "GET" })
         }>
       ).map((person) => [person.id, person.display_name || person.primary_email || "—"]),
     );
+    const taskIds = list.filter((row) => row.entity_type === "TASK").map((row) => row.entity_id);
+    const { data: responseRows, error: responseError } = taskIds.length
+      ? await context.supabase.rpc("list_work_graph_task_response_sources", {
+          _tenant_id: tenantId,
+          _task_ids: taskIds,
+        })
+      : { data: [], error: null };
+    if (responseError) mapPgError(responseError);
+    const responseByTask = new Map(
+      (
+        (responseRows ?? []) as Array<{
+          task_id: string;
+          team_response_count: number;
+          team_last_response_at: string | null;
+          ai_response_count: number;
+          ai_last_response_at: string | null;
+        }>
+      ).map((row) => [row.task_id, row]),
+    );
 
-    const items: WorkGraphBoardItem[] = list.map((row) => ({
-      type: row.entity_type,
-      id: row.entity_id,
-      title: row.title,
-      status: row.status,
-      href: workEntityHref(row.entity_type, row.entity_id),
-      updatedAt: row.updated_at,
-      links: Number(row.links ?? 0),
-      progress: Number(row.progress ?? 0),
-      dueAt: row.due_at,
-      completedSteps: Number(row.completed_steps ?? 0),
-      totalSteps: Number(row.total_steps ?? 0),
-      ownerId: row.owner_id,
-      ownerName: row.owner_id ? (ownerNames.get(row.owner_id) ?? "—") : null,
-      interactionCount: Number(row.interaction_count ?? 0),
-      lastInteractionAt: row.last_interaction_at,
-      unreadMessageCount: Number(row.unread_message_count ?? 0),
-    }));
+    const items: WorkGraphBoardItem[] = list.map((row) => {
+      const responses = responseByTask.get(row.entity_id);
+      return {
+        type: row.entity_type,
+        id: row.entity_id,
+        title: row.title,
+        status: row.status,
+        href: workEntityHref(row.entity_type, row.entity_id),
+        updatedAt: row.updated_at,
+        links: Number(row.links ?? 0),
+        progress: Number(row.progress ?? 0),
+        dueAt: row.due_at,
+        completedSteps: Number(row.completed_steps ?? 0),
+        totalSteps: Number(row.total_steps ?? 0),
+        ownerId: row.owner_id,
+        ownerName: row.owner_id ? (ownerNames.get(row.owner_id) ?? "—") : null,
+        interactionCount: Number(row.interaction_count ?? 0),
+        lastInteractionAt: row.last_interaction_at,
+        teamResponseCount: Number(responses?.team_response_count ?? 0),
+        teamLastResponseAt: responses?.team_last_response_at ?? null,
+        aiResponseCount: Number(responses?.ai_response_count ?? 0),
+        aiLastResponseAt: responses?.ai_last_response_at ?? null,
+        unreadMessageCount: Number(row.unread_message_count ?? 0),
+      };
+    });
 
     return {
       items,

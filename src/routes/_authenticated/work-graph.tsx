@@ -365,18 +365,43 @@ function WorkGraphPage() {
                           </span>
                         ) : null}
                         {i.type === "TASK" ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-                            · <MessageSquare className="h-3 w-3" />
-                            {t("wg.messageCount").replace("{n}", String(i.interactionCount))}
-                            {i.lastInteractionAt
-                              ? ` · ${t("wg.lastInteraction").replace(
-                                  "{time}",
-                                  new Date(i.lastInteractionAt).toLocaleString(
-                                    lang === "vi" ? "vi-VN" : "en-US",
-                                    { dateStyle: "short", timeStyle: "short" },
-                                  ),
-                                )}`
-                              : ""}
+                          <span className="flex w-full flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground sm:w-auto">
+                            <span className="inline-flex items-center gap-1">
+                              <MessageSquare className="h-3 w-3" />
+                              {t("wg.messageCount").replace("{n}", String(i.interactionCount))}
+                            </span>
+                            {i.teamResponseCount > 0 ? (
+                              <Badge
+                                variant="outline"
+                                className="h-5 px-1.5 text-[10px] font-normal"
+                              >
+                                {t("wg.teamResponses")
+                                  .replace("{n}", String(i.teamResponseCount))
+                                  .replace(
+                                    "{time}",
+                                    new Date(i.teamLastResponseAt ?? "").toLocaleString(
+                                      lang === "vi" ? "vi-VN" : "en-US",
+                                      { dateStyle: "short", timeStyle: "short" },
+                                    ),
+                                  )}
+                              </Badge>
+                            ) : null}
+                            {i.aiResponseCount > 0 ? (
+                              <Badge
+                                variant="secondary"
+                                className="h-5 px-1.5 text-[10px] font-normal"
+                              >
+                                {t("wg.aiResponses")
+                                  .replace("{n}", String(i.aiResponseCount))
+                                  .replace(
+                                    "{time}",
+                                    new Date(i.aiLastResponseAt ?? "").toLocaleString(
+                                      lang === "vi" ? "vi-VN" : "en-US",
+                                      { dateStyle: "short", timeStyle: "short" },
+                                    ),
+                                  )}
+                              </Badge>
+                            ) : null}
                           </span>
                         ) : null}
                         {i.type === "TASK" && i.unreadMessageCount > 0 ? (
