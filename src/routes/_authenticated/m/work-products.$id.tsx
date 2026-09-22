@@ -23,10 +23,19 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { DocumentPreview } from "@/components/work-products/document-preview";
 import { VersionCompare } from "@/components/work-products/version-compare";
-import { reviseWorkProductFromFeedback, listWorkProductRevisionFeedback } from "@/lib/api/work-product-revise.functions";
+import {
+  reviseWorkProductFromFeedback,
+  listWorkProductRevisionFeedback,
+} from "@/lib/api/work-product-revise.functions";
 import { localeTag, useI18n, type Key } from "@/lib/i18n";
 import {
   ArrowLeft,
@@ -126,7 +135,10 @@ function MobileWorkProductDetail() {
   const [reviewNote, setReviewNote] = useState("");
   const [compare, setCompare] = useState<{ before: number; after: number } | null>(null);
   const feedbackByVersion = new Map<number, any[]>(
-    ((revisionFeedback.data as any)?.groups ?? []).map((group: any) => [group.afterVersion, group.items]),
+    ((revisionFeedback.data as any)?.groups ?? []).map((group: any) => [
+      group.afterVersion,
+      group.items,
+    ]),
   );
 
   useEffect(() => {
@@ -182,7 +194,8 @@ function MobileWorkProductDetail() {
   });
 
   const reviseMut = useMutation({
-    mutationFn: () => reviseWorkProductFromFeedback({ data: { idempotencyKey: crypto.randomUUID(), id } }),
+    mutationFn: () =>
+      reviseWorkProductFromFeedback({ data: { idempotencyKey: crypto.randomUUID(), id } }),
     onSuccess: async (result) => {
       setCompare({ before: result.beforeVersion, after: result.afterVersion });
       toast.success(t("wp.revise.done").replace("{n}", String(result.feedbackCount)));
@@ -191,11 +204,22 @@ function MobileWorkProductDetail() {
         qc.invalidateQueries({ queryKey: ["m-work-product-revision-feedback", id] }),
       ]);
     },
-    onError: (err: Error) => toast.error(err.message.includes("NO_PROCESSED_FEEDBACK") ? t("wp.revise.none") : t("wp.revise.failed")),
+    onError: (err: Error) =>
+      toast.error(
+        err.message.includes("NO_PROCESSED_FEEDBACK") ? t("wp.revise.none") : t("wp.revise.failed"),
+      ),
   });
 
   const requestReviewMut = useMutation({
-    mutationFn: () => requestWorkDeliverableReview({ data: { idempotencyKey: crypto.randomUUID(), id, reviewerId, note: reviewNote.trim() || undefined } }),
+    mutationFn: () =>
+      requestWorkDeliverableReview({
+        data: {
+          idempotencyKey: crypto.randomUUID(),
+          id,
+          reviewerId,
+          note: reviewNote.trim() || undefined,
+        },
+      }),
     onSuccess: async () => {
       setReviewerId("");
       setReviewNote("");
@@ -204,8 +228,16 @@ function MobileWorkProductDetail() {
   });
 
   const decideReviewMut = useMutation({
-    mutationFn: ({ reviewId, decision }: { reviewId: string; decision: "APPROVED" | "CHANGES_REQUESTED" }) =>
-      decideWorkDeliverableReview({ data: { idempotencyKey: crypto.randomUUID(), reviewId, decision } }),
+    mutationFn: ({
+      reviewId,
+      decision,
+    }: {
+      reviewId: string;
+      decision: "APPROVED" | "CHANGES_REQUESTED";
+    }) =>
+      decideWorkDeliverableReview({
+        data: { idempotencyKey: crypto.randomUUID(), reviewId, decision },
+      }),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["m-work-product", id] }),
   });
 
@@ -313,8 +345,12 @@ function MobileWorkProductDetail() {
           <TabsTrigger value="comments" className="min-h-11">
             {t("wp.tab.comments")} {comments.length > 0 ? `(${comments.length})` : ""}
           </TabsTrigger>
-          <TabsTrigger value="versions" className="min-h-11">{t("wp.tab.versions")}</TabsTrigger>
-          <TabsTrigger value="review" className="min-h-11">{t("wp.tab.review")}</TabsTrigger>
+          <TabsTrigger value="versions" className="min-h-11">
+            {t("wp.tab.versions")}
+          </TabsTrigger>
+          <TabsTrigger value="review" className="min-h-11">
+            {t("wp.tab.review")}
+          </TabsTrigger>
         </TabsList>
         <TabsList className="mt-2 grid h-auto w-full grid-cols-1 rounded-xl bg-surface-2 p-1">
           <TabsTrigger value="graph" className="min-h-11">
@@ -384,34 +420,165 @@ function MobileWorkProductDetail() {
         </TabsContent>
 
         <TabsContent value="versions" className="mt-4 space-y-3">
-          {canEdit && <Button className="min-h-11 w-full" disabled={reviseMut.isPending} onClick={() => reviseMut.mutate()}><Sparkles className="h-4 w-4" />{reviseMut.isPending ? t("wp.revise.running") : t("wp.revise.action")}</Button>}
-          {compare && <VersionCompare id={id} beforeVersion={compare.before} afterVersion={compare.after} onClose={() => setCompare(null)} />}
-          {versions.length === 0 ? <p className="text-sm text-muted-foreground">{t("wp.versions.empty")}</p> : versions.map((version: any, index: number) => (
-            <section key={version.id} className="rounded-xl border border-border bg-card p-4">
-              <div className="flex items-center gap-2">
-                <Badge variant="outline">v{version.version}</Badge>
-                {version.ai_generated && <Badge variant="secondary"><Sparkles className="mr-1 h-3 w-3" />AI</Badge>}
-                <span className="ml-auto text-xs text-muted-foreground">{new Intl.DateTimeFormat(localeTag(lang), { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(version.created_at))}</span>
-              </div>
-              <p className="mt-2 text-sm">{version.summary || version.title || t("m.wp.detail.updated")}</p>
-              {(feedbackByVersion.get(version.version) ?? []).length > 0 && <p className="mt-2 text-xs text-muted-foreground">{t("wp.revise.usedTitle").replace("{n}", String((feedbackByVersion.get(version.version) ?? []).length))}</p>}
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                {index > 0 && <Button variant="ghost" className="min-h-11" onClick={() => setCompare({ before: version.version, after: versions[0].version })}>{t("wp.compare.open")}</Button>}
-                {canEdit && <Button variant="outline" className="min-h-11" onClick={() => restoreWorkDeliverableVersion({ data: { idempotencyKey: crypto.randomUUID(), id, version: version.version } }).then(() => { toast.success(t("wp.versions.restored")); void qc.invalidateQueries({ queryKey: ["m-work-product", id] }); })}>{t("wp.versions.restore")}</Button>}
-              </div>
-            </section>
-          ))}
+          {canEdit && (
+            <Button
+              className="min-h-11 w-full"
+              disabled={reviseMut.isPending}
+              onClick={() => reviseMut.mutate()}
+            >
+              <Sparkles className="h-4 w-4" />
+              {reviseMut.isPending ? t("wp.revise.running") : t("wp.revise.action")}
+            </Button>
+          )}
+          {compare && (
+            <VersionCompare
+              id={id}
+              beforeVersion={compare.before}
+              afterVersion={compare.after}
+              onClose={() => setCompare(null)}
+            />
+          )}
+          {versions.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t("wp.versions.empty")}</p>
+          ) : (
+            versions.map((version: any, index: number) => (
+              <section key={version.id} className="rounded-xl border border-border bg-card p-4">
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">v{version.version}</Badge>
+                  {version.ai_generated && (
+                    <Badge variant="secondary">
+                      <Sparkles className="mr-1 h-3 w-3" />
+                      AI
+                    </Badge>
+                  )}
+                  <span className="ml-auto text-xs text-muted-foreground">
+                    {new Intl.DateTimeFormat(localeTag(lang), {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                    }).format(new Date(version.created_at))}
+                  </span>
+                </div>
+                <p className="mt-2 text-sm">
+                  {version.summary || version.title || t("m.wp.detail.updated")}
+                </p>
+                {(feedbackByVersion.get(version.version) ?? []).length > 0 && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {t("wp.revise.usedTitle").replace(
+                      "{n}",
+                      String((feedbackByVersion.get(version.version) ?? []).length),
+                    )}
+                  </p>
+                )}
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  {index > 0 && (
+                    <Button
+                      variant="ghost"
+                      className="min-h-11"
+                      onClick={() =>
+                        setCompare({ before: version.version, after: versions[0].version })
+                      }
+                    >
+                      {t("wp.compare.open")}
+                    </Button>
+                  )}
+                  {canEdit && (
+                    <Button
+                      variant="outline"
+                      className="min-h-11"
+                      onClick={() =>
+                        restoreWorkDeliverableVersion({
+                          data: {
+                            idempotencyKey: crypto.randomUUID(),
+                            id,
+                            version: version.version,
+                          },
+                        }).then(() => {
+                          toast.success(t("wp.versions.restored"));
+                          void qc.invalidateQueries({ queryKey: ["m-work-product", id] });
+                        })
+                      }
+                    >
+                      {t("wp.versions.restore")}
+                    </Button>
+                  )}
+                </div>
+              </section>
+            ))
+          )}
         </TabsContent>
 
         <TabsContent value="review" className="mt-4 space-y-3">
           <section className="space-y-3 rounded-xl border border-border bg-card p-4">
-            <h2 className="flex items-center gap-2 text-sm font-semibold"><UserCheck className="h-4 w-4" />{t("wp.review.request")}</h2>
-            <Select value={reviewerId} onValueChange={setReviewerId}><SelectTrigger className="min-h-11"><SelectValue placeholder={t("wp.review.reviewer")} /></SelectTrigger><SelectContent>{(reviewers.data ?? []).map((reviewer: any) => <SelectItem key={reviewer.id} value={reviewer.id}>{reviewer.name}{reviewer.self ? ` ${t("wp.review.self")}` : ""}</SelectItem>)}</SelectContent></Select>
-            <Textarea value={reviewNote} onChange={(event) => setReviewNote(event.target.value)} placeholder={t("wp.review.note")} />
-            <Button className="min-h-11 w-full" disabled={!reviewerId || requestReviewMut.isPending} onClick={() => requestReviewMut.mutate()}>{t("wp.review.send")}</Button>
+            <h2 className="flex items-center gap-2 text-sm font-semibold">
+              <UserCheck className="h-4 w-4" />
+              {t("wp.review.request")}
+            </h2>
+            <Select value={reviewerId} onValueChange={setReviewerId}>
+              <SelectTrigger className="min-h-11">
+                <SelectValue placeholder={t("wp.review.reviewer")} />
+              </SelectTrigger>
+              <SelectContent>
+                {(reviewers.data ?? []).map((reviewer: any) => (
+                  <SelectItem key={reviewer.id} value={reviewer.id}>
+                    {reviewer.name}
+                    {reviewer.self ? ` ${t("wp.review.self")}` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Textarea
+              value={reviewNote}
+              onChange={(event) => setReviewNote(event.target.value)}
+              placeholder={t("wp.review.note")}
+            />
+            <Button
+              className="min-h-11 w-full"
+              disabled={!reviewerId || requestReviewMut.isPending}
+              onClick={() => requestReviewMut.mutate()}
+            >
+              {t("wp.review.send")}
+            </Button>
           </section>
-          {(data as any)?.reviews?.length === 0 && <p className="text-sm text-muted-foreground">{t("wp.review.empty")}</p>}
-          {((data as any)?.reviews ?? []).map((review: any) => <section key={review.id} className="rounded-xl border border-border bg-card p-4"><div className="flex items-center gap-2"><span className="min-w-0 flex-1 truncate text-sm font-semibold">{review.reviewerName || "—"}</span><Badge variant="outline">v{review.version}</Badge></div>{review.decision_note && <p className="mt-2 text-xs text-muted-foreground">{review.decision_note}</p>}{review.status === "PENDING" && <div className="mt-3 grid grid-cols-2 gap-2"><Button className="min-h-11" disabled={decideReviewMut.isPending} onClick={() => decideReviewMut.mutate({ reviewId: review.id, decision: "APPROVED" })}>{t("wp.review.approve")}</Button><Button variant="outline" className="min-h-11" disabled={decideReviewMut.isPending} onClick={() => decideReviewMut.mutate({ reviewId: review.id, decision: "CHANGES_REQUESTED" })}>{t("wp.review.changes")}</Button></div>}</section>)}
+          {(data as any)?.reviews?.length === 0 && (
+            <p className="text-sm text-muted-foreground">{t("wp.review.empty")}</p>
+          )}
+          {((data as any)?.reviews ?? []).map((review: any) => (
+            <section key={review.id} className="rounded-xl border border-border bg-card p-4">
+              <div className="flex items-center gap-2">
+                <span className="min-w-0 flex-1 truncate text-sm font-semibold">
+                  {review.reviewerName || "—"}
+                </span>
+                <Badge variant="outline">v{review.version}</Badge>
+              </div>
+              {review.decision_note && (
+                <p className="mt-2 text-xs text-muted-foreground">{review.decision_note}</p>
+              )}
+              {review.status === "PENDING" && (
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <Button
+                    className="min-h-11"
+                    disabled={decideReviewMut.isPending}
+                    onClick={() =>
+                      decideReviewMut.mutate({ reviewId: review.id, decision: "APPROVED" })
+                    }
+                  >
+                    {t("wp.review.approve")}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="min-h-11"
+                    disabled={decideReviewMut.isPending}
+                    onClick={() =>
+                      decideReviewMut.mutate({ reviewId: review.id, decision: "CHANGES_REQUESTED" })
+                    }
+                  >
+                    {t("wp.review.changes")}
+                  </Button>
+                </div>
+              )}
+            </section>
+          ))}
         </TabsContent>
 
         <TabsContent value="comments" className="mt-4 space-y-3">
@@ -441,7 +608,12 @@ function MobileWorkProductDetail() {
                   <div className="mt-2 flex items-center gap-2">
                     <span className="text-[11px] text-muted-foreground">
                       {c.authorName ?? "Thành viên"} ·{" "}
-                      {new Intl.DateTimeFormat(localeTag(lang), { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(c.created_at))}
+                      {new Intl.DateTimeFormat(localeTag(lang), {
+                        day: "2-digit",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      }).format(new Date(c.created_at))}
                     </span>
                     <Button
                       variant="ghost"

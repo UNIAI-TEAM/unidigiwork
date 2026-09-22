@@ -21,7 +21,10 @@ const SCOPES = [
 
 type ScopeId = (typeof SCOPES)[number]["id"];
 
-type MobileWorkProduct = WorkDeliverableRow & { workspaceName?: string | null; ownerName?: string | null };
+type MobileWorkProduct = WorkDeliverableRow & {
+  workspaceName?: string | null;
+  ownerName?: string | null;
+};
 
 export const Route = createFileRoute("/_authenticated/m/work-products/")({
   head: () => ({
@@ -60,7 +63,8 @@ function MobileWorkProductsPage() {
     const q = search.trim().toLowerCase();
     if (q)
       list = list.filter(
-        (p) => p.title.toLowerCase().includes(q) || p.tags.some((tag) => tag.toLowerCase().includes(q)),
+        (p) =>
+          p.title.toLowerCase().includes(q) || p.tags.some((tag) => tag.toLowerCase().includes(q)),
       );
     list.sort((a, b) => {
       const da = new Date(a.updated_at ?? a.created_at).getTime();
@@ -114,7 +118,9 @@ function MobileWorkProductsPage() {
 
       {isLoading ? (
         <div className="grid gap-2" aria-label={t("wp.loading")}>
-          {[0, 1, 2].map((item) => <div key={item} className="h-24 animate-pulse rounded-xl bg-surface-2" />)}
+          {[0, 1, 2].map((item) => (
+            <div key={item} className="h-24 animate-pulse rounded-xl bg-surface-2" />
+          ))}
         </div>
       ) : items.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border p-8 text-center">
@@ -135,17 +141,24 @@ function MobileWorkProductsPage() {
                   <FileText className="h-5 w-5" />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="line-clamp-2 block text-sm font-semibold leading-5">{p.title}</span>
+                  <span className="line-clamp-2 block text-sm font-semibold leading-5">
+                    {p.title}
+                  </span>
                   <span className="mt-1 block truncate text-xs text-muted-foreground">
                     {t(`wp.type.${p.business_type}` as Key)} · v{p.current_version ?? 1}
                     {p.workspaceName ? ` · ${p.workspaceName}` : ""}
                   </span>
                   <span className="mt-1 block truncate text-xs text-muted-foreground">
-                    {format(new Date(p.updated_at ?? p.created_at), "d MMM yyyy", { locale: lang === "vi" ? vi : enUS })}
+                    {format(new Date(p.updated_at ?? p.created_at), "d MMM yyyy", {
+                      locale: lang === "vi" ? vi : enUS,
+                    })}
                   </span>
                 </span>
                 {p.ai_generated && (
-                  <Sparkles className="h-4 w-4 shrink-0 text-primary" aria-label={t("m.wp.scope.ai")} />
+                  <Sparkles
+                    className="h-4 w-4 shrink-0 text-primary"
+                    aria-label={t("m.wp.scope.ai")}
+                  />
                 )}
                 <Badge variant="secondary" className="shrink-0 text-[10px]">
                   {t(`wp.status.${p.status}` as Key)}

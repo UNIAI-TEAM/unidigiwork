@@ -923,7 +923,10 @@ export function SettingsPage() {
             <h1 className="text-2xl font-semibold">{t("ac.80")}</h1>
             <p className="mt-1 text-sm text-muted-foreground">{t("ac.81")}</p>
           </header>
-          <nav className="overflow-hidden rounded-xl border border-border bg-card" aria-label={t("ac.80")}>
+          <nav
+            className="overflow-hidden rounded-xl border border-border bg-card"
+            aria-label={t("ac.80")}
+          >
             {SECTIONS.map((item, index) => (
               <button
                 key={item.key}
