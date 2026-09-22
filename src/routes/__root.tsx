@@ -164,7 +164,8 @@ function RootComponent() {
 
   useEffect(() => {
     setupOfflineSupport();
-  }, []);
+    return setupOfflinePersistence(queryClient);
+  }, [queryClient]);
 
   return (
     <QueryClientProvider client={queryClient}>
