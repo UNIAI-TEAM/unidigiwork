@@ -194,19 +194,14 @@ function NativeDrawer({
 
         <nav className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-3">
           <DrawerLink icon={Plus} label={t("m.nav.newWork")} onClick={() => go("/m")} />
-
-          <DrawerSection label={t("m.nav.inbox")}>
-            {INBOX_LINKS.map((item, index) => (
-              <DrawerLink
-                key={item.label}
-                icon={item.icon}
-                label={t(item.label)}
-                onClick={() => go("/m/box")}
-                count={[inboxCounts.attention, inboxCounts.working, inboxCounts.review][index]}
-                tone={index === 0 ? "danger" : index === 1 ? "brand" : "primary"}
-              />
-            ))}
-          </DrawerSection>
+          {QUICK_LINKS.map((item) => (
+            <DrawerLink
+              key={item.to}
+              icon={item.icon}
+              label={t(item.label)}
+              onClick={() => go(item.to)}
+            />
+          ))}
 
           <DrawerSection label={t("m.nav.workspaces")}>
             <button
