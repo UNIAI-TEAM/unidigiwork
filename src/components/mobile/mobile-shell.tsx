@@ -248,7 +248,9 @@ function NativeDrawer({
                   aria-label={conversation.title}
                   className="min-w-0 px-2 text-left"
                 >
-                  <span className="block truncate text-[15px] font-normal">{conversation.title}</span>
+                  <span className="block truncate text-[15px] font-normal">
+                    {conversation.title}
+                  </span>
                 </button>
                 <Button
                   variant="ghost"

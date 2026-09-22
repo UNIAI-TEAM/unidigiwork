@@ -126,7 +126,9 @@ function MobileSearchPage() {
                 className="grid min-h-14 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-lg px-3 text-left hover:bg-muted"
               >
                 <span className="min-w-0 truncate text-[15px]">{conversation.title}</span>
-                <span className="shrink-0 text-xs text-muted-foreground">{relativeTime(conversation.lastMessageAt)}</span>
+                <span className="shrink-0 text-xs text-muted-foreground">
+                  {relativeTime(conversation.lastMessageAt)}
+                </span>
               </button>
             ))}
           </div>
