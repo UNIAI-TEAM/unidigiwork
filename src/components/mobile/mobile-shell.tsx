@@ -49,8 +49,34 @@ export function MobileShell() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [drawerOpen, setDrawerOpen] = useState(false);
   const isNativeRoot = pathname === "/m" || pathname === "/m/" || pathname.startsWith("/m/c/");
+  const openSwipe = useRef<{ x: number; y: number } | null>(null);
 
   const startNew = () => void navigate({ to: "/m" as never });
+
+  const startOpenSwipe = (event: React.TouchEvent<HTMLDivElement>) => {
+    if (drawerOpen) return;
+    const touch = event.touches[0];
+    if (!touch || touch.clientX > 28) return;
+    openSwipe.current = { x: touch.clientX, y: touch.clientY };
+  };
+
+  const moveOpenSwipe = (event: React.TouchEvent<HTMLDivElement>) => {
+    if (!openSwipe.current) return;
+    const touch = event.touches[0];
+    if (!touch) return;
+    const dx = touch.clientX - openSwipe.current.x;
+    const dy = Math.abs(touch.clientY - openSwipe.current.y);
+    if (dx > 64 && dx > dy * 1.5) {
+      openSwipe.current = null;
+      setDrawerOpen(true);
+    } else if (dy > 48 && dy > dx) {
+      openSwipe.current = null;
+    }
+  };
+
+  const endOpenSwipe = () => {
+    openSwipe.current = null;
+  };
 
   const keepNavigationNative = (event: React.MouseEvent<HTMLDivElement>) => {
     const anchor = (event.target as HTMLElement).closest("a");
