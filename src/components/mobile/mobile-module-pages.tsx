@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Activity,
@@ -9,6 +9,7 @@ import {
   BriefcaseBusiness,
   CalendarDays,
   CheckCircle2,
+  ChevronLeft,
   ChevronRight,
   CircleDollarSign,
   Clock3,
@@ -29,25 +30,36 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import { MobileListItem } from "@/components/mobile/mobile-list-item";
 import { useActiveWorkspace } from "@/lib/active-workspace";
 import { useActiveTenant } from "@/features/tenants/hooks";
 import { listCalendarEvents } from "@/lib/api/calendar.functions";
 import { listProjects, getProject, type ProjectWithStats } from "@/lib/api/projects.functions";
-import { listPeople, getPerson, type PersonDTO } from "@/lib/api/people.functions";
-import { listKnowledgeArticles } from "@/lib/api/knowledge.functions";
-import { listWorkflows } from "@/lib/api/workflows.functions";
-import { getAiBrainOverview } from "@/lib/api/ai-brain.functions";
-import { listAiSkills } from "@/lib/api/ai-skills.functions";
+import { listPeople, getPerson } from "@/lib/api/people.functions";
+import { listKnowledgeArticles, getKnowledgeArticle } from "@/lib/api/knowledge.functions";
+import { listWorkflows, getWorkflow } from "@/lib/api/workflows.functions";
+import { getAiBrainOverview, getProposalTracking } from "@/lib/api/ai-brain.functions";
+import {
+  listAiSkills,
+  getAiSkillsPermission,
+  setAiSkillEnabled,
+} from "@/lib/api/ai-skills.functions";
 import { listWorkflowAgents } from "@/lib/api/workflow-agents.functions";
-import { listHumanAgents } from "@/lib/api/human-agents.functions";
+import {
+  listHumanAgents,
+  saveHumanAgent,
+  setHumanAgentRolePolicy,
+  type AssignRole,
+} from "@/lib/api/human-agents.functions";
 import { listDecisions } from "@/lib/api/decisions.functions";
 import { listWorkApprovals } from "@/lib/api/work-deliverables.functions";
 import { getReportOverview } from "@/lib/api/reports.functions";
 import { getCeoOverview } from "@/lib/api/ceo.functions";
 import { getMyAdminAccess, getAdminStats } from "@/lib/api/admin.functions";
 import { listPlans, getActiveSubscription } from "@/lib/api/billing.functions";
-import { useI18n } from "@/lib/i18n";
+import { localeTag, useI18n, type Key } from "@/lib/i18n";
+import { toast } from "sonner";
 
 type Copy = { search: string; empty: string; loading: string; noWorkspace: string };
 const copy = {
@@ -142,8 +154,34 @@ const dateText = (value?: string | null) =>
       )
     : "—";
 
+function useOpsCopy() {
+  const { t, lang } = useI18n();
+  const text = (key: Key, vars?: Record<string, string | number>) => {
+    let value = t(key);
+    for (const [name, replacement] of Object.entries(vars ?? {})) {
+      value = value.replace(`{${name}}`, String(replacement));
+    }
+    return value;
+  };
+  const date = (value?: string | null) =>
+    value
+      ? new Intl.DateTimeFormat(localeTag(lang), {
+          dateStyle: "medium",
+          timeStyle: "short",
+        }).format(new Date(value))
+      : "—";
+  return { text, date };
+}
+
+function StatusBadge({ value }: { value: string }) {
+  const { text } = useOpsCopy();
+  const key = `ops.status.${value}` as Key;
+  return <Badge variant="outline">{text(key) === key ? value : text(key)}</Badge>;
+}
+
 export function MobileProjectsPage() {
   const c = useCopy(),
+    { text } = useOpsCopy(),
     navigate = useNavigate(),
     workspaceId = useWorkspaceId(),
     [q, setQ] = useState("");
@@ -161,7 +199,10 @@ export function MobileProjectsPage() {
     [query.data, q],
   );
   return (
-    <Page title="Dự án" subtitle={`${rows.length} dự án trong không gian đang chọn`}>
+    <Page
+      title={text("ops.projects.title")}
+      subtitle={text("ops.projects.subtitle", { count: rows.length })}
+    >
       <SearchBox value={q} onChange={setQ} placeholder={c.search} />
       <State loading={query.isLoading} empty={!rows.length} text={c} />
       <ul className="grid gap-2">
@@ -170,9 +211,9 @@ export function MobileProjectsPage() {
             <MobileListItem
               title={p.name}
               subtitle={p.description ?? p.code ?? undefined}
-              meta={`${p.taskDone}/${p.taskTotal} việc hoàn thành${p.taskOverdue ? ` · ${p.taskOverdue} quá hạn` : ""}`}
+              meta={`${text("ops.projects.progress", { done: p.taskDone, total: p.taskTotal })}${p.taskOverdue ? ` · ${text("ops.projects.overdue", { count: p.taskOverdue })}` : ""}`}
               icon={<FolderKanban className="h-5 w-5" />}
-              badge={<Badge variant="outline">{p.status}</Badge>}
+              badge={<StatusBadge value={p.status} />}
               onClick={() =>
                 void navigate({ to: "/m/projects/$id" as never, params: { id: p.id } as never })
               }
@@ -185,6 +226,7 @@ export function MobileProjectsPage() {
 }
 export function MobileProjectDetail({ id }: { id: string }) {
   const c = useCopy(),
+    { text, date } = useOpsCopy(),
     navigate = useNavigate(),
     fn = useServerFn(getProject);
   const q = useQuery({
@@ -194,12 +236,12 @@ export function MobileProjectDetail({ id }: { id: string }) {
   const data = q.data as any;
   return (
     <Page
-      title={data?.project?.name ?? "Chi tiết dự án"}
+      title={data?.project?.name ?? text("ops.projects.title")}
       subtitle={data?.project?.description ?? undefined}
       action={
-        <Button size="icon" variant="ghost" onClick={() => history.back()}>
-          <ChevronRight className="h-5 w-5 rotate-180" />
-          <span className="sr-only">Quay lại</span>
+        <Button className="h-11 w-11" size="icon" variant="ghost" onClick={() => history.back()}>
+          <ChevronLeft className="h-5 w-5" />
+          <span className="sr-only">{text("ops.common.back")}</span>
         </Button>
       }
     >
@@ -208,9 +250,12 @@ export function MobileProjectDetail({ id }: { id: string }) {
         <>
           <div className="grid grid-cols-3 gap-2">
             {[
-              ["Công việc", data.tasks?.length ?? 0],
-              ["Hoàn thành", data.tasks?.filter((x: any) => x.status === "done").length ?? 0],
-              ["Hạn", dateText(data.project.due_date)],
+              [text("ops.projects.tasks"), data.tasks?.length ?? 0],
+              [
+                text("ops.projects.done"),
+                data.tasks?.filter((x: any) => x.status === "done").length ?? 0,
+              ],
+              [text("ops.projects.due"), date(data.project.due_date)],
             ].map(([k, v]) => (
               <div key={String(k)} className="rounded-xl border border-border p-3">
                 <p className="text-xs text-muted-foreground">{k}</p>
@@ -224,7 +269,11 @@ export function MobileProjectDetail({ id }: { id: string }) {
                 <MobileListItem
                   title={t.title}
                   subtitle={t.assignees?.map((a: any) => a.name).join(", ")}
-                  meta={t.due_at ? `Hạn ${dateText(t.due_at)}` : undefined}
+                  meta={
+                    t.due_at
+                      ? `${text("ops.projects.due")} ${date(t.due_at)}`
+                      : text("ops.projects.noDue")
+                  }
                   badge={<Badge variant="secondary">{t.status}</Badge>}
                   onClick={() => void navigate({ to: "/m/tasks/$id", params: { id: t.id } })}
                 />
@@ -238,6 +287,7 @@ export function MobileProjectDetail({ id }: { id: string }) {
 }
 export function MobileCalendarPage() {
   const c = useCopy(),
+    { text, date } = useOpsCopy(),
     navigate = useNavigate(),
     workspaceId = useWorkspaceId(),
     [q, setQ] = useState("");
@@ -259,7 +309,7 @@ export function MobileCalendarPage() {
   });
   const rows = (query.data ?? []).filter((e) => e.title.toLowerCase().includes(q.toLowerCase()));
   return (
-    <Page title="Lịch" subtitle="Cuộc họp, công việc và hạn chót">
+    <Page title={text("ops.calendar.title")} subtitle={text("ops.calendar.subtitle")}>
       <SearchBox value={q} onChange={setQ} placeholder={c.search} />
       <State loading={query.isLoading} empty={!rows.length} text={c} />
       <ul className="grid gap-2">
@@ -268,9 +318,9 @@ export function MobileCalendarPage() {
             <MobileListItem
               title={e.title}
               subtitle={e.project ?? e.location ?? undefined}
-              meta={dateText(e.at)}
+              meta={date(e.at)}
               icon={<CalendarDays className="h-5 w-5" />}
-              badge={<Badge variant="outline">{e.kind}</Badge>}
+              badge={<Badge variant="outline">{text(`ops.calendar.${e.kind}` as Key)}</Badge>}
               onClick={() =>
                 void navigate({
                   to: (e.kind === "meeting" ? "/m/meet/$id" : "/m/tasks/$id") as never,
@@ -286,6 +336,7 @@ export function MobileCalendarPage() {
 }
 export function MobilePeoplePage() {
   const c = useCopy(),
+    { text } = useOpsCopy(),
     navigate = useNavigate(),
     [q, setQ] = useState("");
   const fn = useServerFn(listPeople);
@@ -294,7 +345,10 @@ export function MobilePeoplePage() {
     `${p.name} ${p.department} ${p.title}`.toLowerCase().includes(q.toLowerCase()),
   );
   return (
-    <Page title="Nhân sự" subtitle={`${rows.length} thành viên`}>
+    <Page
+      title={text("ops.people.title")}
+      subtitle={text("ops.people.subtitle", { count: rows.length })}
+    >
       <SearchBox value={q} onChange={setQ} placeholder={c.search} />
       <State loading={query.isLoading} empty={!rows.length} text={c} />
       <ul className="grid gap-2">
@@ -318,22 +372,24 @@ export function MobilePeoplePage() {
 }
 export function MobilePersonDetail({ id }: { id: string }) {
   const c = useCopy(),
+    { text } = useOpsCopy(),
     fn = useServerFn(getPerson);
   const q = useQuery({ queryKey: ["m-person", id], queryFn: () => fn({ data: { userId: id } }) });
   const p = q.data?.person;
   return (
-    <Page title={p?.name ?? "Hồ sơ nhân sự"} subtitle={p?.title || p?.department}>
+    <Page title={p?.name ?? text("ops.people.profile")} subtitle={p?.title || p?.department}>
       <State loading={q.isLoading} empty={!q.isLoading && !p} text={c} />
       {p ? (
         <div className="grid gap-3">
           {[
-            ["Email", p.email],
-            ["Điện thoại", p.phone],
-            ["Phòng ban", p.department],
-            ["Nhóm", p.team],
-            ["Địa điểm", p.location],
-            ["Vai trò", p.role],
-            ["Kỹ năng", p.skills.join(", ")],
+            [text("ops.people.email"), p.email],
+            [text("ops.people.phone"), p.phone],
+            [text("ops.people.department"), p.department],
+            [text("ops.people.team"), p.team],
+            [text("ops.people.location"), p.location],
+            [text("ops.people.role"), p.role],
+            [text("ops.people.skills"), p.skills.join(", ")],
+            [text("ops.people.about"), p.about],
           ].map(([k, v]) => (
             <div key={k} className="border-b border-border py-3">
               <p className="text-xs text-muted-foreground">{k}</p>
@@ -348,6 +404,8 @@ export function MobilePersonDetail({ id }: { id: string }) {
 
 export function MobileKnowledgePage() {
   const c = useCopy(),
+    { text, date } = useOpsCopy(),
+    navigate = useNavigate(),
     [q, setQ] = useState("");
   const fn = useServerFn(listKnowledgeArticles);
   const query = useQuery({
@@ -356,7 +414,7 @@ export function MobileKnowledgePage() {
   });
   const rows = query.data?.articles ?? [];
   return (
-    <Page title="Kho tri thức" subtitle="Kiến thức dùng chung trong tổ chức">
+    <Page title={text("ops.knowledge.title")} subtitle={text("ops.knowledge.subtitle")}>
       <SearchBox value={q} onChange={setQ} placeholder={c.search} />
       <State loading={query.isLoading} empty={!rows.length} text={c} />
       <ul className="grid gap-2">
@@ -365,9 +423,15 @@ export function MobileKnowledgePage() {
             <MobileListItem
               title={a.title}
               subtitle={a.summary}
-              meta={`${a.category} · ${dateText(a.updatedAt)}`}
+              meta={`${a.category} · ${date(a.updatedAt)}`}
               icon={<Library className="h-5 w-5" />}
-              badge={<Badge variant="outline">{a.status}</Badge>}
+              badge={<StatusBadge value={a.status} />}
+              onClick={() =>
+                void navigate({
+                  to: "/m/knowledge/$slug" as never,
+                  params: { slug: a.slug } as never,
+                })
+              }
             />
           </li>
         ))}
@@ -375,8 +439,64 @@ export function MobileKnowledgePage() {
     </Page>
   );
 }
+export function MobileKnowledgeDetail({ slug }: { slug: string }) {
+  const c = useCopy(),
+    { text, date } = useOpsCopy(),
+    fn = useServerFn(getKnowledgeArticle);
+  const query = useQuery({
+    queryKey: ["m-knowledge", slug],
+    queryFn: () => fn({ data: { slug } }),
+  });
+  const article = query.data?.article;
+  return (
+    <Page
+      title={article?.title ?? text("ops.knowledge.title")}
+      subtitle={article?.summary}
+      action={
+        <Button className="h-11 w-11" size="icon" variant="ghost" onClick={() => history.back()}>
+          <ChevronLeft className="h-5 w-5" />
+          <span className="sr-only">{text("ops.common.back")}</span>
+        </Button>
+      }
+    >
+      <State loading={query.isLoading} empty={!query.isLoading && !article} text={c} />
+      {article ? (
+        <article className="min-w-0 space-y-5">
+          <div className="flex flex-wrap items-center gap-2">
+            <StatusBadge value={article.status} />
+            <Badge variant="secondary">{article.category}</Badge>
+            <span className="text-xs text-muted-foreground">
+              {text("ops.knowledge.views", { count: article.viewCount })} ·{" "}
+              {date(article.updatedAt)}
+            </span>
+          </div>
+          {article.tags.length ? (
+            <section>
+              <h2 className="mb-2 text-sm font-semibold">{text("ops.knowledge.tags")}</h2>
+              <div className="flex flex-wrap gap-2">
+                {article.tags.map((tag) => (
+                  <Badge key={tag} variant="outline">
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            </section>
+          ) : null}
+          <section>
+            <h2 className="mb-3 text-base font-semibold">{text("ops.knowledge.content")}</h2>
+            <div className="whitespace-pre-wrap break-words text-sm leading-relaxed">
+              {article.content}
+            </div>
+          </section>
+        </article>
+      ) : null}
+    </Page>
+  );
+}
 export function MobileWorkflowsPage() {
   const c = useCopy(),
+    { text, date } = useOpsCopy(),
+    navigate = useNavigate(),
     workspaceId = useWorkspaceId();
   const fn = useServerFn(listWorkflows);
   const query = useQuery({
@@ -386,7 +506,7 @@ export function MobileWorkflowsPage() {
   });
   const rows = (query.data ?? []) as any[];
   return (
-    <Page title="Quy trình" subtitle="Các quy trình tự động trong không gian">
+    <Page title={text("ops.workflows.title")} subtitle={text("ops.workflows.subtitle")}>
       <State loading={query.isLoading} empty={!rows.length} text={c} />
       <ul className="grid gap-2">
         {rows.map((w) => (
@@ -394,9 +514,12 @@ export function MobileWorkflowsPage() {
             <MobileListItem
               title={w.name}
               subtitle={w.description ?? undefined}
-              meta={dateText(w.updated_at)}
+              meta={date(w.updated_at)}
               icon={<Workflow className="h-5 w-5" />}
-              badge={<Badge variant="outline">{w.status}</Badge>}
+              badge={<StatusBadge value={w.status} />}
+              onClick={() =>
+                void navigate({ to: "/m/workflows/$id" as never, params: { id: w.id } as never })
+              }
             />
           </li>
         ))}
@@ -404,8 +527,77 @@ export function MobileWorkflowsPage() {
     </Page>
   );
 }
+export function MobileWorkflowDetail({ id }: { id: string }) {
+  const c = useCopy(),
+    { text, date } = useOpsCopy(),
+    fn = useServerFn(getWorkflow),
+    navigate = useNavigate();
+  const query = useQuery({
+    queryKey: ["m-workflow", id],
+    queryFn: () => fn({ data: { workflowId: id } }),
+  });
+  const data = query.data as any;
+  const definition = data?.workflow?.definition as { steps?: unknown[] } | undefined;
+  return (
+    <Page
+      title={data?.workflow?.name ?? text("ops.workflows.title")}
+      subtitle={data?.workflow?.description ?? undefined}
+      action={
+        <Button className="h-11 w-11" size="icon" variant="ghost" onClick={() => history.back()}>
+          <ChevronLeft className="h-5 w-5" />
+          <span className="sr-only">{text("ops.common.back")}</span>
+        </Button>
+      }
+    >
+      <State loading={query.isLoading} empty={!query.isLoading && !data} text={c} />
+      {data ? (
+        <>
+          <div className="flex flex-wrap gap-2">
+            <StatusBadge value={data.workflow.status} />
+            <Badge variant="secondary">
+              {text("ops.workflows.steps", { count: definition?.steps?.length ?? 0 })}
+            </Badge>
+          </div>
+          <section>
+            <h2 className="mb-2 text-sm font-semibold">{text("ops.workflows.triggers")}</h2>
+            <div className="grid gap-2">
+              {data.triggers.map((trigger: any) => (
+                <MobileListItem
+                  key={trigger.id}
+                  title={trigger.name ?? trigger.trigger_type ?? "Trigger"}
+                  subtitle={trigger.event_type ?? trigger.cron_expression ?? undefined}
+                  right={<CheckCircle2 className="h-4 w-4 text-muted-foreground" />}
+                />
+              ))}
+            </div>
+          </section>
+          <section>
+            <h2 className="mb-2 text-sm font-semibold">{text("ops.workflows.runs")}</h2>
+            <div className="grid gap-2">
+              {data.runs.map((run: any) => (
+                <MobileListItem
+                  key={run.id}
+                  title={run.status}
+                  meta={date(run.started_at ?? run.created_at)}
+                  onClick={() => void navigate({ to: `/m/workflows/${id}?run=${run.id}` as never })}
+                />
+              ))}
+            </div>
+            {!data.runs.length ? (
+              <p className="py-6 text-center text-sm text-muted-foreground">
+                {text("ops.workflows.noRuns")}
+              </p>
+            ) : null}
+          </section>
+        </>
+      ) : null}
+    </Page>
+  );
+}
 export function MobileAiBrainPage() {
   const c = useCopy(),
+    { text, date } = useOpsCopy(),
+    navigate = useNavigate(),
     workspaceId = useWorkspaceId();
   const fn = useServerFn(getAiBrainOverview);
   const query = useQuery({
@@ -414,16 +606,16 @@ export function MobileAiBrainPage() {
   });
   const d = query.data;
   return (
-    <Page title="Bộ não AI" subtitle="Đề xuất, hiệu quả và nhật ký hoạt động">
+    <Page title={text("ops.ai.title")} subtitle={text("ops.ai.subtitle")}>
       <State loading={query.isLoading} empty={!d} text={c} />
       {d ? (
         <>
           <div className="grid grid-cols-2 gap-2">
             {[
-              ["Chờ duyệt", d.metrics.pending],
-              ["Đã duyệt tuần này", d.metrics.approvedThisWeek],
-              ["Tỷ lệ chấp nhận", `${d.metrics.acceptanceRate}%`],
-              ["Token tuần này", d.metrics.tokensThisWeek],
+              [text("ops.ai.pending"), d.metrics.pending],
+              [text("ops.ai.approved"), d.metrics.approvedThisWeek],
+              [text("ops.ai.acceptance"), `${d.metrics.acceptanceRate}%`],
+              [text("ops.ai.tokens"), d.metrics.tokensThisWeek],
             ].map(([k, v]) => (
               <div key={String(k)} className="rounded-xl border border-border p-3">
                 <p className="text-xs text-muted-foreground">{k}</p>
@@ -431,13 +623,41 @@ export function MobileAiBrainPage() {
               </div>
             ))}
           </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant="outline"
+              className="min-h-11"
+              onClick={() => void navigate({ to: "/m/ai-brain/tracking" as never })}
+            >
+              {text("ops.ai.tracking")}
+            </Button>
+            <Button
+              variant="outline"
+              className="min-h-11"
+              onClick={() => void navigate({ to: "/m/ai-skills" })}
+            >
+              {text("ops.ai.skills")}
+            </Button>
+          </div>
+          {d.disabledSkills.length ? (
+            <section>
+              <h2 className="mb-2 text-sm font-semibold">{text("ops.ai.disabledSkills")}</h2>
+              <div className="flex flex-wrap gap-2">
+                {d.disabledSkills.map((skill) => (
+                  <Badge key={skill.id} variant="secondary">
+                    {skill.name}
+                  </Badge>
+                ))}
+              </div>
+            </section>
+          ) : null}
           <ul className="grid gap-2">
             {d.log.map((x) => (
               <li key={x.id}>
                 <MobileListItem
                   title={x.title}
                   subtitle={x.description ?? undefined}
-                  meta={dateText(x.createdAt)}
+                  meta={date(x.createdAt)}
                   icon={<BrainCircuit className="h-5 w-5" />}
                   badge={<Badge variant="outline">{x.status}</Badge>}
                 />
@@ -449,17 +669,68 @@ export function MobileAiBrainPage() {
     </Page>
   );
 }
+export function MobileAiTrackingPage() {
+  const c = useCopy(),
+    { text, date } = useOpsCopy(),
+    workspaceId = useWorkspaceId(),
+    navigate = useNavigate();
+  const fn = useServerFn(getProposalTracking);
+  const query = useQuery({
+    queryKey: ["m-ai-tracking", workspaceId],
+    queryFn: () => fn({ data: { workspaceId, limit: 100 } }),
+    enabled: !!workspaceId,
+  });
+  const rows = query.data ?? [];
+  return (
+    <Page title={text("ops.ai.tracking")}>
+      <State loading={query.isLoading} empty={!rows.length} text={c} />
+      <ul className="grid gap-2">
+        {rows.map((row) => (
+          <li key={row.id}>
+            <MobileListItem
+              title={row.taskTitle ?? row.title}
+              subtitle={[row.workerName, ...row.assignees.map((a) => a.name)]
+                .filter(Boolean)
+                .join(" · ")}
+              meta={`${date(row.taskUpdatedAt ?? row.createdAt)}${row.taskProgress !== null ? ` · ${row.taskProgress}%` : ""}`}
+              badge={<Badge variant="outline">{row.taskStatus ?? row.status}</Badge>}
+              onClick={
+                row.taskId
+                  ? () =>
+                      void navigate({ to: "/m/tasks/$id", params: { id: row.taskId as string } })
+                  : undefined
+              }
+            />
+          </li>
+        ))}
+      </ul>
+    </Page>
+  );
+}
 export function MobileAiSkillsPage() {
   const c = useCopy(),
+    { text } = useOpsCopy(),
+    qc = useQueryClient(),
     workspaceId = useWorkspaceId();
   const fn = useServerFn(listAiSkills);
+  const permissionFn = useServerFn(getAiSkillsPermission);
+  const toggleFn = useServerFn(setAiSkillEnabled);
   const query = useQuery({
     queryKey: ["m-ai-skills", workspaceId],
     queryFn: () => fn({ data: { workspaceId: workspaceId || null } }),
   });
+  const permission = useQuery({
+    queryKey: ["m-ai-skills-permission", workspaceId],
+    queryFn: () => permissionFn({ data: { workspaceId: workspaceId || null } }),
+  });
+  const toggle = useMutation({
+    mutationFn: (input: { skillId: string; enabled: boolean }) => toggleFn({ data: input }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["m-ai-skills"] }),
+    onError: () => toast.error(c.empty),
+  });
   const rows = (query.data ?? []) as any[];
   return (
-    <Page title="Kỹ năng AI" subtitle="Kỹ năng đang được đội ngũ AI sử dụng">
+    <Page title={text("ops.skill.title")} subtitle={text("ops.skill.subtitle")}>
       <State loading={query.isLoading} empty={!rows.length} text={c} />
       <ul className="grid gap-2">
         {rows.map((s) => (
@@ -471,8 +742,18 @@ export function MobileAiSkillsPage() {
               icon={<Sparkles className="h-5 w-5" />}
               badge={
                 <Badge variant={s.enabled ? "default" : "secondary"}>
-                  {s.enabled ? "Bật" : "Tắt"}
+                  {s.enabled ? text("ops.human.enabled") : text("ops.human.disabled")}
                 </Badge>
+              }
+              right={
+                permission.data?.canEdit ? (
+                  <Switch
+                    aria-label={s.name}
+                    checked={Boolean(s.enabled)}
+                    disabled={toggle.isPending}
+                    onCheckedChange={(enabled) => toggle.mutate({ skillId: s.id, enabled })}
+                  />
+                ) : undefined
               }
             />
           </li>
@@ -516,21 +797,78 @@ export function MobileWorkflowAgentsPage() {
 }
 export function MobileHumanAgentsPage() {
   const c = useCopy(),
+    { text } = useOpsCopy(),
+    qc = useQueryClient(),
     fn = useServerFn(listHumanAgents);
+  const saveFn = useServerFn(saveHumanAgent);
+  const policyFn = useServerFn(setHumanAgentRolePolicy);
   const query = useQuery({ queryKey: ["m-human-agents"], queryFn: () => fn() });
   const rows = query.data?.agents ?? [];
+  const save = useMutation({
+    mutationFn: (agent: (typeof rows)[number]) =>
+      saveFn({
+        data: {
+          userId: agent.userId,
+          enabled: !agent.enabled,
+          workEmail: agent.workEmail,
+          domains: agent.domains,
+          maxOpenTasks: agent.maxOpenTasks,
+          note: agent.note,
+          assignRole: agent.assignRole,
+        },
+      }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["m-human-agents"] }),
+    onError: () => toast.error(c.empty),
+  });
+  const policy = useMutation({
+    mutationFn: (input: { role: AssignRole; canReceiveTasks: boolean }) =>
+      policyFn({ data: input }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["m-human-agents"] }),
+    onError: () => toast.error(c.empty),
+  });
   return (
-    <Page title="Human Agent" subtitle="Người thật có thể nhận việc từ orchestration">
+    <Page title={text("ops.human.title")} subtitle={text("ops.human.subtitle")}>
       <State loading={query.isLoading} empty={!rows.length} text={c} />
+      {query.data?.canManage ? (
+        <section>
+          <h2 className="mb-2 text-sm font-semibold">{text("ops.human.rolePolicies")}</h2>
+          <div className="grid gap-2">
+            {(["admin", "manager", "staff"] as AssignRole[]).map((role) => (
+              <div
+                key={role}
+                className="flex min-h-11 items-center justify-between rounded-lg border border-border px-3"
+              >
+                <span className="text-sm font-medium">{role}</span>
+                <Switch
+                  aria-label={role}
+                  checked={query.data?.rolePolicies[role]}
+                  disabled={policy.isPending}
+                  onCheckedChange={(canReceiveTasks) => policy.mutate({ role, canReceiveTasks })}
+                />
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
       <ul className="grid gap-2">
         {rows.map((a) => (
           <li key={a.userId}>
             <MobileListItem
               title={a.name}
               subtitle={a.workEmail || a.accountEmail}
-              meta={`${a.openTasks}/${a.maxOpenTasks} việc đang mở`}
+              meta={text("ops.human.capacity", { open: a.openTasks, max: a.maxOpenTasks })}
               icon={<BriefcaseBusiness className="h-5 w-5" />}
               badge={<Badge variant={a.enabled ? "default" : "secondary"}>{a.assignRole}</Badge>}
+              right={
+                query.data?.canManage ? (
+                  <Switch
+                    aria-label={a.name}
+                    checked={a.enabled}
+                    disabled={save.isPending}
+                    onCheckedChange={() => save.mutate(a)}
+                  />
+                ) : undefined
+              }
             />
           </li>
         ))}
