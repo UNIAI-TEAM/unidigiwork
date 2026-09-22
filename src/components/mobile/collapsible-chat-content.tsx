@@ -23,12 +23,7 @@ export function CollapsibleChatContent({
 
   return (
     <div className={cn("min-w-0", className)}>
-      <div
-        className={cn(
-          "relative min-w-0 overflow-hidden",
-          isLong && !expanded && "max-h-72",
-        )}
-      >
+      <div className={cn("relative min-w-0 overflow-hidden", isLong && !expanded && "max-h-72")}>
         {children}
         {isLong && !expanded ? (
           <div
@@ -45,11 +40,7 @@ export function CollapsibleChatContent({
           aria-expanded={expanded}
           onClick={() => setExpanded((value) => !value)}
         >
-          {expanded ? (
-            <ChevronUp className="h-4 w-4" />
-          ) : (
-            <ChevronDown className="h-4 w-4" />
-          )}
+          {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           {t(expanded ? "m.ai.collapse" : "m.ai.expand")}
         </Button>
       ) : null}
