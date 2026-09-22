@@ -102,3 +102,14 @@
 
 - [x] Báo cáo tự động từ biên bản họp thành Work Product REPORT, liên kết Task/Person và Work Graph.
 - [x] Hiển thị trạng thái và lối mở báo cáo trên Cuộc họp mobile và bảng AI họp.
+
+## Đợt PWA — Đồng bộ module vận hành mobile-native
+
+- [ ] Chuẩn hóa shell, tìm kiếm, lọc, loading/error/empty và i18n cho Dự án, Lịch, Nhân sự, Knowledge, Quy trình, AI Brain.
+- [ ] Hoàn thiện danh sách/chi tiết Dự án và liên kết Task hoàn toàn trong `/m/*`.
+- [ ] Hoàn thiện Lịch theo ngày và điều hướng sự kiện tới Task/Cuộc họp mobile-native.
+- [ ] Hoàn thiện Nhân sự, hồ sơ thành viên, Human Agent và các thao tác được phân quyền.
+- [ ] Hoàn thiện Knowledge danh sách/chi tiết và các thao tác nội dung bằng API thật.
+- [ ] Hoàn thiện Quy trình danh sách/chi tiết, trạng thái chạy và AI Agent bằng API thật.
+- [ ] Hoàn thiện AI Brain tổng quan, theo dõi, đề xuất và Skill bằng API thật.
+- [ ] Xóa mọi liên kết nội bộ của sáu nhóm còn thoát khỏi `/m/*`; kiểm tra 390/440/820px và các cổng kiến trúc.
