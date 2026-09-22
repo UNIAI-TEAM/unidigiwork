@@ -312,7 +312,7 @@ function NativeDrawer({
         </nav>
 
         <button
-          onClick={() => go("/settings")}
+          onClick={() => go("/m/settings")}
           className="relative grid w-full min-w-0 min-h-20 grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] items-center gap-2 border-t border-mobile-menu-border px-3 pb-[max(.75rem,env(safe-area-inset-bottom))] pt-3 text-left hover:bg-mobile-menu-accent"
         >
           <Avatar className="h-11 w-11">

@@ -126,7 +126,7 @@ export const NAV_ITEMS: NavItem[] = [
     match: ["/calendar"],
     visibility: "everyone",
     order: 2,
-    mobile: { placement: "more", href: "/calendar", order: 1 },
+    mobile: { placement: "more", href: "/m/calendar", order: 1 },
   },
 
   // WORK
@@ -149,7 +149,7 @@ export const NAV_ITEMS: NavItem[] = [
     match: ["/projects"],
     visibility: "everyone",
     order: 2,
-    mobile: { placement: "more", href: "/projects", order: 2 },
+    mobile: { placement: "more", href: "/m/projects", order: 2 },
   },
   {
     id: "tasks",
@@ -170,7 +170,7 @@ export const NAV_ITEMS: NavItem[] = [
     match: ["/workflows"],
     visibility: "everyone",
     order: 4,
-    mobile: { placement: "more", href: "/workflows", order: 6 },
+    mobile: { placement: "more", href: "/m/workflows", order: 6 },
   },
 
   // COMMUNICATION
@@ -232,6 +232,7 @@ export const NAV_ITEMS: NavItem[] = [
     match: ["/work-approvals"],
     visibility: "everyone",
     order: 1.5,
+    mobile: { placement: "more", href: "/m/work-approvals", order: 3.2 },
   },
   {
     id: "task-ops",
@@ -252,6 +253,7 @@ export const NAV_ITEMS: NavItem[] = [
     match: ["/work-graph"],
     visibility: "everyone",
     order: 1.6,
+    mobile: { placement: "more", href: "/m/work-graph", order: 3.3 },
   },
   {
     id: "documents",
@@ -262,7 +264,7 @@ export const NAV_ITEMS: NavItem[] = [
     match: ["/documents"],
     visibility: "everyone",
     order: 1,
-    mobile: { placement: "more", href: "/documents", order: 2 },
+    mobile: { placement: "more", href: "/m/documents", order: 2 },
   },
   // KNOWLEDGE
   {
@@ -274,7 +276,7 @@ export const NAV_ITEMS: NavItem[] = [
     match: ["/knowledge"],
     visibility: "everyone",
     order: 1,
-    mobile: { placement: "more", href: "/knowledge", order: 4 },
+    mobile: { placement: "more", href: "/m/knowledge", order: 4 },
   },
 
   // AUTOMATION
@@ -287,7 +289,7 @@ export const NAV_ITEMS: NavItem[] = [
     match: ["/ai"],
     visibility: "everyone",
     order: 1,
-    mobile: { placement: "more", href: "/ai", order: 7 },
+    mobile: { placement: "more", href: "/m", order: 7 },
   },
 
   {
@@ -299,7 +301,7 @@ export const NAV_ITEMS: NavItem[] = [
     match: ["/ai-brain"],
     visibility: "everyone",
     order: 1.5,
-    mobile: { placement: "more", href: "/ai-brain", order: 7.2 },
+    mobile: { placement: "more", href: "/m/ai-brain", order: 7.2 },
   },
   {
     id: "ai-agents",
@@ -310,7 +312,7 @@ export const NAV_ITEMS: NavItem[] = [
     match: ["/workflows/agents"],
     visibility: "everyone",
     order: 1.6,
-    mobile: { placement: "more", href: "/workflows/agents", order: 7.3 },
+    mobile: { placement: "more", href: "/m/workflow-agents", order: 7.3 },
   },
   {
     id: "ai-skills",
@@ -321,7 +323,7 @@ export const NAV_ITEMS: NavItem[] = [
     match: ["/ai-brain/skills"],
     visibility: "everyone",
     order: 1.7,
-    mobile: { placement: "more", href: "/ai-brain/skills", order: 7.4 },
+    mobile: { placement: "more", href: "/m/ai-skills", order: 7.4 },
   },
   {
     id: "ai-workforce",
@@ -353,6 +355,7 @@ export const NAV_ITEMS: NavItem[] = [
     match: ["/decisions"],
     visibility: "everyone",
     order: 3.5,
+    mobile: { placement: "more", href: "/m/decisions", order: 7.8 },
   },
   {
     id: "decision-history",
@@ -386,7 +389,7 @@ export const NAV_ITEMS: NavItem[] = [
     match: ["/people"],
     visibility: "everyone",
     order: 1,
-    mobile: { placement: "more", href: "/people", order: 4 },
+    mobile: { placement: "more", href: "/m/people", order: 4 },
   },
   {
     id: "hr",
@@ -397,7 +400,7 @@ export const NAV_ITEMS: NavItem[] = [
     match: ["/hr"],
     visibility: "admin",
     order: 1.2,
-    mobile: { placement: "more", href: "/hr", order: 4.2 },
+    mobile: { placement: "more", href: "/m/hr", order: 4.2 },
   },
   {
     id: "human-agents",
@@ -408,7 +411,7 @@ export const NAV_ITEMS: NavItem[] = [
     match: ["/human-agents"],
     visibility: "admin",
     order: 1.25,
-    mobile: { placement: "more", href: "/human-agents", order: 4.25 },
+    mobile: { placement: "more", href: "/m/human-agents", order: 4.25 },
   },
   {
     id: "meetings-manage",
@@ -419,7 +422,7 @@ export const NAV_ITEMS: NavItem[] = [
     match: ["/meetings-manage"],
     visibility: "admin",
     order: 1.3,
-    mobile: { placement: "more", href: "/meetings-manage", order: 4.3 },
+    mobile: { placement: "more", href: "/m/meetings-manage", order: 4.3 },
   },
   {
     id: "ceo",
@@ -430,7 +433,7 @@ export const NAV_ITEMS: NavItem[] = [
     match: ["/ceo"],
     visibility: "admin",
     order: 1.5,
-    mobile: { placement: "more", href: "/ceo", order: 8.5 },
+    mobile: { placement: "more", href: "/m/ceo", order: 8.5 },
   },
   {
     id: "reports",
@@ -441,7 +444,7 @@ export const NAV_ITEMS: NavItem[] = [
     match: ["/reports"],
     visibility: "everyone",
     order: 2,
-    mobile: { placement: "more", href: "/reports", order: 9 },
+    mobile: { placement: "more", href: "/m/reports", order: 9 },
   },
 
   // ADMIN — chỉ hiện khi có quyền quản trị.
@@ -454,7 +457,7 @@ export const NAV_ITEMS: NavItem[] = [
     match: ["/admin"],
     visibility: "admin",
     order: 3,
-    mobile: { placement: "more", href: "/admin", order: 10 },
+    mobile: { placement: "more", href: "/m/admin", order: 10 },
   },
   {
     id: "audit",
@@ -475,7 +478,7 @@ export const NAV_ITEMS: NavItem[] = [
     match: ["/billing"],
     visibility: "admin",
     order: 5,
-    mobile: { placement: "more", href: "/billing", order: 11 },
+    mobile: { placement: "more", href: "/m/billing", order: 11 },
   },
 ];
 

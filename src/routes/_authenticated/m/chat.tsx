@@ -97,8 +97,8 @@ function MobileChatPage() {
               badge={c.is_private ? <Badge variant="outline">Riêng tư</Badge> : null}
                 onClick={() =>
                   navigate({
-                    to: "/chat/$channelId",
-                    params: { channelId: c.id },
+                    to: "/m/c/$id",
+                    params: { id: c.id },
                   })
                 }
             />
