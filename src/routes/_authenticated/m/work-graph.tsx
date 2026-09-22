@@ -118,5 +118,4 @@ function WorkGraphRow({ item }: { item: WorkGraphBoardItem }) {
       </Link>
     </li>
   );
-  );
 }
