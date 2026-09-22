@@ -20,7 +20,10 @@ export const Route = createFileRoute("/_authenticated/m/chat")({
       { title: "Chat · UNIWORK" },
       { name: "description", content: "Danh sách kênh chat và tin nhắn trên UNIWORK mobile." },
       { property: "og:title", content: "Chat · UNIWORK" },
-      { property: "og:description", content: "Danh sách kênh chat và tin nhắn trên UNIWORK mobile." },
+      {
+        property: "og:description",
+        content: "Danh sách kênh chat và tin nhắn trên UNIWORK mobile.",
+      },
     ],
   }),
   component: MobileChatPage,
@@ -45,9 +48,7 @@ function MobileChatPage() {
     },
   });
 
-  const filtered = channels.filter((c) =>
-    c.name.toLowerCase().includes(search.toLowerCase()),
-  );
+  const filtered = channels.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div className="flex min-h-full flex-col gap-3 p-4 pb-24">
@@ -95,12 +96,12 @@ function MobileChatPage() {
                 </span>
               }
               badge={c.is_private ? <Badge variant="outline">Riêng tư</Badge> : null}
-                onClick={() =>
-                  navigate({
-                    to: "/m/c/$id",
-                    params: { id: c.id },
-                  })
-                }
+              onClick={() =>
+                navigate({
+                  to: "/m/c/$id",
+                  params: { id: c.id },
+                })
+              }
             />
           ))}
         </div>
