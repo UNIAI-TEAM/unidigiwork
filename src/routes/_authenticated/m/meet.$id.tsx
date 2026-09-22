@@ -1,7 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, CalendarClock, MapPin, Users, Video } from "lucide-react";
+import { ArrowLeft, CalendarClock, ExternalLink, FileText, MapPin, Users, Video } from "lucide-react";
 import { getMeeting } from "@/lib/api/meetings.functions";
+import { getMeetingSummary } from "@/lib/api/meeting-intelligence.functions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -37,6 +38,11 @@ function MobileMeetingDetail() {
   const detail = useQuery({
     queryKey: ["m-meeting", id],
     queryFn: () => getMeeting({ data: { meetingId: id } }),
+    retry: false,
+  });
+  const summary = useQuery({
+    queryKey: ["meeting-summary", id],
+    queryFn: () => getMeetingSummary({ data: { meetingId: id } }),
     retry: false,
   });
   if (detail.isLoading)
@@ -95,6 +101,35 @@ function MobileMeetingDetail() {
           {meeting.agenda || t("mtg.m.noAgenda")}
         </p>
       </section>
+      {summary.data ? (
+        <section className="rounded-2xl border border-border bg-card p-4">
+          <div className="flex items-start gap-3">
+            <FileText className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+            <div className="min-w-0 flex-1">
+              <h2 className="text-sm font-semibold">{t("mtg.report.title")}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {summary.data.report.status === "READY"
+                  ? t("mtg.report.ready")
+                  : summary.data.report.status === "GENERATING"
+                    ? t("mtg.report.generating")
+                    : summary.data.report.status === "FAILED"
+                      ? t("mtg.report.failed")
+                      : t("mtg.report.pending")}
+              </p>
+            </div>
+          </div>
+          {summary.data.report.mobileHref ? (
+            <Button
+              variant="outline"
+              className="mt-4 min-h-11 w-full"
+              onClick={() => void navigate({ to: summary.data.report.mobileHref ?? "/m/work-products" })}
+            >
+              <ExternalLink className="mr-2 h-4 w-4" />
+              {t("mtg.report.open")}
+            </Button>
+          ) : null}
+        </section>
+      ) : null}
       <Button
         className="min-h-11 w-full"
         onClick={() => void navigate({ to: "/m/meet/$id/room", params: { id } })}
