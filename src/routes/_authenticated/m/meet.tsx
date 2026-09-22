@@ -77,7 +77,8 @@ function MobileMeetPage() {
       setDraft({ title: "", startAt: "", endAt: "", agenda: "" });
       toast.success("Đã tạo cuộc họp");
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "Không thể tạo cuộc họp"),
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "Không thể tạo cuộc họp"),
   });
 
   // Đọc qua server function (RLS theo JWT người dùng), không gọi thẳng bảng từ client.
@@ -217,15 +218,69 @@ function MobileMeetPage() {
       <MobileFAB label={t("mtg.m.create")} onClick={() => setCreating(true)} />
       <Dialog open={creating} onOpenChange={setCreating}>
         <DialogContent className="w-[calc(100%-2rem)] max-w-lg rounded-2xl">
-          <DialogHeader><DialogTitle>{t("mtg.m.create")}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>{t("mtg.m.create")}</DialogTitle>
+          </DialogHeader>
           <div className="grid gap-4">
-            <div className="grid gap-2"><Label htmlFor="meeting-title">Tên cuộc họp</Label><Input id="meeting-title" className="h-11" value={draft.title} onChange={(event) => setDraft((value) => ({ ...value, title: event.target.value }))} /></div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div className="grid gap-2"><Label htmlFor="meeting-start">Bắt đầu</Label><Input id="meeting-start" type="datetime-local" className="h-11" value={draft.startAt} onChange={(event) => setDraft((value) => ({ ...value, startAt: event.target.value }))} /></div>
-              <div className="grid gap-2"><Label htmlFor="meeting-end">Kết thúc</Label><Input id="meeting-end" type="datetime-local" className="h-11" value={draft.endAt} onChange={(event) => setDraft((value) => ({ ...value, endAt: event.target.value }))} /></div>
+            <div className="grid gap-2">
+              <Label htmlFor="meeting-title">Tên cuộc họp</Label>
+              <Input
+                id="meeting-title"
+                className="h-11"
+                value={draft.title}
+                onChange={(event) => setDraft((value) => ({ ...value, title: event.target.value }))}
+              />
             </div>
-            <div className="grid gap-2"><Label htmlFor="meeting-agenda">Nội dung</Label><Textarea id="meeting-agenda" value={draft.agenda} onChange={(event) => setDraft((value) => ({ ...value, agenda: event.target.value }))} /></div>
-            <Button className="min-h-11" disabled={!workspaceId || !draft.title.trim() || !draft.startAt || !draft.endAt || new Date(draft.endAt) <= new Date(draft.startAt) || createMeeting.isPending} onClick={() => createMeeting.mutate()}>Tạo cuộc họp</Button>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="grid gap-2">
+                <Label htmlFor="meeting-start">Bắt đầu</Label>
+                <Input
+                  id="meeting-start"
+                  type="datetime-local"
+                  className="h-11"
+                  value={draft.startAt}
+                  onChange={(event) =>
+                    setDraft((value) => ({ ...value, startAt: event.target.value }))
+                  }
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="meeting-end">Kết thúc</Label>
+                <Input
+                  id="meeting-end"
+                  type="datetime-local"
+                  className="h-11"
+                  value={draft.endAt}
+                  onChange={(event) =>
+                    setDraft((value) => ({ ...value, endAt: event.target.value }))
+                  }
+                />
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="meeting-agenda">Nội dung</Label>
+              <Textarea
+                id="meeting-agenda"
+                value={draft.agenda}
+                onChange={(event) =>
+                  setDraft((value) => ({ ...value, agenda: event.target.value }))
+                }
+              />
+            </div>
+            <Button
+              className="min-h-11"
+              disabled={
+                !workspaceId ||
+                !draft.title.trim() ||
+                !draft.startAt ||
+                !draft.endAt ||
+                new Date(draft.endAt) <= new Date(draft.startAt) ||
+                createMeeting.isPending
+              }
+              onClick={() => createMeeting.mutate()}
+            >
+              Tạo cuộc họp
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
