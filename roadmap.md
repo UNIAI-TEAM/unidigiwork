@@ -73,3 +73,5 @@
 - [x] Enforce task messaging roles: employees message assignees; superiors use UNI AI or private superior messages.
 - [x] Label Work Graph responses by UNI AI or task team, including each source's latest time.
 - [x] Add an assignee picker for direct task messages from Work Graph.
+- [ ] Auto-create a deadline-bound child task and Work Product from each newly classified employee request.
+- [ ] Turn every persisted Executive Brief into a directly readable report within its Work Product.
