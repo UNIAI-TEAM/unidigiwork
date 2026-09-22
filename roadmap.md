@@ -84,3 +84,5 @@
 
 - [x] Đợt 3: tách Cài đặt PWA thành màn mobile-native độc lập, chỉ hiển thị dữ liệu và thao tác thật.
 - [x] Đợt 3: làm mới danh sách/chi tiết Task mobile-native với dữ liệu thật, hội thoại, tệp và Work Graph.
+- [x] Đợt 3: thêm màn mobile-native cho Dự án, Lịch, Nhân sự, Knowledge, Quy trình, AI Brain, phê duyệt, quyết định, báo cáo, điều hành, quản trị và thanh toán.
+- [x] Đợt 3: chuyển menu và deep link PWA sang namespace `/m`, không còn mở bố cục web từ các điểm vào chính.
