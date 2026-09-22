@@ -3807,6 +3807,10 @@ export type Database = {
           meeting_id: string
           model: string | null
           open_questions: Json
+          report_error: string | null
+          report_generated_at: string | null
+          report_status: string
+          report_work_product_id: string | null
           risks: Json
           segment_count: number
           sources: Json
@@ -3829,6 +3833,10 @@ export type Database = {
           meeting_id: string
           model?: string | null
           open_questions?: Json
+          report_error?: string | null
+          report_generated_at?: string | null
+          report_status?: string
+          report_work_product_id?: string | null
           risks?: Json
           segment_count?: number
           sources?: Json
@@ -3851,6 +3859,10 @@ export type Database = {
           meeting_id?: string
           model?: string | null
           open_questions?: Json
+          report_error?: string | null
+          report_generated_at?: string | null
+          report_status?: string
+          report_work_product_id?: string | null
           risks?: Json
           segment_count?: number
           sources?: Json
@@ -3867,6 +3879,13 @@ export type Database = {
             columns: ["meeting_id"]
             isOneToOne: false
             referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_summaries_report_work_product_id_fkey"
+            columns: ["report_work_product_id"]
+            isOneToOne: false
+            referencedRelation: "work_products"
             referencedColumns: ["id"]
           },
           {
@@ -10799,6 +10818,10 @@ export type Database = {
         Args: { _meeting_id: string }
         Returns: Json
       }
+      get_meeting_report_context: {
+        Args: { _meeting_id: string }
+        Returns: Json
+      }
       get_meeting_stats: { Args: { _meeting_id: string }; Returns: Json }
       get_my_workflow_permissions: {
         Args: { _workspace_id: string }
@@ -11179,6 +11202,14 @@ export type Database = {
         }
         Returns: string
       }
+      mark_meeting_report_failed: {
+        Args: { _error: string; _meeting_id: string; _summary_version: number }
+        Returns: undefined
+      }
+      mark_meeting_report_generating: {
+        Args: { _meeting_id: string; _summary_version: number }
+        Returns: undefined
+      }
       mark_task_message_notifications_read: {
         Args: { _task_id: string }
         Returns: number
@@ -11223,6 +11254,17 @@ export type Database = {
           _root_type?: string
           _sources?: Json
           _title: string
+        }
+        Returns: Json
+      }
+      persist_meeting_report: {
+        Args: {
+          _content: string
+          _correlation_id?: string
+          _idempotency_key?: string
+          _meeting_id: string
+          _report_metadata?: Json
+          _summary_version: number
         }
         Returns: Json
       }
@@ -11839,6 +11881,10 @@ export type Database = {
           meeting_id: string
           model: string | null
           open_questions: Json
+          report_error: string | null
+          report_generated_at: string | null
+          report_status: string
+          report_work_product_id: string | null
           risks: Json
           segment_count: number
           sources: Json
