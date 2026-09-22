@@ -351,6 +351,13 @@
       "when": 1790063810538,
       "tag": "0049_task_chat_requests_and_executive_brief_reports",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1790085255481,
+      "tag": "0050_full_executive_brief_reports",
+      "breakpoints": true
     }
   ]
 }
