@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   AlertCircle,
-  BarChart3,
   Building2,
   CalendarDays,
   CheckCircle2,
@@ -13,7 +12,6 @@ import {
   FileText,
   Folder,
   Menu,
-  MoreHorizontal,
   Pin,
   Plus,
   Search,
@@ -133,6 +131,9 @@ function NativeDrawer({
   const { workspaces, workspaceId, select } = useActiveWorkspace();
   const [workspacesOpen, setWorkspacesOpen] = useState(true);
   const [pinnedIds, setPinnedIds] = useState<string[]>([]);
+  const swipeStartX = useRef<number | null>(null);
+  const swipeDistance = useRef(0);
+  const drawerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     try {
       const saved = localStorage.getItem(PINNED_KEY);
@@ -194,20 +195,50 @@ function NativeDrawer({
     void navigate({ to: to as never });
   };
 
+  const startSwipe = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === "mouse") return;
+    swipeStartX.current = event.clientX;
+    swipeDistance.current = 0;
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const moveSwipe = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (swipeStartX.current === null || !drawerRef.current) return;
+    const distance = Math.min(0, event.clientX - swipeStartX.current);
+    swipeDistance.current = distance;
+    drawerRef.current.style.transform = `translateX(${distance}px)`;
+    drawerRef.current.style.transition = "none";
+  };
+
+  const endSwipe = () => {
+    if (!drawerRef.current || swipeStartX.current === null) return;
+    const shouldClose = swipeDistance.current < -72;
+    drawerRef.current.style.transform = "";
+    drawerRef.current.style.transition = "";
+    swipeStartX.current = null;
+    swipeDistance.current = 0;
+    if (shouldClose) onOpenChange(false);
+  };
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
+        ref={drawerRef}
         side="left"
-        className="flex w-[78vw] max-w-[340px] flex-col gap-0 overflow-hidden border-mobile-menu-border bg-mobile-menu p-0 text-mobile-menu-foreground shadow-panel [&>button:first-of-type]:right-3 [&>button:first-of-type]:top-[max(.75rem,env(safe-area-inset-top))] [&>button:first-of-type]:grid [&>button:first-of-type]:h-11 [&>button:first-of-type]:w-11 [&>button:first-of-type]:place-items-center [&>button:first-of-type]:rounded-full [&>button:first-of-type]:border [&>button:first-of-type]:border-mobile-menu-border [&>button:first-of-type]:bg-mobile-menu-accent [&>button:first-of-type]:text-mobile-menu-foreground [&>button:first-of-type]:opacity-100"
+        onPointerDown={startSwipe}
+        onPointerMove={moveSwipe}
+        onPointerUp={endSwipe}
+        onPointerCancel={endSwipe}
+        className="flex w-[86vw] max-w-[360px] touch-pan-y flex-col gap-0 overflow-hidden border-mobile-menu-border bg-mobile-menu p-0 text-mobile-menu-foreground shadow-panel [&>button:first-of-type]:hidden"
       >
-        <SheetHeader className="px-4 pb-3 pt-[max(.75rem,env(safe-area-inset-top))] text-left">
-          <SheetTitle className="flex min-h-11 items-center pr-14 text-xl text-mobile-menu-foreground">
+        <SheetHeader className="px-5 pb-4 pt-[max(1rem,env(safe-area-inset-top))] text-left">
+          <SheetTitle className="flex min-h-11 items-center text-xl text-mobile-menu-foreground">
             UniWork
           </SheetTitle>
           <SheetDescription className="sr-only">{t("m.nav.tagline")}</SheetDescription>
         </SheetHeader>
 
-        <nav className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-3">
+        <nav className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-3">
           <DrawerLink icon={Plus} label={t("m.nav.newWork")} onClick={() => go("/m")} />
           <DrawerLink icon={Search} label={t("cmd.group.search")} onClick={() => go("/m/search")} />
 
@@ -216,36 +247,22 @@ function NativeDrawer({
             action={t("m.nav.viewAll")}
             onAction={() => go("/m/search")}
           >
-            {recentConversations.map((conversation, index) => (
+            {recentConversations.map((conversation) => (
               <div
                 key={conversation.id}
-                className="grid min-h-12 grid-cols-[2.5rem_minmax(0,1fr)_2.5rem_2.5rem] items-center rounded-lg hover:bg-mobile-menu-accent"
+                className="group grid min-h-11 grid-cols-[minmax(0,1fr)_2.5rem] items-center rounded-lg hover:bg-mobile-menu-accent"
               >
                 <button
                   onClick={() => go(`/m/c/${conversation.id}`)}
                   aria-label={conversation.title}
-                  className="contents"
+                  className="min-w-0 px-2 text-left"
                 >
-                  {index % 3 === 0 ? (
-                    <FileText className="mx-auto h-5 w-5" />
-                  ) : index % 3 === 1 ? (
-                    <CalendarDays className="mx-auto h-5 w-5" />
-                  ) : (
-                    <BarChart3 className="mx-auto h-5 w-5" />
-                  )}
-                  <span className="min-w-0 text-left">
-                    <span className="block truncate text-[15px] font-medium">
-                      {conversation.title}
-                    </span>
-                    <span className="block truncate text-xs text-mobile-menu-muted">
-                      {t("m.nav.conversation")} · {relativeTime(conversation.lastMessageAt)}
-                    </span>
-                  </span>
+                  <span className="block truncate text-[15px] font-normal">{conversation.title}</span>
                 </button>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-10 w-10 rounded-full text-mobile-menu-muted hover:bg-mobile-menu-accent hover:text-mobile-menu-foreground"
+                  className="h-10 w-10 rounded-full text-mobile-menu-muted opacity-0 hover:bg-mobile-menu-accent hover:text-mobile-menu-foreground focus-visible:opacity-100 group-hover:opacity-100"
                   onClick={() => togglePin(conversation.id)}
                   aria-label={
                     pinnedIds.includes(conversation.id) ? t("m.nav.unpin") : t("m.nav.pin")
@@ -256,14 +273,6 @@ function NativeDrawer({
                   ) : (
                     <Pin />
                   )}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-10 w-10 rounded-full text-mobile-menu-muted hover:bg-mobile-menu-accent hover:text-mobile-menu-foreground"
-                  aria-label={t("m.nav.more")}
-                >
-                  <MoreHorizontal />
                 </Button>
               </div>
             ))}
@@ -359,7 +368,7 @@ function DrawerSection({
   children: React.ReactNode;
 }) {
   return (
-    <section className="mt-5">
+    <section className="mt-6">
       <div className="mb-1 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-1">
         <p className="truncate text-sm font-semibold text-mobile-menu-foreground">{label}</p>
         {action && onAction ? (
