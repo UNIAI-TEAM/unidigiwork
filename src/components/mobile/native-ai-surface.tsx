@@ -321,10 +321,12 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="h-12 w-12 shrink-0 rounded-full"
-                  aria-label={t("m.ai.voice")}
+                  className={`h-12 w-12 shrink-0 rounded-full ${listening ? "bg-primary text-primary-foreground hover:bg-primary/90" : ""}`}
+                  aria-label={listening ? t("m.ai.listening") : t("m.ai.voice")}
+                  aria-pressed={listening}
+                  onClick={toggleVoice}
                 >
-                  <Mic className="!h-6 !w-6" />
+                  <Mic className={`!h-6 !w-6 ${listening ? "animate-pulse" : ""}`} />
                 </Button>
               </PromptInputTools>
               <PromptInputSubmit
