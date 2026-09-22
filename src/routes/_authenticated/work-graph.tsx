@@ -36,8 +36,11 @@ import {
   listWorkGraphBoard,
 } from "@/lib/api/work-graph.functions";
 import type { WorkGraphBoardItem } from "@/lib/api/work-graph.functions";
-import { setTaskDueAt } from "@/lib/api/tasks.functions";
-import { commentTask } from "@/lib/api/tasks.functions";
+import {
+  listTaskMessageRecipients,
+  sendTaskMessage,
+  setTaskDueAt,
+} from "@/lib/api/tasks.functions";
 
 export const Route = createFileRoute("/_authenticated/work-graph")({
   validateSearch: z.object({ task: z.string().uuid().optional() }),
@@ -96,25 +99,6 @@ function WorkGraphPage() {
   const [deadlineItems, setDeadlineItems] = useState<Set<string>>(() => new Set());
   const [deadlineDrafts, setDeadlineDrafts] = useState<Record<string, string>>({});
   const [messageItems, setMessageItems] = useState<Set<string>>(() => new Set());
-  const [messageDrafts, setMessageDrafts] = useState<Record<string, string>>({});
-  const messageMutation = useMutation({
-    mutationFn: ({ taskId, body }: { taskId: string; body: string }) =>
-      commentTask({ data: { taskId, body, idempotencyKey: crypto.randomUUID() } }),
-    onSuccess: async (_, variables) => {
-      setMessageDrafts((current) => ({ ...current, [variables.taskId]: "" }));
-      setMessageItems((current) => {
-        const next = new Set(current);
-        next.delete(variables.taskId);
-        return next;
-      });
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["work-graph-board"] }),
-        queryClient.invalidateQueries({ queryKey: ["task-chat-detail", variables.taskId] }),
-      ]);
-      toast.success(t("wg.messageSent"));
-    },
-    onError: () => toast.error(t("wg.messageError")),
-  });
   const deadlineMutation = useMutation({
     mutationFn: ({ taskId, dueAt }: { taskId: string; dueAt: string | null }) =>
       setTaskDueAt({
@@ -448,41 +432,7 @@ function WorkGraphPage() {
                         </span>
                       ) : null}
                       {i.type === "TASK" && messageItems.has(i.id) ? (
-                        <form
-                          className="mt-1 flex min-w-0 gap-2 rounded-lg border bg-muted/30 p-2"
-                          onSubmit={(event) => {
-                            event.preventDefault();
-                            const body = messageDrafts[i.id]?.trim();
-                            if (body) messageMutation.mutate({ taskId: i.id, body });
-                          }}
-                        >
-                          <Input
-                            value={messageDrafts[i.id] ?? ""}
-                            onChange={(event) =>
-                              setMessageDrafts((current) => ({
-                                ...current,
-                                [i.id]: event.target.value,
-                              }))
-                            }
-                            placeholder={t("wg.messagePlaceholder")}
-                            aria-label={t("wg.messagePlaceholder")}
-                            maxLength={2000}
-                            className="h-11 min-w-0 text-base sm:h-9 sm:text-sm"
-                          />
-                          <Button
-                            type="submit"
-                            size="icon"
-                            className="h-11 w-11 shrink-0 sm:h-9 sm:w-9"
-                            disabled={messageMutation.isPending || !messageDrafts[i.id]?.trim()}
-                            aria-label={t("wg.sendMessage")}
-                          >
-                            {messageMutation.isPending ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Send className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </form>
+                        <WorkGraphMessageForm taskId={i.id} />
                       ) : null}
                       {i.type === "TASK" && deadlineItems.has(i.id) ? (
                         <div className="mt-1 flex flex-col gap-2 rounded-lg border bg-muted/30 p-2 sm:flex-row sm:items-center">
