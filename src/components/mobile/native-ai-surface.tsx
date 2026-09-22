@@ -262,86 +262,86 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
     <div className="mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col overflow-hidden">
       <Conversation className="min-h-0 flex-1">
         <ConversationContent className="min-h-full gap-6 px-4 pb-6 pt-4 sm:px-6">
-        {messages.isLoading ? (
-          <div className="flex min-h-72 items-center justify-center text-muted-foreground">
-            <Loader2 className="h-5 w-5 animate-spin" />
-            <span className="ml-2 text-sm">{t("m.ai.loading")}</span>
-          </div>
-        ) : isEmpty ? (
-          <EmptyState firstName={firstName} onPick={submit} />
-        ) : (
-          <div className="space-y-6 pb-4">
-            {displayMessages.map((message) => (
-              <Message key={message.id} message={message} />
-            ))}
-            {canBuildWorkProduct && (
-              <WorkProductRun
-                key={lastMessage?.id}
-                kinds={requestedKinds}
-                brief={buildBrief}
-                workspaceId={workspaceId}
-                sourceEntities={buildSources}
-              />
-            )}
-            {turns.map((turn) => (
-              <div key={turn.id} className="space-y-3">
-                <UserMessage content={turn.user} />
-                {turn.note && (
-                  <p className="rounded-xl border border-border bg-surface px-3 py-2 text-[13px] text-muted-foreground">
-                    {turn.note}
-                  </p>
-                )}
-                {turn.executor && (
-                  <p className="text-xs text-muted-foreground">
-                    {turn.executor.kind === "AI"
-                      ? t("m.ai.assign.ai").replace("{name}", turn.executor.profileName ?? "")
-                      : t("m.ai.assign.human")}
-                  </p>
-                )}
-                {turn.proposal && (
-                  <ActionProposalCard
-                    proposal={turn.proposal}
-                    onExecuted={(result: AiActionExecutionResult) =>
-                      setTurns((current) =>
-                        current.map((item) =>
-                          item.id === turn.id && result.entityType === "TASK" && result.entityId
-                            ? {
-                                ...item,
-                                executed: {
-                                  taskId: result.entityId,
-                                  agentName: result.assignedAgent?.agentName,
-                                  humanName: result.assignedHuman?.name,
-                                },
-                              }
-                            : item,
-                        ),
-                      )
-                    }
-                  />
-                )}
-                {turn.executed && (
-                  <ExecutionObserver
-                    taskId={turn.executed.taskId}
-                    agentName={turn.executed.agentName}
-                    humanName={turn.executed.humanName ?? identity.displayName}
-                  />
-                )}
-              </div>
-            ))}
-            {pendingText && (
-              <>
-                <UserMessage content={pendingText} />
-                <div
-                  className="flex items-center gap-3 text-sm text-muted-foreground"
-                  role="status"
-                >
-                  <BrandMark className="h-8 w-8" />
-                  <Shimmer className="text-sm">{t("m.ai.working")}</Shimmer>
+          {messages.isLoading ? (
+            <div className="flex min-h-72 items-center justify-center text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span className="ml-2 text-sm">{t("m.ai.loading")}</span>
+            </div>
+          ) : isEmpty ? (
+            <EmptyState firstName={firstName} onPick={submit} />
+          ) : (
+            <div className="space-y-6 pb-4">
+              {displayMessages.map((message) => (
+                <Message key={message.id} message={message} />
+              ))}
+              {canBuildWorkProduct && (
+                <WorkProductRun
+                  key={lastMessage?.id}
+                  kinds={requestedKinds}
+                  brief={buildBrief}
+                  workspaceId={workspaceId}
+                  sourceEntities={buildSources}
+                />
+              )}
+              {turns.map((turn) => (
+                <div key={turn.id} className="space-y-3">
+                  <UserMessage content={turn.user} />
+                  {turn.note && (
+                    <p className="rounded-xl border border-border bg-surface px-3 py-2 text-[13px] text-muted-foreground">
+                      {turn.note}
+                    </p>
+                  )}
+                  {turn.executor && (
+                    <p className="text-xs text-muted-foreground">
+                      {turn.executor.kind === "AI"
+                        ? t("m.ai.assign.ai").replace("{name}", turn.executor.profileName ?? "")
+                        : t("m.ai.assign.human")}
+                    </p>
+                  )}
+                  {turn.proposal && (
+                    <ActionProposalCard
+                      proposal={turn.proposal}
+                      onExecuted={(result: AiActionExecutionResult) =>
+                        setTurns((current) =>
+                          current.map((item) =>
+                            item.id === turn.id && result.entityType === "TASK" && result.entityId
+                              ? {
+                                  ...item,
+                                  executed: {
+                                    taskId: result.entityId,
+                                    agentName: result.assignedAgent?.agentName,
+                                    humanName: result.assignedHuman?.name,
+                                  },
+                                }
+                              : item,
+                          ),
+                        )
+                      }
+                    />
+                  )}
+                  {turn.executed && (
+                    <ExecutionObserver
+                      taskId={turn.executed.taskId}
+                      agentName={turn.executed.agentName}
+                      humanName={turn.executed.humanName ?? identity.displayName}
+                    />
+                  )}
                 </div>
-              </>
-            )}
-          </div>
-        )}
+              ))}
+              {pendingText && (
+                <>
+                  <UserMessage content={pendingText} />
+                  <div
+                    className="flex items-center gap-3 text-sm text-muted-foreground"
+                    role="status"
+                  >
+                    <BrandMark className="h-8 w-8" />
+                    <Shimmer className="text-sm">{t("m.ai.working")}</Shimmer>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </ConversationContent>
         <ConversationScrollButton aria-label={t("m.ai.scrollLatest")} />
       </Conversation>
@@ -501,19 +501,19 @@ function Message({ message }: { message: AiMessageDTO }) {
           <MessageResponse className="executive-brief text-sm leading-7 [&_h2]:mb-2 [&_h2]:mt-5 [&_h2]:text-xs [&_h2]:font-semibold [&_h2]:uppercase [&_h2]:text-muted-foreground [&_li]:my-1 [&_ul]:my-2">
             {message.content}
           </MessageResponse>
-        {message.metadata?.sources?.length ? (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {message.metadata.sources.slice(0, 4).map((source) => (
-              <a
-                key={source.sourceId}
-                href={source.href}
-                className="max-w-full truncate rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground"
-              >
-                {source.title}
-              </a>
-            ))}
-          </div>
-        ) : null}
+          {message.metadata?.sources?.length ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {message.metadata.sources.slice(0, 4).map((source) => (
+                <a
+                  key={source.sourceId}
+                  href={source.href}
+                  className="max-w-full truncate rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  {source.title}
+                </a>
+              ))}
+            </div>
+          ) : null}
         </MessageContent>
       </div>
     </AiMessage>
