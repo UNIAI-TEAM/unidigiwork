@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { z } from "zod";
 import { useQuery } from "@tanstack/react-query";
 import {
   CheckCircle2,
@@ -19,6 +20,7 @@ import { getWorkGraphOverview, listWorkGraphBoard } from "@/lib/api/work-graph.f
 import type { WorkGraphBoardItem } from "@/lib/api/work-graph.functions";
 
 export const Route = createFileRoute("/_authenticated/work-graph")({
+  validateSearch: z.object({ task: z.string().uuid().optional() }),
   head: () => ({
     meta: [
       { title: "Work Graph — UNIWORK" },
@@ -60,6 +62,7 @@ function isDone(i: WorkGraphBoardItem) {
 type Tab = "all" | "running" | "done" | "products";
 
 function WorkGraphPage() {
+  const search = Route.useSearch();
   const { t, lang } = useI18n();
   const [tab, setTab] = useState<Tab>("all");
   const [q, setQ] = useState("");
@@ -79,8 +82,11 @@ function WorkGraphPage() {
     queryFn: () => getWorkGraphOverview(),
   });
   const board = useQuery({
-    queryKey: ["work-graph-board", tab, term, page],
-    queryFn: () => listWorkGraphBoard({ data: { tab, search: term, page, pageSize: PAGE_SIZE } }),
+    queryKey: ["work-graph-board", tab, term, page, search.task],
+    queryFn: () =>
+      listWorkGraphBoard({
+        data: { tab, search: term, page, pageSize: PAGE_SIZE, taskId: search.task },
+      }),
     placeholderData: (prev) => prev,
   });
 

@@ -454,6 +454,7 @@ export const listWorkGraphBoard = createServerFn({ method: "GET" })
         search: z.string().max(200).default(""),
         page: z.number().int().min(1).default(1),
         pageSize: z.number().int().min(10).max(100).default(25),
+        taskId: z.string().uuid().optional(),
       })
       .parse(i ?? {}),
   )
@@ -536,6 +537,7 @@ export const listWorkGraphBoard = createServerFn({ method: "GET" })
 
     const term = data.search.trim().toLowerCase();
     let filtered = rows;
+    if (data.taskId) filtered = filtered.filter((r) => r.type === "TASK" && r.id === data.taskId);
     if (data.tab === "running") filtered = filtered.filter((r) => isRunningRow(r.type, r.status));
     else if (data.tab === "done") filtered = filtered.filter((r) => isDoneRow(r.type, r.status));
     else if (data.tab === "products") filtered = filtered.filter((r) => r.type === "WORK_PRODUCT");

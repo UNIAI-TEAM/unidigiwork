@@ -145,6 +145,13 @@ export type AiMessageVersionDTO = {
   createdAt: string;
 };
 
+export type TaskConversationDTO = {
+  id: string;
+  title: string;
+  lastMessageAt: string;
+  messages: AiMessageDTO[];
+};
+
 async function resolveTenant(ctx: Ctx): Promise<string | null> {
   const { data, error } = await ctx.supabase
     .from("tenant_members")
@@ -291,6 +298,94 @@ export const getAiConversation = createServerFn({ method: "GET" })
           ? (r.metadata as AiMessageMetadata)
           : null,
     }));
+  });
+
+/** Lịch sử hội thoại đã gắn hoặc trích dẫn một task, giới hạn theo tenant và RLS của người dùng. */
+export const getTaskConversations = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ taskId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }): Promise<TaskConversationDTO[]> => {
+    const ctx = context as unknown as Ctx;
+    const tenantId = await resolveTenant(ctx);
+    if (!tenantId) return [];
+
+    const { data: task, error: taskError } = await ctx.supabase
+      .from("tasks")
+      .select("id")
+      .eq("tenant_id", tenantId)
+      .eq("id", data.taskId)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (taskError)
+      throw new ApiError({ code: "AI_MESSAGE_LIST_FAILED", message: taskError.message });
+    if (!task) return [];
+
+    const { data: candidates, error: candidateError } = await ctx.supabase
+      .from("ai_messages")
+      .select("conversation_id, metadata")
+      .eq("tenant_id", tenantId)
+      .order("created_at", { ascending: false })
+      .limit(1000);
+    if (candidateError)
+      throw new ApiError({ code: "AI_MESSAGE_LIST_FAILED", message: candidateError.message });
+
+    const referencesTask = (metadata: unknown) => {
+      if (!metadata || typeof metadata !== "object") return false;
+      const value = metadata as AiMessageMetadata;
+      return (
+        value.contextEntities?.some((item) => item.type === "TASK" && item.id === data.taskId) ||
+        value.sources?.some((item) => item.entityType === "TASK" && item.entityId === data.taskId) ||
+        false
+      );
+    };
+    const conversationIds = Array.from(
+      new Set(
+        ((candidates ?? []) as Array<{ conversation_id: string; metadata: unknown }>)
+          .filter((row) => referencesTask(row.metadata))
+          .map((row) => row.conversation_id),
+      ),
+    ).slice(0, 20);
+    if (!conversationIds.length) return [];
+
+    const [{ data: conversations, error: conversationError }, { data: messages, error: messageError }] =
+      await Promise.all([
+        ctx.supabase
+          .from("ai_conversations")
+          .select("id, title, last_message_at")
+          .in("id", conversationIds)
+          .is("deleted_at", null),
+        ctx.supabase
+          .from("ai_messages")
+          .select("id, conversation_id, role, content, created_at, input_tokens, output_tokens, metadata")
+          .in("conversation_id", conversationIds)
+          .neq("role", "system")
+          .order("created_at", { ascending: true })
+          .limit(500),
+      ]);
+    if (conversationError)
+      throw new ApiError({ code: "AI_CONVERSATION_LIST_FAILED", message: conversationError.message });
+    if (messageError)
+      throw new ApiError({ code: "AI_MESSAGE_LIST_FAILED", message: messageError.message });
+
+    const rows = (messages ?? []) as Array<any>;
+    return ((conversations ?? []) as Array<any>)
+      .map((conversation) => ({
+        id: conversation.id as string,
+        title: conversation.title as string,
+        lastMessageAt: conversation.last_message_at as string,
+        messages: rows
+          .filter((message) => message.conversation_id === conversation.id)
+          .map((message) => ({
+            id: message.id,
+            role: message.role,
+            content: message.content,
+            createdAt: message.created_at,
+            inputTokens: message.input_tokens ?? 0,
+            outputTokens: message.output_tokens ?? 0,
+            metadata: message.metadata ?? null,
+          })),
+      }))
+      .sort((a, b) => b.lastMessageAt.localeCompare(a.lastMessageAt));
   });
 
 export const deleteAiConversation = createServerFn({ method: "POST" })
