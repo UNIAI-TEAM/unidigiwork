@@ -3,19 +3,18 @@ import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
-  AlertCircle,
   Building2,
   CalendarDays,
-  CheckCircle2,
   ChevronDown,
   ChevronRight,
   FileText,
   Folder,
   Menu,
+  MessageSquare,
   Plus,
   Search,
   Settings,
-  Workflow,
+  Video,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -27,16 +26,15 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { listAiConversations } from "@/lib/api/ai-chat.functions";
-import { getHomeSummary } from "@/lib/api/home.functions";
 import { useActiveWorkspace } from "@/lib/active-workspace";
 import { useCurrentIdentity } from "@/lib/use-current-identity";
 import { useI18n, type Key } from "@/lib/i18n";
 import { toMobileHref } from "@/lib/mobile-routes";
 
-const INBOX_LINKS = [
-  { label: "m.nav.attention" as Key, icon: AlertCircle },
-  { label: "m.nav.working" as Key, icon: Workflow },
-  { label: "m.nav.review" as Key, icon: CheckCircle2 },
+const QUICK_LINKS = [
+  { label: "m.nav.chat" as Key, icon: MessageSquare, to: "/m/chat" },
+  { label: "m.nav.video" as Key, icon: Video, to: "/m/meet" },
+  { label: "m.nav.file" as Key, icon: Folder, to: "/m/documents" },
 ];
 
 const LIBRARY_LINKS = [
@@ -51,8 +49,34 @@ export function MobileShell() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [drawerOpen, setDrawerOpen] = useState(false);
   const isNativeRoot = pathname === "/m" || pathname === "/m/" || pathname.startsWith("/m/c/");
+  const openSwipe = useRef<{ x: number; y: number } | null>(null);
 
   const startNew = () => void navigate({ to: "/m" as never });
+
+  const startOpenSwipe = (event: React.TouchEvent<HTMLDivElement>) => {
+    if (drawerOpen) return;
+    const touch = event.touches[0];
+    if (!touch || touch.clientX > 28) return;
+    openSwipe.current = { x: touch.clientX, y: touch.clientY };
+  };
+
+  const moveOpenSwipe = (event: React.TouchEvent<HTMLDivElement>) => {
+    if (!openSwipe.current) return;
+    const touch = event.touches[0];
+    if (!touch) return;
+    const dx = touch.clientX - openSwipe.current.x;
+    const dy = Math.abs(touch.clientY - openSwipe.current.y);
+    if (dx > 64 && dx > dy * 1.5) {
+      openSwipe.current = null;
+      setDrawerOpen(true);
+    } else if (dy > 48 && dy > dx) {
+      openSwipe.current = null;
+    }
+  };
+
+  const endOpenSwipe = () => {
+    openSwipe.current = null;
+  };
 
   const keepNavigationNative = (event: React.MouseEvent<HTMLDivElement>) => {
     const anchor = (event.target as HTMLElement).closest("a");
@@ -69,6 +93,10 @@ export function MobileShell() {
   return (
     <div
       onClickCapture={keepNavigationNative}
+      onTouchStart={startOpenSwipe}
+      onTouchMove={moveOpenSwipe}
+      onTouchEnd={endOpenSwipe}
+      onTouchCancel={endOpenSwipe}
       className="flex h-dvh min-h-dvh min-w-0 flex-col overflow-hidden bg-background"
     >
       <header className="z-40 flex min-h-16 shrink-0 items-center gap-2 bg-background px-[max(0.75rem,env(safe-area-inset-left))] pb-2 pt-[max(.5rem,env(safe-area-inset-top))]">
@@ -133,7 +161,6 @@ function NativeDrawer({
   const { t } = useI18n();
   const navigate = useNavigate();
   const listFn = useServerFn(listAiConversations);
-  const homeFn = useServerFn(getHomeSummary);
   const identity = useCurrentIdentity();
   const { workspaces, workspaceId, select } = useActiveWorkspace();
   const [workspacesOpen, setWorkspacesOpen] = useState(true);
@@ -145,18 +172,6 @@ function NativeDrawer({
     queryFn: () => listFn({ data: { limit: 6, sort: "recent" } }),
     enabled: open,
   });
-  const home = useQuery({
-    queryKey: ["home", "summary", "mobile-drawer"],
-    queryFn: () => homeFn(),
-    enabled: open,
-    staleTime: 60_000,
-  });
-
-  const inboxCounts = {
-    attention: home.data?.counts.attention ?? 0,
-    working: home.data?.myWork.filter((task) => task.status === "in_progress").length ?? 0,
-    review: home.data?.counts.approvals ?? 0,
-  };
 
   const go = (to: string) => {
     onOpenChange(false);
@@ -209,19 +224,14 @@ function NativeDrawer({
 
         <nav className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-3">
           <DrawerLink icon={Plus} label={t("m.nav.newWork")} onClick={() => go("/m")} />
-
-          <DrawerSection label={t("m.nav.inbox")}>
-            {INBOX_LINKS.map((item, index) => (
-              <DrawerLink
-                key={item.label}
-                icon={item.icon}
-                label={t(item.label)}
-                onClick={() => go("/m/box")}
-                count={[inboxCounts.attention, inboxCounts.working, inboxCounts.review][index]}
-                tone={index === 0 ? "danger" : index === 1 ? "brand" : "primary"}
-              />
-            ))}
-          </DrawerSection>
+          {QUICK_LINKS.map((item) => (
+            <DrawerLink
+              key={item.to}
+              icon={item.icon}
+              label={t(item.label)}
+              onClick={() => go(item.to)}
+            />
+          ))}
 
           <DrawerSection label={t("m.nav.workspaces")}>
             <button
