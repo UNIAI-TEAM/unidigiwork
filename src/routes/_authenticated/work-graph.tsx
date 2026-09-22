@@ -341,6 +341,11 @@ function WorkGraphPage() {
                         <span className="text-[11px] text-muted-foreground">
                           {t("wg.progress")} {i.progress}%
                         </span>
+                        {i.ownerName ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground sm:hidden">
+                            · <UserRound className="h-3 w-3" /> {i.ownerName}
+                          </span>
+                        ) : null}
                         {i.totalSteps > 0 ? (
                           <span className="text-[11px] text-muted-foreground">
                             ·{" "}

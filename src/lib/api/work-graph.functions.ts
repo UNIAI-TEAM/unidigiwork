@@ -435,8 +435,8 @@ export const listWorkGraphAssignees = createServerFn({ method: "GET" })
 
 /**
  * Bảng Work Graph của tổ chức: công việc, lượt thực thi và kết quả công việc
- * đã được chiếu vào graph. Đọc từ projection work_nodes/work_edges và resolve
- * qua bảng nguồn bằng client theo phiên — RLS loại bỏ thực thể không được xem.
+ * đã được chiếu vào graph. Truy vấn tenant-scoped phân trang ngay tại nguồn;
+ * quyền RLS loại bỏ thực thể người gọi không được xem.
  */
 export const listWorkGraphBoard = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
