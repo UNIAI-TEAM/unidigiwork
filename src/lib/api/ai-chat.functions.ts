@@ -18,27 +18,6 @@ const SYSTEM_PROMPT = [
   "Ưu tiên tiếng Việt trừ khi người dùng dùng ngôn ngữ khác.",
 ].join(" ");
 
-function ensureExecutiveBrief(text: string): string {
-  const sections = ["Kết luận", "Việc cần làm", "Hạn", "Người phụ trách"];
-  const normalized = text.trim() || "Chưa có kết quả.";
-  if (sections.every((section) => new RegExp(`^##\\s+${section}\\s*$`, "im").test(normalized))) {
-    return normalized;
-  }
-  return [
-    "## Kết luận",
-    normalized,
-    "",
-    "## Việc cần làm",
-    "- AI đề xuất: Xác nhận bước tiếp theo từ kết luận trên.",
-    "",
-    "## Hạn",
-    "Chưa xác định",
-    "",
-    "## Người phụ trách",
-    "Chưa xác định",
-  ].join("\n");
-}
-
 type Ctx = { supabase: any; userId: string };
 
 export type AiConversationDTO = {
@@ -631,7 +610,8 @@ export const sendAiMessage = createServerFn({ method: "POST" })
             ],
           },
         );
-        reply = ensureExecutiveBrief(result.text);
+        reply = result.text.trim();
+        if (!reply) throw new Error("AI không trả về nội dung.");
         inputTokens = result.usage?.inputTokens ?? 0;
         outputTokens = result.usage?.outputTokens ?? 0;
         sourceMetadata = result.sources.slice(0, 8).map((source) => ({
