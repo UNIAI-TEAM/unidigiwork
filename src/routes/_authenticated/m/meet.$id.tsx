@@ -1,16 +1,20 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import {
   ArrowLeft,
   CalendarClock,
   ExternalLink,
   FileText,
   MapPin,
+  MessageSquare,
   Users,
   Video,
 } from "lucide-react";
 import { getMeeting } from "@/lib/api/meetings.functions";
 import { getMeetingSummary } from "@/lib/api/meeting-intelligence.functions";
+import { ensureMeetingChatChannel } from "@/lib/api/chat.functions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -47,6 +51,12 @@ function MobileMeetingDetail() {
     queryKey: ["m-meeting", id],
     queryFn: () => getMeeting({ data: { meetingId: id } }),
     retry: false,
+  });
+  const ensureChat = useServerFn(ensureMeetingChatChannel);
+  const openChat = useMutation({
+    mutationFn: () => ensureChat({ data: { meetingId: id } }),
+    onSuccess: (res) => void navigate({ to: "/m/chat/$id", params: { id: res.channelId } }),
+    onError: () => toast.error(t("m.chat.meetingError")),
   });
   const summary = useQuery({
     queryKey: ["meeting-summary", id],
@@ -146,6 +156,15 @@ function MobileMeetingDetail() {
       >
         <Video className="mr-2 h-4 w-4" />
         {t("mtg.m.join")}
+      </Button>
+      <Button
+        variant="outline"
+        className="min-h-11 w-full"
+        disabled={openChat.isPending}
+        onClick={() => openChat.mutate()}
+      >
+        <MessageSquare className="mr-2 h-4 w-4" />
+        {t("m.chat.meetingOpen")}
       </Button>
     </div>
   );

@@ -109,7 +109,6 @@ import { Route as AuthenticatedMHrRouteImport } from './routes/_authenticated/m/
 import { Route as AuthenticatedMHomeRouteImport } from './routes/_authenticated/m/home'
 import { Route as AuthenticatedMDecisionsRouteImport } from './routes/_authenticated/m/decisions'
 import { Route as AuthenticatedMComposeRouteImport } from './routes/_authenticated/m/compose'
-import { Route as AuthenticatedMChatRouteImport } from './routes/_authenticated/m/chat'
 import { Route as AuthenticatedMCeoRouteImport } from './routes/_authenticated/m/ceo'
 import { Route as AuthenticatedMCalendarRouteImport } from './routes/_authenticated/m/calendar'
 import { Route as AuthenticatedMBoxRouteImport } from './routes/_authenticated/m/box'
@@ -725,11 +724,6 @@ const AuthenticatedMComposeRoute = AuthenticatedMComposeRouteImport.update({
   path: '/compose',
   getParentRoute: () => AuthenticatedMRoute,
 } as any)
-const AuthenticatedMChatRoute = AuthenticatedMChatRouteImport.update({
-  id: '/chat',
-  path: '/chat',
-  getParentRoute: () => AuthenticatedMRoute,
-} as any)
 const AuthenticatedMCeoRoute = AuthenticatedMCeoRouteImport.update({
   id: '/ceo',
   path: '/ceo',
@@ -976,9 +970,9 @@ const AuthenticatedMDocumentsIndexRoute =
     getParentRoute: () => AuthenticatedMRoute,
   } as any)
 const AuthenticatedMChatIndexRoute = AuthenticatedMChatIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AuthenticatedMChatRoute,
+  id: '/chat/',
+  path: '/chat/',
+  getParentRoute: () => AuthenticatedMRoute,
 } as any)
 const AuthenticatedMAiWorkforceIndexRoute =
   AuthenticatedMAiWorkforceIndexRouteImport.update({
@@ -1129,9 +1123,9 @@ const AuthenticatedMDocumentsIdRoute =
     getParentRoute: () => AuthenticatedMRoute,
   } as any)
 const AuthenticatedMChatIdRoute = AuthenticatedMChatIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => AuthenticatedMChatRoute,
+  id: '/chat/$id',
+  path: '/chat/$id',
+  getParentRoute: () => AuthenticatedMRoute,
 } as any)
 const AuthenticatedMCIdRoute = AuthenticatedMCIdRouteImport.update({
   id: '/c/$id',
@@ -1340,7 +1334,6 @@ export interface FileRoutesByFullPath {
   '/m/box': typeof AuthenticatedMBoxRoute
   '/m/calendar': typeof AuthenticatedMCalendarRoute
   '/m/ceo': typeof AuthenticatedMCeoRoute
-  '/m/chat': typeof AuthenticatedMChatRouteWithChildren
   '/m/compose': typeof AuthenticatedMComposeRoute
   '/m/decisions': typeof AuthenticatedMDecisionsRoute
   '/m/home': typeof AuthenticatedMHomeRoute
@@ -1721,7 +1714,6 @@ export interface FileRoutesById {
   '/_authenticated/m/box': typeof AuthenticatedMBoxRoute
   '/_authenticated/m/calendar': typeof AuthenticatedMCalendarRoute
   '/_authenticated/m/ceo': typeof AuthenticatedMCeoRoute
-  '/_authenticated/m/chat': typeof AuthenticatedMChatRouteWithChildren
   '/_authenticated/m/compose': typeof AuthenticatedMComposeRoute
   '/_authenticated/m/decisions': typeof AuthenticatedMDecisionsRoute
   '/_authenticated/m/home': typeof AuthenticatedMHomeRoute
@@ -1915,7 +1907,6 @@ export interface FileRouteTypes {
     | '/m/box'
     | '/m/calendar'
     | '/m/ceo'
-    | '/m/chat'
     | '/m/compose'
     | '/m/decisions'
     | '/m/home'
@@ -2295,7 +2286,6 @@ export interface FileRouteTypes {
     | '/_authenticated/m/box'
     | '/_authenticated/m/calendar'
     | '/_authenticated/m/ceo'
-    | '/_authenticated/m/chat'
     | '/_authenticated/m/compose'
     | '/_authenticated/m/decisions'
     | '/_authenticated/m/home'
@@ -3139,13 +3129,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMComposeRouteImport
       parentRoute: typeof AuthenticatedMRoute
     }
-    '/_authenticated/m/chat': {
-      id: '/_authenticated/m/chat'
-      path: '/chat'
-      fullPath: '/m/chat'
-      preLoaderRoute: typeof AuthenticatedMChatRouteImport
-      parentRoute: typeof AuthenticatedMRoute
-    }
     '/_authenticated/m/ceo': {
       id: '/_authenticated/m/ceo'
       path: '/ceo'
@@ -3456,10 +3439,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/m/chat/': {
       id: '/_authenticated/m/chat/'
-      path: '/'
+      path: '/chat'
       fullPath: '/m/chat/'
       preLoaderRoute: typeof AuthenticatedMChatIndexRouteImport
-      parentRoute: typeof AuthenticatedMChatRoute
+      parentRoute: typeof AuthenticatedMRoute
     }
     '/_authenticated/m/ai-workforce/': {
       id: '/_authenticated/m/ai-workforce/'
@@ -3645,10 +3628,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/m/chat/$id': {
       id: '/_authenticated/m/chat/$id'
-      path: '/$id'
+      path: '/chat/$id'
       fullPath: '/m/chat/$id'
       preLoaderRoute: typeof AuthenticatedMChatIdRouteImport
-      parentRoute: typeof AuthenticatedMChatRoute
+      parentRoute: typeof AuthenticatedMRoute
     }
     '/_authenticated/m/c/$id': {
       id: '/_authenticated/m/c/$id'
@@ -3858,19 +3841,6 @@ const AuthenticatedDocumentsRouteWithChildren =
     AuthenticatedDocumentsRouteChildren,
   )
 
-interface AuthenticatedMChatRouteChildren {
-  AuthenticatedMChatIdRoute: typeof AuthenticatedMChatIdRoute
-  AuthenticatedMChatIndexRoute: typeof AuthenticatedMChatIndexRoute
-}
-
-const AuthenticatedMChatRouteChildren: AuthenticatedMChatRouteChildren = {
-  AuthenticatedMChatIdRoute: AuthenticatedMChatIdRoute,
-  AuthenticatedMChatIndexRoute: AuthenticatedMChatIndexRoute,
-}
-
-const AuthenticatedMChatRouteWithChildren =
-  AuthenticatedMChatRoute._addFileChildren(AuthenticatedMChatRouteChildren)
-
 interface AuthenticatedMKnowledgeRouteChildren {
   AuthenticatedMKnowledgeSlugRoute: typeof AuthenticatedMKnowledgeSlugRoute
 }
@@ -3940,7 +3910,6 @@ interface AuthenticatedMRouteChildren {
   AuthenticatedMBoxRoute: typeof AuthenticatedMBoxRoute
   AuthenticatedMCalendarRoute: typeof AuthenticatedMCalendarRoute
   AuthenticatedMCeoRoute: typeof AuthenticatedMCeoRoute
-  AuthenticatedMChatRoute: typeof AuthenticatedMChatRouteWithChildren
   AuthenticatedMComposeRoute: typeof AuthenticatedMComposeRoute
   AuthenticatedMDecisionsRoute: typeof AuthenticatedMDecisionsRoute
   AuthenticatedMHomeRoute: typeof AuthenticatedMHomeRoute
@@ -3969,6 +3938,7 @@ interface AuthenticatedMRouteChildren {
   AuthenticatedMAiMarketIdRoute: typeof AuthenticatedMAiMarketIdRoute
   AuthenticatedMAiWorkforceIdRoute: typeof AuthenticatedMAiWorkforceIdRoute
   AuthenticatedMCIdRoute: typeof AuthenticatedMCIdRoute
+  AuthenticatedMChatIdRoute: typeof AuthenticatedMChatIdRoute
   AuthenticatedMDocumentsIdRoute: typeof AuthenticatedMDocumentsIdRoute
   AuthenticatedMEmailIdRoute: typeof AuthenticatedMEmailIdRoute
   AuthenticatedMMeetIdRoute: typeof AuthenticatedMMeetIdRoute
@@ -3980,6 +3950,7 @@ interface AuthenticatedMRouteChildren {
   AuthenticatedMAdminIndexRoute: typeof AuthenticatedMAdminIndexRoute
   AuthenticatedMAiMarketIndexRoute: typeof AuthenticatedMAiMarketIndexRoute
   AuthenticatedMAiWorkforceIndexRoute: typeof AuthenticatedMAiWorkforceIndexRoute
+  AuthenticatedMChatIndexRoute: typeof AuthenticatedMChatIndexRoute
   AuthenticatedMDocumentsIndexRoute: typeof AuthenticatedMDocumentsIndexRoute
   AuthenticatedMEmailIndexRoute: typeof AuthenticatedMEmailIndexRoute
   AuthenticatedMMeetIndexRoute: typeof AuthenticatedMMeetIndexRoute
@@ -3998,7 +3969,6 @@ const AuthenticatedMRouteChildren: AuthenticatedMRouteChildren = {
   AuthenticatedMBoxRoute: AuthenticatedMBoxRoute,
   AuthenticatedMCalendarRoute: AuthenticatedMCalendarRoute,
   AuthenticatedMCeoRoute: AuthenticatedMCeoRoute,
-  AuthenticatedMChatRoute: AuthenticatedMChatRouteWithChildren,
   AuthenticatedMComposeRoute: AuthenticatedMComposeRoute,
   AuthenticatedMDecisionsRoute: AuthenticatedMDecisionsRoute,
   AuthenticatedMHomeRoute: AuthenticatedMHomeRoute,
@@ -4029,6 +3999,7 @@ const AuthenticatedMRouteChildren: AuthenticatedMRouteChildren = {
   AuthenticatedMAiMarketIdRoute: AuthenticatedMAiMarketIdRoute,
   AuthenticatedMAiWorkforceIdRoute: AuthenticatedMAiWorkforceIdRoute,
   AuthenticatedMCIdRoute: AuthenticatedMCIdRoute,
+  AuthenticatedMChatIdRoute: AuthenticatedMChatIdRoute,
   AuthenticatedMDocumentsIdRoute: AuthenticatedMDocumentsIdRoute,
   AuthenticatedMEmailIdRoute: AuthenticatedMEmailIdRoute,
   AuthenticatedMMeetIdRoute: AuthenticatedMMeetIdRoute,
@@ -4040,6 +4011,7 @@ const AuthenticatedMRouteChildren: AuthenticatedMRouteChildren = {
   AuthenticatedMAdminIndexRoute: AuthenticatedMAdminIndexRoute,
   AuthenticatedMAiMarketIndexRoute: AuthenticatedMAiMarketIndexRoute,
   AuthenticatedMAiWorkforceIndexRoute: AuthenticatedMAiWorkforceIndexRoute,
+  AuthenticatedMChatIndexRoute: AuthenticatedMChatIndexRoute,
   AuthenticatedMDocumentsIndexRoute: AuthenticatedMDocumentsIndexRoute,
   AuthenticatedMEmailIndexRoute: AuthenticatedMEmailIndexRoute,
   AuthenticatedMMeetIndexRoute: AuthenticatedMMeetIndexRoute,
