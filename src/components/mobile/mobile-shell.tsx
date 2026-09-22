@@ -126,9 +126,8 @@ function NativeDrawer({
     }
   }, []);
   const conversations = useQuery({
-    queryKey: ["mobile-ai-conversations", workspaceId],
-    queryFn: () =>
-      listFn({ data: { workspaceId: workspaceId ?? undefined, limit: 6, sort: "recent" } }),
+    queryKey: ["mobile-ai-conversations"],
+    queryFn: () => listFn({ data: { limit: 6, sort: "recent" } }),
     enabled: open,
   });
   const home = useQuery({
@@ -210,7 +209,7 @@ function NativeDrawer({
             {recentConversations.map((conversation, index) => (
               <div
                 key={conversation.id}
-                className="grid min-h-16 grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] items-center gap-2 rounded-xl hover:bg-sidebar-accent"
+                className="grid min-h-16 grid-cols-[2.75rem_minmax(0,1fr)_2.75rem_2.75rem] items-center gap-1 rounded-xl hover:bg-sidebar-accent"
               >
                 <button
                   onClick={() => go(`/m/c/${conversation.id}`)}
@@ -245,8 +244,16 @@ function NativeDrawer({
                   {pinnedIds.includes(conversation.id) ? (
                     <Pin className="fill-primary text-primary" />
                   ) : (
-                    <MoreHorizontal />
+                    <Pin />
                   )}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-11 w-11 text-muted-foreground"
+                  aria-label={t("m.nav.more")}
+                >
+                  <MoreHorizontal />
                 </Button>
               </div>
             ))}
