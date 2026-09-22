@@ -202,7 +202,11 @@ function NativeDrawer({
           />
           <DrawerLink icon={Search} label={t("cmd.group.search")} onClick={() => go("/m/search")} />
 
-          <DrawerSection label={t("m.nav.recent")} action={t("m.nav.viewAll")} onAction={() => go("/m/search")}>
+          <DrawerSection
+            label={t("m.nav.recent")}
+            action={t("m.nav.viewAll")}
+            onAction={() => go("/m/search")}
+          >
             {recentConversations.map((conversation, index) => (
               <div
                 key={conversation.id}
@@ -221,7 +225,9 @@ function NativeDrawer({
                     <BarChart3 className="mx-auto h-5 w-5" />
                   )}
                   <span className="min-w-0 text-left">
-                    <span className="block truncate text-[15px] font-medium">{conversation.title}</span>
+                    <span className="block truncate text-[15px] font-medium">
+                      {conversation.title}
+                    </span>
                     <span className="block truncate text-xs text-muted-foreground">
                       {t("m.nav.conversation")} · {relativeTime(conversation.lastMessageAt)}
                     </span>
@@ -232,7 +238,9 @@ function NativeDrawer({
                   size="icon"
                   className="h-11 w-11 text-muted-foreground"
                   onClick={() => togglePin(conversation.id)}
-                  aria-label={pinnedIds.includes(conversation.id) ? t("m.nav.unpin") : t("m.nav.pin")}
+                  aria-label={
+                    pinnedIds.includes(conversation.id) ? t("m.nav.unpin") : t("m.nav.pin")
+                  }
                 >
                   {pinnedIds.includes(conversation.id) ? (
                     <Pin className="fill-primary text-primary" />
@@ -267,7 +275,9 @@ function NativeDrawer({
               <span className="truncate text-[15px] font-medium">
                 {identity.tenantName ?? t("m.nav.workspaces")}
               </span>
-              <ChevronDown className={`mx-auto h-5 w-5 transition-transform ${workspacesOpen ? "" : "-rotate-90"}`} />
+              <ChevronDown
+                className={`mx-auto h-5 w-5 transition-transform ${workspacesOpen ? "" : "-rotate-90"}`}
+              />
             </button>
             {workspacesOpen && (
               <div className="space-y-0.5">
@@ -368,10 +378,14 @@ function DrawerLink({
       onClick={onClick}
       className={`grid min-h-12 w-full grid-cols-[2.75rem_minmax(0,1fr)_auto_2.75rem] items-center gap-2 rounded-xl text-left text-[15px] transition-colors ${strong ? "bg-primary text-primary-foreground" : active ? "bg-primary/10 text-primary" : "text-sidebar-foreground hover:bg-sidebar-accent"}`}
     >
-      <Icon className={`mx-auto h-5 w-5 shrink-0 ${tone === "danger" ? "text-destructive" : tone === "brand" ? "text-brand-blue" : count !== undefined ? "text-primary" : ""}`} />
+      <Icon
+        className={`mx-auto h-5 w-5 shrink-0 ${tone === "danger" ? "text-destructive" : tone === "brand" ? "text-brand-blue" : count !== undefined ? "text-primary" : ""}`}
+      />
       <span className="min-w-0 flex-1 truncate font-medium">{label}</span>
       {count !== undefined && count > 0 ? (
-        <span className={`grid h-8 min-w-8 place-items-center rounded-full px-2 text-sm font-semibold text-primary-foreground ${tone === "danger" ? "bg-destructive" : tone === "brand" ? "bg-brand-blue" : "bg-primary"}`}>
+        <span
+          className={`grid h-8 min-w-8 place-items-center rounded-full px-2 text-sm font-semibold text-primary-foreground ${tone === "danger" ? "bg-destructive" : tone === "brand" ? "bg-brand-blue" : "bg-primary"}`}
+        >
           {count > 99 ? "99+" : count}
         </span>
       ) : null}
