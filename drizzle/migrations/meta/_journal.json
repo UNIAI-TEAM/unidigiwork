@@ -239,6 +239,13 @@
       "when": 1790051640729,
       "tag": "0033_ai_action_conversation_task_link",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1790053132986,
+      "tag": "0034_list_task_conversations_indexed",
+      "breakpoints": true
     }
   ]
 }
