@@ -18,27 +18,6 @@ const SYSTEM_PROMPT = [
   "Ưu tiên tiếng Việt trừ khi người dùng dùng ngôn ngữ khác.",
 ].join(" ");
 
-function ensureExecutiveBrief(text: string): string {
-  const sections = ["Kết luận", "Việc cần làm", "Hạn", "Người phụ trách"];
-  const normalized = text.trim() || "Chưa có kết quả.";
-  if (sections.every((section) => new RegExp(`^##\\s+${section}\\s*$`, "im").test(normalized))) {
-    return normalized;
-  }
-  return [
-    "## Kết luận",
-    normalized,
-    "",
-    "## Việc cần làm",
-    "- AI đề xuất: Xác nhận bước tiếp theo từ kết luận trên.",
-    "",
-    "## Hạn",
-    "Chưa xác định",
-    "",
-    "## Người phụ trách",
-    "Chưa xác định",
-  ].join("\n");
-}
-
 type Ctx = { supabase: any; userId: string };
 
 export type AiConversationDTO = {
@@ -595,8 +574,7 @@ export const sendAiMessage = createServerFn({ method: "POST" })
         .from("ai_messages")
         .select("role, content")
         .eq("conversation_id", conversationId)
-        .order("created_at", { ascending: true })
-        .limit(40);
+        .order("created_at", { ascending: true });
 
       const started = Date.now();
       let reply = "";
@@ -609,7 +587,6 @@ export const sendAiMessage = createServerFn({ method: "POST" })
       try {
         const { answerWithContext } = await import("./ai-consumer.server");
         const conversation = ((history ?? []) as Array<{ role: string; content: string }>)
-          .slice(-10)
           .map(
             (m) => `${m.role === "assistant" ? "UNI" : "Người dùng"}: ${m.content.slice(0, 1200)}`,
           )
@@ -633,7 +610,8 @@ export const sendAiMessage = createServerFn({ method: "POST" })
             ],
           },
         );
-        reply = ensureExecutiveBrief(result.text);
+        reply = result.text.trim();
+        if (!reply) throw new Error("AI không trả về nội dung.");
         inputTokens = result.usage?.inputTokens ?? 0;
         outputTokens = result.usage?.outputTokens ?? 0;
         sourceMetadata = result.sources.slice(0, 8).map((source) => ({

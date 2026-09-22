@@ -46,15 +46,10 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { getAiConversation, sendAiMessage, type AiMessageDTO } from "@/lib/api/ai-chat.functions";
-import { proposeAiAction } from "@/lib/api/ai-actions.functions";
 import { universalSearch } from "@/lib/api/search-universal.functions";
 import type { UniversalSearchItem } from "@/lib/api/search-universal.server";
 import type { AiContextEntityType } from "@/domain/ai-context/contracts";
 import { WORK_ENTITY_TYPES } from "@/domain/work-graph/relationship-types";
-import type { AiActionExecutionResult, ProposedAiAction } from "@/domain/ai-actions/contracts";
-import { routeRequest, type OrchestrationExecutor } from "@/domain/ai-orchestration/route";
-import { ActionProposalCard } from "@/components/ai/action-proposal-card";
-import { ExecutionObserver } from "@/components/mobile/execution-observer";
 import { WorkProductRun } from "@/components/mobile/build-work-product";
 import { detectWorkProductKinds } from "@/domain/ai-orchestration/work-product-intent";
 import { useActiveWorkspace } from "@/lib/active-workspace";
@@ -63,16 +58,6 @@ import { useI18n } from "@/lib/i18n";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TaskChatHub } from "@/components/mobile/task-chat-summary";
 import { CollapsibleChatContent } from "@/components/mobile/collapsible-chat-content";
-
-/** Lượt điều phối cục bộ: yêu cầu → đề xuất hành động → quan sát thực thi. */
-type OrchestrationTurn = {
-  id: string;
-  user: string;
-  note?: string;
-  proposal?: ProposedAiAction;
-  executor?: OrchestrationExecutor;
-  executed?: { taskId: string; agentName?: string; humanName?: string };
-};
 
 type AddedContext = {
   id: string;
@@ -107,15 +92,12 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
   const queryClient = useQueryClient();
   const sendFn = useServerFn(sendAiMessage);
   const getFn = useServerFn(getAiConversation);
-  const proposeFn = useServerFn(proposeAiAction);
   const { workspaceId } = useActiveWorkspace();
   const identity = useCurrentIdentity();
   const [input, setInput] = useState("");
   const [pendingText, setPendingText] = useState<string | null>(null);
   const [contexts, setContexts] = useState<AddedContext[]>([]);
   const [contextOpen, setContextOpen] = useState(false);
-  const [turns, setTurns] = useState<OrchestrationTurn[]>([]);
-  const [proposing, setProposing] = useState(false);
   const [surfaceTab, setSurfaceTab] = useState("chat");
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -174,57 +156,10 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
     },
   });
 
-  // ORCHESTRATION LAYER — hệ thống tự định tuyến yêu cầu: trả lời, hay chuẩn bị
-  // hành động và tự chọn Human/Agent thực hiện. Người dùng không chọn agent trước.
-  const runAction = async (value: string, actionType: string, executor: OrchestrationExecutor) => {
-    const root = contexts.find((item) => item.root)?.root;
-    setProposing(true);
-    setPendingText(value);
-    try {
-      const proposal = (await proposeFn({
-        data: {
-          query: value,
-          actionType,
-          source: "UNI_COPILOT",
-          workspaceId: workspaceId ?? null,
-          rootEntity: root ? { type: root.type, id: root.id } : null,
-          targetTaskId: root?.type === "TASK" ? root.id : null,
-          conversationId: conversationId ?? null,
-        },
-      } as never)) as ProposedAiAction;
-      setTurns((current) => [
-        ...current,
-        { id: proposal.actionId, user: value, proposal, executor },
-      ]);
-      setContexts([]);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : t("m.ai.proposeError"));
-    } finally {
-      setProposing(false);
-      setPendingText(null);
-    }
-  };
-
   const submit = (raw: string) => {
     const value = raw.trim();
-    if (!value || send.isPending || proposing) return;
+    if (!value || send.isPending) return;
     setInput("");
-    const route = routeRequest(value);
-    if (route.mode === "BLOCKED") {
-      setTurns((current) => [
-        ...current,
-        {
-          id: `blocked-${Date.now()}`,
-          user: value,
-          note: t(route.reason === "SEND_EMAIL" ? "m.ai.blocked.send" : "m.ai.blocked.delete"),
-        },
-      ]);
-      return;
-    }
-    if (route.mode === "ACTION") {
-      void runAction(value, route.actionType, route.executor);
-      return;
-    }
     setPendingText(value);
     send.mutate(value);
   };
@@ -234,7 +169,7 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
   }, [conversationId, send.isPending]);
 
   const displayMessages = (messages.data ?? []).filter((message) => message.role !== "system");
-  const isEmpty = displayMessages.length === 0 && !pendingText && turns.length === 0;
+  const isEmpty = displayMessages.length === 0 && !pendingText;
   const firstName = identity.displayName.trim().split(/\s+/).at(-1) || t("m.ai.user");
 
   // Build Work Product: chỉ hiện sau khi AI đã trả lời xong lượt gần nhất.
@@ -308,53 +243,6 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
                       sourceEntities={buildSources}
                     />
                   )}
-                  {turns.map((turn) => (
-                    <div key={turn.id} className="space-y-3">
-                      <UserMessage content={turn.user} />
-                      {turn.note && (
-                        <p className="rounded-xl border border-border bg-surface px-3 py-2 text-[13px] text-muted-foreground">
-                          {turn.note}
-                        </p>
-                      )}
-                      {turn.executor && (
-                        <p className="text-xs text-muted-foreground">
-                          {turn.executor.kind === "AI"
-                            ? t("m.ai.assign.ai").replace("{name}", turn.executor.profileName ?? "")
-                            : t("m.ai.assign.human")}
-                        </p>
-                      )}
-                      {turn.proposal && (
-                        <ActionProposalCard
-                          proposal={turn.proposal}
-                          onExecuted={(result: AiActionExecutionResult) =>
-                            setTurns((current) =>
-                              current.map((item) =>
-                                item.id === turn.id &&
-                                result.entityType === "TASK" &&
-                                result.entityId
-                                  ? {
-                                      ...item,
-                                      executed: {
-                                        taskId: result.entityId,
-                                        agentName: result.assignedAgent?.agentName,
-                                        humanName: result.assignedHuman?.name,
-                                      },
-                                    }
-                                  : item,
-                              ),
-                            )
-                          }
-                        />
-                      )}
-                      {turn.executed && (
-                        <ExecutionObserver
-                          taskId={turn.executed.taskId}
-                          agentName={turn.executed.agentName}
-                          humanName={turn.executed.humanName ?? identity.displayName}
-                        />
-                      )}
-                    </div>
-                  ))}
                   {pendingText && (
                     <>
                       <UserMessage content={pendingText} />
@@ -445,10 +333,10 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
               <PromptInputSubmit
                 className="h-11 w-11 shrink-0 rounded-xl"
                 aria-label={t("m.ai.send")}
-                disabled={!input.trim() || send.isPending || proposing}
-                status={send.isPending || proposing ? "submitted" : "ready"}
+                disabled={!input.trim() || send.isPending}
+                status={send.isPending ? "submitted" : "ready"}
               >
-                {send.isPending || proposing ? (
+                {send.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <ArrowUp className="h-4 w-4" />
