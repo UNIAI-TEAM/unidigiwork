@@ -169,7 +169,7 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
               <span className="ml-2 text-sm">{t("m.ai.loading")}</span>
             </div>
           ) : isEmpty ? (
-            <EmptyState firstName={firstName} onPick={submit} />
+                <EmptyState firstName={firstName} />
           ) : (
             <div className="mx-auto w-full max-w-2xl space-y-7 pb-4">
               {displayMessages.map((message, index) => (
@@ -305,7 +305,7 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
   );
 }
 
-function EmptyState({ firstName, onPick }: { firstName: string; onPick: (value: string) => void }) {
+function EmptyState({ firstName }: { firstName: string }) {
   const { t } = useI18n();
   return (
     <section className="flex min-h-full flex-col justify-end pb-6 sm:justify-center sm:pb-0">
