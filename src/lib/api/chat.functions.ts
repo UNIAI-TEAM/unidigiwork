@@ -20,6 +20,7 @@ export type ChatChannelDTO = {
   memberCount: number;
   unread: number;
   lastMessageAt: string | null;
+  meetingId: string | null;
 };
 
 export type ChatMessageDTO = {
@@ -124,7 +125,7 @@ export const listChatChannels = createServerFn({ method: "GET" })
 
     const { data: chans, error } = await ctx.supabase
       .from("chat_channels")
-      .select("id, name, description, kind, is_private, last_message_at, created_by")
+      .select("id, name, description, kind, is_private, last_message_at, created_by, meeting_id")
       .eq("tenant_id", scope.tenantId)
       .is("deleted_at", null)
       .order("last_message_at", { ascending: false, nullsFirst: false })
@@ -174,6 +175,7 @@ export const listChatChannels = createServerFn({ method: "GET" })
         memberCount: counts.get(r.id) ?? 0,
         unread: unread.get(r.id) ?? 0,
         lastMessageAt: r.last_message_at,
+        meetingId: r.meeting_id ?? null,
       };
     });
 
