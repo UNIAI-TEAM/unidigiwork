@@ -70,7 +70,7 @@ function MobileOrganizationAdmin() {
     {!canManage ? <ReadOnlyNotice /> : null}
     <div className="flex flex-wrap items-center gap-2">
       <Badge variant="outline">{t(`m.admin.status.${tenant.tenantStatus}` as never)}</Badge>
-      <Badge variant="outline">{t("m.admin.departmentMembers", { count: members.data?.length ?? 0 })}</Badge>
+      <Badge variant="outline">{t("m.admin.departmentMembers").replace("{count}", String(members.data?.length ?? 0))}</Badge>
       {canManage ? <Button className="ml-auto min-h-11" onClick={() => setInviteOpen(true)}><MailPlus className="mr-2 h-4 w-4" />{t("m.admin.invite")}</Button> : null}
     </div>
     {isOwner ? <div className="flex gap-2">
