@@ -64,7 +64,9 @@ export async function classifyTaskMessage(input: {
   const parsed = resultSchema.parse(JSON.parse(raw.slice(start, end + 1)));
   const candidateIds = new Set(input.candidates.map((candidate) => candidate.id));
   const relatedTaskId =
-    parsed.label === "RELATED_WORK" && parsed.relatedTaskId && candidateIds.has(parsed.relatedTaskId)
+    parsed.label === "RELATED_WORK" &&
+    parsed.relatedTaskId &&
+    candidateIds.has(parsed.relatedTaskId)
       ? parsed.relatedTaskId
       : null;
   return {

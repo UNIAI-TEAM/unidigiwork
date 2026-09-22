@@ -325,17 +325,24 @@ export function TaskChatSummary({ taskId, taskTitle }: { taskId: string; taskTit
               <div className="max-h-80 space-y-3 overflow-y-auto rounded-xl border border-border bg-background p-3">
                 {workGraphComments.length ? (
                   workGraphComments.map((comment: any) => (
-                    <Message key={comment.id} from={comment.author_id === identity.userId ? "user" : "assistant"}>
+                    <Message
+                      key={comment.id}
+                      from={comment.author_id === identity.userId ? "user" : "assistant"}
+                    >
                       <MessageContent className="max-w-[92%]">
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span className="font-semibold text-foreground">{comment.author_name ?? t("m.taskChat.member")}</span>
+                          <span className="font-semibold text-foreground">
+                            {comment.author_name ?? t("m.taskChat.member")}
+                          </span>
                           <Badge variant="secondary">{t("m.taskChat.fromWorkGraph")}</Badge>
                         </div>
                         <p className="whitespace-pre-wrap break-words leading-6">{comment.body}</p>
                       </MessageContent>
                     </Message>
                   ))
-                ) : <Empty text={t("m.taskChat.noManagementMessages")} />}
+                ) : (
+                  <Empty text={t("m.taskChat.noManagementMessages")} />
+                )}
               </div>
             </TabsContent>
           </Tabs>
@@ -380,22 +387,33 @@ export function TaskChatSummary({ taskId, taskTitle }: { taskId: string; taskTit
               <Empty text={t("m.taskChat.noHistory")} />
             )}
           </SummarySection>
-          <SummarySection title={t("m.taskChat.feedback")} count={teamComments.filter((comment: any) => comment.metadata?.classification?.label === "FEEDBACK").length}>
-            {teamComments.some((comment: any) => comment.metadata?.classification?.label === "FEEDBACK") ? (
+          <SummarySection
+            title={t("m.taskChat.feedback")}
+            count={
+              teamComments.filter(
+                (comment: any) => comment.metadata?.classification?.label === "FEEDBACK",
+              ).length
+            }
+          >
+            {teamComments.some(
+              (comment: any) => comment.metadata?.classification?.label === "FEEDBACK",
+            ) ? (
               <ul className="grid gap-2">
-                {teamComments.filter((comment: any) => comment.metadata?.classification?.label === "FEEDBACK").map((comment: any) => (
-                  <li key={comment.id} className="rounded-xl border border-border bg-surface p-3">
-                    <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                      <span className="truncate font-semibold text-foreground">
-                        {comment.author_name ?? t("m.taskChat.member")}
-                      </span>
-                      <span className="shrink-0">
-                        {new Date(comment.created_at).toLocaleDateString(localeTag(lang))}
-                      </span>
-                    </div>
-                    <p className="mt-1 break-words text-sm leading-6">{comment.body}</p>
-                  </li>
-                ))}
+                {teamComments
+                  .filter((comment: any) => comment.metadata?.classification?.label === "FEEDBACK")
+                  .map((comment: any) => (
+                    <li key={comment.id} className="rounded-xl border border-border bg-surface p-3">
+                      <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                        <span className="truncate font-semibold text-foreground">
+                          {comment.author_name ?? t("m.taskChat.member")}
+                        </span>
+                        <span className="shrink-0">
+                          {new Date(comment.created_at).toLocaleDateString(localeTag(lang))}
+                        </span>
+                      </div>
+                      <p className="mt-1 break-words text-sm leading-6">{comment.body}</p>
+                    </li>
+                  ))}
               </ul>
             ) : (
               <Empty text={t("m.taskChat.noFeedback")} />
