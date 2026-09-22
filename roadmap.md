@@ -52,7 +52,11 @@
 - [ ] Giữ interaction canon: Open → Ask → Add Context → Execute → Observe → Approve → Receive Work Product → Remember
 
 ## Vòng học từ góp ý & giao việc cho người thật
+
 - [ ] Chạy E2E thật: Home → Kết quả công việc → gửi góp ý → soạn lại xem AI có cải thiện
 - [ ] Tạo tài khoản nhân viên thật, chạy giao việc admin → inbox nhân viên, kiểm tra email nhận được
+
 ## Current task
+
 - [x] Add a task-centric chat summary tab with chat history, feedback, related work, and Work Graph deep links.
+- [x] Optimize mobile Work Graph with compact tasks, scrollable history, and expandable long content.

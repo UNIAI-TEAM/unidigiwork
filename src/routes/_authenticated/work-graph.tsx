@@ -4,6 +4,8 @@ import { z } from "zod";
 import { useQuery } from "@tanstack/react-query";
 import {
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   ClipboardList,
   ListChecks,
   Loader2,
@@ -68,6 +70,7 @@ function WorkGraphPage() {
   const [q, setQ] = useState("");
   const [term, setTerm] = useState("");
   const [page, setPage] = useState(1);
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(() => new Set());
 
   useEffect(() => {
     const id = setTimeout(() => {
@@ -184,7 +187,7 @@ function WorkGraphPage() {
         </div>
       </div>
 
-      <div className="mt-4 rounded-xl border bg-card">
+      <div className="mt-4 overflow-hidden rounded-xl border bg-card">
         {board.isLoading ? (
           <div className="flex h-40 items-center justify-center text-muted-foreground">
             <Loader2 className="h-5 w-5 animate-spin" />
@@ -194,22 +197,37 @@ function WorkGraphPage() {
             {t("wg.empty")}
           </div>
         ) : (
-          <ul className="divide-y">
+          <ul className="max-h-[min(62dvh,42rem)] divide-y overflow-y-auto overscroll-contain scroll-smooth sm:max-h-none sm:overflow-visible">
             {visible.map((i) => {
               const meta = typeMeta(i.type);
               const Icon = meta.icon;
+              const itemKey = `${i.type}:${i.id}`;
+              const expanded = expandedItems.has(itemKey);
+              const hasLongContent = i.title.length > 28;
+              const r = remaining(i.dueAt);
               return (
-                <li key={`${i.type}:${i.id}`}>
-                  <Link
-                    to={i.href as never}
-                    className="flex min-h-[56px] items-start gap-3 px-4 py-3 transition-colors hover:bg-muted/50 sm:items-center"
-                  >
+                <li
+                  key={itemKey}
+                  className="px-3 py-2.5 transition-colors hover:bg-muted/50 sm:px-0 sm:py-0"
+                >
+                  <div className="flex min-w-0 items-start gap-2.5 sm:gap-3 sm:px-4 sm:py-3">
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted">
                       <Icon className="h-4 w-4 text-muted-foreground" />
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-medium">{i.title}</span>
-                      <span className="mt-0.5 line-clamp-2 block text-xs text-muted-foreground">
+                      <Link
+                        to={i.href as never}
+                        className={`block min-h-11 py-0.5 text-sm font-medium leading-5 hover:underline sm:min-h-0 sm:truncate sm:py-0 ${
+                          expanded ? "" : "line-clamp-2"
+                        }`}
+                      >
+                        {i.title}
+                      </Link>
+                      <span
+                        className={`mt-0.5 text-xs text-muted-foreground sm:block ${
+                          expanded ? "block" : "hidden sm:line-clamp-2"
+                        }`}
+                      >
                         {meta.label}
                         {i.links > 0 && ` · ${i.links} ${t("wg.links")}`}
                         {i.updatedAt &&
@@ -217,8 +235,8 @@ function WorkGraphPage() {
                             lang === "vi" ? "vi-VN" : "en-US",
                           )}`}
                       </span>
-                      <span className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
-                        <span className="h-1.5 w-20 overflow-hidden rounded-full bg-muted sm:w-24">
+                      <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 sm:mt-1.5">
+                        <span className="h-1.5 w-16 overflow-hidden rounded-full bg-muted sm:w-24">
                           <span
                             className={`block h-full rounded-full ${
                               isDone(i) ? "bg-primary" : "bg-foreground/50"
@@ -229,30 +247,49 @@ function WorkGraphPage() {
                         <span className="text-[11px] text-muted-foreground">
                           {t("wg.progress")} {i.progress}%
                         </span>
-                        {(() => {
-                          const r = remaining(i.dueAt);
-                          if (!r || isDone(i)) return null;
-                          return (
-                            <span
-                              className={`text-[11px] ${
-                                r.overdue ? "text-destructive" : "text-muted-foreground"
-                              }`}
-                            >
-                              · {r.text}
-                            </span>
-                          );
-                        })()}
+                        {r && !isDone(i) ? (
+                          <span
+                            className={`text-[11px] ${
+                              r.overdue ? "text-destructive" : "text-muted-foreground"
+                            }`}
+                          >
+                            · {r.text}
+                          </span>
+                        ) : null}
                       </span>
+                      {hasLongContent ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="mt-0.5 min-h-11 px-1.5 text-xs text-muted-foreground sm:hidden"
+                          aria-expanded={expanded}
+                          onClick={() =>
+                            setExpandedItems((current) => {
+                              const next = new Set(current);
+                              if (next.has(itemKey)) next.delete(itemKey);
+                              else next.add(itemKey);
+                              return next;
+                            })
+                          }
+                        >
+                          {expanded ? (
+                            <ChevronUp className="h-4 w-4" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4" />
+                          )}
+                          {t(expanded ? "wg.collapse" : "wg.expand")}
+                        </Button>
+                      ) : null}
                     </span>
                     {i.status && (
                       <Badge
                         variant={isDone(i) ? "default" : isRunning(i) ? "secondary" : "outline"}
-                        className="mt-0.5 shrink-0 sm:mt-0"
+                        className="mt-0.5 max-w-24 shrink-0 truncate sm:mt-0 sm:max-w-none"
                       >
                         {statusLabel(i)}
                       </Badge>
                     )}
-                  </Link>
+                  </div>
                 </li>
               );
             })}
