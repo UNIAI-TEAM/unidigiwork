@@ -379,14 +379,10 @@ function DrawerLink({
       onClick={onClick}
       className={`grid min-h-12 w-full grid-cols-[2.5rem_minmax(0,1fr)_auto_2.5rem] items-center gap-1 rounded-lg text-left text-[15px] transition-colors ${strong || active ? "bg-mobile-menu-accent text-mobile-menu-foreground" : "text-mobile-menu-foreground hover:bg-mobile-menu-accent"}`}
     >
-      <Icon
-        className="mx-auto h-5 w-5 shrink-0"
-      />
+      <Icon className="mx-auto h-5 w-5 shrink-0" />
       <span className="min-w-0 flex-1 truncate font-medium">{label}</span>
       {count !== undefined && count > 0 ? (
-        <span
-          className="grid h-7 min-w-7 place-items-center rounded-full bg-mobile-menu-foreground px-2 text-xs font-semibold text-mobile-menu"
-        >
+        <span className="grid h-7 min-w-7 place-items-center rounded-full bg-mobile-menu-foreground px-2 text-xs font-semibold text-mobile-menu">
           {count > 99 ? "99+" : count}
         </span>
       ) : null}
