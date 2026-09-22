@@ -2517,7 +2517,8 @@ const dict = {
     "wp.type.PRESENTATION": "Presentation",
     "wp.type.MEMO": "Memo",
     "m.ai.executiveBriefReady": "Executive Brief saved",
-    "m.ai.executiveBriefFailed": "Executive Brief could not be saved. The reply is still available.",
+    "m.ai.executiveBriefFailed":
+      "Executive Brief could not be saved. The reply is still available.",
     "wp.type.DOCUMENT": "Document",
     "wp.type.SPREADSHEET": "Spreadsheet",
     "wp.type.OTHER": "Other",

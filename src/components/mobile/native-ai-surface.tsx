@@ -408,8 +408,7 @@ function Message({ message, latest = false }: { message: AiMessageDTO; latest?: 
               ))}
             </div>
           ) : null}
-          {message.metadata?.workProductStatus === "CREATED" &&
-          message.metadata.workProductHref ? (
+          {message.metadata?.workProductStatus === "CREATED" && message.metadata.workProductHref ? (
             <a
               href={message.metadata.workProductHref}
               className="mt-3 flex min-h-11 w-fit max-w-full items-center gap-2 rounded-xl border border-border bg-surface px-3 text-sm font-medium text-foreground hover:bg-muted"

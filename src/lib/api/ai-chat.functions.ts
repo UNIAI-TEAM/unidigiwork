@@ -646,18 +646,15 @@ export const sendAiMessage = createServerFn({ method: "POST" })
           root && ["WORKSPACE", "MEETING", "TASK", "DOCUMENT", "EMAIL"].includes(root.type)
             ? root
             : null;
-        const { error: workProductError } = await ctx.supabase.rpc(
-          "persist_chat_executive_brief",
-          {
-            _assistant_message_id: assistantMessageId,
-            _title: `${titleFrom(data.text)} — Executive Brief`,
-            _root_type: supportedRoot?.type ?? null,
-            _root_id: supportedRoot?.id ?? null,
-            _sources: sourceMetadata,
-            _idempotency_key: `chat-executive-brief:${assistantMessageId}`,
-            _correlation_id: conversationId,
-          },
-        );
+        const { error: workProductError } = await ctx.supabase.rpc("persist_chat_executive_brief", {
+          _assistant_message_id: assistantMessageId,
+          _title: `${titleFrom(data.text)} — Executive Brief`,
+          _root_type: supportedRoot?.type ?? null,
+          _root_id: supportedRoot?.id ?? null,
+          _sources: sourceMetadata,
+          _idempotency_key: `chat-executive-brief:${assistantMessageId}`,
+          _correlation_id: conversationId,
+        });
         if (workProductError) {
           await ctx.supabase
             .from("ai_messages")
