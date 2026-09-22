@@ -63,6 +63,23 @@ type AddedContext = {
   root?: { type: AiContextEntityType; id: string };
 };
 
+type SpeechRecognitionResultLike = {
+  isFinal: boolean;
+  0: { transcript: string };
+};
+
+type SpeechRecognitionLike = {
+  lang: string;
+  interimResults: boolean;
+  continuous: boolean;
+  onresult: ((event: { results: ArrayLike<SpeechRecognitionResultLike> }) => void) | null;
+  onend: (() => void) | null;
+  onerror: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+};
+
 const ENTITY_MAP: Partial<Record<UniversalSearchItem["entityType"], AiContextEntityType>> = {
   PROJECT: "WORKSPACE",
   TASK: "TASK",
