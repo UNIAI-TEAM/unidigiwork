@@ -62,6 +62,7 @@ import { useCurrentIdentity } from "@/lib/use-current-identity";
 import { useI18n } from "@/lib/i18n";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TaskChatHub } from "@/components/mobile/task-chat-summary";
+import { CollapsibleChatContent } from "@/components/mobile/collapsible-chat-content";
 
 /** Lượt điều phối cục bộ: yêu cầu → đề xuất hành động → quan sát thực thi. */
 type OrchestrationTurn = {
@@ -291,8 +292,12 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
                 <EmptyState firstName={firstName} onPick={submit} />
               ) : (
                 <div className="space-y-6 pb-4">
-                  {displayMessages.map((message) => (
-                    <Message key={message.id} message={message} />
+                  {displayMessages.map((message, index) => (
+                    <Message
+                      key={message.id}
+                      message={message}
+                      latest={index >= Math.max(0, displayMessages.length - 2)}
+                    />
                   ))}
                   {canBuildWorkProduct && (
                     <WorkProductRun
@@ -522,16 +527,21 @@ function EmptyState({ firstName, onPick }: { firstName: string; onPick: (value: 
   );
 }
 
-function Message({ message }: { message: AiMessageDTO }) {
+function Message({ message, latest = false }: { message: AiMessageDTO; latest?: boolean }) {
   if (message.role === "user") return <UserMessage content={message.content} />;
   return (
-    <AiMessage from="assistant" className="max-w-full">
+    <AiMessage
+      from="assistant"
+      className={latest ? "max-w-full" : "max-w-full border-t border-border/60 pt-5"}
+    >
       <div className="flex items-start gap-3">
         <BrandMark className="mt-0.5 h-8 w-8" />
         <MessageContent className="min-w-0 flex-1 overflow-visible">
-          <MessageResponse className="executive-brief text-sm leading-7 [&_h2]:mb-2 [&_h2]:mt-5 [&_h2]:text-xs [&_h2]:font-semibold [&_h2]:uppercase [&_h2]:text-muted-foreground [&_li]:my-1 [&_ul]:my-2">
-            {message.content}
-          </MessageResponse>
+          <CollapsibleChatContent content={message.content}>
+            <MessageResponse className="executive-brief text-sm leading-7 [&_h2]:mb-2 [&_h2]:mt-5 [&_h2]:text-xs [&_h2]:font-semibold [&_h2]:uppercase [&_h2]:text-muted-foreground [&_li]:my-1 [&_ul]:my-2">
+              {message.content}
+            </MessageResponse>
+          </CollapsibleChatContent>
           {message.metadata?.sources?.length ? (
             <div className="mt-3 flex flex-wrap gap-2">
               {message.metadata.sources.slice(0, 4).map((source) => (
