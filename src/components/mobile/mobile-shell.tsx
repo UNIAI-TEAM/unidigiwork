@@ -196,11 +196,7 @@ function NativeDrawer({
         </SheetHeader>
 
         <nav className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3">
-          <DrawerLink
-            icon={Plus}
-            label={t("m.nav.newWork")}
-            onClick={() => go("/m")}
-          />
+          <DrawerLink icon={Plus} label={t("m.nav.newWork")} onClick={() => go("/m")} />
           <DrawerLink icon={Search} label={t("cmd.group.search")} onClick={() => go("/m/search")} />
 
           <DrawerSection

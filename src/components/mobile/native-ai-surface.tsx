@@ -237,7 +237,7 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
               {contexts.map((item) => (
                 <span
                   key={item.id}
-                   className="flex min-h-9 shrink-0 items-center gap-2 rounded-full border border-border bg-surface px-3 text-xs"
+                  className="flex min-h-9 shrink-0 items-center gap-2 rounded-full border border-border bg-surface px-3 text-xs"
                 >
                   {item.kind === "file" ? (
                     <Paperclip className="h-3.5 w-3.5" />
