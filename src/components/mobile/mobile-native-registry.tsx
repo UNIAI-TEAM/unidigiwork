@@ -347,8 +347,20 @@ function ExecutiveView({ section }: { section?: string }) {
   const query = useQuery({ queryKey: ["m-ceo-manage", section], queryFn: () => fn({ data: { period: "month", workspaceId: null } }) });
   if (query.isLoading) return <NativePage title="Điều hành"><LoadingRows /></NativePage>;
   const data = query.data;
-  const entries = section === "proposal-tracking" ? data?.proposalLog ?? [] : data?.issues ?? [];
-  return <NativePage title={sectionNames[section ?? ""] ?? "Điều hành"}><div className="grid gap-2">{entries.map((entry) => <MobileListItem key={entry.id} title={entry.title} subtitle={"description" in entry ? entry.description ?? undefined : undefined} meta={"status" in entry ? entry.status : undefined} icon={<ChartNoAxesCombined className="h-5 w-5" />} />)}</div>{!entries.length ? <p className="py-12 text-center text-sm text-muted-foreground">Không có mục cần xử lý trong kỳ này.</p> : null}</NativePage>;
+  const entries = section === "proposal-tracking"
+    ? (data?.proposals.entries ?? []).map((entry) => ({
+        id: entry.id,
+        title: entry.title,
+        subtitle: entry.workerName ?? entry.actionType,
+        meta: entry.status,
+      }))
+    : (data?.issues ?? []).map((entry) => ({
+        id: entry.id,
+        title: entry.title,
+        subtitle: entry.detail,
+        meta: entry.status ?? entry.kind,
+      }));
+  return <NativePage title={sectionNames[section ?? ""] ?? "Điều hành"}><div className="grid gap-2">{entries.map((entry) => <MobileListItem key={entry.id} title={entry.title} subtitle={entry.subtitle} meta={entry.meta} icon={<ChartNoAxesCombined className="h-5 w-5" />} />)}</div>{!entries.length ? <p className="py-12 text-center text-sm text-muted-foreground">Không có mục cần xử lý trong kỳ này.</p> : null}</NativePage>;
 }
 
 function ReportsView() {
