@@ -105,7 +105,7 @@ function WorkGraphTaskMessageForm({ taskId }: { taskId: string }) {
       ]);
       toast.success(t("wg.messageSent"));
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : t("common.error")),
+    onError: (error) => toast.error(error instanceof Error ? error.message : t("wg.deadlineError")),
   });
 
   if (permissions.isLoading) {
