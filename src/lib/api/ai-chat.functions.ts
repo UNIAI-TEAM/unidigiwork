@@ -299,47 +299,21 @@ export const getTaskConversations = createServerFn({ method: "GET" })
       throw new ApiError({ code: "AI_MESSAGE_LIST_FAILED", message: taskError.message });
     if (!task) return [];
 
-    const { data: candidates, error: candidateError } = await ctx.supabase
-      .from("ai_messages")
-      .select("conversation_id, metadata")
-      .eq("tenant_id", tenantId)
-      .order("created_at", { ascending: false })
-      .limit(1000);
-    if (candidateError)
-      throw new ApiError({ code: "AI_MESSAGE_LIST_FAILED", message: candidateError.message });
-
-    const { data: actionRows, error: actionError } = await ctx.supabase
-      .from("ai_action_proposals")
-      .select("conversation_id")
-      .eq("tenant_id", tenantId)
-      .eq("status", "SUCCEEDED")
-      .eq("action_type", "CREATE_TASK")
-      .not("conversation_id", "is", null)
-      .contains("result", { entityType: "TASK", entityId: data.taskId });
-    if (actionError)
-      throw new ApiError({ code: "AI_MESSAGE_LIST_FAILED", message: actionError.message });
-
-    const referencesTask = (metadata: unknown) => {
-      if (!metadata || typeof metadata !== "object") return false;
-      const value = metadata as AiMessageMetadata;
-      return (
-        value.contextEntities?.some((item) => item.type === "TASK" && item.id === data.taskId) ||
-        value.sources?.some(
-          (item) => item.entityType === "TASK" && item.entityId === data.taskId,
-        ) ||
-        false
-      );
-    };
+    // Indexed, permission-aware lookup avoids scanning only the latest tenant messages,
+    // which could hide older conversations in active organizations.
+    const { data: linkedRows, error: linkedError } = await ctx.supabase.rpc(
+      "list_task_conversation_ids",
+      { _task_id: data.taskId, _limit: 20 },
+    );
+    if (linkedError)
+      throw new ApiError({ code: "AI_MESSAGE_LIST_FAILED", message: linkedError.message });
     const conversationIds = Array.from(
-      new Set([
-        ...((candidates ?? []) as Array<{ conversation_id: string; metadata: unknown }>)
-          .filter((row) => referencesTask(row.metadata))
-          .map((row) => row.conversation_id),
-        ...((actionRows ?? []) as Array<{ conversation_id: string | null }>).flatMap((row) =>
-          row.conversation_id ? [row.conversation_id] : [],
+      new Set(
+        ((linkedRows ?? []) as Array<{ conversation_id: string }>).map(
+          (row) => row.conversation_id,
         ),
-      ]),
-    ).slice(0, 20);
+      ),
+    );
     if (!conversationIds.length) return [];
 
     const [
