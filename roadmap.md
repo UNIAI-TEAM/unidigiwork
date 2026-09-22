@@ -58,6 +58,10 @@
 
 ## Current task
 
+- [ ] Đợt 3 tiếp: làm mới toàn bộ luồng Tài liệu và Cuộc họp theo giao diện mobile-native, không mở bố cục web.
+- [ ] Hoàn thiện Tài liệu PWA: danh sách, tìm kiếm/lọc, tạo mới, chi tiết, chỉnh sửa, chia sẻ, phiên bản và nhật ký truy cập bằng dữ liệu thật.
+- [ ] Hoàn thiện Cuộc họp PWA: danh sách, quản lý, lịch sử, chi tiết, tiền sảnh và phòng LiveKit trong `/m/*`.
+- [ ] Xác minh hai luồng tại 390px, 440px và 820px, không tràn ngang và vùng chạm tối thiểu 44px.
 - [x] Làm mới toàn bộ PWA: mọi điểm vào và trang chi tiết dùng giao diện mobile-native, không rơi về bố cục web.
 - [x] Chuẩn hóa điều hướng PWA về `/m/*`, bao gồm Settings, Task, Work Product, Work Graph và các module còn lại.
 - [ ] Xác minh toàn bộ luồng ở 390px, 440px và 820px: không tràn ngang, vùng chạm tối thiểu 44px.
