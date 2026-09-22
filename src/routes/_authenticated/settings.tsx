@@ -51,6 +51,7 @@ import { PushDevicesPanel } from "@/components/push-devices-panel";
 import { notifyComingSoon } from "@/lib/coming-soon";
 import { useI18n, type Key as I18nKey } from "@/lib/i18n";
 import { FilterPageHeader } from "@/components/filter-page-header";
+import { Button } from "@/components/ui/button";
 
 const searchSchema = z.object({
   tab: z
