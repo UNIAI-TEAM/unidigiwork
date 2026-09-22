@@ -253,6 +253,20 @@
       "when": 1790055374853,
       "tag": "0035_work_graph_task_deadline_progress",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1790055976261,
+      "tag": "0036_work_graph_board_server_pagination",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1790056134316,
+      "tag": "0037_work_graph_board_unassigned_scope",
+      "breakpoints": true
     }
   ]
 }

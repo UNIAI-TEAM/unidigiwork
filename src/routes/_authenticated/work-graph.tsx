@@ -12,6 +12,7 @@ import {
   Loader2,
   PlayCircle,
   Search,
+  UserRound,
   Waypoints,
   Zap,
 } from "lucide-react";
@@ -19,8 +20,19 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useI18n } from "@/lib/i18n";
-import { getWorkGraphOverview, listWorkGraphBoard } from "@/lib/api/work-graph.functions";
+import {
+  getWorkGraphOverview,
+  listWorkGraphAssignees,
+  listWorkGraphBoard,
+} from "@/lib/api/work-graph.functions";
 import type { WorkGraphBoardItem } from "@/lib/api/work-graph.functions";
 import { setTaskDueAt } from "@/lib/api/tasks.functions";
 
@@ -65,6 +77,7 @@ function isDone(i: WorkGraphBoardItem) {
 }
 
 type Tab = "all" | "running" | "done" | "products";
+type DueFilter = "all" | "overdue" | "due_soon" | "scheduled" | "none";
 
 function WorkGraphPage() {
   const search = Route.useSearch();
@@ -74,6 +87,8 @@ function WorkGraphPage() {
   const [q, setQ] = useState("");
   const [term, setTerm] = useState("");
   const [page, setPage] = useState(1);
+  const [assignee, setAssignee] = useState("all");
+  const [dueFilter, setDueFilter] = useState<DueFilter>("all");
   const [expandedItems, setExpandedItems] = useState<Set<string>>(() => new Set());
   const [deadlineItems, setDeadlineItems] = useState<Set<string>>(() => new Set());
   const [deadlineDrafts, setDeadlineDrafts] = useState<Record<string, string>>({});
@@ -101,11 +116,25 @@ function WorkGraphPage() {
     queryKey: ["work-graph-overview"],
     queryFn: () => getWorkGraphOverview(),
   });
+  const assignees = useQuery({
+    queryKey: ["work-graph-assignees"],
+    queryFn: () => listWorkGraphAssignees(),
+    staleTime: 5 * 60 * 1000,
+  });
   const board = useQuery({
-    queryKey: ["work-graph-board", tab, term, page, search.task],
+    queryKey: ["work-graph-board", tab, term, page, search.task, assignee, dueFilter],
     queryFn: () =>
       listWorkGraphBoard({
-        data: { tab, search: term, page, pageSize: PAGE_SIZE, taskId: search.task },
+        data: {
+          tab,
+          search: term,
+          page,
+          pageSize: PAGE_SIZE,
+          taskId: search.task,
+          assigneeId: assignee !== "all" && assignee !== "unassigned" ? assignee : undefined,
+          unassigned: assignee === "unassigned",
+          dueFilter,
+        },
       }),
     placeholderData: (prev) => prev,
   });
@@ -171,36 +200,78 @@ function WorkGraphPage() {
         )}
       </div>
 
-      <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="-mx-4 flex gap-1 overflow-x-auto rounded-none bg-transparent px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:rounded-lg sm:bg-muted sm:p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {tabs.map(({ id, label, count, icon: Icon }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => {
-                setTab(id);
-                setPage(1);
-              }}
-              className={`flex h-11 shrink-0 items-center gap-1.5 rounded-lg border px-3 text-sm font-medium transition-colors sm:h-8 sm:rounded-md sm:border-0 ${
-                tab === id
-                  ? "border-primary/40 bg-background text-foreground shadow-sm"
-                  : "border-transparent bg-muted text-muted-foreground hover:text-foreground sm:bg-transparent"
-              }`}
-            >
-              <Icon className="h-3.5 w-3.5" />
-              {label}
-              <span className="text-xs text-muted-foreground">{count}</span>
-            </button>
-          ))}
+      <div className="mt-5 flex flex-col gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="-mx-4 flex gap-1 overflow-x-auto rounded-none bg-transparent px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:rounded-lg sm:bg-muted sm:p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {tabs.map(({ id, label, count, icon: Icon }) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => {
+                  setTab(id);
+                  setPage(1);
+                }}
+                className={`flex h-11 shrink-0 items-center gap-1.5 rounded-lg border px-3 text-sm font-medium transition-colors sm:h-8 sm:rounded-md sm:border-0 ${
+                  tab === id
+                    ? "border-primary/40 bg-background text-foreground shadow-sm"
+                    : "border-transparent bg-muted text-muted-foreground hover:text-foreground sm:bg-transparent"
+                }`}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {label}
+                <span className="text-xs text-muted-foreground">{count}</span>
+              </button>
+            ))}
+          </div>
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder={t("wg.searchPlaceholder")}
+              className="h-11 pl-8 text-base sm:h-9 sm:text-sm"
+            />
+          </div>
         </div>
-        <div className="relative w-full sm:w-64">
-          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder={t("wg.searchPlaceholder")}
-            className="h-11 pl-8 text-base sm:h-9 sm:text-sm"
-          />
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <Select
+            value={assignee}
+            onValueChange={(value) => {
+              setAssignee(value);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger className="h-11 w-full sm:h-9" aria-label={t("wg.assigneeFilter")}>
+              <SelectValue placeholder={t("wg.allAssignees")} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("wg.allAssignees")}</SelectItem>
+              <SelectItem value="unassigned">{t("wg.unassigned")}</SelectItem>
+              {(assignees.data ?? []).map((person) => (
+                <SelectItem key={person.id} value={person.id}>
+                  {person.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={dueFilter}
+            onValueChange={(value) => {
+              setDueFilter(value as DueFilter);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger className="h-11 w-full sm:h-9" aria-label={t("wg.dueFilter")}>
+              <SelectValue placeholder={t("wg.allDeadlines")} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("wg.allDeadlines")}</SelectItem>
+              <SelectItem value="overdue">{t("wg.dueOverdue")}</SelectItem>
+              <SelectItem value="due_soon">{t("wg.dueSoon")}</SelectItem>
+              <SelectItem value="scheduled">{t("wg.dueScheduled")}</SelectItem>
+              <SelectItem value="none">{t("wg.noDeadline")}</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -247,6 +318,12 @@ function WorkGraphPage() {
                       >
                         {meta.label}
                         {i.links > 0 && ` · ${i.links} ${t("wg.links")}`}
+                        {i.ownerName && (
+                          <>
+                            {" · "}
+                            <UserRound className="inline h-3 w-3" /> {i.ownerName}
+                          </>
+                        )}
                         {i.updatedAt &&
                           ` · ${new Date(i.updatedAt).toLocaleString(
                             lang === "vi" ? "vi-VN" : "en-US",
@@ -264,6 +341,11 @@ function WorkGraphPage() {
                         <span className="text-[11px] text-muted-foreground">
                           {t("wg.progress")} {i.progress}%
                         </span>
+                        {i.ownerName ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground sm:hidden">
+                            · <UserRound className="h-3 w-3" /> {i.ownerName}
+                          </span>
+                        ) : null}
                         {i.totalSteps > 0 ? (
                           <span className="text-[11px] text-muted-foreground">
                             ·{" "}

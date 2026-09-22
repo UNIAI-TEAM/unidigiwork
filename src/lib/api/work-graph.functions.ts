@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { mapPgError } from "./business.server";
 import { resolveWorkEntities, entityKey } from "./work-graph.server";
+import { workEntityHref } from "@/domain/work-graph/route-resolver";
 import {
   WORK_ENTITY_TYPES,
   WORK_RELATIONSHIP_CODES,
@@ -393,6 +394,8 @@ export type WorkGraphBoardItem = {
   dueAt: string | null;
   completedSteps: number;
   totalSteps: number;
+  ownerId: string | null;
+  ownerName: string | null;
 };
 
 export type WorkGraphBoard = {
@@ -403,49 +406,37 @@ export type WorkGraphBoard = {
   counts: { all: number; running: number; done: number; products: number };
 };
 
-const RUNNING_TASK = new Set(["in_progress", "blocked"]);
-const RUNNING_EXEC = new Set(["QUEUED", "RUNNING", "WAITING_REVIEW", "CHANGES_REQUESTED"]);
-const DONE_EXEC = new Set(["ACCEPTED", "SUCCEEDED"]);
+export type WorkGraphAssignee = {
+  id: string;
+  name: string;
+};
 
-function isRunningRow(type: string, status: string | null) {
-  if (type === "EXECUTION") return RUNNING_EXEC.has(status ?? "");
-  if (type === "TASK") return RUNNING_TASK.has((status ?? "").toLowerCase());
-  return (status ?? "") === "IN_REVIEW";
-}
-
-function isDoneRow(type: string, status: string | null) {
-  if (type === "EXECUTION") return DONE_EXEC.has(status ?? "");
-  if (type === "TASK") return (status ?? "").toLowerCase() === "done";
-  return status === "ACCEPTED" || status === "DELIVERED";
-}
-
-/** Tiến độ mặc định theo trạng thái nguồn (0–100) khi không có bước thực thi. */
-function statusProgress(type: string, status: string | null) {
-  const s = status ?? "";
-  if (isDoneRow(type, s)) return 100;
-  if (type === "TASK") {
-    const k = s.toLowerCase();
-    if (k === "in_progress") return 50;
-    if (k === "blocked") return 35;
-    if (k === "canceled") return 100;
-    return 5;
-  }
-  if (type === "EXECUTION") {
-    if (s === "RUNNING") return 50;
-    if (s === "WAITING_REVIEW") return 85;
-    if (s === "CHANGES_REQUESTED") return 70;
-    if (s === "FAILED") return 100;
-    return 10;
-  }
-  if (s === "IN_REVIEW") return 70;
-  if (s === "DRAFT") return 25;
-  return 10;
-}
+export const listWorkGraphAssignees = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<WorkGraphAssignee[]> => {
+    const tenantId = await currentTenantId(context.supabase, context.userId);
+    const { data, error } = await context.supabase.rpc("list_tenant_member_profiles", {
+      _tenant_id: tenantId,
+    });
+    if (error) mapPgError(error, "TENANT_ACCESS_DENIED");
+    return (
+      (data ?? []) as Array<{
+        id: string;
+        display_name: string | null;
+        primary_email: string | null;
+      }>
+    )
+      .map((person) => ({
+        id: person.id,
+        name: person.display_name || person.primary_email || "—",
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name, "vi"));
+  });
 
 /**
  * Bảng Work Graph của tổ chức: công việc, lượt thực thi và kết quả công việc
- * đã được chiếu vào graph. Đọc từ projection work_nodes/work_edges và resolve
- * qua bảng nguồn bằng client theo phiên — RLS loại bỏ thực thể không được xem.
+ * đã được chiếu vào graph. Truy vấn tenant-scoped phân trang ngay tại nguồn;
+ * quyền RLS loại bỏ thực thể người gọi không được xem.
  */
 export const listWorkGraphBoard = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -457,6 +448,9 @@ export const listWorkGraphBoard = createServerFn({ method: "GET" })
         page: z.number().int().min(1).default(1),
         pageSize: z.number().int().min(10).max(100).default(25),
         taskId: z.string().uuid().optional(),
+        assigneeId: z.string().uuid().optional(),
+        unassigned: z.boolean().default(false),
+        dueFilter: z.enum(["all", "overdue", "due_soon", "scheduled", "none"]).default("all"),
       })
       .parse(i ?? {}),
   )
@@ -469,160 +463,88 @@ export const listWorkGraphBoard = createServerFn({ method: "GET" })
       counts: { all: 0, running: 0, done: 0, products: 0 },
     };
     const tenantId = await currentTenantId(context.supabase, context.userId);
-    const types =
-      data.tab === "products" ? ["WORK_PRODUCT"] : ["TASK", "EXECUTION", "WORK_PRODUCT"];
-    const { data: nodes, error } = await context.supabase
-      .from("work_nodes")
-      .select("id, entity_type, entity_id, updated_at")
-      .eq("tenant_id", tenantId)
-      .in("entity_type", types)
-      .order("updated_at", { ascending: false })
-      .limit(400);
+    const { data: payload, error } = await context.supabase.rpc("list_work_graph_board_page", {
+      _tenant_id: tenantId,
+      _tab: data.tab,
+      _search: data.search || undefined,
+      _assignee_id: data.assigneeId,
+      _unassigned: data.unassigned,
+      _due_filter: data.dueFilter,
+      _task_id: data.taskId,
+      _limit: data.pageSize,
+      _offset: (data.page - 1) * data.pageSize,
+    });
     if (error) mapPgError(error);
-    const list = (nodes ?? []) as {
-      id: string;
-      entity_type: string;
-      entity_id: string;
-      updated_at: string;
-    }[];
-    if (!list.length) return empty;
-
-    // Title/status resolve + execution status: batched, RLS-scoped.
-    const execIds = list.filter((n) => n.entity_type === "EXECUTION").map((n) => n.entity_id);
-    const [resolved, execRows] = await Promise.all([
-      resolveWorkEntities(
-        context.supabase,
-        list.map((n) => ({ type: n.entity_type, id: n.entity_id })),
-      ),
-      execIds.length
-        ? context.supabase.from("ai_task_executions").select("id,status").in("id", execIds)
-        : Promise.resolve({ data: [] as any[] }),
-    ]);
-    const execStatus = new Map<string, string>();
-    ((execRows as any).data ?? []).forEach((r: any) => execStatus.set(r.id, r.status));
-
-    type Row = {
-      nodeId: string;
-      type: WorkGraphBoardItem["type"];
-      id: string;
-      title: string;
-      status: string | null;
-      href: string;
-      updatedAt: string | null;
-      dueAt: string | null;
+    const result = (payload ?? {}) as {
+      items?: Array<{
+        node_id: string;
+        entity_type: WorkGraphBoardItem["type"];
+        entity_id: string;
+        title: string;
+        status: string | null;
+        updated_at: string | null;
+        due_at: string | null;
+        owner_id: string | null;
+        progress: number;
+        completed_steps: number;
+        total_steps: number;
+        links: number;
+      }>;
+      total?: number;
+      counts?: { all?: number; running?: number; done?: number; products?: number };
     };
-    const rows: Row[] = [];
-    for (const n of list) {
-      const r = resolved.get(entityKey(n.entity_type, n.entity_id));
-      if (!r) continue;
-      rows.push({
-        nodeId: n.id,
-        type: n.entity_type as WorkGraphBoardItem["type"],
-        id: n.entity_id,
-        title: r.title,
-        status:
-          n.entity_type === "EXECUTION"
-            ? (execStatus.get(n.entity_id) ?? null)
-            : (r.subtitle ?? null),
-        href: r.href,
-        updatedAt: r.updatedAt ?? n.updated_at ?? null,
-        dueAt: r.dueAt ?? null,
-      });
-    }
-
+    const list = result.items ?? [];
     const counts = {
-      all: rows.length,
-      running: rows.filter((r) => isRunningRow(r.type, r.status)).length,
-      done: rows.filter((r) => isDoneRow(r.type, r.status)).length,
-      products: rows.filter((r) => r.type === "WORK_PRODUCT").length,
+      all: Number(result.counts?.all ?? 0),
+      running: Number(result.counts?.running ?? 0),
+      done: Number(result.counts?.done ?? 0),
+      products: Number(result.counts?.products ?? 0),
     };
-
-    const term = data.search.trim().toLowerCase();
-    let filtered = rows;
-    if (data.taskId) filtered = filtered.filter((r) => r.type === "TASK" && r.id === data.taskId);
-    if (data.tab === "running") filtered = filtered.filter((r) => isRunningRow(r.type, r.status));
-    else if (data.tab === "done") filtered = filtered.filter((r) => isDoneRow(r.type, r.status));
-    else if (data.tab === "products") filtered = filtered.filter((r) => r.type === "WORK_PRODUCT");
-    if (term) filtered = filtered.filter((r) => r.title.toLowerCase().includes(term));
-
-    const total = filtered.length;
-    const start = (data.page - 1) * data.pageSize;
-    const pageRows = filtered.slice(start, start + data.pageSize);
-    if (!pageRows.length)
-      return { items: [], total, page: data.page, pageSize: data.pageSize, counts };
-
-    // Liên kết + tiến độ chỉ tính cho trang đang hiển thị (tránh quét toàn bộ graph).
-    const pageNodeIds = pageRows.map((r) => r.nodeId);
-    const pageExecIds = pageRows.filter((r) => r.type === "EXECUTION").map((r) => r.id);
-    const pageTaskIds = pageRows.filter((r) => r.type === "TASK").map((r) => r.id);
-    const [srcEdges, tgtEdges, executionSteps, taskSteps] = await Promise.all([
-      context.supabase
-        .from("work_edges")
-        .select("source_node_id")
-        .eq("tenant_id", tenantId)
-        .in("source_node_id", pageNodeIds),
-      context.supabase
-        .from("work_edges")
-        .select("target_node_id")
-        .eq("tenant_id", tenantId)
-        .in("target_node_id", pageNodeIds),
-      pageExecIds.length
-        ? context.supabase
-            .from("work_execution_steps")
-            .select("execution_id,status")
-            .in("execution_id", pageExecIds)
-        : Promise.resolve({ data: [] as any[] }),
-      pageTaskIds.length
-        ? context.supabase
-            .from("work_execution_steps")
-            .select("task_id,status")
-            .in("task_id", pageTaskIds)
-        : Promise.resolve({ data: [] as any[] }),
-    ]);
-    const linkCount = new Map<string, number>();
-    ((srcEdges as any).data ?? []).forEach((e: any) =>
-      linkCount.set(e.source_node_id, (linkCount.get(e.source_node_id) ?? 0) + 1),
-    );
-    ((tgtEdges as any).data ?? []).forEach((e: any) =>
-      linkCount.set(e.target_node_id, (linkCount.get(e.target_node_id) ?? 0) + 1),
-    );
-    const stepTotals = new Map<string, { done: number; total: number }>();
-    ((executionSteps as any).data ?? []).forEach((s: any) => {
-      const cur = stepTotals.get(s.execution_id) ?? { done: 0, total: 0 };
-      cur.total += 1;
-      if (["SUCCEEDED", "DONE", "COMPLETED", "SKIPPED"].includes(String(s.status).toUpperCase()))
-        cur.done += 1;
-      stepTotals.set(s.execution_id, cur);
-    });
-    const taskStepTotals = new Map<string, { done: number; total: number }>();
-    ((taskSteps as any).data ?? []).forEach((s: any) => {
-      const cur = taskStepTotals.get(s.task_id) ?? { done: 0, total: 0 };
-      cur.total += 1;
-      if (["SUCCEEDED", "DONE", "COMPLETED", "SKIPPED"].includes(String(s.status).toUpperCase()))
-        cur.done += 1;
-      taskStepTotals.set(s.task_id, cur);
-    });
-
-    const items: WorkGraphBoardItem[] = pageRows.map((r) => {
-      const st = r.type === "TASK" ? taskStepTotals.get(r.id) : stepTotals.get(r.id);
-      const progress =
-        st && st.total > 0
-          ? Math.round((st.done / st.total) * 100)
-          : statusProgress(r.type, r.status);
+    if (!list.length)
       return {
-        type: r.type,
-        id: r.id,
-        title: r.title,
-        status: r.status,
-        href: r.href,
-        updatedAt: r.updatedAt,
-        links: linkCount.get(r.nodeId) ?? 0,
-        progress,
-        dueAt: r.dueAt,
-        completedSteps: st?.done ?? 0,
-        totalSteps: st?.total ?? 0,
+        ...empty,
+        total: Number(result.total ?? 0),
+        counts,
       };
-    });
 
-    return { items, total, page: data.page, pageSize: data.pageSize, counts };
+    const ownerIds = Array.from(
+      new Set(list.map((row) => row.owner_id).filter((id): id is string => Boolean(id))),
+    );
+    const { data: memberRows, error: memberError } = ownerIds.length
+      ? await context.supabase.rpc("list_tenant_member_profiles", { _tenant_id: tenantId })
+      : { data: [], error: null };
+    if (memberError) mapPgError(memberError);
+    const ownerNames = new Map(
+      (
+        (memberRows ?? []) as Array<{
+          id: string;
+          display_name: string | null;
+          primary_email: string | null;
+        }>
+      ).map((person) => [person.id, person.display_name || person.primary_email || "—"]),
+    );
+
+    const items: WorkGraphBoardItem[] = list.map((row) => ({
+      type: row.entity_type,
+      id: row.entity_id,
+      title: row.title,
+      status: row.status,
+      href: workEntityHref(row.entity_type, row.entity_id),
+      updatedAt: row.updated_at,
+      links: Number(row.links ?? 0),
+      progress: Number(row.progress ?? 0),
+      dueAt: row.due_at,
+      completedSteps: Number(row.completed_steps ?? 0),
+      totalSteps: Number(row.total_steps ?? 0),
+      ownerId: row.owner_id,
+      ownerName: row.owner_id ? (ownerNames.get(row.owner_id) ?? "—") : null,
+    }));
+
+    return {
+      items,
+      total: Number(result.total ?? 0),
+      page: data.page,
+      pageSize: data.pageSize,
+      counts,
+    };
   });
