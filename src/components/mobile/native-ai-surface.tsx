@@ -8,6 +8,7 @@ import {
   FileText,
   Image,
   Loader2,
+  MessageSquare,
   Mic,
   Paperclip,
   Plus,
@@ -53,6 +54,7 @@ import { useActiveWorkspace } from "@/lib/active-workspace";
 import { useCurrentIdentity } from "@/lib/use-current-identity";
 import { useI18n } from "@/lib/i18n";
 import { CollapsibleChatContent } from "@/components/mobile/collapsible-chat-content";
+import { TeamChatPanel } from "@/components/mobile/team-chat-panel";
 
 type AddedContext = {
   id: string;
@@ -390,7 +392,8 @@ function AddContextDrawer({
   const navigate = useNavigate();
   const searchFn = useServerFn(universalSearch);
   const { workspaceId } = useActiveWorkspace();
-  const [mode, setMode] = useState<"menu" | "uniwork" | "people">("menu");
+  const [mode, setMode] = useState<"menu" | "uniwork" | "people" | "chat">("menu");
+  const [chatChannelId, setChatChannelId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [debounced, setDebounced] = useState("");
 
@@ -403,6 +406,7 @@ function AddContextDrawer({
     if (!open) {
       setMode("menu");
       setQuery("");
+      setChatChannelId(null);
     }
   }, [open]);
 
@@ -419,12 +423,21 @@ function AddContextDrawer({
           expandGraph: false,
         },
       }),
-    enabled: open && mode !== "menu" && debounced.length >= 2,
+    enabled: open && (mode === "uniwork" || mode === "people") && debounced.length >= 2,
   });
 
   const options = [
     { id: "files", label: t("m.ai.context.files"), icon: Image, action: onFiles },
     { id: "camera", label: t("m.ai.context.camera"), icon: Camera, action: onCamera },
+    {
+      id: "chat",
+      label: t("m.ai.context.chat"),
+      icon: MessageSquare,
+      action: () => {
+        setChatChannelId(null);
+        setMode("chat");
+      },
+    },
     {
       id: "uniwork",
       label: t("m.ai.context.uniwork"),
@@ -446,12 +459,18 @@ function AddContextDrawer({
         className={
           mode === "menu"
             ? "mx-3 mb-[max(1rem,env(safe-area-inset-bottom))] h-[50dvh] rounded-3xl border border-border-strong bg-surface p-2 shadow-card after:hidden"
-            : "max-h-[78dvh] rounded-t-3xl"
+            : mode === "chat"
+              ? "flex h-[86dvh] flex-col rounded-t-3xl"
+              : "max-h-[78dvh] rounded-t-3xl"
         }
       >
         <DrawerHeader className={mode === "menu" ? "sr-only" : "text-left"}>
           <DrawerTitle>
-            {mode === "menu" ? t("m.ai.addContext") : t("m.ai.context.search")}
+            {mode === "menu"
+              ? t("m.ai.addContext")
+              : mode === "chat"
+                ? t("m.ai.chat.title")
+                : t("m.ai.context.search")}
           </DrawerTitle>
           <DrawerDescription>{t("m.ai.context.description")}</DrawerDescription>
         </DrawerHeader>
@@ -459,7 +478,9 @@ function AddContextDrawer({
           className={
             mode === "menu"
               ? "flex flex-1 flex-col justify-center overflow-y-auto px-2 py-2"
-              : "overflow-y-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
+              : mode === "chat"
+                ? "flex min-h-0 flex-1 flex-col px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
+                : "overflow-y-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
           }
         >
           {mode === "menu" ? (
@@ -481,6 +502,12 @@ function AddContextDrawer({
                 </Button>
               ))}
             </div>
+          ) : mode === "chat" ? (
+            <TeamChatPanel
+              channelId={chatChannelId}
+              onOpenChannel={(channel) => setChatChannelId(channel.id)}
+              onBack={() => setChatChannelId(null)}
+            />
           ) : (
             <div className="space-y-3">
               <div className="flex items-center gap-2 rounded-xl border border-border bg-surface px-3">
