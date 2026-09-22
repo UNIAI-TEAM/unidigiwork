@@ -209,22 +209,6 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
     const value = raw.trim();
     if (!value || send.isPending || proposing) return;
     setInput("");
-    const route = routeRequest(value);
-    if (route.mode === "BLOCKED") {
-      setTurns((current) => [
-        ...current,
-        {
-          id: `blocked-${Date.now()}`,
-          user: value,
-          note: t(route.reason === "SEND_EMAIL" ? "m.ai.blocked.send" : "m.ai.blocked.delete"),
-        },
-      ]);
-      return;
-    }
-    if (route.mode === "ACTION") {
-      void runAction(value, route.actionType, route.executor);
-      return;
-    }
     setPendingText(value);
     send.mutate(value);
   };

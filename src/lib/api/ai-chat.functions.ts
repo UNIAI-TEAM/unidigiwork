@@ -595,8 +595,7 @@ export const sendAiMessage = createServerFn({ method: "POST" })
         .from("ai_messages")
         .select("role, content")
         .eq("conversation_id", conversationId)
-        .order("created_at", { ascending: true })
-        .limit(40);
+        .order("created_at", { ascending: true });
 
       const started = Date.now();
       let reply = "";
@@ -609,7 +608,6 @@ export const sendAiMessage = createServerFn({ method: "POST" })
       try {
         const { answerWithContext } = await import("./ai-consumer.server");
         const conversation = ((history ?? []) as Array<{ role: string; content: string }>)
-          .slice(-10)
           .map(
             (m) => `${m.role === "assistant" ? "UNI" : "Người dùng"}: ${m.content.slice(0, 1200)}`,
           )

@@ -56,6 +56,7 @@ export async function callAiConsumer(input: {
           reasoningEffort: input.reasoningEffortOverride ?? policy.reasoningEffort,
           reasoningSummary: "auto",
           store: false,
+          include: ["reasoning.encrypted_content"],
         },
       },
     });
