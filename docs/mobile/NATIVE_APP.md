@@ -45,3 +45,26 @@ và hàng đợi gửi lại khi có mạng (`src/lib/offline/*`). Phần native
 - trạng thái mạng lấy từ hệ điều hành (`@capacitor/network`), chính xác hơn `navigator.onLine`;
 - mở lại app (resume) → tự đồng bộ hàng đợi và làm mới dữ liệu;
 - nút Back Android, splash screen, thanh trạng thái tối.
+
+## Guardrails vỏ app (bổ sung)
+
+1. **Health-check trước bootstrap** — binary mở `native-shell/index.html`, gọi
+   `GET /api/public/app-health` rồi mới chuyển sang bản web đã publish.
+2. **Màn hình dự phòng** — mất mạng/máy chủ không phản hồi: hiện Retry + nút
+   "Chẩn đoán mạng" (trạng thái online, mã HTTP, lỗi, userAgent).
+3. **Version handshake** — web công bố `window.UniWorkNative`
+   (`contractVersion`, `nativeVersion`, `platform`, `capabilities`, `has()`);
+   shell chặn bootstrap nếu `nativeVersion < minNativeVersion`.
+4. **Cache/version invalidation** — `webVersion` trong health; gói web cũ tự xoá
+   cache, cập nhật service worker và nạp lại đúng 1 lần mỗi phiên.
+5. **Kill-switch từ xa** — biến môi trường `UNIWORK_KILL_SWITCH=true`,
+   `UNIWORK_KILL_MESSAGE`, `UNIWORK_MIN_NATIVE_VERSION` (không cần build lại).
+
+Dùng capability trước khi gọi native:
+
+```ts
+import { hasNativeCapability } from "@/lib/native/capabilities";
+if (hasNativeCapability("push")) { /* native */ } else { /* Web Notification */ }
+```
+
+`src/lib/native/notify.ts` là ví dụ fallback push -> Web Notification.
