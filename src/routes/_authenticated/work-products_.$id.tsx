@@ -1202,13 +1202,14 @@ function WorkProductDetail() {
                           variant="ghost"
                           className="mt-1 h-7 gap-1 px-2 text-xs"
                           onClick={() =>
-                            resolveWorkDeliverableComment({
-                              data: {
-                                idempotencyKey: crypto.randomUUID(),
-                                commentId: c.id,
-                                resolved: !c.resolved_at,
-                              },
-                            }).then(invalidate)
+                            runOrQueue("wp.comment.resolve", {
+                              idempotencyKey: crypto.randomUUID(),
+                              commentId: c.id,
+                              resolved: !c.resolved_at,
+                            }).then((sent) => {
+                              if (sent) invalidate();
+                              else toast.message(t("offline.queued"));
+                            })
                           }
                         >
                           <Check className="h-3 w-3" />
