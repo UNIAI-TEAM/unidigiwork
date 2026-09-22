@@ -10789,6 +10789,14 @@ export type Database = {
         Args: { _workspace_id: string }
         Returns: Json
       }
+      get_task_messaging_permissions: {
+        Args: { _task_id: string }
+        Returns: {
+          can_ask_uni_ai: boolean
+          can_message_superior: boolean
+          can_message_team: boolean
+        }[]
+      }
       get_task_snapshot: {
         Args: { _task_id: string }
         Returns: {
@@ -10959,6 +10967,14 @@ export type Database = {
         }[]
       }
       list_task_message_recipients: {
+        Args: { _task_id: string }
+        Returns: {
+          display_name: string
+          id: string
+          primary_email: string
+        }[]
+      }
+      list_task_superior_recipients: {
         Args: { _task_id: string }
         Returns: {
           display_name: string

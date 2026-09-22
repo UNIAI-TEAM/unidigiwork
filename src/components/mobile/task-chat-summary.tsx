@@ -27,8 +27,10 @@ import {
 } from "@/components/ai-elements/prompt-input";
 import { getTaskConversations, sendAiMessage } from "@/lib/api/ai-chat.functions";
 import {
+  getTaskMessagingPermissions,
   getTaskDetail,
   listTaskMessageRecipients,
+  listTaskSuperiorRecipients,
   markTaskMessagesRead,
   sendTaskMessage,
 } from "@/lib/api/tasks.functions";
@@ -117,10 +119,13 @@ export function TaskChatSummary({ taskId, taskTitle }: { taskId: string; taskTit
   const graphFn = useServerFn(getWorkContext);
   const sendAiFn = useServerFn(sendAiMessage);
   const recipientsFn = useServerFn(listTaskMessageRecipients);
+  const superiorRecipientsFn = useServerFn(listTaskSuperiorRecipients);
+  const permissionsFn = useServerFn(getTaskMessagingPermissions);
   const sendTeamFn = useServerFn(sendTaskMessage);
   const markReadFn = useServerFn(markTaskMessagesRead);
   const [draft, setDraft] = useState("");
   const [recipientId, setRecipientId] = useState("");
+  const [superiorRecipientId, setSuperiorRecipientId] = useState("");
   const chats = useQuery({
     queryKey: ["task-conversations", taskId],
     queryFn: () => chatFn({ data: { taskId } }),
@@ -137,12 +142,20 @@ export function TaskChatSummary({ taskId, taskTitle }: { taskId: string; taskTit
     queryKey: ["task-message-recipients", taskId],
     queryFn: () => recipientsFn({ data: { taskId } }),
   });
+  const superiorRecipients = useQuery({
+    queryKey: ["task-superior-recipients", taskId],
+    queryFn: () => superiorRecipientsFn({ data: { taskId } }),
+  });
+  const permissions = useQuery({
+    queryKey: ["task-messaging-permissions", taskId],
+    queryFn: () => permissionsFn({ data: { taskId } }),
+  });
   const title = taskTitle ?? detail.data?.task?.title ?? t("m.taskChat.task");
   const comments = detail.data?.comments ?? [];
-  const workGraphComments = comments.filter(
-    (comment: any) => comment.metadata?.source === "WORK_GRAPH",
+  const privateComments = comments.filter(
+    (comment: any) => comment.metadata?.source === "PRIVATE_SUPERIOR",
   );
-  const teamComments = comments.filter((comment: any) => comment.metadata?.source !== "WORK_GRAPH");
+  const teamComments = comments.filter((comment: any) => comment.metadata?.source === "TASK_CHAT");
   const classificationLabel = (label: string) => {
     if (label === "TASK") return t("m.taskChat.classification.task");
     if (label === "FEEDBACK") return t("m.taskChat.classification.feedback");
@@ -150,7 +163,7 @@ export function TaskChatSummary({ taskId, taskTitle }: { taskId: string; taskTit
     return t("m.taskChat.classification.failed");
   };
   const related = graph.data?.relationships ?? [];
-  const loading = chats.isLoading || detail.isLoading || graph.isLoading;
+  const loading = chats.isLoading || detail.isLoading || graph.isLoading || permissions.isLoading;
   const latestConversation = chats.data?.[0] ?? null;
 
   useEffect(() => {
@@ -163,9 +176,17 @@ export function TaskChatSummary({ taskId, taskTitle }: { taskId: string; taskTit
   }, [markReadFn, queryClient, taskId]);
 
   const sendTeam = useMutation({
-    mutationFn: ({ body, recipientId }: { body: string; recipientId: string }) =>
+    mutationFn: ({
+      body,
+      recipientId,
+      source = "TASK_CHAT",
+    }: {
+      body: string;
+      recipientId: string;
+      source?: "TASK_CHAT" | "PRIVATE_SUPERIOR";
+    }) =>
       sendTeamFn({
-        data: { taskId, recipientId, body, idempotencyKey: crypto.randomUUID() },
+        data: { taskId, recipientId, body, source, idempotencyKey: crypto.randomUUID() },
       }),
     onSuccess: async () => {
       setDraft("");
@@ -222,129 +243,169 @@ export function TaskChatSummary({ taskId, taskTitle }: { taskId: string; taskTit
         </div>
       ) : (
         <>
-          <Tabs defaultValue="team" className="min-w-0">
-            <TabsList className="grid h-11 w-full grid-cols-3">
-              <TabsTrigger value="team" className="min-h-9 gap-2">
-                <Users className="h-4 w-4" /> {t("m.taskChat.team")}
-              </TabsTrigger>
-              <TabsTrigger value="ai" className="min-h-9 gap-2">
-                <Bot className="h-4 w-4" /> {t("m.taskChat.askAi")}
-              </TabsTrigger>
-              <TabsTrigger value="management" className="min-h-9 gap-2">
-                <Waypoints className="h-4 w-4" /> {t("m.taskChat.management")}
-              </TabsTrigger>
+          <Tabs defaultValue={permissions.data?.canMessageTeam ? "team" : "ai"} className="min-w-0">
+            <TabsList
+              className={`grid h-11 w-full ${permissions.data?.canMessageTeam ? "grid-cols-1" : "grid-cols-2"}`}
+            >
+              {permissions.data?.canMessageTeam ? (
+                <TabsTrigger value="team" className="min-h-9 gap-2">
+                  <Users className="h-4 w-4" /> {t("m.taskChat.team")}
+                </TabsTrigger>
+              ) : null}
+              {permissions.data?.canAskUniAi ? (
+                <TabsTrigger value="ai" className="min-h-9 gap-2">
+                  <Bot className="h-4 w-4" /> {t("m.taskChat.askAi")}
+                </TabsTrigger>
+              ) : null}
+              {permissions.data?.canMessageSuperior ? (
+                <TabsTrigger value="management" className="min-h-9 gap-2">
+                  <Waypoints className="h-4 w-4" /> {t("m.taskChat.management")}
+                </TabsTrigger>
+              ) : null}
             </TabsList>
-            <TabsContent value="team" className="mt-3 min-w-0">
-              <div className="max-h-80 space-y-3 overflow-y-auto rounded-xl border border-border bg-background p-3">
-                {teamComments.length ? (
-                  teamComments.map((comment: any) => (
-                    <Message
-                      key={comment.id}
-                      from={comment.author_id === identity.userId ? "user" : "assistant"}
-                    >
-                      <MessageContent className="max-w-[92%]">
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span className="font-semibold text-foreground">
-                            {comment.author_name ?? t("m.taskChat.member")}
-                          </span>
-                          <span>
-                            {new Date(comment.created_at).toLocaleString(localeTag(lang), {
-                              dateStyle: "short",
-                              timeStyle: "short",
-                            })}
-                          </span>
-                          {comment.metadata?.classification?.label &&
-                          comment.metadata.classification.label !== "OTHER" ? (
-                            <Badge variant="secondary">
-                              {classificationLabel(String(comment.metadata.classification.label))}
-                            </Badge>
-                          ) : null}
-                        </div>
-                        <p className="whitespace-pre-wrap break-words leading-6">{comment.body}</p>
-                      </MessageContent>
-                    </Message>
-                  ))
-                ) : (
-                  <Empty text={t("m.taskChat.noTeamMessages")} />
-                )}
-              </div>
-              <TaskMessageComposer
-                value={draft}
-                onChange={setDraft}
-                onSubmit={(text) => {
-                  if (recipientId) sendTeam.mutate({ body: text, recipientId });
-                }}
-                pending={sendTeam.isPending}
-                placeholder={t("m.taskChat.teamPlaceholder")}
-                sendLabel={t("m.taskChat.sendTeam")}
-                recipients={recipients.data ?? []}
-                recipientId={recipientId}
-                onRecipientChange={setRecipientId}
-                recipientPlaceholder={t("m.taskChat.selectRecipient")}
-                noRecipientsLabel={t("m.taskChat.noRecipients")}
-                recipientsLoading={recipients.isLoading}
-              />
-            </TabsContent>
-            <TabsContent value="ai" className="mt-3 min-w-0">
-              <div className="max-h-80 space-y-3 overflow-y-auto rounded-xl border border-border bg-background p-3">
-                {latestConversation?.messages.length ? (
-                  latestConversation.messages.map((message) => (
-                    <Message key={message.id} from={message.role}>
-                      <MessageContent className="max-w-[92%]">
-                        {message.role === "assistant" ? (
-                          <MessageResponse className="text-sm leading-6 [&_h2]:my-2 [&_h2]:text-xs [&_h2]:uppercase [&_h2]:text-muted-foreground">
-                            {message.content}
-                          </MessageResponse>
-                        ) : (
+            {permissions.data?.canMessageTeam ? (
+              <TabsContent value="team" className="mt-3 min-w-0">
+                <div className="max-h-80 space-y-3 overflow-y-auto rounded-xl border border-border bg-background p-3">
+                  {teamComments.length ? (
+                    teamComments.map((comment: any) => (
+                      <Message
+                        key={comment.id}
+                        from={comment.author_id === identity.userId ? "user" : "assistant"}
+                      >
+                        <MessageContent className="max-w-[92%]">
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <span className="font-semibold text-foreground">
+                              {comment.author_name ?? t("m.taskChat.member")}
+                            </span>
+                            <span>
+                              {new Date(comment.created_at).toLocaleString(localeTag(lang), {
+                                dateStyle: "short",
+                                timeStyle: "short",
+                              })}
+                            </span>
+                            {comment.metadata?.classification?.label &&
+                            comment.metadata.classification.label !== "OTHER" ? (
+                              <Badge variant="secondary">
+                                {classificationLabel(String(comment.metadata.classification.label))}
+                              </Badge>
+                            ) : null}
+                          </div>
                           <p className="whitespace-pre-wrap break-words leading-6">
-                            {message.content}
+                            {comment.body}
                           </p>
-                        )}
-                      </MessageContent>
-                    </Message>
-                  ))
-                ) : (
-                  <Empty text={t("m.taskChat.noAiMessages")} />
-                )}
-                {sendAi.isPending ? (
-                  <div className="flex min-h-11 items-center gap-2 text-sm text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin" /> {t("m.ai.working")}
-                  </div>
-                ) : null}
-              </div>
-              <TaskMessageComposer
-                value={draft}
-                onChange={setDraft}
-                onSubmit={(text) => sendAi.mutate(text)}
-                pending={sendAi.isPending}
-                placeholder={t("m.taskChat.aiPlaceholder")}
-                sendLabel={t("m.taskChat.sendAi")}
-              />
-            </TabsContent>
-            <TabsContent value="management" className="mt-3 min-w-0">
-              <div className="max-h-80 space-y-3 overflow-y-auto rounded-xl border border-border bg-background p-3">
-                {workGraphComments.length ? (
-                  workGraphComments.map((comment: any) => (
-                    <Message
-                      key={comment.id}
-                      from={comment.author_id === identity.userId ? "user" : "assistant"}
-                    >
-                      <MessageContent className="max-w-[92%]">
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span className="font-semibold text-foreground">
-                            {comment.author_name ?? t("m.taskChat.member")}
-                          </span>
-                          <Badge variant="secondary">{t("m.taskChat.fromWorkGraph")}</Badge>
-                        </div>
-                        <p className="whitespace-pre-wrap break-words leading-6">{comment.body}</p>
-                      </MessageContent>
-                    </Message>
-                  ))
-                ) : (
-                  <Empty text={t("m.taskChat.noManagementMessages")} />
-                )}
-              </div>
-            </TabsContent>
+                        </MessageContent>
+                      </Message>
+                    ))
+                  ) : (
+                    <Empty text={t("m.taskChat.noTeamMessages")} />
+                  )}
+                </div>
+                <TaskMessageComposer
+                  value={draft}
+                  onChange={setDraft}
+                  onSubmit={(text) => {
+                    if (recipientId) sendTeam.mutate({ body: text, recipientId });
+                  }}
+                  pending={sendTeam.isPending}
+                  placeholder={t("m.taskChat.teamPlaceholder")}
+                  sendLabel={t("m.taskChat.sendTeam")}
+                  recipients={recipients.data ?? []}
+                  recipientId={recipientId}
+                  onRecipientChange={setRecipientId}
+                  recipientPlaceholder={t("m.taskChat.selectRecipient")}
+                  noRecipientsLabel={t("m.taskChat.noRecipients")}
+                  recipientsLoading={recipients.isLoading}
+                />
+              </TabsContent>
+            ) : null}
+            {permissions.data?.canAskUniAi ? (
+              <TabsContent value="ai" className="mt-3 min-w-0">
+                <div className="max-h-80 space-y-3 overflow-y-auto rounded-xl border border-border bg-background p-3">
+                  {latestConversation?.messages.length ? (
+                    latestConversation.messages.map((message) => (
+                      <Message key={message.id} from={message.role}>
+                        <MessageContent className="max-w-[92%]">
+                          {message.role === "assistant" ? (
+                            <MessageResponse className="text-sm leading-6 [&_h2]:my-2 [&_h2]:text-xs [&_h2]:uppercase [&_h2]:text-muted-foreground">
+                              {message.content}
+                            </MessageResponse>
+                          ) : (
+                            <p className="whitespace-pre-wrap break-words leading-6">
+                              {message.content}
+                            </p>
+                          )}
+                        </MessageContent>
+                      </Message>
+                    ))
+                  ) : (
+                    <Empty text={t("m.taskChat.noAiMessages")} />
+                  )}
+                  {sendAi.isPending ? (
+                    <div className="flex min-h-11 items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" /> {t("m.ai.working")}
+                    </div>
+                  ) : null}
+                </div>
+                <TaskMessageComposer
+                  value={draft}
+                  onChange={setDraft}
+                  onSubmit={(text) => sendAi.mutate(text)}
+                  pending={sendAi.isPending}
+                  placeholder={t("m.taskChat.aiPlaceholder")}
+                  sendLabel={t("m.taskChat.sendAi")}
+                />
+              </TabsContent>
+            ) : null}
+            {permissions.data?.canMessageSuperior ? (
+              <TabsContent value="management" className="mt-3 min-w-0">
+                <div className="max-h-80 space-y-3 overflow-y-auto rounded-xl border border-border bg-background p-3">
+                  {privateComments.length ? (
+                    privateComments.map((comment: any) => (
+                      <Message
+                        key={comment.id}
+                        from={comment.author_id === identity.userId ? "user" : "assistant"}
+                      >
+                        <MessageContent className="max-w-[92%]">
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <span className="font-semibold text-foreground">
+                              {comment.author_name ?? t("m.taskChat.member")}
+                            </span>
+                            <Badge variant="secondary">{t("m.taskChat.privateSuperior")}</Badge>
+                          </div>
+                          <p className="whitespace-pre-wrap break-words leading-6">
+                            {comment.body}
+                          </p>
+                        </MessageContent>
+                      </Message>
+                    ))
+                  ) : (
+                    <Empty text={t("m.taskChat.noManagementMessages")} />
+                  )}
+                </div>
+                <TaskMessageComposer
+                  value={draft}
+                  onChange={setDraft}
+                  onSubmit={(text) => {
+                    if (superiorRecipientId) {
+                      sendTeam.mutate({
+                        body: text,
+                        recipientId: superiorRecipientId,
+                        source: "PRIVATE_SUPERIOR",
+                      });
+                    }
+                  }}
+                  pending={sendTeam.isPending}
+                  placeholder={t("m.taskChat.superiorPlaceholder")}
+                  sendLabel={t("m.taskChat.sendSuperior")}
+                  recipients={superiorRecipients.data ?? []}
+                  recipientId={superiorRecipientId}
+                  onRecipientChange={setSuperiorRecipientId}
+                  recipientPlaceholder={t("m.taskChat.selectSuperior")}
+                  noRecipientsLabel={t("m.taskChat.noSuperiors")}
+                  recipientsLoading={superiorRecipients.isLoading}
+                />
+              </TabsContent>
+            ) : null}
           </Tabs>
           <SummarySection title={t("m.taskChat.history")} count={chats.data?.length ?? 0}>
             {(chats.data ?? []).length ? (

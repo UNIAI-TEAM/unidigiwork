@@ -13,7 +13,6 @@ import {
   MessageSquare,
   PlayCircle,
   Search,
-  Send,
   UserRound,
   Waypoints,
   Zap,
@@ -36,12 +35,7 @@ import {
   listWorkGraphBoard,
 } from "@/lib/api/work-graph.functions";
 import type { WorkGraphBoardItem } from "@/lib/api/work-graph.functions";
-import {
-  canSendWorkGraphMessage,
-  listTaskMessageRecipients,
-  sendTaskMessage,
-  setTaskDueAt,
-} from "@/lib/api/tasks.functions";
+import { setTaskDueAt } from "@/lib/api/tasks.functions";
 
 export const Route = createFileRoute("/_authenticated/work-graph")({
   validateSearch: z.object({ task: z.string().uuid().optional() }),
@@ -83,99 +77,6 @@ function isDone(i: WorkGraphBoardItem) {
   return i.status === "ACCEPTED" || i.status === "DELIVERED";
 }
 
-function WorkGraphMessageForm({ taskId }: { taskId: string }) {
-  const { t } = useI18n();
-  const queryClient = useQueryClient();
-  const [body, setBody] = useState("");
-  const [recipientId, setRecipientId] = useState("");
-  const permission = useQuery({
-    queryKey: ["work-graph-message-permission", taskId],
-    queryFn: () => canSendWorkGraphMessage({ data: { taskId } }),
-  });
-  const recipients = useQuery({
-    queryKey: ["task-message-recipients", taskId],
-    queryFn: () => listTaskMessageRecipients({ data: { taskId } }),
-  });
-  const send = useMutation({
-    mutationFn: () =>
-      sendTaskMessage({
-        data: {
-          taskId,
-          recipientId,
-          body: body.trim(),
-          source: "WORK_GRAPH",
-          idempotencyKey: crypto.randomUUID(),
-        },
-      }),
-    onSuccess: async () => {
-      setBody("");
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["work-graph-board"] }),
-        queryClient.invalidateQueries({ queryKey: ["task-chat-detail", taskId] }),
-        queryClient.invalidateQueries({ queryKey: ["notifications"] }),
-      ]);
-      toast.success(t("wg.messageSent"));
-    },
-    onError: () => toast.error(t("wg.messageError")),
-  });
-
-  if (permission.isLoading || !permission.data) return null;
-
-  return (
-    <form
-      className="mt-1 grid min-w-0 gap-2 rounded-lg border bg-muted/30 p-2 sm:grid-cols-[minmax(10rem,0.8fr)_minmax(12rem,1fr)_auto]"
-      onSubmit={(event) => {
-        event.preventDefault();
-        if (body.trim() && recipientId) send.mutate();
-      }}
-    >
-      {recipients.isLoading ? (
-        <span className="flex h-11 items-center gap-2 px-2 text-xs text-muted-foreground sm:h-9">
-          <Loader2 className="h-4 w-4 animate-spin" /> {t("wg.selectRecipient")}
-        </span>
-      ) : (recipients.data ?? []).length ? (
-        <Select value={recipientId} onValueChange={setRecipientId}>
-          <SelectTrigger className="h-11 min-w-0 sm:h-9">
-            <SelectValue placeholder={t("wg.selectRecipient")} />
-          </SelectTrigger>
-          <SelectContent>
-            {(recipients.data ?? []).map((person) => (
-              <SelectItem key={person.id} value={person.id} className="min-h-11">
-                {person.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      ) : (
-        <span className="flex min-h-11 items-center px-2 text-xs text-muted-foreground sm:min-h-9">
-          {t("wg.noRecipients")}
-        </span>
-      )}
-      <Input
-        value={body}
-        onChange={(event) => setBody(event.target.value)}
-        placeholder={t("wg.messagePlaceholder")}
-        aria-label={t("wg.messagePlaceholder")}
-        maxLength={2000}
-        className="h-11 min-w-0 text-base sm:h-9 sm:text-sm"
-      />
-      <Button
-        type="submit"
-        size="icon"
-        className="h-11 w-full shrink-0 sm:h-9 sm:w-9"
-        disabled={send.isPending || !body.trim() || !recipientId}
-        aria-label={t("wg.sendMessage")}
-      >
-        {send.isPending ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <Send className="h-4 w-4" />
-        )}
-      </Button>
-    </form>
-  );
-}
-
 type Tab = "all" | "running" | "done" | "products";
 type DueFilter = "all" | "overdue" | "due_soon" | "scheduled" | "none";
 
@@ -192,7 +93,6 @@ function WorkGraphPage() {
   const [expandedItems, setExpandedItems] = useState<Set<string>>(() => new Set());
   const [deadlineItems, setDeadlineItems] = useState<Set<string>>(() => new Set());
   const [deadlineDrafts, setDeadlineDrafts] = useState<Record<string, string>>({});
-  const [messageItems, setMessageItems] = useState<Set<string>>(() => new Set());
   const deadlineMutation = useMutation({
     mutationFn: ({ taskId, dueAt }: { taskId: string; dueAt: string | null }) =>
       setTaskDueAt({
@@ -495,20 +395,13 @@ function WorkGraphPage() {
                       {i.type === "TASK" ? (
                         <span className="mt-0.5 flex flex-wrap gap-1">
                           <Button
-                            type="button"
+                            asChild
                             variant="ghost"
                             className="min-h-11 px-1.5 text-xs text-muted-foreground sm:min-h-9"
-                            aria-expanded={messageItems.has(i.id)}
-                            onClick={() =>
-                              setMessageItems((current) => {
-                                const next = new Set(current);
-                                if (next.has(i.id)) next.delete(i.id);
-                                else next.add(i.id);
-                                return next;
-                              })
-                            }
                           >
-                            <MessageSquare className="h-4 w-4" /> {t("wg.sendMessage")}
+                            <Link to="/m/tasks/$id" params={{ id: i.id }}>
+                              <MessageSquare className="h-4 w-4" /> {t("wg.sendMessage")}
+                            </Link>
                           </Button>
                           <Button
                             type="button"
@@ -536,9 +429,6 @@ function WorkGraphPage() {
                             {i.dueAt ? t("wg.changeDeadline") : t("wg.setDeadline")}
                           </Button>
                         </span>
-                      ) : null}
-                      {i.type === "TASK" && messageItems.has(i.id) ? (
-                        <WorkGraphMessageForm taskId={i.id} />
                       ) : null}
                       {i.type === "TASK" && deadlineItems.has(i.id) ? (
                         <div className="mt-1 flex flex-col gap-2 rounded-lg border bg-muted/30 p-2 sm:flex-row sm:items-center">

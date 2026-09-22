@@ -229,6 +229,28 @@ export type TaskMessageRecipient = {
   email: string;
 };
 
+export type TaskMessagingPermissions = {
+  canMessageTeam: boolean;
+  canMessageSuperior: boolean;
+  canAskUniAi: boolean;
+};
+
+export const getTaskMessagingPermissions = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ taskId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }): Promise<TaskMessagingPermissions> => {
+    const { data: rows, error } = await context.supabase.rpc("get_task_messaging_permissions", {
+      _task_id: data.taskId,
+    });
+    if (error) mapPgError(error, "TENANT_ACCESS_DENIED");
+    const row = rows?.[0];
+    return {
+      canMessageTeam: Boolean(row?.can_message_team),
+      canMessageSuperior: Boolean(row?.can_message_superior),
+      canAskUniAi: Boolean(row?.can_ask_uni_ai),
+    };
+  });
+
 /** Người đang được giao task, đã được tenant/RLS kiểm tra ở phía máy chủ. */
 export const listTaskMessageRecipients = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -255,6 +277,27 @@ export const listTaskMessageRecipients = createServerFn({ method: "GET" })
       .sort((a, b) => a.name.localeCompare(b.name, "vi"));
   });
 
+export const listTaskSuperiorRecipients = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ taskId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }): Promise<TaskMessageRecipient[]> => {
+    const { data: people, error } = await context.supabase.rpc("list_task_superior_recipients", {
+      _task_id: data.taskId,
+    });
+    if (error) mapPgError(error, "TENANT_ACCESS_DENIED");
+    return (
+      (people ?? []) as Array<{
+        id: string;
+        display_name: string | null;
+        primary_email: string | null;
+      }>
+    ).map((person) => ({
+      id: person.id,
+      name: person.display_name || person.primary_email || "—",
+      email: person.primary_email ?? "",
+    }));
+  });
+
 /** Lưu tin nhắn task và phát thông báo đích danh trong cùng giao dịch. */
 export const sendTaskMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -265,7 +308,7 @@ export const sendTaskMessage = createServerFn({ method: "POST" })
         taskId: z.string().uuid(),
         recipientId: z.string().uuid(),
         body: z.string().min(1).max(10000),
-        source: z.enum(["TASK_CHAT", "WORK_GRAPH"]).default("TASK_CHAT"),
+        source: z.enum(["TASK_CHAT", "PRIVATE_SUPERIOR"]).default("TASK_CHAT"),
       })
       .parse(i),
   )
@@ -279,6 +322,7 @@ export const sendTaskMessage = createServerFn({ method: "POST" })
       _source: data.source,
     });
     const comment = ensureOk(res, "TASK_NOT_FOUND") as { id: string };
+    if (data.source === "PRIVATE_SUPERIOR") return comment;
     const apiKey = process.env["LOVABLE_API_KEY"];
     if (!apiKey) return comment;
 
@@ -326,17 +370,6 @@ export const sendTaskMessage = createServerFn({ method: "POST" })
       if (failed.error) mapPgError(failed.error);
       return { ...comment, classification: failed.data };
     }
-  });
-
-export const canSendWorkGraphMessage = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((i) => z.object({ taskId: z.string().uuid() }).parse(i))
-  .handler(async ({ data, context }) => {
-    const { data: allowed, error } = await context.supabase.rpc("can_send_work_graph_message", {
-      _task_id: data.taskId,
-    });
-    if (error) mapPgError(error);
-    return Boolean(allowed);
   });
 
 /** Đánh dấu đã đọc riêng các thông báo tin nhắn của task hiện tại. */
