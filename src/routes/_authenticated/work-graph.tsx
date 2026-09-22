@@ -140,7 +140,11 @@ function WorkGraphTaskMessageForm({ taskId }: { taskId: string }) {
         disabled={!recipientId || !body.trim() || send.isPending || !recipients.data?.length}
         onClick={() => send.mutate()}
       >
-        {send.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+        {send.isPending ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Send className="h-4 w-4" />
+        )}
         {t("wg.sendMessage")}
       </Button>
       {!recipients.isLoading && !recipients.data?.length ? (
