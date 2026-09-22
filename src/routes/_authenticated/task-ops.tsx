@@ -201,7 +201,7 @@ function TaskOpsPage() {
                       <Link
                         to="/tasks/$id"
                         params={{ id: item.id }}
-                        className="block truncate text-sm font-medium hover:underline"
+                        className="block min-h-[24px] text-sm font-medium hover:underline max-sm:line-clamp-2 sm:truncate"
                       >
                         {item.title}
                       </Link>
