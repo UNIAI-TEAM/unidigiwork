@@ -101,7 +101,9 @@ export function TaskChatSummary({ taskId, taskTitle }: { taskId: string; taskTit
     <section className="min-w-0 space-y-4">
       <div className="flex min-w-0 items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase text-muted-foreground">{t("m.taskChat.title")}</p>
+          <p className="text-xs font-semibold uppercase text-muted-foreground">
+            {t("m.taskChat.title")}
+          </p>
           <h2 className="mt-1 break-words text-lg font-semibold">{title}</h2>
         </div>
         <Button asChild variant="outline" className="min-h-11 shrink-0 px-3">
@@ -119,7 +121,10 @@ export function TaskChatSummary({ taskId, taskTitle }: { taskId: string; taskTit
           <SummarySection title={t("m.taskChat.history")} count={chats.data?.length ?? 0}>
             {(chats.data ?? []).length ? (
               chats.data?.map((conversation) => (
-                <article key={conversation.id} className="rounded-xl border border-border bg-surface p-3">
+                <article
+                  key={conversation.id}
+                  className="rounded-xl border border-border bg-surface p-3"
+                >
                   <Link
                     to="/m/c/$id"
                     params={{ id: conversation.id }}
@@ -184,7 +189,9 @@ export function TaskChatSummary({ taskId, taskTitle }: { taskId: string; taskTit
                   >
                     <Link2 className="h-4 w-4 shrink-0 text-primary" />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-semibold">{item.entity.title}</span>
+                      <span className="block truncate text-sm font-semibold">
+                        {item.entity.title}
+                      </span>
                       <span className="block truncate text-xs text-muted-foreground">
                         {item.relationship} · {item.entity.type}
                       </span>
@@ -202,7 +209,15 @@ export function TaskChatSummary({ taskId, taskTitle }: { taskId: string; taskTit
   );
 }
 
-function SummarySection({ title, count, children }: { title: string; count: number; children: React.ReactNode }) {
+function SummarySection({
+  title,
+  count,
+  children,
+}: {
+  title: string;
+  count: number;
+  children: React.ReactNode;
+}) {
   return (
     <div className="min-w-0">
       <div className="mb-2 flex items-center gap-2">
@@ -215,5 +230,9 @@ function SummarySection({ title, count, children }: { title: string; count: numb
 }
 
 function Empty({ text }: { text: string }) {
-  return <p className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">{text}</p>;
+  return (
+    <p className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">
+      {text}
+    </p>
+  );
 }

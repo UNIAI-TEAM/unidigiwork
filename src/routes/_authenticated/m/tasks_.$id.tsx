@@ -287,117 +287,126 @@ function MobileTaskDetail() {
 
       <Tabs defaultValue="details" className="min-w-0">
         <TabsList className="grid min-h-12 w-full grid-cols-2 p-1">
-          <TabsTrigger value="details" className="min-h-10">Chi tiết</TabsTrigger>
-          <TabsTrigger value="chat" className="min-h-10">Chat tổng hợp</TabsTrigger>
+          <TabsTrigger value="details" className="min-h-10">
+            Chi tiết
+          </TabsTrigger>
+          <TabsTrigger value="chat" className="min-h-10">
+            Chat tổng hợp
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="details" className="mt-4 min-w-0 space-y-4">
-      {task.description && (
-        <section className="min-w-0 overflow-hidden rounded-2xl border border-border bg-surface p-4">
-          <h2 className="mb-1 text-sm font-semibold">Mô tả</h2>
-          <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
-            {task.description}
-          </p>
-        </section>
-      )}
-
-      <section className="min-w-0 overflow-hidden rounded-2xl border border-border bg-surface p-4">
-        <h2 className="mb-2 text-sm font-semibold">Công việc con</h2>
-        {subtasks.length === 0 ? (
-          <p className="text-xs text-muted-foreground">Chưa có công việc con.</p>
-        ) : (
-          <ul className="grid min-w-0 gap-1">
-            {subtasks.map((s) => (
-              <li key={s.id} className="flex min-h-11 min-w-0 items-center gap-2">
-                <button
-                  aria-label={s.status === "done" ? `Mở lại ${s.title}` : `Hoàn tất ${s.title}`}
-                  className="grid h-11 w-11 shrink-0 place-items-center text-muted-foreground"
-                  disabled={changeStatus.isPending}
-                  onClick={() =>
-                    changeStatus.mutate({ taskId: s.id, to: s.status === "done" ? "todo" : "done" })
-                  }
-                >
-                  <CheckCircle2
-                    className={`h-5 w-5 ${s.status === "done" ? "text-success" : ""}`}
-                  />
-                </button>
-                <span
-                  className={`min-w-0 flex-1 break-words text-sm ${
-                    s.status === "done" ? "text-muted-foreground line-through" : ""
-                  }`}
-                >
-                  {s.title}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (subtaskTitle.trim()) addSubtaskMut.mutate(subtaskTitle.trim());
-          }}
-          className="mt-3 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-2"
-        >
-          <Input
-            value={subtaskTitle}
-            onChange={(e) => setSubtaskTitle(e.target.value)}
-            placeholder="Thêm việc con…"
-            className="h-11 min-w-0"
-          />
-          <Button
-            type="submit"
-            className="min-h-11 shrink-0"
-            disabled={!subtaskTitle.trim() || addSubtaskMut.isPending}
-          >
-            Thêm
-          </Button>
-        </form>
-      </section>
-
-      <section className="min-w-0 overflow-hidden rounded-2xl border border-border bg-surface p-4">
-        <h2 className="mb-2 text-sm font-semibold">Bình luận ({comments.length})</h2>
-        <ul className="grid min-w-0 gap-3">
-          {comments.map((c) => (
-            <li key={c.id} className="min-w-0">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <span className="font-medium text-foreground">{c.author_name ?? "Thành viên"}</span>
-                <span>{new Date(c.created_at).toLocaleDateString("vi-VN")}</span>
-              </div>
-              <p className="mt-0.5 break-words text-sm">{c.body}</p>
-            </li>
-          ))}
-          {comments.length === 0 && (
-            <li className="text-xs text-muted-foreground">Chưa có bình luận nào.</li>
+          {task.description && (
+            <section className="min-w-0 overflow-hidden rounded-2xl border border-border bg-surface p-4">
+              <h2 className="mb-1 text-sm font-semibold">Mô tả</h2>
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
+                {task.description}
+              </p>
+            </section>
           )}
-        </ul>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (comment.trim()) addCommentMut.mutate(comment.trim());
-          }}
-          className="mt-3 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-end gap-2"
-        >
-          <Textarea
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            rows={2}
-            placeholder="Viết bình luận…"
-            className="min-w-0"
-          />
-          <Button
-            type="submit"
-            className="min-h-11 shrink-0"
-            disabled={!comment.trim() || addCommentMut.isPending}
-            aria-label="Gửi bình luận"
-          >
-            {addCommentMut.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+
+          <section className="min-w-0 overflow-hidden rounded-2xl border border-border bg-surface p-4">
+            <h2 className="mb-2 text-sm font-semibold">Công việc con</h2>
+            {subtasks.length === 0 ? (
+              <p className="text-xs text-muted-foreground">Chưa có công việc con.</p>
             ) : (
-              <Send className="h-4 w-4" />
+              <ul className="grid min-w-0 gap-1">
+                {subtasks.map((s) => (
+                  <li key={s.id} className="flex min-h-11 min-w-0 items-center gap-2">
+                    <button
+                      aria-label={s.status === "done" ? `Mở lại ${s.title}` : `Hoàn tất ${s.title}`}
+                      className="grid h-11 w-11 shrink-0 place-items-center text-muted-foreground"
+                      disabled={changeStatus.isPending}
+                      onClick={() =>
+                        changeStatus.mutate({
+                          taskId: s.id,
+                          to: s.status === "done" ? "todo" : "done",
+                        })
+                      }
+                    >
+                      <CheckCircle2
+                        className={`h-5 w-5 ${s.status === "done" ? "text-success" : ""}`}
+                      />
+                    </button>
+                    <span
+                      className={`min-w-0 flex-1 break-words text-sm ${
+                        s.status === "done" ? "text-muted-foreground line-through" : ""
+                      }`}
+                    >
+                      {s.title}
+                    </span>
+                  </li>
+                ))}
+              </ul>
             )}
-          </Button>
-        </form>
-      </section>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (subtaskTitle.trim()) addSubtaskMut.mutate(subtaskTitle.trim());
+              }}
+              className="mt-3 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-2"
+            >
+              <Input
+                value={subtaskTitle}
+                onChange={(e) => setSubtaskTitle(e.target.value)}
+                placeholder="Thêm việc con…"
+                className="h-11 min-w-0"
+              />
+              <Button
+                type="submit"
+                className="min-h-11 shrink-0"
+                disabled={!subtaskTitle.trim() || addSubtaskMut.isPending}
+              >
+                Thêm
+              </Button>
+            </form>
+          </section>
+
+          <section className="min-w-0 overflow-hidden rounded-2xl border border-border bg-surface p-4">
+            <h2 className="mb-2 text-sm font-semibold">Bình luận ({comments.length})</h2>
+            <ul className="grid min-w-0 gap-3">
+              {comments.map((c) => (
+                <li key={c.id} className="min-w-0">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span className="font-medium text-foreground">
+                      {c.author_name ?? "Thành viên"}
+                    </span>
+                    <span>{new Date(c.created_at).toLocaleDateString("vi-VN")}</span>
+                  </div>
+                  <p className="mt-0.5 break-words text-sm">{c.body}</p>
+                </li>
+              ))}
+              {comments.length === 0 && (
+                <li className="text-xs text-muted-foreground">Chưa có bình luận nào.</li>
+              )}
+            </ul>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (comment.trim()) addCommentMut.mutate(comment.trim());
+              }}
+              className="mt-3 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-end gap-2"
+            >
+              <Textarea
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                rows={2}
+                placeholder="Viết bình luận…"
+                className="min-w-0"
+              />
+              <Button
+                type="submit"
+                className="min-h-11 shrink-0"
+                disabled={!comment.trim() || addCommentMut.isPending}
+                aria-label="Gửi bình luận"
+              >
+                {addCommentMut.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+              </Button>
+            </form>
+          </section>
         </TabsContent>
         <TabsContent value="chat" className="mt-4 min-w-0">
           <section className="min-w-0 overflow-hidden rounded-2xl border border-border bg-surface p-4">

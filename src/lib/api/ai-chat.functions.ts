@@ -334,7 +334,9 @@ export const getTaskConversations = createServerFn({ method: "GET" })
       const value = metadata as AiMessageMetadata;
       return (
         value.contextEntities?.some((item) => item.type === "TASK" && item.id === data.taskId) ||
-        value.sources?.some((item) => item.entityType === "TASK" && item.entityId === data.taskId) ||
+        value.sources?.some(
+          (item) => item.entityType === "TASK" && item.entityId === data.taskId,
+        ) ||
         false
       );
     };
@@ -347,23 +349,30 @@ export const getTaskConversations = createServerFn({ method: "GET" })
     ).slice(0, 20);
     if (!conversationIds.length) return [];
 
-    const [{ data: conversations, error: conversationError }, { data: messages, error: messageError }] =
-      await Promise.all([
-        ctx.supabase
-          .from("ai_conversations")
-          .select("id, title, last_message_at")
-          .in("id", conversationIds)
-          .is("deleted_at", null),
-        ctx.supabase
-          .from("ai_messages")
-          .select("id, conversation_id, role, content, created_at, input_tokens, output_tokens, metadata")
-          .in("conversation_id", conversationIds)
-          .neq("role", "system")
-          .order("created_at", { ascending: true })
-          .limit(500),
-      ]);
+    const [
+      { data: conversations, error: conversationError },
+      { data: messages, error: messageError },
+    ] = await Promise.all([
+      ctx.supabase
+        .from("ai_conversations")
+        .select("id, title, last_message_at")
+        .in("id", conversationIds)
+        .is("deleted_at", null),
+      ctx.supabase
+        .from("ai_messages")
+        .select(
+          "id, conversation_id, role, content, created_at, input_tokens, output_tokens, metadata",
+        )
+        .in("conversation_id", conversationIds)
+        .neq("role", "system")
+        .order("created_at", { ascending: true })
+        .limit(500),
+    ]);
     if (conversationError)
-      throw new ApiError({ code: "AI_CONVERSATION_LIST_FAILED", message: conversationError.message });
+      throw new ApiError({
+        code: "AI_CONVERSATION_LIST_FAILED",
+        message: conversationError.message,
+      });
     if (messageError)
       throw new ApiError({ code: "AI_MESSAGE_LIST_FAILED", message: messageError.message });
 
