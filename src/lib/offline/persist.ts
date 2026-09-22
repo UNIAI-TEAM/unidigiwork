@@ -14,6 +14,7 @@ const PERSISTED_PREFIXES = [
   "work-product-revision-feedback",
   "tasks",
   "task-detail",
+  "task-follow",
   "notifications",
 ];
 
