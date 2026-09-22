@@ -69,16 +69,17 @@ function MobileOrganizationAdmin() {
       </MobileAdminLayout>
     );
 
-  const canManage = active.data.role === "tenant_owner" || active.data.role === "tenant_admin";
-  const isOwner = active.data.role === "tenant_owner";
+  const tenant = active.data;
+  const canManage = tenant.role === "tenant_owner" || tenant.role === "tenant_admin";
+  const isOwner = tenant.role === "tenant_owner";
   const busy = changeRole.isPending || changeStatus.isPending || transferOwnership.isPending;
   const fail = (error: unknown) =>
     toast.error(error instanceof Error ? error.message : t("m.admin.memberError"));
 
   return (
     <MobileAdminLayout
-      title={active.data.tenantName}
-      subtitle={`${t("m.admin.currentOrganization")} · ${t(`m.admin.role.${active.data.role}` as never)}`}
+      title={tenant.tenantName}
+      subtitle={`${t("m.admin.currentOrganization")} · ${t(`m.admin.role.${tenant.role}` as never)}`}
       backTo="/m/admin"
     >
       {!canManage ? <ReadOnlyNotice /> : null}
@@ -88,7 +89,7 @@ function MobileOrganizationAdmin() {
       ) : null}
       <div className="grid gap-3">
         {(members.data ?? []).map((member) => {
-          const isSelf = member.user_id === active.data.actorId;
+          const isSelf = member.user_id === tenant.actorId;
           const memberIsOwner = member.role === "tenant_owner";
           const label = member.display_name ?? member.email ?? `${t("m.admin.memberId")} ${member.user_id.slice(0, 8)}`;
           return (
