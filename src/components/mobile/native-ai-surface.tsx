@@ -88,9 +88,60 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
   const [pendingText, setPendingText] = useState<string | null>(null);
   const [contexts, setContexts] = useState<AddedContext[]>([]);
   const [contextOpen, setContextOpen] = useState(false);
+  const [listening, setListening] = useState(false);
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
+  const recognitionRef = useRef<{ stop: () => void; abort: () => void } | null>(null);
+
+  const toggleVoice = () => {
+    if (listening) {
+      recognitionRef.current?.stop();
+      return;
+    }
+    const SpeechRecognitionCtor = (
+      window as unknown as {
+        SpeechRecognition?: new () => SpeechRecognitionLike;
+        webkitSpeechRecognition?: new () => SpeechRecognitionLike;
+      }
+    ).SpeechRecognition ??
+      (window as unknown as { webkitSpeechRecognition?: new () => SpeechRecognitionLike })
+        .webkitSpeechRecognition;
+    if (!SpeechRecognitionCtor) {
+      toast.error(t("m.ai.voiceUnsupported"));
+      return;
+    }
+    const recognition = SpeechRecognitionCtor();
+    recognition.lang = "vi-VN";
+    recognition.interimResults = true;
+    recognition.continuous = true;
+    recognition.onresult = (event) => {
+      let transcript = "";
+      for (let index = 0; index < event.results.length; index += 1) {
+        transcript += event.results[index]?.[0]?.transcript ?? "";
+      }
+      const text = transcript.trim();
+      if (text) setInput(text);
+    };
+    recognition.onend = () => {
+      setListening(false);
+      recognitionRef.current = null;
+    };
+    recognition.onerror = () => {
+      setListening(false);
+      recognitionRef.current = null;
+    };
+    recognitionRef.current = recognition;
+    setListening(true);
+    recognition.start();
+  };
+
+  useEffect(
+    () => () => {
+      recognitionRef.current?.abort();
+    },
+    [],
+  );
 
   const messages = useQuery({
     queryKey: ["native-ai-messages", conversationId],
