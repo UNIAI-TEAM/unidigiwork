@@ -421,12 +421,21 @@ function AddContextDrawer({
           expandGraph: false,
         },
       }),
-    enabled: open && mode !== "menu" && debounced.length >= 2,
+    enabled: open && (mode === "uniwork" || mode === "people") && debounced.length >= 2,
   });
 
   const options = [
     { id: "files", label: t("m.ai.context.files"), icon: Image, action: onFiles },
     { id: "camera", label: t("m.ai.context.camera"), icon: Camera, action: onCamera },
+    {
+      id: "chat",
+      label: t("m.ai.context.chat"),
+      icon: MessageSquare,
+      action: () => {
+        setChatChannelId(null);
+        setMode("chat");
+      },
+    },
     {
       id: "uniwork",
       label: t("m.ai.context.uniwork"),
