@@ -31,7 +31,7 @@ const ProposeSchema = z.object({
   source: z.enum(AI_ACTION_SOURCES).default("UNI_COPILOT"),
   workspaceId: z.string().uuid().nullish(),
   targetTaskId: z.string().uuid().nullish(),
-    conversationId: z.string().uuid().nullish(),
+  conversationId: z.string().uuid().nullish(),
   rootEntity: z.object({ type: z.string().max(40), id: z.string().uuid() }).nullish(),
   sourceRefs: z
     .array(

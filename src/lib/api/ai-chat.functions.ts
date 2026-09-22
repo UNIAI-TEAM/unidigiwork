@@ -352,16 +352,14 @@ export const getTaskConversations = createServerFn({ method: "GET" })
       );
     };
     const conversationIds = Array.from(
-      new Set(
-        [
-          ...((candidates ?? []) as Array<{ conversation_id: string; metadata: unknown }>)
-            .filter((row) => referencesTask(row.metadata))
-            .map((row) => row.conversation_id),
-          ...((actionRows ?? []) as Array<{ conversation_id: string | null }>).flatMap((row) =>
-            row.conversation_id ? [row.conversation_id] : [],
-          ),
-        ],
-      ),
+      new Set([
+        ...((candidates ?? []) as Array<{ conversation_id: string; metadata: unknown }>)
+          .filter((row) => referencesTask(row.metadata))
+          .map((row) => row.conversation_id),
+        ...((actionRows ?? []) as Array<{ conversation_id: string | null }>).flatMap((row) =>
+          row.conversation_id ? [row.conversation_id] : [],
+        ),
+      ]),
     ).slice(0, 20);
     if (!conversationIds.length) return [];
 
