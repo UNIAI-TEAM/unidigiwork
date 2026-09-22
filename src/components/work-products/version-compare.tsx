@@ -102,7 +102,7 @@ export function VersionCompare({
     <div className="space-y-2 rounded-lg border bg-muted/30 p-3">
       <div className="flex items-center gap-2">
         <p className="text-sm font-medium">{t("wp.compare.title")}</p>
-        <Button size="sm" variant="ghost" className="ml-auto h-8" onClick={onClose}>
+        <Button variant="ghost" className="ml-auto h-11 sm:h-8" onClick={onClose}>
           {t("wp.compare.close")}
         </Button>
       </div>
