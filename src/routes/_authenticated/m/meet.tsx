@@ -1,10 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { isToday, isTomorrow } from "date-fns";
 import { Search, X, Video } from "lucide-react";
 import { useActiveWorkspace } from "@/lib/active-workspace";
-import { listMeetings } from "@/lib/api/meetings.functions";
+import { listMeetings, scheduleMeeting } from "@/lib/api/meetings.functions";
 import { localeTag, useI18n } from "@/lib/i18n";
 import { fmt } from "@/lib/i18n-interpolate";
 import { MobileListItem } from "@/components/mobile/mobile-list-item";
@@ -13,6 +13,10 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 
 const STATUS_KEY = {
   scheduled: "mtg.status.scheduled",
@@ -38,6 +42,7 @@ export const Route = createFileRoute("/_authenticated/m/meet")({
 
 function MobileMeetPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { t, lang } = useI18n();
   const locale = localeTag(lang);
   const {
@@ -51,6 +56,29 @@ function MobileMeetPage() {
   const resolvingWorkspace = !ready || (workspacesLoading && !workspaceId);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
+  const [creating, setCreating] = useState(false);
+  const [draft, setDraft] = useState({ title: "", startAt: "", endAt: "", agenda: "" });
+  const createMeeting = useMutation({
+    mutationFn: () =>
+      scheduleMeeting({
+        data: {
+          workspaceId: workspaceId as string,
+          title: draft.title.trim(),
+          startAt: new Date(draft.startAt).toISOString(),
+          endAt: new Date(draft.endAt).toISOString(),
+          agenda: draft.agenda.trim() || undefined,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          idempotencyKey: crypto.randomUUID(),
+        },
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["mobile-meetings", workspaceId] });
+      setCreating(false);
+      setDraft({ title: "", startAt: "", endAt: "", agenda: "" });
+      toast.success("Đã tạo cuộc họp");
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Không thể tạo cuộc họp"),
+  });
 
   // Đọc qua server function (RLS theo JWT người dùng), không gọi thẳng bảng từ client.
   const meetingsQuery = useQuery({
@@ -186,7 +214,21 @@ function MobileMeetPage() {
         </div>
       )}
 
-      <MobileFAB label={t("mtg.m.create")} onClick={() => void navigate({ to: "/meeting" })} />
+      <MobileFAB label={t("mtg.m.create")} onClick={() => setCreating(true)} />
+      <Dialog open={creating} onOpenChange={setCreating}>
+        <DialogContent className="w-[calc(100%-2rem)] max-w-lg rounded-2xl">
+          <DialogHeader><DialogTitle>{t("mtg.m.create")}</DialogTitle></DialogHeader>
+          <div className="grid gap-4">
+            <div className="grid gap-2"><Label htmlFor="meeting-title">Tên cuộc họp</Label><Input id="meeting-title" className="h-11" value={draft.title} onChange={(event) => setDraft((value) => ({ ...value, title: event.target.value }))} /></div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="grid gap-2"><Label htmlFor="meeting-start">Bắt đầu</Label><Input id="meeting-start" type="datetime-local" className="h-11" value={draft.startAt} onChange={(event) => setDraft((value) => ({ ...value, startAt: event.target.value }))} /></div>
+              <div className="grid gap-2"><Label htmlFor="meeting-end">Kết thúc</Label><Input id="meeting-end" type="datetime-local" className="h-11" value={draft.endAt} onChange={(event) => setDraft((value) => ({ ...value, endAt: event.target.value }))} /></div>
+            </div>
+            <div className="grid gap-2"><Label htmlFor="meeting-agenda">Nội dung</Label><Textarea id="meeting-agenda" value={draft.agenda} onChange={(event) => setDraft((value) => ({ ...value, agenda: event.target.value }))} /></div>
+            <Button className="min-h-11" disabled={!workspaceId || !draft.title.trim() || !draft.startAt || !draft.endAt || new Date(draft.endAt) <= new Date(draft.startAt) || createMeeting.isPending} onClick={() => createMeeting.mutate()}>Tạo cuộc họp</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

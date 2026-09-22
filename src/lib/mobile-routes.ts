@@ -13,7 +13,7 @@ export function toMobileHref(href: string): string {
   for (const [pattern, replacement] of mappings) {
     if (pattern.test(href)) return href.replace(pattern, replacement);
   }
-  return href.startsWith("/m/") || href === "/m"
-    ? href
-    : `/m/module?from=${encodeURIComponent(href)}`;
+  // Không tạo deep-link đến một route mobile không tồn tại. Các module chưa có
+  // presentation mobile riêng vẫn mở route thật trong responsive shell.
+  return href;
 }
