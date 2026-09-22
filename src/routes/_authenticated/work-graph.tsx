@@ -441,8 +441,6 @@ function WorkGraphPage() {
                           </Button>
                         </span>
                       ) : null}
-                      {i.type === "TASK" && messageItems.has(i.id) ? (
-                      ) : null}
                       {i.type === "TASK" && deadlineItems.has(i.id) ? (
                         <div className="mt-1 flex flex-col gap-2 rounded-lg border bg-muted/30 p-2 sm:flex-row sm:items-center">
                           <label className="sr-only" htmlFor={`deadline-${i.id}`}>
