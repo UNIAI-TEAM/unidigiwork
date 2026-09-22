@@ -47,7 +47,7 @@ function Column({ rows, title }: { rows: DiffRow[]; title: string }) {
   return (
     <div className="min-w-0 flex-1 rounded-lg border bg-background">
       <div className="border-b px-3 py-2 text-xs font-medium text-muted-foreground">{title}</div>
-      <pre className="max-h-96 overflow-auto px-3 py-2 text-[12px] leading-5">
+      <pre className="max-h-64 overflow-auto px-3 py-2 text-[12px] leading-5 sm:max-h-96">
         {rows.map((r, idx) => (
           <div
             key={idx}
