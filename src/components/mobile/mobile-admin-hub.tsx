@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Building2, Gauge, KeyRound, ShieldCheck, Users } from "lucide-react";
+import { Building2, Gauge, KeyRound, Network, ShieldCheck, Users } from "lucide-react";
 import { getMyAdminAccess } from "@/lib/api/admin.functions";
 import { useActiveTenant } from "@/features/tenants/hooks";
 import { MobileListItem } from "@/components/mobile/mobile-list-item";
@@ -74,6 +74,24 @@ export function MobileAdminHubNative() {
             tenantCanManage ? undefined : <Badge variant="outline">{t("m.admin.readOnly")}</Badge>
           }
           onClick={() => void navigate({ to: "/m/admin/organization" })}
+        />
+        <MobileListItem
+          title={t("m.admin.departments")}
+          subtitle={t("m.admin.departmentsHint")}
+          icon={<Network className="h-5 w-5" />}
+          badge={
+            tenantCanManage ? undefined : <Badge variant="outline">{t("m.admin.readOnly")}</Badge>
+          }
+          onClick={() => void navigate({ to: "/m/admin/departments" as never })}
+        />
+        <MobileListItem
+          title={t("m.admin.roles")}
+          subtitle={t("m.admin.rolesHint")}
+          icon={<ShieldCheck className="h-5 w-5" />}
+          badge={
+            tenantCanManage ? undefined : <Badge variant="outline">{t("m.admin.readOnly")}</Badge>
+          }
+          onClick={() => void navigate({ to: "/m/admin/roles" as never })}
         />
         {access.data?.canRead ? (
           <MobileListItem

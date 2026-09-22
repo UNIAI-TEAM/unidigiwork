@@ -40,6 +40,8 @@ export function toMobileHref(href: string): string {
     [/^\/reports/, "/m/reports"],
     [/^\/admin\/(?:accounts|users)(?:[/?#]|$)/, "/m/admin/accounts"],
     [/^\/admin\/tenant(?:[/?#]|$)/, "/m/admin/organization"],
+    [/^\/workspace\/members(?:[/?#]|$)/, "/m/admin/organization"],
+    [/^\/workspace\/settings(?:[/?#]|$)/, "/m/admin/organization"],
     [/^\/admin\/limits(?:[/?#]|$)/, "/m/admin/limits"],
     [/^\/admin\/(.+)/, "/m/admin/$1"],
     [/^\/admin/, "/m/admin"],
