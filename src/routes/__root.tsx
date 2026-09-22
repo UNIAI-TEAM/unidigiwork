@@ -166,7 +166,14 @@ function RootComponent() {
 
   useEffect(() => {
     setupOfflineSupport();
-    return setupOfflinePersistence(queryClient);
+    const stopNative = setupNativeShell(() => {
+      void queryClient.invalidateQueries();
+    });
+    const stopPersist = setupOfflinePersistence(queryClient);
+    return () => {
+      stopNative();
+      stopPersist?.();
+    };
   }, [queryClient]);
 
   return (
