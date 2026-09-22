@@ -19,6 +19,7 @@ import {
   getWorkContext, linkWorkEntities, unlinkWorkEntities, searchLinkableEntities,
 } from "@/lib/api/work-graph.functions";
 import { FreshnessBadge } from "@/components/work-graph/freshness-badge";
+import { toMobileHref } from "@/lib/mobile-routes";
 import {
   entityTypeLabel, relationshipLabel, userCreatableFrom, linkableTargetTypes,
   type WorkEntityType,
@@ -47,10 +48,11 @@ export interface RelatedWorkPanelProps {
   className?: string;
   /** Mobile: hiển thị dạng mục có thể thu gọn. */
   collapsible?: boolean;
+  mobileLinks?: boolean;
 }
 
 export function RelatedWorkPanel({
-  entityType, entityId, canLink = true, className, collapsible = false,
+  entityType, entityId, canLink = true, className, collapsible = false, mobileLinks = false,
 }: RelatedWorkPanelProps) {
   const qc = useQueryClient();
   const fetchContext = useServerFn(getWorkContext);
@@ -149,7 +151,7 @@ export function RelatedWorkPanel({
                       className="group flex items-center gap-2.5 rounded-lg border border-border bg-card px-3 py-2 transition-colors hover:bg-muted/50"
                     >
                       <EntityIcon type={it.entity.type} />
-                      <Link {...({ to: it.entity.href } as any)} className="min-w-0 flex-1">
+                      <Link {...({ to: mobileLinks ? toMobileHref(it.entity.href) : it.entity.href } as any)} className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium text-foreground">{it.entity.title}</p>
                         <p className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 truncate text-xs text-muted-foreground">
                           <span className="truncate">

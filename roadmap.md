@@ -82,3 +82,4 @@
 - [x] Turn every persisted Executive Brief into a directly readable report within its Work Product.
 
 - [x] Đợt 3: tách Cài đặt PWA thành màn mobile-native độc lập, chỉ hiển thị dữ liệu và thao tác thật.
+- [x] Đợt 3: làm mới danh sách/chi tiết Task mobile-native với dữ liệu thật, hội thoại, tệp và Work Graph.
