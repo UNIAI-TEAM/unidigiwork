@@ -31,7 +31,7 @@ import { listAiConversations } from "@/lib/api/ai-chat.functions";
 import { getHomeSummary } from "@/lib/api/home.functions";
 import { useActiveWorkspace } from "@/lib/active-workspace";
 import { useCurrentIdentity } from "@/lib/use-current-identity";
-import { localeTag, useI18n, type Key } from "@/lib/i18n";
+import { useI18n, type Key } from "@/lib/i18n";
 import { toMobileHref } from "@/lib/mobile-routes";
 
 const INBOX_LINKS = [
@@ -123,7 +123,7 @@ function NativeDrawer({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
   const navigate = useNavigate();
   const listFn = useServerFn(listAiConversations);
   const homeFn = useServerFn(getHomeSummary);
@@ -179,15 +179,6 @@ function NativeDrawer({
     attention: home.data?.counts.attention ?? 0,
     working: home.data?.myWork.filter((task) => task.status === "in_progress").length ?? 0,
     review: home.data?.counts.approvals ?? 0,
-  };
-
-  const relativeTime = (value: string) => {
-    const minutes = Math.max(1, Math.round((Date.now() - new Date(value).getTime()) / 60_000));
-    const formatter = new Intl.RelativeTimeFormat(localeTag(lang), { numeric: "auto" });
-    if (minutes < 60) return formatter.format(-minutes, "minute");
-    const hours = Math.round(minutes / 60);
-    if (hours < 24) return formatter.format(-hours, "hour");
-    return formatter.format(-Math.round(hours / 24), "day");
   };
 
   const go = (to: string) => {

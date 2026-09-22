@@ -25,32 +25,6 @@ export const Route = createFileRoute("/_authenticated/m/search")({
   component: MobileSearchPage,
 });
 
-const KIND_ICON: Record<SearchKind, LucideIcon> = {
-  project: Briefcase,
-  task: ListChecks,
-  meeting: Video,
-  artifact: Sparkles,
-  workproduct: FileText,
-  decision: Gavel,
-  document: FileText,
-  email: Mail,
-  chat: MessageSquare,
-  person: Users,
-};
-
-const KIND_LABEL: Record<SearchKind, string> = {
-  project: "Dự án",
-  task: "Công việc",
-  meeting: "Cuộc họp",
-  artifact: "Kết quả họp",
-  workproduct: "Kết quả công việc",
-  decision: "Quyết định",
-  document: "Tài liệu",
-  email: "Email",
-  chat: "Chat",
-  person: "Nhân sự",
-};
-
 function MobileSearchPage() {
   const { t, lang } = useI18n();
   const navigate = useNavigate();
@@ -87,44 +61,52 @@ function MobileSearchPage() {
     <div className="mx-auto flex min-h-full w-full max-w-2xl flex-col px-4 pb-24">
       <div className="sticky top-0 z-10 bg-background pb-4 pt-2">
         <div className="grid grid-cols-[2.75rem_minmax(0,1fr)] items-center gap-2">
-          <Button variant="ghost" size="icon" className="h-11 w-11 rounded-full" onClick={() => history.back()} aria-label={t("common.back")}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-11 w-11 rounded-full"
+            onClick={() => history.back()}
+            aria-label={t("ops.common.back")}
+          >
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex min-w-0 items-center gap-2 rounded-full bg-muted px-4">
             <Search className="h-5 w-5 shrink-0 text-muted-foreground" />
-          <input
-            ref={inputRef}
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            type="search"
-            enterKeyHint="search"
-            placeholder={t("m.search.placeholder")}
-            aria-label={t("m.search.label")}
-            className="h-12 w-full min-w-0 bg-transparent text-base outline-none placeholder:text-muted-foreground"
-          />
-          {conversations.isFetching && (
-            <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />
-          )}
-          {q && !conversations.isFetching && (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={() => {
-                setQ("");
-                inputRef.current?.focus();
-              }}
-              aria-label={t("m.search.clear")}
-              className="h-8 w-8 shrink-0 rounded-full text-muted-foreground"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          )}
+            <input
+              ref={inputRef}
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              type="search"
+              enterKeyHint="search"
+              placeholder={t("m.search.placeholder")}
+              aria-label={t("m.search.label")}
+              className="h-12 w-full min-w-0 bg-transparent text-base outline-none placeholder:text-muted-foreground"
+            />
+            {conversations.isFetching && (
+              <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />
+            )}
+            {q && !conversations.isFetching && (
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => {
+                  setQ("");
+                  inputRef.current?.focus();
+                }}
+                aria-label={t("m.search.clear")}
+                className="h-8 w-8 shrink-0 rounded-full text-muted-foreground"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
       </div>
 
       <section className="min-w-0 pt-3">
-        <h1 className="mb-3 px-2 text-sm font-semibold">{q ? t("m.search.results") : t("m.nav.recent")}</h1>
+        <h1 className="mb-3 px-2 text-sm font-semibold">
+          {q ? t("m.search.results") : t("m.nav.recent")}
+        </h1>
         {(conversations.data?.conversations.length ?? 0) === 0 && !conversations.isFetching ? (
           <p className="px-1 py-10 text-center text-sm text-muted-foreground">
             {q ? t("m.search.empty") : t("m.search.noRecent")}
@@ -135,7 +117,12 @@ function MobileSearchPage() {
               <button
                 key={conversation.id}
                 type="button"
-                onClick={() => void navigate({ to: "/m/c/$id" as never, params: { id: conversation.id } as never })}
+                onClick={() =>
+                  void navigate({
+                    to: "/m/c/$id" as never,
+                    params: { id: conversation.id } as never,
+                  })
+                }
                 className="grid min-h-14 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-lg px-3 text-left hover:bg-muted"
               >
                 <span className="min-w-0 truncate text-[15px]">{conversation.title}</span>
