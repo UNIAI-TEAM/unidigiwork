@@ -633,7 +633,7 @@ export const sendAiMessage = createServerFn({ method: "POST" })
           .single();
         if (assistantError || !aMsg) {
           throw new ApiError({
-            code: "AI_MESSAGE_CREATE_FAILED",
+            code: "AI_GENERATION_FAILED",
             message: assistantError?.message ?? "Không lưu được phản hồi AI",
           });
         }
