@@ -211,8 +211,8 @@ function WorkGraphPage() {
                             lang === "vi" ? "vi-VN" : "en-US",
                           )}`}
                       </span>
-                      <span className="mt-1.5 flex items-center gap-2">
-                        <span className="h-1.5 w-24 overflow-hidden rounded-full bg-muted">
+                      <span className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <span className="h-1.5 w-20 overflow-hidden rounded-full bg-muted sm:w-24">
                           <span
                             className={`block h-full rounded-full ${
                               isDone(i) ? "bg-primary" : "bg-foreground/50"
