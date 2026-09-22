@@ -2672,6 +2672,11 @@ const dict = {
     "offline.pending": "{n} change(s) waiting",
     "offline.synced": "Synced {n} change(s)",
     "offline.queued": "Offline · saved, will send when back online",
+    "guard.maintenanceTitle": "UniWork is paused",
+    "guard.upgradeTitle": "App update required",
+    "guard.upgradeBody":
+      "Installed build ({current}) is outdated. Please install {required} or newer to continue.",
+    "guard.retry": "Try again",
     "wg.prev": "Previous",
     "wg.next": "Next",
     "wg.type.task": "Task",
