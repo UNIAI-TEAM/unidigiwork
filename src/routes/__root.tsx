@@ -17,6 +17,7 @@ import { LanguageProvider } from "@/lib/i18n";
 import { setupOfflineSupport } from "@/lib/pwa";
 import { setupOfflinePersistence } from "@/lib/offline/persist";
 import { OfflineStatus } from "@/components/offline-status";
+import { setupNativeShell } from "@/lib/native/bridge";
 
 function NotFoundComponent() {
   return (
@@ -166,7 +167,14 @@ function RootComponent() {
 
   useEffect(() => {
     setupOfflineSupport();
-    return setupOfflinePersistence(queryClient);
+    const stopNative = setupNativeShell(() => {
+      void queryClient.invalidateQueries();
+    });
+    const stopPersist = setupOfflinePersistence(queryClient);
+    return () => {
+      stopNative();
+      stopPersist?.();
+    };
   }, [queryClient]);
 
   return (
