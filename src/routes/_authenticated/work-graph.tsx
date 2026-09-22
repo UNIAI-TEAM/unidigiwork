@@ -203,7 +203,7 @@ function WorkGraphPage() {
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-medium">{i.title}</span>
-                      <span className="mt-0.5 block text-xs text-muted-foreground">
+                      <span className="mt-0.5 line-clamp-2 block text-xs text-muted-foreground">
                         {meta.label}
                         {i.links > 0 && ` · ${i.links} ${t("wg.links")}`}
                         {i.updatedAt &&
