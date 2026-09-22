@@ -20,6 +20,25 @@ import {
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
+  Conversation,
+  ConversationContent,
+  ConversationScrollButton,
+} from "@/components/ai-elements/conversation";
+import {
+  Message as AiMessage,
+  MessageContent,
+  MessageResponse,
+} from "@/components/ai-elements/message";
+import {
+  PromptInput,
+  PromptInputFooter,
+  PromptInputSubmit,
+  PromptInputTextarea,
+  PromptInputTools,
+} from "@/components/ai-elements/prompt-input";
+import { Shimmer } from "@/components/ai-elements/shimmer";
+import { BrandMark } from "@/components/brand-logo";
+import {
   Drawer,
   DrawerContent,
   DrawerDescription,
@@ -95,6 +114,7 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
   const [turns, setTurns] = useState<OrchestrationTurn[]>([]);
   const [proposing, setProposing] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const composerRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
 
@@ -143,6 +163,7 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
           replace: true,
         });
       }
+      requestAnimationFrame(() => composerRef.current?.focus());
     },
     onError: (error) => {
       setPendingText(null);
@@ -208,6 +229,10 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages.data?.length, pendingText, turns.length]);
 
+  useEffect(() => {
+    composerRef.current?.focus();
+  }, [conversationId, send.isPending]);
+
   const displayMessages = (messages.data ?? []).filter((message) => message.role !== "system");
   const isEmpty = displayMessages.length === 0 && !pendingText && turns.length === 0;
   const firstName = identity.displayName.trim().split(/\s+/).at(-1) || t("m.ai.user");
@@ -240,7 +265,8 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
 
   return (
     <div className="mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col overflow-hidden">
-      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 pt-4 sm:px-6">
+      <Conversation ref={scrollRef} className="min-h-0 flex-1">
+        <ConversationContent className="min-h-full gap-6 px-4 pb-6 pt-4 sm:px-6">
         {messages.isLoading ? (
           <div className="flex min-h-72 items-center justify-center text-muted-foreground">
             <Loader2 className="h-5 w-5 animate-spin" />
@@ -314,17 +340,16 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
                   className="flex items-center gap-3 text-sm text-muted-foreground"
                   role="status"
                 >
-                  <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary/10 text-primary">
-                    <Sparkles className="h-4 w-4" />
-                  </span>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {t("m.ai.working")}
+                  <BrandMark className="h-8 w-8" />
+                  <Shimmer className="text-sm">{t("m.ai.working")}</Shimmer>
                 </div>
               </>
             )}
           </div>
         )}
-      </div>
+        </ConversationContent>
+        <ConversationScrollButton aria-label={t("m.ai.scrollLatest")} />
+      </Conversation>
 
       <div className="shrink-0 bg-background px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 sm:px-6">
         {contexts.length > 0 && (
@@ -355,53 +380,54 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
             ))}
           </div>
         )}
-        <div className="flex min-h-14 items-end gap-1 rounded-2xl border border-border bg-surface p-1.5 shadow-panel">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-11 w-11 shrink-0 rounded-xl"
-            aria-label={t("m.ai.addContext")}
-            onClick={() => setContextOpen(true)}
-          >
-            <Plus className="h-5 w-5" />
-          </Button>
-          <textarea
+        <PromptInput
+          className="rounded-2xl border-border bg-surface shadow-panel"
+          onSubmit={({ text }) => submit(text)}
+        >
+          <PromptInputTextarea
+            ref={composerRef}
             value={input}
-            rows={1}
-            enterKeyHint="send"
             aria-label={t("m.ai.composer")}
             placeholder={t("m.ai.composer")}
-            onChange={(event) => setInput(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" && !event.shiftKey) {
-                event.preventDefault();
-                submit(input);
-              }
-            }}
-            className="max-h-32 min-h-11 min-w-0 flex-1 resize-none bg-transparent px-2 py-3 text-base leading-5 outline-none placeholder:text-muted-foreground"
+            onChange={(event) => setInput(event.currentTarget.value)}
+            className="max-h-32 min-h-14 px-4 pt-3 text-base leading-6"
           />
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-11 w-11 shrink-0 rounded-xl"
-            aria-label={t("m.ai.voice")}
-          >
-            <Mic className="h-4 w-4" />
-          </Button>
-          <Button
-            size="icon"
-            className="h-11 w-11 shrink-0 rounded-xl"
-            aria-label={t("m.ai.send")}
-            disabled={!input.trim() || send.isPending || proposing}
-            onClick={() => submit(input)}
-          >
-            {send.isPending || proposing ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <ArrowUp className="h-4 w-4" />
-            )}
-          </Button>
-        </div>
+          <PromptInputFooter className="px-1.5 pb-1.5">
+            <PromptInputTools>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-11 w-11 shrink-0 rounded-xl"
+                aria-label={t("m.ai.addContext")}
+                onClick={() => setContextOpen(true)}
+              >
+                <Plus className="h-5 w-5" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-11 w-11 shrink-0 rounded-xl"
+                aria-label={t("m.ai.voice")}
+              >
+                <Mic className="h-4 w-4" />
+              </Button>
+            </PromptInputTools>
+            <PromptInputSubmit
+              className="h-11 w-11 shrink-0 rounded-xl"
+              aria-label={t("m.ai.send")}
+              disabled={!input.trim() || send.isPending || proposing}
+              status={send.isPending || proposing ? "submitted" : "ready"}
+            >
+              {send.isPending || proposing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <ArrowUp className="h-4 w-4" />
+              )}
+            </PromptInputSubmit>
+          </PromptInputFooter>
+        </PromptInput>
         <p className="mt-2 text-center text-[11px] text-muted-foreground">{t("m.ai.disclaimer")}</p>
       </div>
 
@@ -473,12 +499,13 @@ function EmptyState({ firstName, onPick }: { firstName: string; onPick: (value: 
 function Message({ message }: { message: AiMessageDTO }) {
   if (message.role === "user") return <UserMessage content={message.content} />;
   return (
-    <article className="flex items-start gap-3">
-      <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-        <Sparkles className="h-4 w-4" />
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="whitespace-pre-wrap text-sm leading-7">{message.content}</p>
+    <AiMessage from="assistant" className="max-w-full">
+      <div className="flex items-start gap-3">
+        <BrandMark className="mt-0.5 h-8 w-8" />
+        <MessageContent className="min-w-0 flex-1 overflow-visible">
+          <MessageResponse className="executive-brief text-sm leading-7 [&_h2]:mb-2 [&_h2]:mt-5 [&_h2]:text-xs [&_h2]:font-semibold [&_h2]:uppercase [&_h2]:text-muted-foreground [&_li]:my-1 [&_ul]:my-2">
+            {message.content}
+          </MessageResponse>
         {message.metadata?.sources?.length ? (
           <div className="mt-3 flex flex-wrap gap-2">
             {message.metadata.sources.slice(0, 4).map((source) => (
@@ -492,16 +519,19 @@ function Message({ message }: { message: AiMessageDTO }) {
             ))}
           </div>
         ) : null}
+        </MessageContent>
       </div>
-    </article>
+    </AiMessage>
   );
 }
 
 function UserMessage({ content }: { content: string }) {
   return (
-    <p className="ml-auto w-fit max-w-[86%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-surface-2 px-4 py-3 text-sm leading-6">
-      {content}
-    </p>
+    <AiMessage from="user">
+      <MessageContent className="max-w-[86%] rounded-2xl rounded-br-md bg-secondary text-secondary-foreground">
+        <p className="whitespace-pre-wrap text-sm leading-6">{content}</p>
+      </MessageContent>
+    </AiMessage>
   );
 }
 
