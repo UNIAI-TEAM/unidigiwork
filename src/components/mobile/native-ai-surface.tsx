@@ -390,7 +390,8 @@ function AddContextDrawer({
   const navigate = useNavigate();
   const searchFn = useServerFn(universalSearch);
   const { workspaceId } = useActiveWorkspace();
-  const [mode, setMode] = useState<"menu" | "uniwork" | "people">("menu");
+  const [mode, setMode] = useState<"menu" | "uniwork" | "people" | "chat">("menu");
+  const [chatChannelId, setChatChannelId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [debounced, setDebounced] = useState("");
 
