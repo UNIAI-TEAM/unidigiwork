@@ -32,6 +32,8 @@ import {
   Share2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TaskChatSummary } from "@/components/mobile/task-chat-summary";
 
 type Status = "todo" | "in_progress" | "blocked" | "done" | "canceled";
 
@@ -283,6 +285,12 @@ function MobileTaskDetail() {
         )}
       </Button>
 
+      <Tabs defaultValue="details" className="min-w-0">
+        <TabsList className="grid min-h-12 w-full grid-cols-2 p-1">
+          <TabsTrigger value="details" className="min-h-10">Chi tiết</TabsTrigger>
+          <TabsTrigger value="chat" className="min-h-10">Chat tổng hợp</TabsTrigger>
+        </TabsList>
+        <TabsContent value="details" className="mt-4 min-w-0 space-y-4">
       {task.description && (
         <section className="min-w-0 overflow-hidden rounded-2xl border border-border bg-surface p-4">
           <h2 className="mb-1 text-sm font-semibold">Mô tả</h2>
@@ -390,6 +398,13 @@ function MobileTaskDetail() {
           </Button>
         </form>
       </section>
+        </TabsContent>
+        <TabsContent value="chat" className="mt-4 min-w-0">
+          <section className="min-w-0 overflow-hidden rounded-2xl border border-border bg-surface p-4">
+            <TaskChatSummary taskId={id} taskTitle={task.title} />
+          </section>
+        </TabsContent>
+      </Tabs>
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="w-[calc(100vw-2rem)] max-w-md">

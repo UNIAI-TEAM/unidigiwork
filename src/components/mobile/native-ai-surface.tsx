@@ -60,6 +60,8 @@ import { detectWorkProductKinds } from "@/domain/ai-orchestration/work-product-i
 import { useActiveWorkspace } from "@/lib/active-workspace";
 import { useCurrentIdentity } from "@/lib/use-current-identity";
 import { useI18n } from "@/lib/i18n";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TaskChatHub } from "@/components/mobile/task-chat-summary";
 
 /** Lượt điều phối cục bộ: yêu cầu → đề xuất hành động → quan sát thực thi. */
 type OrchestrationTurn = {
@@ -113,6 +115,7 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
   const [contextOpen, setContextOpen] = useState(false);
   const [turns, setTurns] = useState<OrchestrationTurn[]>([]);
   const [proposing, setProposing] = useState(false);
+  const [surfaceTab, setSurfaceTab] = useState("chat");
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
@@ -260,7 +263,23 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
 
   return (
     <div className="mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col overflow-hidden">
-      <Conversation className="min-h-0 flex-1">
+      <Tabs
+        value={surfaceTab}
+        onValueChange={setSurfaceTab}
+        className="flex min-h-0 flex-1 flex-col overflow-hidden"
+      >
+        <div className="shrink-0 px-4 pt-2 sm:px-6">
+          <TabsList className="grid h-11 w-full grid-cols-2">
+            <TabsTrigger value="chat" className="min-h-9">
+              {t("m.taskChat.tab.chat")}
+            </TabsTrigger>
+            <TabsTrigger value="tasks" className="min-h-9">
+              {t("m.taskChat.tab.tasks")}
+            </TabsTrigger>
+          </TabsList>
+        </div>
+        <TabsContent value="chat" className="mt-0 flex min-h-0 flex-1 flex-col overflow-hidden">
+          <Conversation className="min-h-0 flex-1">
         <ConversationContent className="min-h-full gap-6 px-4 pb-6 pt-4 sm:px-6">
           {messages.isLoading ? (
             <div className="flex min-h-72 items-center justify-center text-muted-foreground">
@@ -344,8 +363,14 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
           )}
         </ConversationContent>
         <ConversationScrollButton aria-label={t("m.ai.scrollLatest")} />
-      </Conversation>
+          </Conversation>
+        </TabsContent>
+        <TabsContent value="tasks" className="mt-0 flex min-h-0 flex-1 flex-col overflow-hidden">
+          <TaskChatHub />
+        </TabsContent>
+      </Tabs>
 
+      {surfaceTab === "chat" && (
       <div className="shrink-0 bg-background px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 sm:px-6">
         {contexts.length > 0 && (
           <div className="mb-2 flex gap-2 overflow-x-auto pb-1">
@@ -425,6 +450,7 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
         </PromptInput>
         <p className="mt-2 text-center text-[11px] text-muted-foreground">{t("m.ai.disclaimer")}</p>
       </div>
+      )}
 
       <input
         ref={fileRef}
