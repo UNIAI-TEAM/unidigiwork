@@ -246,6 +246,13 @@
       "when": 1790053132986,
       "tag": "0034_list_task_conversations_indexed",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1790055374853,
+      "tag": "0035_work_graph_task_deadline_progress",
+      "breakpoints": true
     }
   ]
 }

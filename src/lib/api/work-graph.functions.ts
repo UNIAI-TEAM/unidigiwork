@@ -391,6 +391,8 @@ export type WorkGraphBoardItem = {
   progress: number;
   /** Hạn hoàn thành (nếu nguồn có) — UI tính thời gian còn lại. */
   dueAt: string | null;
+  completedSteps: number;
+  totalSteps: number;
 };
 
 export type WorkGraphBoard = {
@@ -552,7 +554,8 @@ export const listWorkGraphBoard = createServerFn({ method: "GET" })
     // Liên kết + tiến độ chỉ tính cho trang đang hiển thị (tránh quét toàn bộ graph).
     const pageNodeIds = pageRows.map((r) => r.nodeId);
     const pageExecIds = pageRows.filter((r) => r.type === "EXECUTION").map((r) => r.id);
-    const [srcEdges, tgtEdges, steps] = await Promise.all([
+    const pageTaskIds = pageRows.filter((r) => r.type === "TASK").map((r) => r.id);
+    const [srcEdges, tgtEdges, executionSteps, taskSteps] = await Promise.all([
       context.supabase
         .from("work_edges")
         .select("source_node_id")
@@ -569,6 +572,12 @@ export const listWorkGraphBoard = createServerFn({ method: "GET" })
             .select("execution_id,status")
             .in("execution_id", pageExecIds)
         : Promise.resolve({ data: [] as any[] }),
+      pageTaskIds.length
+        ? context.supabase
+            .from("work_execution_steps")
+            .select("task_id,status")
+            .in("task_id", pageTaskIds)
+        : Promise.resolve({ data: [] as any[] }),
     ]);
     const linkCount = new Map<string, number>();
     ((srcEdges as any).data ?? []).forEach((e: any) =>
@@ -578,16 +587,24 @@ export const listWorkGraphBoard = createServerFn({ method: "GET" })
       linkCount.set(e.target_node_id, (linkCount.get(e.target_node_id) ?? 0) + 1),
     );
     const stepTotals = new Map<string, { done: number; total: number }>();
-    ((steps as any).data ?? []).forEach((s: any) => {
+    ((executionSteps as any).data ?? []).forEach((s: any) => {
       const cur = stepTotals.get(s.execution_id) ?? { done: 0, total: 0 };
       cur.total += 1;
       if (["SUCCEEDED", "DONE", "COMPLETED", "SKIPPED"].includes(String(s.status).toUpperCase()))
         cur.done += 1;
       stepTotals.set(s.execution_id, cur);
     });
+    const taskStepTotals = new Map<string, { done: number; total: number }>();
+    ((taskSteps as any).data ?? []).forEach((s: any) => {
+      const cur = taskStepTotals.get(s.task_id) ?? { done: 0, total: 0 };
+      cur.total += 1;
+      if (["SUCCEEDED", "DONE", "COMPLETED", "SKIPPED"].includes(String(s.status).toUpperCase()))
+        cur.done += 1;
+      taskStepTotals.set(s.task_id, cur);
+    });
 
     const items: WorkGraphBoardItem[] = pageRows.map((r) => {
-      const st = stepTotals.get(r.id);
+      const st = r.type === "TASK" ? taskStepTotals.get(r.id) : stepTotals.get(r.id);
       const progress =
         st && st.total > 0
           ? Math.round((st.done / st.total) * 100)
@@ -602,6 +619,8 @@ export const listWorkGraphBoard = createServerFn({ method: "GET" })
         links: linkCount.get(r.nodeId) ?? 0,
         progress,
         dueAt: r.dueAt,
+        completedSteps: st?.done ?? 0,
+        totalSteps: st?.total ?? 0,
       };
     });
 
