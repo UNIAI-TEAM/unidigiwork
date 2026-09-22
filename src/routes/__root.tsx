@@ -15,6 +15,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/lib/theme";
 import { LanguageProvider } from "@/lib/i18n";
 import { setupOfflineSupport } from "@/lib/pwa";
+import { setupOfflinePersistence } from "@/lib/offline/persist";
+import { OfflineStatus } from "@/components/offline-status";
 
 function NotFoundComponent() {
   return (
