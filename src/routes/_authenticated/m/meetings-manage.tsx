@@ -9,6 +9,15 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useActiveWorkspace } from "@/lib/active-workspace";
 import { listTenantMeetings } from "@/lib/api/meetings-admin.functions";
+import { fmt } from "@/lib/i18n-interpolate";
+import { localeTag, useI18n } from "@/lib/i18n";
+
+const STATUS_KEY = {
+  scheduled: "mtg.status.scheduled",
+  live: "mtg.status.live",
+  ended: "mtg.status.ended",
+  canceled: "mtg.status.canceled",
+} as const;
 
 export const Route = createFileRoute("/_authenticated/m/meetings-manage")({
   component: MobileMeetingsManage,
@@ -16,6 +25,7 @@ export const Route = createFileRoute("/_authenticated/m/meetings-manage")({
 
 function MobileMeetingsManage() {
   const navigate = useNavigate();
+  const { t, lang } = useI18n();
   const { workspaceId: selectedWorkspaceId, workspaces } = useActiveWorkspace();
   const workspaceId = selectedWorkspaceId ?? workspaces[0]?.id ?? "";
   const [search, setSearch] = useState("");
@@ -44,11 +54,11 @@ function MobileMeetingsManage() {
           onClick={() => void navigate({ to: "/m/meet" })}
         >
           <ChevronLeft className="h-5 w-5" />
-          <span className="sr-only">Quay lại</span>
+          <span className="sr-only">{t("mtg.back")}</span>
         </Button>
         <div className="min-w-0">
-          <h1 className="truncate text-lg font-semibold">Quản lý lịch họp</h1>
-          <p className="truncate text-xs text-muted-foreground">Toàn bộ lịch họp trong tổ chức</p>
+          <h1 className="truncate text-lg font-semibold">{t("mtg.m.manage")}</h1>
+          <p className="truncate text-xs text-muted-foreground">{t("mtg.m.manageDesc")}</p>
         </div>
       </header>
       <div className="relative">
@@ -57,12 +67,12 @@ function MobileMeetingsManage() {
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           className="h-11 pl-9"
-          placeholder="Tìm cuộc họp, bộ phận hoặc dự án…"
+          placeholder={t("mtg.m.manageSearch")}
         />
       </div>
       {!workspaceId ? (
         <p className="rounded-xl border p-4 text-sm text-muted-foreground">
-          Hãy chọn một không gian làm việc.
+          {t("m.doc.noWorkspace")}
         </p>
       ) : query.isLoading ? (
         <div className="grid gap-2">
@@ -72,14 +82,14 @@ function MobileMeetingsManage() {
         </div>
       ) : query.isError ? (
         <div className="rounded-xl border p-4 text-sm">
-          <p>{query.error instanceof Error ? query.error.message : "Không thể tải lịch họp."}</p>
+          <p>{query.error instanceof Error ? query.error.message : t("mtg.loadError")}</p>
           <Button variant="outline" className="mt-3 min-h-11" onClick={() => void query.refetch()}>
-            Thử lại
+            {t("mtg.retry")}
           </Button>
         </div>
       ) : rows.length === 0 ? (
         <p className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
-          Chưa có lịch họp phù hợp.
+          {t("mtg.m.noMatch")}
         </p>
       ) : (
         <div className="grid gap-2">
@@ -87,16 +97,22 @@ function MobileMeetingsManage() {
             <MobileListItem
               key={meeting.id}
               title={meeting.title}
-              subtitle={new Date(meeting.startAt).toLocaleString("vi-VN")}
+              subtitle={new Date(meeting.startAt).toLocaleString(localeTag(lang))}
               meta={[
                 meeting.department,
                 meeting.projectName,
-                `${meeting.participants.length} người`,
+                fmt(t("mtg.m.participants"), { n: meeting.participants.length }),
               ]
                 .filter(Boolean)
                 .join(" · ")}
               icon={<CalendarCog className="h-5 w-5" />}
-              badge={<Badge variant="outline">{meeting.status}</Badge>}
+              badge={
+                <Badge variant="outline">
+                  {t(
+                    STATUS_KEY[meeting.status as keyof typeof STATUS_KEY] ?? "mtg.status.scheduled",
+                  )}
+                </Badge>
+              }
               onClick={() => void navigate({ to: "/m/meet/$id", params: { id: meeting.id } })}
             />
           ))}
@@ -105,7 +121,7 @@ function MobileMeetingsManage() {
       {rows.length > 0 ? (
         <p className="flex items-center gap-2 text-xs text-muted-foreground">
           <Users className="h-4 w-4" />
-          {rows.length} cuộc họp
+          {fmt(t("mtg.m.count"), { n: rows.length })}
         </p>
       ) : null}
     </div>

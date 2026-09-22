@@ -28,7 +28,7 @@ const STATUS_KEY = {
 type Filter = "all" | "scheduled" | "live" | "ended";
 const FILTERS: Filter[] = ["all", "scheduled", "live", "ended"];
 
-export const Route = createFileRoute("/_authenticated/m/meet")({
+export const Route = createFileRoute("/_authenticated/m/meet/")({
   head: () => ({
     meta: [
       { title: "Meet · UNIWORK" },
@@ -75,10 +75,10 @@ function MobileMeetPage() {
       await queryClient.invalidateQueries({ queryKey: ["mobile-meetings", workspaceId] });
       setCreating(false);
       setDraft({ title: "", startAt: "", endAt: "", agenda: "" });
-      toast.success("Đã tạo cuộc họp");
+      toast.success(t("mtg.m.created"));
     },
     onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Không thể tạo cuộc họp"),
+      toast.error(error instanceof Error ? error.message : t("mtg.m.createError")),
   });
 
   // Đọc qua server function (RLS theo JWT người dùng), không gọi thẳng bảng từ client.
@@ -112,7 +112,7 @@ function MobileMeetPage() {
   return (
     <div className="flex min-h-full flex-col gap-3 p-4 pb-24">
       <header className="flex min-h-11 items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold">Meet</h1>
+        <h1 className="text-xl font-semibold">{t("mtg.home.title")}</h1>
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
@@ -130,7 +130,7 @@ function MobileMeetPage() {
             onClick={() => void navigate({ to: "/m/meetings-manage" })}
           >
             <Settings2 className="h-5 w-5" />
-            <span className="sr-only">Quản lý lịch họp</span>
+            <span className="sr-only">{t("mtg.m.manage")}</span>
           </Button>
         </div>
       </header>
@@ -246,7 +246,7 @@ function MobileMeetPage() {
           </DialogHeader>
           <div className="grid gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="meeting-title">Tên cuộc họp</Label>
+              <Label htmlFor="meeting-title">{t("mtg.m.titleLabel")}</Label>
               <Input
                 id="meeting-title"
                 className="h-11"
@@ -256,7 +256,7 @@ function MobileMeetPage() {
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="grid gap-2">
-                <Label htmlFor="meeting-start">Bắt đầu</Label>
+                <Label htmlFor="meeting-start">{t("mtg.m.startLabel")}</Label>
                 <Input
                   id="meeting-start"
                   type="datetime-local"
@@ -268,7 +268,7 @@ function MobileMeetPage() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="meeting-end">Kết thúc</Label>
+                <Label htmlFor="meeting-end">{t("mtg.m.endLabel")}</Label>
                 <Input
                   id="meeting-end"
                   type="datetime-local"
@@ -281,7 +281,7 @@ function MobileMeetPage() {
               </div>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="meeting-agenda">Nội dung</Label>
+              <Label htmlFor="meeting-agenda">{t("mtg.m.agendaLabel")}</Label>
               <Textarea
                 id="meeting-agenda"
                 value={draft.agenda}
@@ -302,7 +302,7 @@ function MobileMeetPage() {
               }
               onClick={() => createMeeting.mutate()}
             >
-              Tạo cuộc họp
+              {t("mtg.m.create")}
             </Button>
           </div>
         </DialogContent>
