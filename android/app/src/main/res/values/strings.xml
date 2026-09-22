@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">UniWork</string>
+    <string name="title_activity_main">UniWork</string>
+    <string name="package_name">vn.ubos.uniwork</string>
+    <string name="custom_url_scheme">vn.ubos.uniwork</string>
+</resources>
