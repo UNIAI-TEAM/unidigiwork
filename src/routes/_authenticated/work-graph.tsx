@@ -266,7 +266,10 @@ function WorkGraphPage() {
                         </span>
                         {i.totalSteps > 0 ? (
                           <span className="text-[11px] text-muted-foreground">
-                            · {t("wg.stepsDone").replace("{done}", String(i.completedSteps)).replace("{total}", String(i.totalSteps))}
+                            ·{" "}
+                            {t("wg.stepsDone")
+                              .replace("{done}", String(i.completedSteps))
+                              .replace("{total}", String(i.totalSteps))}
                           </span>
                         ) : null}
                         {r && !isDone(i) ? (
@@ -293,7 +296,9 @@ function WorkGraphPage() {
                                 next.add(i.id);
                                 setDeadlineDrafts((drafts) => ({
                                   ...drafts,
-                                  [i.id]: i.dueAt ? new Date(i.dueAt).toISOString().slice(0, 16) : "",
+                                  [i.id]: i.dueAt
+                                    ? new Date(i.dueAt).toISOString().slice(0, 16)
+                                    : "",
                                 }));
                               }
                               return next;
@@ -342,7 +347,9 @@ function WorkGraphPage() {
                                 variant="outline"
                                 className="h-11 flex-1 sm:h-9 sm:flex-none"
                                 disabled={deadlineMutation.isPending}
-                                onClick={() => deadlineMutation.mutate({ taskId: i.id, dueAt: null })}
+                                onClick={() =>
+                                  deadlineMutation.mutate({ taskId: i.id, dueAt: null })
+                                }
                               >
                                 {t("wg.clearDeadline")}
                               </Button>
