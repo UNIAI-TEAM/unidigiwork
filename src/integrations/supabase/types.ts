@@ -10898,6 +10898,14 @@ export type Database = {
           conversation_id: string
         }[]
       }
+      list_task_message_recipients: {
+        Args: { _task_id: string }
+        Returns: {
+          display_name: string
+          id: string
+          primary_email: string
+        }[]
+      }
       list_tenant_member_profiles: {
         Args: { _tenant_id: string }
         Returns: {
