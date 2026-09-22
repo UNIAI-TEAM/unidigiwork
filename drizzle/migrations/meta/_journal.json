@@ -344,6 +344,13 @@
       "when": 1790062764346,
       "tag": "0048_work_graph_task_response_sources",
       "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1790063810538,
+      "tag": "0049_task_chat_requests_and_executive_brief_reports",
+      "breakpoints": true
     }
   ]
 }

@@ -9449,6 +9449,21 @@ export type Database = {
         }
         Returns: Json
       }
+      apply_task_message_classification_v2: {
+        Args: {
+          _classifier_version: string
+          _comment_id: string
+          _confidence: number
+          _correlation_id: string
+          _idempotency_key: string
+          _label: string
+          _model: string
+          _related_task_id: string
+          _suggested_due_at: string
+          _task_title: string
+        }
+        Returns: Json
+      }
       archive_document: {
         Args: {
           _correlation_id?: string
