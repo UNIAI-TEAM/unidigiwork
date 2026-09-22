@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { mapPgError } from "./business.server";
 import { resolveWorkEntities, entityKey } from "./work-graph.server";
+import { workEntityHref } from "@/domain/work-graph/route-resolver";
 import {
   WORK_ENTITY_TYPES,
   WORK_RELATIONSHIP_CODES,
@@ -393,6 +394,8 @@ export type WorkGraphBoardItem = {
   dueAt: string | null;
   completedSteps: number;
   totalSteps: number;
+  ownerId: string | null;
+  ownerName: string | null;
 };
 
 export type WorkGraphBoard = {
@@ -402,6 +405,31 @@ export type WorkGraphBoard = {
   pageSize: number;
   counts: { all: number; running: number; done: number; products: number };
 };
+
+export type WorkGraphAssignee = {
+  id: string;
+  name: string;
+};
+
+export const listWorkGraphAssignees = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<WorkGraphAssignee[]> => {
+    const tenantId = await currentTenantId(context.supabase, context.userId);
+    const { data, error } = await context.supabase.rpc("list_tenant_member_profiles", {
+      _tenant_id: tenantId,
+    });
+    if (error) mapPgError(error, "TENANT_ACCESS_DENIED");
+    return ((data ?? []) as Array<{
+      id: string;
+      display_name: string | null;
+      primary_email: string | null;
+    }>)
+      .map((person) => ({
+        id: person.id,
+        name: person.display_name || person.primary_email || "—",
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name, "vi"));
+  });
 
 const RUNNING_TASK = new Set(["in_progress", "blocked"]);
 const RUNNING_EXEC = new Set(["QUEUED", "RUNNING", "WAITING_REVIEW", "CHANGES_REQUESTED"]);
@@ -457,6 +485,9 @@ export const listWorkGraphBoard = createServerFn({ method: "GET" })
         page: z.number().int().min(1).default(1),
         pageSize: z.number().int().min(10).max(100).default(25),
         taskId: z.string().uuid().optional(),
+        assigneeId: z.string().uuid().optional(),
+        unassigned: z.boolean().default(false),
+        dueFilter: z.enum(["all", "overdue", "due_soon", "scheduled", "none"]).default("all"),
       })
       .parse(i ?? {}),
   )
@@ -469,23 +500,100 @@ export const listWorkGraphBoard = createServerFn({ method: "GET" })
       counts: { all: 0, running: 0, done: 0, products: 0 },
     };
     const tenantId = await currentTenantId(context.supabase, context.userId);
-    const types =
-      data.tab === "products" ? ["WORK_PRODUCT"] : ["TASK", "EXECUTION", "WORK_PRODUCT"];
-    const { data: nodes, error } = await context.supabase
-      .from("work_nodes")
-      .select("id, entity_type, entity_id, updated_at")
-      .eq("tenant_id", tenantId)
-      .in("entity_type", types)
-      .order("updated_at", { ascending: false })
-      .limit(400);
+    const { data: payload, error } = await context.supabase.rpc("list_work_graph_board_page", {
+      _tenant_id: tenantId,
+      _tab: data.tab,
+      _search: data.search || undefined,
+      _assignee_id: data.assigneeId,
+      _unassigned: data.unassigned,
+      _due_filter: data.dueFilter,
+      _task_id: data.taskId,
+      _limit: data.pageSize,
+      _offset: (data.page - 1) * data.pageSize,
+    });
     if (error) mapPgError(error);
-    const list = (nodes ?? []) as {
+    const result = (payload ?? {}) as {
+      items?: Array<{
+        node_id: string;
+        entity_type: WorkGraphBoardItem["type"];
+        entity_id: string;
+        title: string;
+        status: string | null;
+        updated_at: string | null;
+        due_at: string | null;
+        owner_id: string | null;
+        progress: number;
+        completed_steps: number;
+        total_steps: number;
+        links: number;
+      }>;
+      total?: number;
+      counts?: { all?: number; running?: number; done?: number; products?: number };
+    };
+    const list = result.items ?? [];
+    const counts = {
+      all: Number(result.counts?.all ?? 0),
+      running: Number(result.counts?.running ?? 0),
+      done: Number(result.counts?.done ?? 0),
+      products: Number(result.counts?.products ?? 0),
+    };
+    if (!list.length)
+      return {
+        ...empty,
+        total: Number(result.total ?? 0),
+        counts,
+      };
+
+    const ownerIds = Array.from(
+      new Set(list.map((row) => row.owner_id).filter((id): id is string => Boolean(id))),
+    );
+    const { data: memberRows, error: memberError } = ownerIds.length
+      ? await context.supabase.rpc("list_tenant_member_profiles", { _tenant_id: tenantId })
+      : { data: [], error: null };
+    if (memberError) mapPgError(memberError);
+    const ownerNames = new Map(
+      ((memberRows ?? []) as Array<{
+        id: string;
+        display_name: string | null;
+        primary_email: string | null;
+      }>).map((person) => [
+        person.id,
+        person.display_name || person.primary_email || "—",
+      ]),
+    );
+
+    const items: WorkGraphBoardItem[] = list.map((row) => ({
+      type: row.entity_type,
+      id: row.entity_id,
+      title: row.title,
+      status: row.status,
+      href: workEntityHref(row.entity_type, row.entity_id),
+      updatedAt: row.updated_at,
+      links: Number(row.links ?? 0),
+      progress: Number(row.progress ?? 0),
+      dueAt: row.due_at,
+      completedSteps: Number(row.completed_steps ?? 0),
+      totalSteps: Number(row.total_steps ?? 0),
+      ownerId: row.owner_id,
+      ownerName: row.owner_id ? (ownerNames.get(row.owner_id) ?? "—") : null,
+    }));
+
+    return {
+      items,
+      total: Number(result.total ?? 0),
+      page: data.page,
+      pageSize: data.pageSize,
+      counts,
+    };
+    /* Previous in-memory board implementation intentionally replaced by
+       list_work_graph_board_page so search/filter/count/pagination happen at source. */
+    const _legacyList = [] as {
       id: string;
       entity_type: string;
       entity_id: string;
       updated_at: string;
     }[];
-    if (!list.length) return empty;
+    if (!_legacyList.length) return empty;
 
     // Title/status resolve + execution status: batched, RLS-scoped.
     const execIds = list.filter((n) => n.entity_type === "EXECUTION").map((n) => n.entity_id);
