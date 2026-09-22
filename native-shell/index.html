@@ -120,13 +120,28 @@
         });
       }
 
+      // Phiên bản binary thật lấy từ plugin App. Không xác định được -> null
+      // (bỏ qua cổng phiên bản, tránh chặn nhầm mọi bản cài).
       function nativeVersion() {
         try {
-          return (window.Capacitor && window.Capacitor.appVersion) || "0.0.0";
+          var cap = window.Capacitor;
+          var app = cap && cap.Plugins && cap.Plugins.App;
+          if (app && typeof app.getInfo === "function") {
+            return Promise.resolve(app.getInfo()).then(
+              function (info) {
+                return (info && info.version) || null;
+              },
+              function () {
+                return null;
+              },
+            );
+          }
         } catch (e) {
-          return "0.0.0";
+          /* khong xac dinh duoc */
         }
+        return Promise.resolve(null);
       }
+
 
       function cmp(a, b) {
         var pa = String(a).split(/[-+]/)[0].split(".");
