@@ -196,7 +196,7 @@ function WorkGraphPage() {
                 <li key={`${i.type}:${i.id}`}>
                   <Link
                     to={i.href as never}
-                    className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/50"
+                    className="flex min-h-[56px] items-start gap-3 px-4 py-3 transition-colors hover:bg-muted/50 sm:items-center"
                   >
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted">
                       <Icon className="h-4 w-4 text-muted-foreground" />
