@@ -322,6 +322,7 @@ export const sendTaskMessage = createServerFn({ method: "POST" })
       _source: data.source,
     });
     const comment = ensureOk(res, "TASK_NOT_FOUND") as { id: string };
+    if (data.source === "PRIVATE_SUPERIOR") return comment;
     const apiKey = process.env["LOVABLE_API_KEY"];
     if (!apiKey) return comment;
 

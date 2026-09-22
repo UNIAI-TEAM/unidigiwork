@@ -395,6 +395,15 @@ function WorkGraphPage() {
                       {i.type === "TASK" ? (
                         <span className="mt-0.5 flex flex-wrap gap-1">
                           <Button
+                            asChild
+                            variant="ghost"
+                            className="min-h-11 px-1.5 text-xs text-muted-foreground sm:min-h-9"
+                          >
+                            <Link to="/m/tasks/$id" params={{ id: i.id }}>
+                              <MessageSquare className="h-4 w-4" /> {t("wg.sendMessage")}
+                            </Link>
+                          </Button>
+                          <Button
                             type="button"
                             variant="ghost"
                             className="min-h-11 px-1.5 text-xs text-muted-foreground sm:min-h-9"
