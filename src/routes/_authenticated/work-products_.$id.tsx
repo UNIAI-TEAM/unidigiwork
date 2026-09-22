@@ -94,6 +94,7 @@ import {
   unshareWorkProduct,
   updateWorkProductShare,
 } from "@/lib/api/work-deliverables.functions";
+import { runOrQueue } from "@/lib/offline/queue";
 import {
   reviseWorkProductFromFeedback,
   listWorkProductRevisionFeedback,
