@@ -39,7 +39,10 @@ function NotificationsView({ detailId }: { detailId?: string }) {
   const query = useQuery({ queryKey: ["m-notifications"], queryFn: () => fn() });
   const rows = query.data ?? [], selected = detailId ? rows.find((row) => row.id === detailId) : undefined;
   if (query.isLoading) return <NativePage title="Thông báo"><LoadingRows /></NativePage>;
-  if (detailId && selected) return <NativePage title={selected.title}><article className="space-y-4"><p className="text-sm leading-relaxed">{selected.body}</p><p className="text-xs text-muted-foreground">{new Date(selected.created_at).toLocaleString("vi-VN")}</p>{selected.link ? <Button className="min-h-11" onClick={() => void navigate({ to: toMobileHref(selected.link) as never })}>Mở nội dung</Button> : null}</article></NativePage>;
+  if (detailId && selected) {
+    const link = selected.link;
+    return <NativePage title={selected.title}><article className="space-y-4"><p className="text-sm leading-relaxed">{selected.body}</p><p className="text-xs text-muted-foreground">{new Date(selected.created_at).toLocaleString("vi-VN")}</p>{link ? <Button className="min-h-11" onClick={() => void navigate({ to: toMobileHref(link) as never })}>Mở nội dung</Button> : null}</article></NativePage>;
+  }
   return <NativePage title="Thông báo"><div className="grid gap-2">{rows.map((row) => <MobileListItem key={row.id} title={row.title} subtitle={row.body ?? undefined} meta={new Date(row.created_at).toLocaleString("vi-VN")} icon={<Bell className="h-5 w-5" />} badge={!row.is_read ? <Badge>Mới</Badge> : undefined} onClick={() => void navigate({ to: `/m/notifications/${row.id}` as never })} />)}</div>{!rows.length ? <p className="py-12 text-center text-sm text-muted-foreground">Chưa có thông báo.</p> : null}</NativePage>;
 }
 

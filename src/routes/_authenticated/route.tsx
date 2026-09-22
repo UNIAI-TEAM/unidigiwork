@@ -83,7 +83,7 @@ function AuthenticatedLayout() {
             <span>{banner.text}</span>
           </div>
           <Link
-            to={location.pathname.startsWith("/m") ? "/m/admin/tenant" : "/admin/tenant"}
+            to={(location.pathname.startsWith("/m") ? "/m/admin/tenant" : "/admin/tenant") as never}
             className="rounded-md px-2 py-1 hover:bg-surface"
           >
             Quản trị tenant
