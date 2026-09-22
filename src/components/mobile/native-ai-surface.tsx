@@ -128,11 +128,11 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
       toast.error(t("m.ai.voiceUnsupported"));
       return;
     }
-    const recognition = SpeechRecognitionCtor();
+    const recognition = new SpeechRecognitionCtor();
     recognition.lang = "vi-VN";
     recognition.interimResults = true;
     recognition.continuous = true;
-    recognition.onresult = (event) => {
+    recognition.onresult = (event: { results: ArrayLike<SpeechRecognitionResultLike> }) => {
       let transcript = "";
       for (let index = 0; index < event.results.length; index += 1) {
         transcript += event.results[index]?.[0]?.transcript ?? "";
