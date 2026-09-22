@@ -61,7 +61,7 @@
 - [ ] Làm mới toàn bộ PWA: mọi điểm vào và trang chi tiết dùng giao diện mobile-native, không rơi về bố cục web.
 - [ ] Chuẩn hóa điều hướng PWA về `/m/*`, bao gồm Settings, Task, Work Product, Work Graph và các module còn lại.
 - [ ] Xác minh toàn bộ luồng ở 390px, 440px và 820px: không tràn ngang, vùng chạm tối thiểu 44px.
-- [ ] Đợt 2: làm mới Cài đặt và danh sách/chi tiết Work Product theo giao diện mobile-native.
+- [x] Đợt 2: làm mới Cài đặt và danh sách/chi tiết Work Product theo giao diện mobile-native.
 
 - [x] Add a task-centric chat summary tab with chat history, feedback, related work, and Work Graph deep links.
 - [x] Optimize mobile Work Graph with compact tasks, scrollable history, and expandable long content.
