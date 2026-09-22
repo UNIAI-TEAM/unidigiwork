@@ -20,7 +20,6 @@ import {
   Settings,
   Workflow,
 } from "lucide-react";
-import { BrandMark } from "@/components/brand-logo";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -183,18 +182,16 @@ function NativeDrawer({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="left"
-        className="flex w-[min(92vw,400px)] flex-col gap-0 overflow-hidden border-sidebar-border bg-sidebar p-0 text-sidebar-foreground shadow-panel sm:max-w-[400px] [&>button]:right-5 [&>button]:top-[max(1rem,env(safe-area-inset-top))] [&>button]:grid [&>button]:h-11 [&>button]:w-11 [&>button]:place-items-center [&>button]:rounded-xl [&>button]:border [&>button]:border-border [&>button]:opacity-100"
+        className="flex w-[78vw] max-w-[340px] flex-col gap-0 overflow-hidden border-mobile-menu-border bg-mobile-menu p-0 text-mobile-menu-foreground shadow-panel [&>button]:right-3 [&>button]:top-[max(.75rem,env(safe-area-inset-top))] [&>button]:grid [&>button]:h-11 [&>button]:w-11 [&>button]:place-items-center [&>button]:rounded-full [&>button]:border [&>button]:border-mobile-menu-border [&>button]:bg-mobile-menu-accent [&>button]:text-mobile-menu-foreground [&>button]:opacity-100"
       >
-        <SheetHeader className="border-b border-sidebar-border px-5 pb-5 pt-[max(1rem,env(safe-area-inset-top))] text-left">
-          <SheetTitle className="flex min-h-11 items-center gap-3 pr-14 text-2xl text-sidebar-foreground">
-            <BrandMark className="h-9 w-9 shrink-0" /> UniWork
+        <SheetHeader className="px-4 pb-3 pt-[max(.75rem,env(safe-area-inset-top))] text-left">
+          <SheetTitle className="flex min-h-11 items-center pr-14 text-xl text-mobile-menu-foreground">
+            UniWork
           </SheetTitle>
-          <SheetDescription className="text-base text-muted-foreground">
-            {t("m.nav.tagline")}
-          </SheetDescription>
+          <SheetDescription className="sr-only">{t("m.nav.tagline")}</SheetDescription>
         </SheetHeader>
 
-        <nav className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3">
+        <nav className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-3">
           <DrawerLink icon={Plus} label={t("m.nav.newWork")} onClick={() => go("/m")} />
           <DrawerLink icon={Search} label={t("cmd.group.search")} onClick={() => go("/m/search")} />
 
@@ -206,7 +203,7 @@ function NativeDrawer({
             {recentConversations.map((conversation, index) => (
               <div
                 key={conversation.id}
-                className="grid min-h-16 grid-cols-[2.75rem_minmax(0,1fr)_2.75rem_2.75rem] items-center gap-1 rounded-xl hover:bg-sidebar-accent"
+                className="grid min-h-12 grid-cols-[2.5rem_minmax(0,1fr)_2.5rem_2.5rem] items-center rounded-lg hover:bg-mobile-menu-accent"
               >
                 <button
                   onClick={() => go(`/m/c/${conversation.id}`)}
@@ -224,7 +221,7 @@ function NativeDrawer({
                     <span className="block truncate text-[15px] font-medium">
                       {conversation.title}
                     </span>
-                    <span className="block truncate text-xs text-muted-foreground">
+                    <span className="block truncate text-xs text-mobile-menu-muted">
                       {t("m.nav.conversation")} · {relativeTime(conversation.lastMessageAt)}
                     </span>
                   </span>
@@ -232,14 +229,14 @@ function NativeDrawer({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-11 w-11 text-muted-foreground"
+                  className="h-10 w-10 rounded-full text-mobile-menu-muted hover:bg-mobile-menu-accent hover:text-mobile-menu-foreground"
                   onClick={() => togglePin(conversation.id)}
                   aria-label={
                     pinnedIds.includes(conversation.id) ? t("m.nav.unpin") : t("m.nav.pin")
                   }
                 >
                   {pinnedIds.includes(conversation.id) ? (
-                    <Pin className="fill-primary text-primary" />
+                    <Pin className="fill-mobile-menu-foreground text-mobile-menu-foreground" />
                   ) : (
                     <Pin />
                   )}
@@ -247,7 +244,7 @@ function NativeDrawer({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-11 w-11 text-muted-foreground"
+                  className="h-10 w-10 rounded-full text-mobile-menu-muted hover:bg-mobile-menu-accent hover:text-mobile-menu-foreground"
                   aria-label={t("m.nav.more")}
                 >
                   <MoreHorizontal />
@@ -272,10 +269,10 @@ function NativeDrawer({
           <DrawerSection label={t("m.nav.workspaces")}>
             <button
               onClick={() => setWorkspacesOpen((value) => !value)}
-              className="grid min-h-12 w-full grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] items-center gap-2 rounded-xl text-left hover:bg-sidebar-accent"
+              className="grid min-h-12 w-full grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-center gap-1 rounded-lg text-left hover:bg-mobile-menu-accent"
               aria-expanded={workspacesOpen}
             >
-              <Building2 className="mx-auto h-5 w-5 text-primary" />
+              <Building2 className="mx-auto h-5 w-5" />
               <span className="truncate text-[15px] font-medium">
                 {identity.tenantName ?? t("m.nav.workspaces")}
               </span>
@@ -292,9 +289,9 @@ function NativeDrawer({
                       select(workspace.id);
                       onOpenChange(false);
                     }}
-                    className={`grid min-h-11 w-full grid-cols-[2.75rem_minmax(0,1fr)] items-center gap-2 rounded-xl text-left text-sm ${workspaceId === workspace.id ? "text-primary" : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"}`}
+                    className={`grid min-h-11 w-full grid-cols-[2.5rem_minmax(0,1fr)] items-center gap-1 rounded-lg text-left text-sm ${workspaceId === workspace.id ? "bg-mobile-menu-accent text-mobile-menu-foreground" : "text-mobile-menu-muted hover:bg-mobile-menu-accent hover:text-mobile-menu-foreground"}`}
                   >
-                    <span className="mx-auto h-2.5 w-2.5 rounded-full bg-primary" />
+                    <span className="mx-auto h-2.5 w-2.5 rounded-full bg-mobile-menu-foreground" />
                     <span className="truncate">{workspace.name}</span>
                   </button>
                 ))}
@@ -316,18 +313,18 @@ function NativeDrawer({
 
         <button
           onClick={() => go("/settings")}
-          className="grid min-h-20 grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] items-center gap-2 border-t border-sidebar-border px-4 pb-[max(.75rem,env(safe-area-inset-bottom))] pt-3 text-left hover:bg-sidebar-accent"
+          className="grid min-h-20 grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] items-center gap-2 border-t border-mobile-menu-border px-3 pb-[max(.75rem,env(safe-area-inset-bottom))] pt-3 text-left hover:bg-mobile-menu-accent"
         >
           <Avatar className="h-11 w-11">
             <AvatarFallback>{identity.initials}</AvatarFallback>
           </Avatar>
           <span className="min-w-0 flex-1">
             <span className="block truncate text-sm font-medium">{identity.displayName}</span>
-            <span className="block truncate text-xs text-muted-foreground">
+            <span className="block truncate text-xs text-mobile-menu-muted">
               {identity.tenantName ?? identity.email}
             </span>
           </span>
-          <Settings className="mx-auto h-5 w-5 text-muted-foreground" />
+          <Settings className="mx-auto h-5 w-5 text-mobile-menu-muted" />
         </button>
       </SheetContent>
     </Sheet>
@@ -346,11 +343,11 @@ function DrawerSection({
   children: React.ReactNode;
 }) {
   return (
-    <section className="mt-4 border-t border-sidebar-border pt-4">
+    <section className="mt-5">
       <div className="mb-1 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-1">
-        <p className="truncate text-xs font-semibold uppercase text-muted-foreground">{label}</p>
+        <p className="truncate text-sm font-semibold text-mobile-menu-foreground">{label}</p>
         {action && onAction ? (
-          <button onClick={onAction} className="min-h-11 px-2 text-xs font-medium text-primary">
+          <button onClick={onAction} className="min-h-11 px-2 text-xs text-mobile-menu-muted">
             {action}
           </button>
         ) : null}
@@ -380,16 +377,12 @@ function DrawerLink({
   return (
     <button
       onClick={onClick}
-      className={`grid min-h-12 w-full grid-cols-[2.75rem_minmax(0,1fr)_auto_2.75rem] items-center gap-2 rounded-xl text-left text-[15px] transition-colors ${strong ? "bg-primary text-primary-foreground" : active ? "bg-primary/10 text-primary" : "text-sidebar-foreground hover:bg-sidebar-accent"}`}
+      className={`grid min-h-12 w-full grid-cols-[2.5rem_minmax(0,1fr)_auto_2.5rem] items-center gap-1 rounded-lg text-left text-[15px] transition-colors ${strong || active ? "bg-mobile-menu-accent text-mobile-menu-foreground" : "text-mobile-menu-foreground hover:bg-mobile-menu-accent"}`}
     >
-      <Icon
-        className={`mx-auto h-5 w-5 shrink-0 ${tone === "danger" ? "text-destructive" : tone === "brand" ? "text-brand-blue" : count !== undefined ? "text-primary" : ""}`}
-      />
+      <Icon className="mx-auto h-5 w-5 shrink-0" />
       <span className="min-w-0 flex-1 truncate font-medium">{label}</span>
       {count !== undefined && count > 0 ? (
-        <span
-          className={`grid h-8 min-w-8 place-items-center rounded-full px-2 text-sm font-semibold text-primary-foreground ${tone === "danger" ? "bg-destructive" : tone === "brand" ? "bg-brand-blue" : "bg-primary"}`}
-        >
+        <span className="grid h-7 min-w-7 place-items-center rounded-full bg-mobile-menu-foreground px-2 text-xs font-semibold text-mobile-menu">
           {count > 99 ? "99+" : count}
         </span>
       ) : null}
