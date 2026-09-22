@@ -21,7 +21,10 @@ export const Route = createFileRoute("/_authenticated/m/admin/accounts/")({
       { title: "Tài khoản quản trị mobile — UNIWORK" },
       { name: "description", content: "Quản lý tài khoản và quyền UNIWORK trên điện thoại." },
       { property: "og:title", content: "Tài khoản quản trị mobile — UNIWORK" },
-      { property: "og:description", content: "Quản lý tài khoản và quyền UNIWORK trên điện thoại." },
+      {
+        property: "og:description",
+        content: "Quản lý tài khoản và quyền UNIWORK trên điện thoại.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -73,7 +76,9 @@ function MobileAdminAccounts() {
           </div>
           {users.isLoading ? <MobileAdminLoading /> : null}
           {users.isError ? (
-            <MobileAdminMessage retry={() => void users.refetch()}>{t("m.admin.roleError")}</MobileAdminMessage>
+            <MobileAdminMessage retry={() => void users.refetch()}>
+              {t("m.admin.roleError")}
+            </MobileAdminMessage>
           ) : null}
           {!users.isLoading && !users.isError && filtered.length === 0 ? (
             <MobileAdminMessage>{t("m.admin.empty")}</MobileAdminMessage>
@@ -84,15 +89,24 @@ function MobileAdminAccounts() {
                 key={user.id}
                 title={user.display_name ?? user.email}
                 subtitle={user.display_name ? user.email : undefined}
-                meta={user.roles.map((role) => t(`m.admin.role.${role}` as never)).join(" · ") || t("m.admin.role.user")}
+                meta={
+                  user.roles.map((role) => t(`m.admin.role.${role}` as never)).join(" · ") ||
+                  t("m.admin.role.user")
+                }
                 icon={<UserRound className="h-5 w-5" />}
                 badge={
                   <Badge variant="outline" className="gap-1 normal-case">
-                    {user.email_confirmed ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+                    {user.email_confirmed ? (
+                      <CheckCircle2 className="h-3 w-3" />
+                    ) : (
+                      <XCircle className="h-3 w-3" />
+                    )}
                     {user.email_confirmed ? t("m.admin.confirmed") : t("m.admin.unconfirmed")}
                   </Badge>
                 }
-                onClick={() => void navigate({ to: "/m/admin/accounts/$id", params: { id: user.id } })}
+                onClick={() =>
+                  void navigate({ to: "/m/admin/accounts/$id", params: { id: user.id } })
+                }
               />
             ))}
           </div>

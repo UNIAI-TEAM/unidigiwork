@@ -78,7 +78,8 @@ function MobileAdminAccountDetail() {
       await invalidate();
       toast.success(t("m.admin.roleSaved"));
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : t("m.admin.roleError")),
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : t("m.admin.roleError")),
   });
   const passwordMutation = useMutation({
     mutationFn: () => passwordFn({ data: { user_id: id, password } }),
@@ -92,7 +93,10 @@ function MobileAdminAccountDetail() {
   });
   const formatDate = (value: string | null) =>
     value
-      ? new Intl.DateTimeFormat(localeTag(lang), { dateStyle: "medium", timeStyle: "short" }).format(new Date(value))
+      ? new Intl.DateTimeFormat(localeTag(lang), {
+          dateStyle: "medium",
+          timeStyle: "short",
+        }).format(new Date(value))
       : t("m.admin.never");
 
   if (access.isLoading || detail.isLoading)
@@ -110,7 +114,9 @@ function MobileAdminAccountDetail() {
   if (!detail.data)
     return (
       <MobileAdminLayout title={t("m.admin.accounts")} backTo="/m/admin/accounts">
-        <MobileAdminMessage retry={() => void detail.refetch()}>{t("m.admin.empty")}</MobileAdminMessage>
+        <MobileAdminMessage retry={() => void detail.refetch()}>
+          {t("m.admin.empty")}
+        </MobileAdminMessage>
       </MobileAdminLayout>
     );
 
@@ -127,15 +133,24 @@ function MobileAdminAccountDetail() {
         <dl className="mt-3 grid gap-3 text-sm">
           <div className="flex items-start gap-3">
             <CalendarDays className="mt-0.5 h-4 w-4 text-muted-foreground" />
-            <div><dt className="text-xs text-muted-foreground">{t("m.admin.createdAt")}</dt><dd>{formatDate(account.created_at)}</dd></div>
+            <div>
+              <dt className="text-xs text-muted-foreground">{t("m.admin.createdAt")}</dt>
+              <dd>{formatDate(account.created_at)}</dd>
+            </div>
           </div>
           <div className="flex items-start gap-3">
             <Check className="mt-0.5 h-4 w-4 text-muted-foreground" />
-            <div><dt className="text-xs text-muted-foreground">{t("m.admin.lastSignIn")}</dt><dd>{formatDate(account.last_sign_in_at)}</dd></div>
+            <div>
+              <dt className="text-xs text-muted-foreground">{t("m.admin.lastSignIn")}</dt>
+              <dd>{formatDate(account.last_sign_in_at)}</dd>
+            </div>
           </div>
           <div className="flex items-start gap-3">
             <Languages className="mt-0.5 h-4 w-4 text-muted-foreground" />
-            <div><dt className="text-xs text-muted-foreground">{t("m.admin.language")}</dt><dd>{account.lang.toUpperCase()}</dd></div>
+            <div>
+              <dt className="text-xs text-muted-foreground">{t("m.admin.language")}</dt>
+              <dd>{account.lang.toUpperCase()}</dd>
+            </div>
           </div>
         </dl>
       </section>
@@ -159,7 +174,8 @@ function MobileAdminAccountDetail() {
                   disabled={!access.data.canWrite || roleMutation.isPending}
                   aria-label={t(`m.admin.role.${role}` as never)}
                   onCheckedChange={(enabled) => {
-                    if (window.confirm(t("m.admin.roleConfirm"))) roleMutation.mutate({ role, enabled });
+                    if (window.confirm(t("m.admin.roleConfirm")))
+                      roleMutation.mutate({ role, enabled });
                   }}
                 />
               </div>
@@ -172,34 +188,91 @@ function MobileAdminAccountDetail() {
         <h2 className="font-medium">{t("m.admin.organizationRoles")}</h2>
         <p className="mt-1 text-xs text-muted-foreground">{t("m.admin.organizationRolesHint")}</p>
         <div className="mt-3 grid gap-2">
-          {account.memberships.length ? account.memberships.map((membership) => (
-            <div key={membership.tenant_id} className="rounded-lg border border-border p-3">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0"><p className="truncate text-sm font-medium">{membership.tenant_name}</p><p className="text-xs text-muted-foreground">{t(`m.admin.role.${membership.role}` as never)}</p></div>
-                <Badge variant="outline">{t(`m.admin.status.${membership.status}` as never)}</Badge>
+          {account.memberships.length ? (
+            account.memberships.map((membership) => (
+              <div key={membership.tenant_id} className="rounded-lg border border-border p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{membership.tenant_name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t(`m.admin.role.${membership.role}` as never)}
+                    </p>
+                  </div>
+                  <Badge variant="outline">
+                    {t(`m.admin.status.${membership.status}` as never)}
+                  </Badge>
+                </div>
               </div>
-            </div>
-          )) : <p className="text-sm text-muted-foreground">{t("m.admin.noOrganization")}</p>}
+            ))
+          ) : (
+            <p className="text-sm text-muted-foreground">{t("m.admin.noOrganization")}</p>
+          )}
         </div>
       </section>
 
       {access.data.canWrite ? (
-        <Button type="button" variant="outline" className="min-h-11" onClick={() => setPasswordOpen(true)}>
+        <Button
+          type="button"
+          variant="outline"
+          className="min-h-11"
+          onClick={() => setPasswordOpen(true)}
+        >
           <KeyRound className="mr-2 h-4 w-4" /> {t("m.admin.password")}
         </Button>
       ) : null}
 
       <Dialog open={passwordOpen} onOpenChange={setPasswordOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{t("m.admin.password")}</DialogTitle><DialogDescription>{t("m.admin.passwordHint")}</DialogDescription></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>{t("m.admin.password")}</DialogTitle>
+            <DialogDescription>{t("m.admin.passwordHint")}</DialogDescription>
+          </DialogHeader>
           <div className="grid gap-4">
-            <div className="grid gap-2"><Label htmlFor="admin-password">{t("m.admin.newPassword")}</Label><Input id="admin-password" type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} className="min-h-11" /></div>
-            <div className="grid gap-2"><Label htmlFor="admin-password-confirm">{t("m.admin.confirmPassword")}</Label><Input id="admin-password-confirm" type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} className="min-h-11" /></div>
-            {confirmPassword && password !== confirmPassword ? <p className="text-sm text-destructive">{t("m.admin.passwordMismatch")}</p> : null}
+            <div className="grid gap-2">
+              <Label htmlFor="admin-password">{t("m.admin.newPassword")}</Label>
+              <Input
+                id="admin-password"
+                type="password"
+                autoComplete="new-password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                className="min-h-11"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="admin-password-confirm">{t("m.admin.confirmPassword")}</Label>
+              <Input
+                id="admin-password-confirm"
+                type="password"
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+                className="min-h-11"
+              />
+            </div>
+            {confirmPassword && password !== confirmPassword ? (
+              <p className="text-sm text-destructive">{t("m.admin.passwordMismatch")}</p>
+            ) : null}
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" className="min-h-11" onClick={() => setPasswordOpen(false)}>{t("m.admin.cancel")}</Button>
-            <Button type="button" className="min-h-11" disabled={password.length < 8 || password !== confirmPassword || passwordMutation.isPending} onClick={() => passwordMutation.mutate()}>{t("m.admin.save")}</Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="min-h-11"
+              onClick={() => setPasswordOpen(false)}
+            >
+              {t("m.admin.cancel")}
+            </Button>
+            <Button
+              type="button"
+              className="min-h-11"
+              disabled={
+                password.length < 8 || password !== confirmPassword || passwordMutation.isPending
+              }
+              onClick={() => passwordMutation.mutate()}
+            >
+              {t("m.admin.save")}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
