@@ -28,6 +28,11 @@ export function TeamChatPanel({
   return <ChannelRoom channelId={channelId} onBack={onBack} />;
 }
 
+/** Phòng trò chuyện dùng chung cho panel dấu cộng và các màn /m/chat, /m/meet. */
+export function ChatRoomView({ channelId }: { channelId: string }) {
+  return <ChannelRoom channelId={channelId} />;
+}
+
 function ChannelList({ onOpenChannel }: { onOpenChannel: (channel: ChatChannelDTO) => void }) {
   const { t, lang } = useI18n();
   const listFn = useServerFn(listChatChannels);
@@ -85,7 +90,7 @@ function ChannelList({ onOpenChannel }: { onOpenChannel: (channel: ChatChannelDT
   );
 }
 
-function ChannelRoom({ channelId, onBack }: { channelId: string; onBack: () => void }) {
+function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => void }) {
   const { t, lang } = useI18n();
   const queryClient = useQueryClient();
   const messagesFn = useServerFn(listChatMessages);
@@ -137,14 +142,16 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack: () => v
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <Button
-        variant="ghost"
-        className="mb-2 h-11 w-fit justify-start gap-2 px-2 text-sm"
-        onClick={onBack}
-      >
-        <ChevronLeft className="h-4 w-4" />
-        {t("m.ai.chat.back")}
-      </Button>
+      {onBack ? (
+        <Button
+          variant="ghost"
+          className="mb-2 h-11 w-fit justify-start gap-2 px-2 text-sm"
+          onClick={onBack}
+        >
+          <ChevronLeft className="h-4 w-4" />
+          {t("m.ai.chat.back")}
+        </Button>
+      ) : null}
 
       <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pb-2">
         {history.isLoading ? (

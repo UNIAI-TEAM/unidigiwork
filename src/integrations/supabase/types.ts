@@ -1720,6 +1720,7 @@ export type Database = {
           is_private: boolean
           kind: string
           last_message_at: string | null
+          meeting_id: string | null
           name: string
           row_version: number
           tenant_id: string
@@ -1736,6 +1737,7 @@ export type Database = {
           is_private?: boolean
           kind?: string
           last_message_at?: string | null
+          meeting_id?: string | null
           name: string
           row_version?: number
           tenant_id: string
@@ -1752,6 +1754,7 @@ export type Database = {
           is_private?: boolean
           kind?: string
           last_message_at?: string | null
+          meeting_id?: string | null
           name?: string
           row_version?: number
           tenant_id?: string
@@ -1760,6 +1763,13 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "chat_channels_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "chat_channels_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -10578,6 +10588,10 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      ensure_meeting_chat_channel: {
+        Args: { _meeting_id: string }
+        Returns: string
       }
       ensure_work_node: {
         Args: { _entity_id: string; _entity_type: string }

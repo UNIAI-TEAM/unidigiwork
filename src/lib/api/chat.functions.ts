@@ -20,6 +20,7 @@ export type ChatChannelDTO = {
   memberCount: number;
   unread: number;
   lastMessageAt: string | null;
+  meetingId: string | null;
 };
 
 export type ChatMessageDTO = {
@@ -77,7 +78,9 @@ export type ChatListResult = {
 
 type Ctx = { supabase: any; userId: string };
 
-async function resolveScope(ctx: Ctx): Promise<{ tenantId: string; role: string; workspaceId: string | null } | null> {
+async function resolveScope(
+  ctx: Ctx,
+): Promise<{ tenantId: string; role: string; workspaceId: string | null } | null> {
   const { data, error } = await ctx.supabase
     .from("tenant_members")
     .select("tenant_id, role, status")
@@ -124,7 +127,7 @@ export const listChatChannels = createServerFn({ method: "GET" })
 
     const { data: chans, error } = await ctx.supabase
       .from("chat_channels")
-      .select("id, name, description, kind, is_private, last_message_at, created_by")
+      .select("id, name, description, kind, is_private, last_message_at, created_by, meeting_id")
       .eq("tenant_id", scope.tenantId)
       .is("deleted_at", null)
       .order("last_message_at", { ascending: false, nullsFirst: false })
@@ -132,16 +135,29 @@ export const listChatChannels = createServerFn({ method: "GET" })
     if (error) mapPgError(error);
     const rows = (chans ?? []) as any[];
     if (rows.length === 0) {
-      return { tenantId: scope.tenantId, workspaceId: scope.workspaceId, canCreate: !!scope.workspaceId, channels: [] };
+      return {
+        tenantId: scope.tenantId,
+        workspaceId: scope.workspaceId,
+        canCreate: !!scope.workspaceId,
+        channels: [],
+      };
     }
     const ids = rows.map((r) => r.id);
     const [membersRes, myRes] = await Promise.all([
       ctx.supabase.from("chat_members").select("channel_id, user_id, role").in("channel_id", ids),
-      ctx.supabase.from("chat_members").select("channel_id, is_favorite, last_read_at, role").eq("user_id", ctx.userId).in("channel_id", ids),
+      ctx.supabase
+        .from("chat_members")
+        .select("channel_id, is_favorite, last_read_at, role")
+        .eq("user_id", ctx.userId)
+        .in("channel_id", ids),
     ]);
     const counts = new Map<string, number>();
-    for (const m of membersRes.data ?? []) counts.set(m.channel_id, (counts.get(m.channel_id) ?? 0) + 1);
-    const mine = new Map<string, { is_favorite: boolean; last_read_at: string | null; role: string }>();
+    for (const m of membersRes.data ?? [])
+      counts.set(m.channel_id, (counts.get(m.channel_id) ?? 0) + 1);
+    const mine = new Map<
+      string,
+      { is_favorite: boolean; last_read_at: string | null; role: string }
+    >();
     for (const m of myRes.data ?? []) mine.set(m.channel_id, m as any);
 
     // Unread: đếm tin nhắn sau last_read_at cho các kênh tôi tham gia
@@ -174,6 +190,7 @@ export const listChatChannels = createServerFn({ method: "GET" })
         memberCount: counts.get(r.id) ?? 0,
         unread: unread.get(r.id) ?? 0,
         lastMessageAt: r.last_message_at,
+        meetingId: r.meeting_id ?? null,
       };
     });
 
@@ -204,7 +221,9 @@ export const listChatMessages = createServerFn({ method: "GET" })
     const limit = data.limit ?? 50;
     let query = ctx.supabase
       .from("chat_messages")
-      .select("id, channel_id, body, author_id, created_at, edited_at, parent_message_id, attachments, pinned_at, pinned_by")
+      .select(
+        "id, channel_id, body, author_id, created_at, edited_at, parent_message_id, attachments, pinned_at, pinned_by",
+      )
       .eq("channel_id", data.channelId)
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
@@ -250,11 +269,11 @@ export const listChatMessages = createServerFn({ method: "GET" })
         editedAt: r.edited_at,
         isMine: r.author_id === ctx.userId,
         parentId: r.parent_message_id ?? null,
-        parentAuthorName: parent ? names.get(parent.author_id) ?? "Thành viên" : null,
+        parentAuthorName: parent ? (names.get(parent.author_id) ?? "Thành viên") : null,
         parentExcerpt: parent ? String(parent.body).slice(0, 140) : null,
         attachments: Array.isArray(r.attachments) ? (r.attachments as ChatAttachment[]) : [],
         pinnedAt: r.pinned_at ?? null,
-        pinnedByName: r.pinned_by ? names.get(r.pinned_by) ?? "Thành viên" : null,
+        pinnedByName: r.pinned_by ? (names.get(r.pinned_by) ?? "Thành viên") : null,
       };
     });
     return { messages, hasMore };
@@ -282,7 +301,9 @@ export const listPinnedChatMessages = createServerFn({ method: "GET" })
     const ctx = context as unknown as Ctx;
     const { data: rows, error } = await ctx.supabase
       .from("chat_messages")
-      .select("id, channel_id, body, author_id, created_at, edited_at, parent_message_id, attachments, pinned_at, pinned_by")
+      .select(
+        "id, channel_id, body, author_id, created_at, edited_at, parent_message_id, attachments, pinned_at, pinned_by",
+      )
       .eq("channel_id", data.channelId)
       .is("deleted_at", null)
       .not("pinned_at", "is", null)
@@ -308,7 +329,7 @@ export const listPinnedChatMessages = createServerFn({ method: "GET" })
       parentExcerpt: null,
       attachments: Array.isArray(r.attachments) ? (r.attachments as ChatAttachment[]) : [],
       pinnedAt: r.pinned_at ?? null,
-      pinnedByName: r.pinned_by ? names.get(r.pinned_by) ?? "Thành viên" : null,
+      pinnedByName: r.pinned_by ? (names.get(r.pinned_by) ?? "Thành viên") : null,
     }));
   });
 
@@ -343,7 +364,8 @@ export const sendChatMessage = createServerFn({ method: "POST" })
       .eq("id", data.channelId)
       .maybeSingle();
     if (chErr) mapPgError(chErr);
-    if (!ch) throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "Không tìm thấy kênh chat" });
+    if (!ch)
+      throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "Không tìm thấy kênh chat" });
     const { data: row, error } = await ctx.supabase
       .from("chat_messages")
       .insert({
@@ -413,7 +435,8 @@ export const createChatChannel = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ id: string }> => {
     const ctx = context as unknown as Ctx;
     const scope = await resolveScope(ctx);
-    if (!scope?.workspaceId) throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "Chưa có không gian làm việc" });
+    if (!scope?.workspaceId)
+      throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "Chưa có không gian làm việc" });
     const { data: row, error } = await ctx.supabase
       .from("chat_channels")
       .insert({
@@ -450,11 +473,17 @@ export const joinChatChannel = createServerFn({ method: "POST" })
       .eq("id", data.channelId)
       .maybeSingle();
     if (chErr) mapPgError(chErr);
-    if (!ch) throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "Không tìm thấy kênh chat" });
+    if (!ch)
+      throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "Không tìm thấy kênh chat" });
     const { error } = await ctx.supabase
       .from("chat_members")
       .upsert(
-        { channel_id: data.channelId, user_id: ctx.userId, tenant_id: ch.tenant_id, role: "member" },
+        {
+          channel_id: data.channelId,
+          user_id: ctx.userId,
+          tenant_id: ch.tenant_id,
+          role: "member",
+        },
         { onConflict: "channel_id,user_id" },
       );
     if (error) mapPgError(error, "PERMISSION_DENIED");
@@ -531,18 +560,26 @@ export const listChatChannelMembers = createServerFn({ method: "GET" })
     const { data: users } = await ctx.supabase
       .from("users")
       .select("id, display_name, primary_email")
-      .in("id", list.map((r) => r.user_id).length ? list.map((r) => r.user_id) : ["00000000-0000-0000-0000-000000000000"]);
+      .in(
+        "id",
+        list.map((r) => r.user_id).length
+          ? list.map((r) => r.user_id)
+          : ["00000000-0000-0000-0000-000000000000"],
+      );
     const byId = new Map<string, any>();
     for (const u of users ?? []) byId.set(u.id, u);
     return list
       .map((r) => ({
         userId: r.user_id,
-        name: byId.get(r.user_id)?.display_name ?? byId.get(r.user_id)?.primary_email ?? "Thành viên",
+        name:
+          byId.get(r.user_id)?.display_name ?? byId.get(r.user_id)?.primary_email ?? "Thành viên",
         email: byId.get(r.user_id)?.primary_email ?? null,
         role: r.role,
         isMe: r.user_id === ctx.userId,
       }))
-      .sort((a, b) => (a.role === b.role ? a.name.localeCompare(b.name) : a.role === "owner" ? -1 : 1));
+      .sort((a, b) =>
+        a.role === b.role ? a.name.localeCompare(b.name) : a.role === "owner" ? -1 : 1,
+      );
   });
 
 /** Danh sách người trong tổ chức (để mời vào kênh hoặc mở DM). */
@@ -597,11 +634,19 @@ export const addChatChannelMember = createServerFn({ method: "POST" })
       .eq("id", data.channelId)
       .maybeSingle();
     if (chErr) mapPgError(chErr);
-    if (!ch) throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "Không tìm thấy kênh chat" });
-    const { error } = await ctx.supabase.from("chat_members").upsert(
-      { channel_id: data.channelId, user_id: data.userId, tenant_id: ch.tenant_id, role: "member" },
-      { onConflict: "channel_id,user_id" },
-    );
+    if (!ch)
+      throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "Không tìm thấy kênh chat" });
+    const { error } = await ctx.supabase
+      .from("chat_members")
+      .upsert(
+        {
+          channel_id: data.channelId,
+          user_id: data.userId,
+          tenant_id: ch.tenant_id,
+          role: "member",
+        },
+        { onConflict: "channel_id,user_id" },
+      );
     if (error) mapPgError(error, "PERMISSION_DENIED");
     return { ok: true };
   });
@@ -618,7 +663,10 @@ export const listChatChannelReaders = createServerFn({ method: "GET" })
       .eq("channel_id", data.channelId);
     if (error) mapPgError(error);
     const list = (rows ?? []) as Array<{ user_id: string; last_read_at: string | null }>;
-    const names = await displayNames(ctx, list.map((r) => r.user_id));
+    const names = await displayNames(
+      ctx,
+      list.map((r) => r.user_id),
+    );
     return list.map((r) => ({
       userId: r.user_id,
       name: names.get(r.user_id) ?? "Thành viên",
@@ -672,7 +720,10 @@ export const openDirectMessage = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ id: string }> => {
     const ctx = context as unknown as Ctx;
     if (data.userId === ctx.userId)
-      throw new ApiError({ code: "VALIDATION_FAILED", message: "Không thể nhắn tin cho chính mình" });
+      throw new ApiError({
+        code: "VALIDATION_FAILED",
+        message: "Không thể nhắn tin cho chính mình",
+      });
     const scope = await resolveScope(ctx);
     if (!scope?.workspaceId)
       throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "Chưa có không gian làm việc" });
@@ -724,4 +775,19 @@ export const openDirectMessage = createServerFn({ method: "POST" })
     ]);
     if (memErr) mapPgError(memErr, "PERMISSION_DENIED");
     return { id: row.id };
+  });
+
+/** Kênh chat riêng của một cuộc họp (tạo nếu chưa có, idempotent, tenant-scoped). */
+export const ensureMeetingChatChannel = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ meetingId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }): Promise<{ channelId: string }> => {
+    const ctx = context as unknown as Ctx;
+    const { data: channelId, error } = await ctx.supabase.rpc("ensure_meeting_chat_channel", {
+      _meeting_id: data.meetingId,
+    });
+    if (error) mapPgError(error, "PERMISSION_DENIED");
+    if (!channelId)
+      throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "Không tạo được kênh họp" });
+    return { channelId: channelId as string };
   });
