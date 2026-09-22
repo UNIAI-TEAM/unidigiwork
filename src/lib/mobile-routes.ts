@@ -1,4 +1,5 @@
 export function toMobileHref(href: string): string {
+  if (href === "/m" || href.startsWith("/m/")) return href;
   const mappings: Array<[RegExp, string]> = [
     [/^\/tasks\/([^/?#]+)/, "/m/tasks/$1"],
     [/^\/work-products\/([^/?#]+)/, "/m/work-products/$1"],
@@ -29,11 +30,22 @@ export function toMobileHref(href: string): string {
     [/^\/reports/, "/m/reports"],
     [/^\/admin/, "/m/admin"],
     [/^\/billing/, "/m/billing"],
+    [/^\/notifications/, "/m/notifications"],
+    [/^\/workspace/, "/m/workspace"],
+    [/^\/task-ops/, "/m/task-ops"],
+    [/^\/work-board/, "/m/work-board"],
+    [/^\/work-catalog/, "/m/work-catalog"],
+    [/^\/ai-market/, "/m/ai-market"],
+    [/^\/ai-workforce/, "/m/ai-workforce"],
+    [/^\/email/, "/m/email"],
+    [/^\/chat\/([^/?#]+)/, "/m/c/$1"],
+    [/^\/chat/, "/m/chat"],
+    [/^\/dashboard/, "/m"],
+    [/^\/home/, "/m"],
+    [/^\/help/, "/m/knowledge"],
   ];
   for (const [pattern, replacement] of mappings) {
     if (pattern.test(href)) return href.replace(pattern, replacement);
   }
-  // Không tạo deep-link đến một route mobile không tồn tại. Các module chưa có
-  // presentation mobile riêng vẫn mở route thật trong responsive shell.
-  return href;
+  return href.startsWith("/") ? `/m/${href.slice(1)}` : href;
 }
