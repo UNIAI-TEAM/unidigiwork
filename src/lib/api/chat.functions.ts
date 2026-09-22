@@ -725,3 +725,18 @@ export const openDirectMessage = createServerFn({ method: "POST" })
     if (memErr) mapPgError(memErr, "PERMISSION_DENIED");
     return { id: row.id };
   });
+
+/** Kênh chat riêng của một cuộc họp (tạo nếu chưa có, idempotent, tenant-scoped). */
+export const ensureMeetingChatChannel = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ meetingId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }): Promise<{ channelId: string }> => {
+    const ctx = context as unknown as Ctx;
+    const { data: channelId, error } = await ctx.supabase.rpc("ensure_meeting_chat_channel", {
+      _meeting_id: data.meetingId,
+    });
+    if (error) mapPgError(error, "PERMISSION_DENIED");
+    if (!channelId)
+      throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "Không tạo được kênh họp" });
+    return { channelId: channelId as string };
+  });
