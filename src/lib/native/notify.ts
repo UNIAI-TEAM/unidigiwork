@@ -8,21 +8,30 @@ export type NotifyInput = { title: string; body?: string; link?: string };
 
 export async function notifyUser(input: NotifyInput): Promise<"native" | "web" | "none"> {
   if (hasNativeCapability("push")) {
-    try {
-      const { LocalNotifications } = await import("@capacitor/local-notifications");
-      await LocalNotifications.schedule({
-        notifications: [
-          {
-            id: Date.now() % 2147483647,
-            title: input.title,
-            body: input.body ?? "",
-            extra: input.link ? { link: input.link } : undefined,
-          },
-        ],
-      });
-      return "native";
-    } catch {
-      /* roi xuong fallback web */
+    // Gọi qua Capacitor.Plugins để không phụ thuộc gói native lúc build web.
+    const plugin = (
+      window as unknown as {
+        Capacitor?: {
+          Plugins?: { LocalNotifications?: { schedule?: (o: unknown) => Promise<unknown> } };
+        };
+      }
+    ).Capacitor?.Plugins?.LocalNotifications;
+    if (plugin?.schedule) {
+      try {
+        await plugin.schedule({
+          notifications: [
+            {
+              id: Date.now() % 2147483647,
+              title: input.title,
+              body: input.body ?? "",
+              extra: input.link ? { link: input.link } : undefined,
+            },
+          ],
+        });
+        return "native";
+      } catch {
+        /* roi xuong fallback web */
+      }
     }
   }
 
