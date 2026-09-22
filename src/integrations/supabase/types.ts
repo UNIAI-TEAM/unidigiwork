@@ -10945,6 +10945,13 @@ export type Database = {
         Returns: Json
       }
       list_meeting_guests: { Args: { _meeting_id: string }; Returns: Json }
+      list_task_classification_candidates: {
+        Args: { _limit?: number; _task_id: string }
+        Returns: {
+          id: string
+          title: string
+        }[]
+      }
       list_task_conversation_ids: {
         Args: { _limit?: number; _task_id: string }
         Returns: {
