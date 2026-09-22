@@ -41,7 +41,18 @@ function MobileWorkGraphPage() {
   useEffect(() => setPage(1), [tab, debounced]);
   const board = useQuery({
     queryKey: ["m-work-graph", tab, debounced, page, task],
-    queryFn: () => listWorkGraphBoard({ data: { tab, search: debounced, page, pageSize: 25, taskId: task, dueFilter: "all", unassigned: false } }),
+    queryFn: () =>
+      listWorkGraphBoard({
+        data: {
+          tab,
+          search: debounced,
+          page,
+          pageSize: 25,
+          taskId: task,
+          dueFilter: "all",
+          unassigned: false,
+        },
+      }),
   });
   const pages = Math.max(1, Math.ceil((board.data?.total ?? 0) / 25));
   const tabs = [
@@ -60,12 +71,79 @@ function MobileWorkGraphPage() {
       </header>
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input value={search} onChange={(event) => setSearch(event.target.value)} className="h-11 pl-9" placeholder="Tìm trong Work Graph…" />
+        <Input
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          className="h-11 pl-9"
+          placeholder="Tìm trong Work Graph…"
+        />
       </div>
-      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">{tabs.map(([id, label, count]) => <Button key={id} variant={tab === id ? "default" : "outline"} className="min-h-11 shrink-0 rounded-full" onClick={() => setTab(id)}>{label}{typeof count === "number" ? ` ${count}` : ""}</Button>)}</div>
-      {board.isLoading ? <div className="grid gap-2">{[0,1,2].map((item) => <Skeleton key={item} className="h-28 rounded-xl" />)}</div> : !board.data?.items.length ? <p className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">Chưa có dữ liệu phù hợp.</p> : <ul className="grid gap-2">{board.data.items.map((item) => <WorkGraphRow key={`${item.type}-${item.id}`} item={item} />)}</ul>}
-      <footer className="flex items-center justify-between gap-3"><span className="text-xs text-muted-foreground">Trang {page}/{pages}</span><div className="flex gap-2"><Button size="icon" variant="outline" className="h-11 w-11" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}><ChevronLeft className="h-4 w-4"/><span className="sr-only">Trang trước</span></Button><Button size="icon" variant="outline" className="h-11 w-11" disabled={page >= pages} onClick={() => setPage((value) => Math.min(pages, value + 1))}><ChevronRight className="h-4 w-4"/><span className="sr-only">Trang sau</span></Button></div></footer>
-      {task ? <Button variant="outline" className="min-h-11" onClick={() => void navigate({ to: "/m/tasks/$id", params: { id: task } })}>Mở chi tiết công việc</Button> : null}
+      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+        {tabs.map(([id, label, count]) => (
+          <Button
+            key={id}
+            variant={tab === id ? "default" : "outline"}
+            className="min-h-11 shrink-0 rounded-full"
+            onClick={() => setTab(id)}
+          >
+            {label}
+            {typeof count === "number" ? ` ${count}` : ""}
+          </Button>
+        ))}
+      </div>
+      {board.isLoading ? (
+        <div className="grid gap-2">
+          {[0, 1, 2].map((item) => (
+            <Skeleton key={item} className="h-28 rounded-xl" />
+          ))}
+        </div>
+      ) : !board.data?.items.length ? (
+        <p className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+          Chưa có dữ liệu phù hợp.
+        </p>
+      ) : (
+        <ul className="grid gap-2">
+          {board.data.items.map((item) => (
+            <WorkGraphRow key={`${item.type}-${item.id}`} item={item} />
+          ))}
+        </ul>
+      )}
+      <footer className="flex items-center justify-between gap-3">
+        <span className="text-xs text-muted-foreground">
+          Trang {page}/{pages}
+        </span>
+        <div className="flex gap-2">
+          <Button
+            size="icon"
+            variant="outline"
+            className="h-11 w-11"
+            disabled={page <= 1}
+            onClick={() => setPage((value) => Math.max(1, value - 1))}
+          >
+            <ChevronLeft className="h-4 w-4" />
+            <span className="sr-only">Trang trước</span>
+          </Button>
+          <Button
+            size="icon"
+            variant="outline"
+            className="h-11 w-11"
+            disabled={page >= pages}
+            onClick={() => setPage((value) => Math.min(pages, value + 1))}
+          >
+            <ChevronRight className="h-4 w-4" />
+            <span className="sr-only">Trang sau</span>
+          </Button>
+        </div>
+      </footer>
+      {task ? (
+        <Button
+          variant="outline"
+          className="min-h-11"
+          onClick={() => void navigate({ to: "/m/tasks/$id", params: { id: task } })}
+        >
+          Mở chi tiết công việc
+        </Button>
+      ) : null}
     </div>
   );
 }
@@ -112,7 +190,11 @@ function WorkGraphRow({ item }: { item: WorkGraphBoardItem }) {
         </div>
         {item.dueAt ? (
           <p className="mt-2 text-xs text-muted-foreground">
-            Hạn {new Date(item.dueAt).toLocaleString("vi-VN", { dateStyle: "short", timeStyle: "short" })}
+            Hạn{" "}
+            {new Date(item.dueAt).toLocaleString("vi-VN", {
+              dateStyle: "short",
+              timeStyle: "short",
+            })}
           </p>
         ) : null}
       </Link>
