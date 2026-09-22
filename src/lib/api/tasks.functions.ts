@@ -278,6 +278,17 @@ export const sendTaskMessage = createServerFn({ method: "POST" })
     });
     return ensureOk(res, "TASK_NOT_FOUND");
   });
+
+/** Đánh dấu đã đọc riêng các thông báo tin nhắn của task hiện tại. */
+export const markTaskMessagesRead = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ taskId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const res = await context.supabase.rpc("mark_task_message_notifications_read", {
+      _task_id: data.taskId,
+    });
+    return ensureOk(res, "TASK_NOT_FOUND");
+  });
 // ---- Batch: Task detail (comments, attachments, subtasks, due reminders) ----
 
 export const getTaskDetail = createServerFn({ method: "GET" })
