@@ -13,6 +13,7 @@ import {
   MessageSquare,
   PlayCircle,
   Search,
+  Send,
   UserRound,
   Waypoints,
   Zap,
@@ -35,7 +36,12 @@ import {
   listWorkGraphBoard,
 } from "@/lib/api/work-graph.functions";
 import type { WorkGraphBoardItem } from "@/lib/api/work-graph.functions";
-import { setTaskDueAt } from "@/lib/api/tasks.functions";
+import {
+  getTaskMessagingPermissions,
+  listTaskMessageRecipients,
+  sendTaskMessage,
+  setTaskDueAt,
+} from "@/lib/api/tasks.functions";
 
 export const Route = createFileRoute("/_authenticated/work-graph")({
   validateSearch: z.object({ task: z.string().uuid().optional() }),
@@ -65,6 +71,89 @@ const DONE_TASK = new Set(["done"]);
 const DONE_EXEC = new Set(["ACCEPTED", "SUCCEEDED"]);
 const PAGE_SIZE = 25;
 
+function WorkGraphTaskMessageForm({ taskId }: { taskId: string }) {
+  const { t } = useI18n();
+  const queryClient = useQueryClient();
+  const [recipientId, setRecipientId] = useState("");
+  const [body, setBody] = useState("");
+  const permissions = useQuery({
+    queryKey: ["task-messaging-permissions", taskId],
+    queryFn: () => getTaskMessagingPermissions({ data: { taskId } }),
+  });
+  const recipients = useQuery({
+    queryKey: ["task-message-recipients", taskId],
+    queryFn: () => listTaskMessageRecipients({ data: { taskId } }),
+    enabled: permissions.data?.canMessageTeam === true,
+  });
+  const send = useMutation({
+    mutationFn: () =>
+      sendTaskMessage({
+        data: {
+          taskId,
+          recipientId,
+          body: body.trim(),
+          source: "TASK_CHAT",
+          idempotencyKey: crypto.randomUUID(),
+        },
+      }),
+    onSuccess: async () => {
+      setBody("");
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["work-graph-board"] }),
+        queryClient.invalidateQueries({ queryKey: ["task-chat-detail", taskId] }),
+        queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+      ]);
+      toast.success(t("wg.messageSent"));
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : t("wg.deadlineError")),
+  });
+
+  if (permissions.isLoading) {
+    return <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />;
+  }
+  if (!permissions.data?.canMessageTeam) return null;
+
+  return (
+    <div className="mt-2 grid gap-2 rounded-lg border bg-muted/30 p-2 sm:grid-cols-[minmax(12rem,0.8fr)_minmax(16rem,1.6fr)_auto] sm:items-center">
+      <Select value={recipientId} onValueChange={setRecipientId}>
+        <SelectTrigger className="h-11 w-full sm:h-9" aria-label={t("wg.selectRecipient")}>
+          <SelectValue placeholder={t("wg.selectRecipient")} />
+        </SelectTrigger>
+        <SelectContent>
+          {(recipients.data ?? []).map((person) => (
+            <SelectItem key={person.id} value={person.id}>
+              {person.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Input
+        value={body}
+        onChange={(event) => setBody(event.target.value)}
+        placeholder={t("wg.messagePlaceholder")}
+        className="h-11 sm:h-9"
+        maxLength={10000}
+      />
+      <Button
+        type="button"
+        className="h-11 w-full sm:h-9 sm:w-auto"
+        disabled={!recipientId || !body.trim() || send.isPending || !recipients.data?.length}
+        onClick={() => send.mutate()}
+      >
+        {send.isPending ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Send className="h-4 w-4" />
+        )}
+        {t("wg.sendMessage")}
+      </Button>
+      {!recipients.isLoading && !recipients.data?.length ? (
+        <p className="text-xs text-muted-foreground sm:col-span-3">{t("wg.noRecipients")}</p>
+      ) : null}
+    </div>
+  );
+}
+
 function isRunning(i: WorkGraphBoardItem) {
   if (i.type === "EXECUTION") return RUNNING_EXEC.has(i.status ?? "");
   if (i.type === "TASK") return RUNNING_TASK.has((i.status ?? "").toLowerCase());
@@ -92,6 +181,7 @@ function WorkGraphPage() {
   const [dueFilter, setDueFilter] = useState<DueFilter>("all");
   const [expandedItems, setExpandedItems] = useState<Set<string>>(() => new Set());
   const [deadlineItems, setDeadlineItems] = useState<Set<string>>(() => new Set());
+  const [messageItems, setMessageItems] = useState<Set<string>>(() => new Set());
   const [deadlineDrafts, setDeadlineDrafts] = useState<Record<string, string>>({});
   const deadlineMutation = useMutation({
     mutationFn: ({ taskId, dueAt }: { taskId: string; dueAt: string | null }) =>
@@ -420,13 +510,20 @@ function WorkGraphPage() {
                       {i.type === "TASK" ? (
                         <span className="mt-0.5 flex flex-wrap gap-1">
                           <Button
-                            asChild
+                            type="button"
                             variant="ghost"
                             className="min-h-11 px-1.5 text-xs text-muted-foreground sm:min-h-9"
+                            aria-expanded={messageItems.has(i.id)}
+                            onClick={() =>
+                              setMessageItems((current) => {
+                                const next = new Set(current);
+                                if (next.has(i.id)) next.delete(i.id);
+                                else next.add(i.id);
+                                return next;
+                              })
+                            }
                           >
-                            <Link to="/m/tasks/$id" params={{ id: i.id }}>
-                              <MessageSquare className="h-4 w-4" /> {t("wg.sendMessage")}
-                            </Link>
+                            <MessageSquare className="h-4 w-4" /> {t("wg.sendMessage")}
                           </Button>
                           <Button
                             type="button"
@@ -454,6 +551,9 @@ function WorkGraphPage() {
                             {i.dueAt ? t("wg.changeDeadline") : t("wg.setDeadline")}
                           </Button>
                         </span>
+                      ) : null}
+                      {i.type === "TASK" && messageItems.has(i.id) ? (
+                        <WorkGraphTaskMessageForm taskId={i.id} />
                       ) : null}
                       {i.type === "TASK" && deadlineItems.has(i.id) ? (
                         <div className="mt-1 flex flex-col gap-2 rounded-lg border bg-muted/30 p-2 sm:flex-row sm:items-center">

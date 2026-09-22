@@ -72,3 +72,4 @@
 - [x] Persist every new UNI chat Executive Brief as a Work Product and project it into Work Graph without reopening the conversation.
 - [x] Enforce task messaging roles: employees message assignees; superiors use UNI AI or private superior messages.
 - [x] Label Work Graph responses by UNI AI or task team, including each source's latest time.
+- [x] Add an assignee picker for direct task messages from Work Graph.
