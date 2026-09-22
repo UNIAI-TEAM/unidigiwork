@@ -20,6 +20,8 @@ export const Route = createFileRoute("/_authenticated/m/search")({
         property: "og:description",
         content: "Tìm nhanh dự án, công việc, cuộc họp, tài liệu, email và nhân sự trên UNIWORK.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: MobileSearchPage,

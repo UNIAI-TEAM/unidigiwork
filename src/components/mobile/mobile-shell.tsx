@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -12,7 +12,6 @@ import {
   FileText,
   Folder,
   Menu,
-  Pin,
   Plus,
   Search,
   Settings,
@@ -45,8 +44,6 @@ const LIBRARY_LINKS = [
   { label: "nav.meetings" as Key, icon: CalendarDays, to: "/m/meet" },
   { label: "nav.documents" as Key, icon: Folder, to: "/m/documents" },
 ];
-
-const PINNED_KEY = "uniwork.mobile.pinned-conversations";
 
 export function MobileShell() {
   const { t } = useI18n();
@@ -130,18 +127,9 @@ function NativeDrawer({
   const identity = useCurrentIdentity();
   const { workspaces, workspaceId, select } = useActiveWorkspace();
   const [workspacesOpen, setWorkspacesOpen] = useState(true);
-  const [pinnedIds, setPinnedIds] = useState<string[]>([]);
   const swipeStartX = useRef<number | null>(null);
   const swipeDistance = useRef(0);
   const drawerRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(PINNED_KEY);
-      if (saved) setPinnedIds(JSON.parse(saved) as string[]);
-    } catch {
-      /* preference only */
-    }
-  }, []);
   const conversations = useQuery({
     queryKey: ["mobile-ai-conversations"],
     queryFn: () => listFn({ data: { limit: 6, sort: "recent" } }),
@@ -153,27 +141,6 @@ function NativeDrawer({
     enabled: open,
     staleTime: 60_000,
   });
-
-  const recentConversations = useMemo(() => {
-    const rows = conversations.data?.conversations ?? [];
-    return [...rows].sort((a, b) => {
-      const aPinned = pinnedIds.includes(a.id) ? 1 : 0;
-      const bPinned = pinnedIds.includes(b.id) ? 1 : 0;
-      return bPinned - aPinned;
-    });
-  }, [conversations.data?.conversations, pinnedIds]);
-
-  const togglePin = (id: string) => {
-    setPinnedIds((current) => {
-      const next = current.includes(id) ? current.filter((item) => item !== id) : [...current, id];
-      try {
-        localStorage.setItem(PINNED_KEY, JSON.stringify(next));
-      } catch {
-        /* preference only */
-      }
-      return next;
-    });
-  };
 
   const inboxCounts = {
     attention: home.data?.counts.attention ?? 0,
@@ -215,12 +182,13 @@ function NativeDrawer({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         ref={drawerRef}
+        showClose={false}
         side="left"
         onPointerDown={startSwipe}
         onPointerMove={moveSwipe}
         onPointerUp={endSwipe}
         onPointerCancel={endSwipe}
-        className="flex w-[86vw] max-w-[360px] touch-pan-y flex-col gap-0 overflow-hidden border-mobile-menu-border bg-mobile-menu p-0 text-mobile-menu-foreground shadow-panel [&>button:first-of-type]:hidden"
+        className="flex w-[86vw] max-w-[360px] touch-pan-y flex-col gap-0 overflow-hidden border-mobile-menu-border bg-mobile-menu p-0 text-mobile-menu-foreground shadow-panel"
       >
         <SheetHeader className="px-5 pb-4 pt-[max(1rem,env(safe-area-inset-top))] text-left">
           <SheetTitle className="flex min-h-11 items-center text-xl text-mobile-menu-foreground">
@@ -233,41 +201,18 @@ function NativeDrawer({
           <DrawerLink icon={Plus} label={t("m.nav.newWork")} onClick={() => go("/m")} />
           <DrawerLink icon={Search} label={t("cmd.group.search")} onClick={() => go("/m/search")} />
 
-          <DrawerSection
-            label={t("m.nav.recent")}
-            action={t("m.nav.viewAll")}
-            onAction={() => go("/m/search")}
-          >
-            {recentConversations.map((conversation) => (
-              <div
+          <DrawerSection label={t("m.nav.recent")}>
+            {(conversations.data?.conversations ?? []).map((conversation) => (
+              <button
                 key={conversation.id}
-                className="group grid min-h-11 grid-cols-[minmax(0,1fr)_2.5rem] items-center rounded-lg hover:bg-mobile-menu-accent"
+                onClick={() => go(`/m/c/${conversation.id}`)}
+                aria-label={conversation.title}
+                className="grid min-h-11 w-full min-w-0 grid-cols-[minmax(0,1fr)] items-center rounded-lg px-2 text-left hover:bg-mobile-menu-accent"
               >
-                <button
-                  onClick={() => go(`/m/c/${conversation.id}`)}
-                  aria-label={conversation.title}
-                  className="min-w-0 px-2 text-left"
-                >
-                  <span className="block truncate text-[15px] font-normal">
-                    {conversation.title}
-                  </span>
-                </button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-10 w-10 rounded-full text-mobile-menu-muted opacity-0 hover:bg-mobile-menu-accent hover:text-mobile-menu-foreground focus-visible:opacity-100 group-hover:opacity-100"
-                  onClick={() => togglePin(conversation.id)}
-                  aria-label={
-                    pinnedIds.includes(conversation.id) ? t("m.nav.unpin") : t("m.nav.pin")
-                  }
-                >
-                  {pinnedIds.includes(conversation.id) ? (
-                    <Pin className="fill-mobile-menu-foreground text-mobile-menu-foreground" />
-                  ) : (
-                    <Pin />
-                  )}
-                </Button>
-              </div>
+                <span className="block min-w-0 truncate text-[15px] font-normal">
+                  {conversation.title}
+                </span>
+              </button>
             ))}
           </DrawerSection>
 
