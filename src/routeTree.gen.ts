@@ -77,6 +77,7 @@ import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authentic
 import { Route as ShareWorkGraphTokenRouteImport } from './routes/share.work-graph.$token'
 import { Route as MeetingIdGuestRouteImport } from './routes/meeting_.$id_.guest'
 import { Route as BlogCategoryCategoryRouteImport } from './routes/blog.category.$category'
+import { Route as ApiPublicAppHealthRouteImport } from './routes/api/public/app-health'
 import { Route as ApiOfficeSessionsRouteImport } from './routes/api/office/sessions'
 import { Route as ApiOfficeDownloadRouteImport } from './routes/api/office/download'
 import { Route as ApiAdminWorkProductGraphBackfillRouteImport } from './routes/api/admin/work-product-graph-backfill'
@@ -506,6 +507,11 @@ const BlogCategoryCategoryRoute = BlogCategoryCategoryRouteImport.update({
   id: '/category/$category',
   path: '/category/$category',
   getParentRoute: () => BlogRoute,
+} as any)
+const ApiPublicAppHealthRoute = ApiPublicAppHealthRouteImport.update({
+  id: '/api/public/app-health',
+  path: '/api/public/app-health',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiOfficeSessionsRoute = ApiOfficeSessionsRouteImport.update({
   id: '/api/office/sessions',
@@ -1073,6 +1079,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/work-product-graph-backfill': typeof ApiAdminWorkProductGraphBackfillRoute
   '/api/office/download': typeof ApiOfficeDownloadRoute
   '/api/office/sessions': typeof ApiOfficeSessionsRouteWithChildren
+  '/api/public/app-health': typeof ApiPublicAppHealthRoute
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
   '/meeting/$id/guest': typeof MeetingIdGuestRoute
   '/share/work-graph/$token': typeof ShareWorkGraphTokenRoute
@@ -1219,6 +1226,7 @@ export interface FileRoutesByTo {
   '/api/admin/work-product-graph-backfill': typeof ApiAdminWorkProductGraphBackfillRoute
   '/api/office/download': typeof ApiOfficeDownloadRoute
   '/api/office/sessions': typeof ApiOfficeSessionsRouteWithChildren
+  '/api/public/app-health': typeof ApiPublicAppHealthRoute
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
   '/meeting/$id/guest': typeof MeetingIdGuestRoute
   '/share/work-graph/$token': typeof ShareWorkGraphTokenRoute
@@ -1370,6 +1378,7 @@ export interface FileRoutesById {
   '/api/admin/work-product-graph-backfill': typeof ApiAdminWorkProductGraphBackfillRoute
   '/api/office/download': typeof ApiOfficeDownloadRoute
   '/api/office/sessions': typeof ApiOfficeSessionsRouteWithChildren
+  '/api/public/app-health': typeof ApiPublicAppHealthRoute
   '/blog/category/$category': typeof BlogCategoryCategoryRoute
   '/meeting_/$id_/guest': typeof MeetingIdGuestRoute
   '/share/work-graph/$token': typeof ShareWorkGraphTokenRoute
@@ -1521,6 +1530,7 @@ export interface FileRouteTypes {
     | '/api/admin/work-product-graph-backfill'
     | '/api/office/download'
     | '/api/office/sessions'
+    | '/api/public/app-health'
     | '/blog/category/$category'
     | '/meeting/$id/guest'
     | '/share/work-graph/$token'
@@ -1667,6 +1677,7 @@ export interface FileRouteTypes {
     | '/api/admin/work-product-graph-backfill'
     | '/api/office/download'
     | '/api/office/sessions'
+    | '/api/public/app-health'
     | '/blog/category/$category'
     | '/meeting/$id/guest'
     | '/share/work-graph/$token'
@@ -1817,6 +1828,7 @@ export interface FileRouteTypes {
     | '/api/admin/work-product-graph-backfill'
     | '/api/office/download'
     | '/api/office/sessions'
+    | '/api/public/app-health'
     | '/blog/category/$category'
     | '/meeting_/$id_/guest'
     | '/share/work-graph/$token'
@@ -1882,6 +1894,7 @@ export interface RootRouteChildren {
   ApiAdminWorkProductGraphBackfillRoute: typeof ApiAdminWorkProductGraphBackfillRoute
   ApiOfficeDownloadRoute: typeof ApiOfficeDownloadRoute
   ApiOfficeSessionsRoute: typeof ApiOfficeSessionsRouteWithChildren
+  ApiPublicAppHealthRoute: typeof ApiPublicAppHealthRoute
   MeetingIdGuestRoute: typeof MeetingIdGuestRoute
   ShareWorkGraphTokenRoute: typeof ShareWorkGraphTokenRoute
   ApiAdminTraceCorrelationIdRoute: typeof ApiAdminTraceCorrelationIdRoute
@@ -2376,6 +2389,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/blog/category/$category'
       preLoaderRoute: typeof BlogCategoryCategoryRouteImport
       parentRoute: typeof BlogRoute
+    }
+    '/api/public/app-health': {
+      id: '/api/public/app-health'
+      path: '/api/public/app-health'
+      fullPath: '/api/public/app-health'
+      preLoaderRoute: typeof ApiPublicAppHealthRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/office/sessions': {
       id: '/api/office/sessions'
@@ -3291,6 +3311,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminWorkProductGraphBackfillRoute: ApiAdminWorkProductGraphBackfillRoute,
   ApiOfficeDownloadRoute: ApiOfficeDownloadRoute,
   ApiOfficeSessionsRoute: ApiOfficeSessionsRouteWithChildren,
+  ApiPublicAppHealthRoute: ApiPublicAppHealthRoute,
   MeetingIdGuestRoute: MeetingIdGuestRoute,
   ShareWorkGraphTokenRoute: ShareWorkGraphTokenRoute,
   ApiAdminTraceCorrelationIdRoute: ApiAdminTraceCorrelationIdRoute,
