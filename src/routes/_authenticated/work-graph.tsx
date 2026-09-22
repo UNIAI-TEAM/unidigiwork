@@ -203,7 +203,7 @@ function WorkGraphPage() {
               const Icon = meta.icon;
               const itemKey = `${i.type}:${i.id}`;
               const expanded = expandedItems.has(itemKey);
-              const hasLongContent = i.title.length > 72;
+              const hasLongContent = i.title.length > 40;
               const r = remaining(i.dueAt);
               return (
                 <li
