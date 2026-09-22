@@ -112,4 +112,4 @@
 - [x] Hoàn thiện Knowledge danh sách/chi tiết và các thao tác nội dung bằng API thật.
 - [x] Hoàn thiện Quy trình danh sách/chi tiết, trạng thái chạy và AI Agent bằng API thật.
 - [x] Hoàn thiện AI Brain tổng quan, theo dõi, đề xuất và Skill bằng API thật.
-- [ ] Xóa mọi liên kết nội bộ của sáu nhóm còn thoát khỏi `/m/*`; kiểm tra 390/440/820px và các cổng kiến trúc.
+- [x] Xóa mọi liên kết nội bộ của sáu nhóm còn thoát khỏi `/m/*`; kiểm tra 390/440/820px và các cổng kiến trúc.
