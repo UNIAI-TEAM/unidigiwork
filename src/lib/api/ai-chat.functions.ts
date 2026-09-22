@@ -499,6 +499,20 @@ export const sendAiMessage = createServerFn({ method: "POST" })
           message: "Chưa có tổ chức hoạt động",
         });
 
+      if (data.rootEntity?.type === "TASK") {
+        const { data: permissions, error: permissionError } = await ctx.supabase.rpc(
+          "get_task_messaging_permissions",
+          { _task_id: data.rootEntity.id },
+        );
+        if (permissionError) throw permissionError;
+        if (!permissions?.[0]?.can_ask_uni_ai) {
+          throw new ApiError({
+            code: "TENANT_ACCESS_DENIED",
+            message: "Bạn không có quyền hỏi UNI AI trong công việc này",
+          });
+        }
+      }
+
       // 1. Resolve or create conversation
       let conversationId = data.conversationId ?? null;
       let workspaceId = data.workspaceId ?? null;

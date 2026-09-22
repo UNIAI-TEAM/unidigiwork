@@ -13,7 +13,6 @@ import {
   MessageSquare,
   PlayCircle,
   Search,
-  Send,
   UserRound,
   Waypoints,
   Zap,
@@ -96,7 +95,6 @@ function WorkGraphPage() {
   const [expandedItems, setExpandedItems] = useState<Set<string>>(() => new Set());
   const [deadlineItems, setDeadlineItems] = useState<Set<string>>(() => new Set());
   const [deadlineDrafts, setDeadlineDrafts] = useState<Record<string, string>>({});
-  const [messageItems, setMessageItems] = useState<Set<string>>(() => new Set());
   const deadlineMutation = useMutation({
     mutationFn: ({ taskId, dueAt }: { taskId: string; dueAt: string | null }) =>
       setTaskDueAt({
@@ -398,22 +396,6 @@ function WorkGraphPage() {
                       </span>
                       {i.type === "TASK" ? (
                         <span className="mt-0.5 flex flex-wrap gap-1">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            className="min-h-11 px-1.5 text-xs text-muted-foreground sm:min-h-9"
-                            aria-expanded={messageItems.has(i.id)}
-                            onClick={() =>
-                              setMessageItems((current) => {
-                                const next = new Set(current);
-                                if (next.has(i.id)) next.delete(i.id);
-                                else next.add(i.id);
-                                return next;
-                              })
-                            }
-                          >
-                            <MessageSquare className="h-4 w-4" /> {t("wg.sendMessage")}
-                          </Button>
                           <Button
                             type="button"
                             variant="ghost"
