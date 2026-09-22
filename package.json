@@ -22,7 +22,11 @@
     "gate:domain-sdk": "node scripts/domain-sdk-gate.mjs",
     "verify": "bun run typecheck && bun run lint:changed && bun run test && bun run build",
     "test:integration": "bash scripts/integration-tests.sh",
-    "test:e2e:task-detail": "python3 tests/e2e/task-detail-ai-panel.py"
+    "test:e2e:task-detail": "python3 tests/e2e/task-detail-ai-panel.py",
+    "mobile:init": "cap add android && cap add ios",
+    "mobile:sync": "cap sync",
+    "mobile:android": "cap open android",
+    "mobile:ios": "cap open ios"
   },
   "dependencies": {
     "@ai-sdk/openai": "^4.0.36",
