@@ -298,7 +298,7 @@ export const sendTaskMessage = createServerFn({ method: "POST" })
         candidates,
         apiKey,
       });
-      const applied = await context.supabase.rpc("apply_task_message_classification", {
+      const applied = await (context.supabase as any).rpc("apply_task_message_classification", {
         _comment_id: comment.id,
         _label: classification.label,
         _confidence: classification.confidence,
@@ -312,7 +312,7 @@ export const sendTaskMessage = createServerFn({ method: "POST" })
       if (applied.error) mapPgError(applied.error);
       return { ...comment, classification: applied.data };
     } catch {
-      const failed = await context.supabase.rpc("apply_task_message_classification", {
+      const failed = await (context.supabase as any).rpc("apply_task_message_classification", {
         _comment_id: comment.id,
         _label: "FAILED",
         _confidence: 0,
