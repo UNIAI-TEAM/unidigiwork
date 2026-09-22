@@ -1036,8 +1036,7 @@ function WorkProductDetail() {
                         <p className="text-sm font-medium">{t("wp.revise.action")}</p>
                         <p className="mt-1 text-xs text-muted-foreground">{t("wp.revise.hint")}</p>
                         <Button
-                          size="sm"
-                          className="mt-2 gap-1"
+                          className="mt-2 h-11 w-full gap-1 sm:h-9 sm:w-auto"
                           disabled={revise.isPending}
                           onClick={() => revise.mutate()}
                         >
