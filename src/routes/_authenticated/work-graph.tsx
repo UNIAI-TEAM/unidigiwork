@@ -241,7 +241,7 @@ function WorkGraphPage() {
                     {i.status && (
                       <Badge
                         variant={isDone(i) ? "default" : isRunning(i) ? "secondary" : "outline"}
-                        className="shrink-0"
+                        className="mt-0.5 shrink-0 sm:mt-0"
                       >
                         {statusLabel(i)}
                       </Badge>
