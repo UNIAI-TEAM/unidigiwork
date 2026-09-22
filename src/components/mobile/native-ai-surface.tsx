@@ -54,6 +54,7 @@ import { useActiveWorkspace } from "@/lib/active-workspace";
 import { useCurrentIdentity } from "@/lib/use-current-identity";
 import { useI18n } from "@/lib/i18n";
 import { CollapsibleChatContent } from "@/components/mobile/collapsible-chat-content";
+import { TeamChatPanel } from "@/components/mobile/team-chat-panel";
 
 type AddedContext = {
   id: string;
