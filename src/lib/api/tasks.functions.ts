@@ -342,12 +342,13 @@ export const sendTaskMessage = createServerFn({ method: "POST" })
         candidates,
         apiKey,
       });
-      const applied = await (context.supabase as any).rpc("apply_task_message_classification", {
+      const applied = await context.supabase.rpc("apply_task_message_classification_v2", {
         _comment_id: comment.id,
         _label: classification.label,
         _confidence: classification.confidence,
         _task_title: classification.taskTitle,
         _related_task_id: classification.relatedTaskId,
+        _suggested_due_at: classification.suggestedDueAt,
         _model: classification.model,
         _classifier_version: classification.version,
         _idempotency_key: `${data.idempotencyKey}:classification`,
@@ -356,14 +357,15 @@ export const sendTaskMessage = createServerFn({ method: "POST" })
       if (applied.error) mapPgError(applied.error);
       return { ...comment, classification: applied.data };
     } catch {
-      const failed = await (context.supabase as any).rpc("apply_task_message_classification", {
+      const failed = await context.supabase.rpc("apply_task_message_classification_v2", {
         _comment_id: comment.id,
         _label: "FAILED",
         _confidence: 0,
         _task_title: null,
         _related_task_id: null,
+        _suggested_due_at: null,
         _model: "openai/gpt-6-astra",
-        _classifier_version: "task-message-v1",
+        _classifier_version: "task-message-v2",
         _idempotency_key: `${data.idempotencyKey}:classification-failed`,
         _correlation_id: data.correlationId ?? null,
       });

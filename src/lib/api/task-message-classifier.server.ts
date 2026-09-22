@@ -3,13 +3,14 @@ import { z } from "zod";
 import { createLovableResponsesProvider } from "@/lib/ai-gateway.server";
 
 const MODEL = "openai/gpt-6-astra";
-const VERSION = "task-message-v1";
+const VERSION = "task-message-v2";
 
 const resultSchema = z.object({
   label: z.enum(["TASK", "FEEDBACK", "RELATED_WORK", "OTHER"]),
   confidence: z.number().min(0).max(1),
   taskTitle: z.string().max(500).nullable(),
   relatedTaskId: z.string().uuid().nullable(),
+  suggestedDueAt: z.string().datetime({ offset: true }).nullable(),
 });
 
 export type TaskMessageClassification = z.infer<typeof resultSchema> & {
@@ -35,6 +36,7 @@ export async function classifyTaskMessage(input: {
       "Chỉ trả về một JSON object hợp lệ; không markdown, không giải thích.",
       "relatedTaskId chỉ được là ID trong danh sách ứng viên và chỉ dùng khi label RELATED_WORK.",
       "taskTitle là tiêu đề hành động ngắn khi label TASK, còn lại null.",
+      "suggestedDueAt là thời hạn ISO 8601 có múi giờ khi tin nhắn nêu hạn rõ ràng; nếu không có thì null.",
     ].join("\n"),
     prompt: JSON.stringify({
       currentTask: input.parentTitle,
@@ -45,6 +47,7 @@ export async function classifyTaskMessage(input: {
         confidence: "number 0..1",
         taskTitle: "string|null",
         relatedTaskId: "uuid|null",
+        suggestedDueAt: "ISO 8601 datetime with timezone|null",
       },
     }),
     providerOptions: {

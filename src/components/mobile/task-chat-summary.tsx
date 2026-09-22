@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   Bot,
   ExternalLink,
+  FileText,
   Link2,
   Loader2,
   MessageSquare,
@@ -288,6 +289,21 @@ export function TaskChatSummary({ taskId, taskTitle }: { taskId: string; taskTit
                               <Badge variant="secondary">
                                 {classificationLabel(String(comment.metadata.classification.label))}
                               </Badge>
+                            ) : null}
+                            {comment.metadata?.classification?.work_product_href ? (
+                              <Button asChild variant="ghost" size="sm" className="min-h-9 px-2">
+                                <Link
+                                  to="/work-products/$id"
+                                  params={{
+                                    id: String(
+                                      comment.metadata.classification.created_work_product_id,
+                                    ),
+                                  }}
+                                >
+                                  <FileText className="h-4 w-4" />
+                                  {t("m.taskChat.openReport")}
+                                </Link>
+                              </Button>
                             ) : null}
                           </div>
                           <p className="whitespace-pre-wrap break-words leading-6">
