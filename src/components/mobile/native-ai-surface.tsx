@@ -169,7 +169,7 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
               <span className="ml-2 text-sm">{t("m.ai.loading")}</span>
             </div>
           ) : isEmpty ? (
-                <EmptyState firstName={firstName} />
+            <EmptyState firstName={firstName} />
           ) : (
             <div className="mx-auto w-full max-w-2xl space-y-7 pb-4">
               {displayMessages.map((message, index) => (
