@@ -183,8 +183,10 @@ import { Route as AuthenticatedMAiWorkforceIdRouteImport } from './routes/_authe
 import { Route as AuthenticatedMAiMarketIdRouteImport } from './routes/_authenticated/m/ai-market.$id'
 import { Route as AuthenticatedMAdminOverviewRouteImport } from './routes/_authenticated/m/admin.overview'
 import { Route as AuthenticatedAdminSellWorkPilotsRouteImport } from './routes/_authenticated/admin.sell-work.pilots'
+import { Route as AuthenticatedMAdminAccountsIndexRouteImport } from './routes/_authenticated/m/admin.accounts.index'
 import { Route as ApiInternalOfficeV1RenderRouteImport } from './routes/api/internal/office/v1/render'
 import { Route as AuthenticatedMMeetIdRoomRouteImport } from './routes/_authenticated/m/meet.$id_.room'
+import { Route as AuthenticatedMAdminAccountsIdRouteImport } from './routes/_authenticated/m/admin.accounts.$id'
 import { Route as AuthenticatedAdminSellWorkPilotsPilotIdRouteImport } from './routes/_authenticated/admin.sell-work.pilots.$pilotId'
 
 const WorkflowsRoute = WorkflowsRouteImport.update({
@@ -1126,6 +1128,12 @@ const AuthenticatedAdminSellWorkPilotsRoute =
     path: '/sell-work/pilots',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedMAdminAccountsIndexRoute =
+  AuthenticatedMAdminAccountsIndexRouteImport.update({
+    id: '/admin/accounts/',
+    path: '/admin/accounts/',
+    getParentRoute: () => AuthenticatedMRoute,
+  } as any)
 const ApiInternalOfficeV1RenderRoute =
   ApiInternalOfficeV1RenderRouteImport.update({
     id: '/api/internal/office/v1/render',
@@ -1136,6 +1144,12 @@ const AuthenticatedMMeetIdRoomRoute =
   AuthenticatedMMeetIdRoomRouteImport.update({
     id: '/meet/$id_/room',
     path: '/meet/$id/room',
+    getParentRoute: () => AuthenticatedMRoute,
+  } as any)
+const AuthenticatedMAdminAccountsIdRoute =
+  AuthenticatedMAdminAccountsIdRouteImport.update({
+    id: '/admin/accounts/$id',
+    path: '/admin/accounts/$id',
     getParentRoute: () => AuthenticatedMRoute,
   } as any)
 const AuthenticatedAdminSellWorkPilotsPilotIdRoute =
@@ -1320,8 +1334,10 @@ export interface FileRoutesByFullPath {
   '/m/projects/': typeof AuthenticatedMProjectsIndexRoute
   '/m/work-products/': typeof AuthenticatedMWorkProductsIndexRoute
   '/admin/sell-work/pilots/$pilotId': typeof AuthenticatedAdminSellWorkPilotsPilotIdRoute
+  '/m/admin/accounts/$id': typeof AuthenticatedMAdminAccountsIdRoute
   '/m/meet/$id/room': typeof AuthenticatedMMeetIdRoomRoute
   '/api/internal/office/v1/render': typeof ApiInternalOfficeV1RenderRoute
+  '/m/admin/accounts/': typeof AuthenticatedMAdminAccountsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -1495,8 +1511,10 @@ export interface FileRoutesByTo {
   '/m/projects': typeof AuthenticatedMProjectsIndexRoute
   '/m/work-products': typeof AuthenticatedMWorkProductsIndexRoute
   '/admin/sell-work/pilots/$pilotId': typeof AuthenticatedAdminSellWorkPilotsPilotIdRoute
+  '/m/admin/accounts/$id': typeof AuthenticatedMAdminAccountsIdRoute
   '/m/meet/$id/room': typeof AuthenticatedMMeetIdRoomRoute
   '/api/internal/office/v1/render': typeof ApiInternalOfficeV1RenderRoute
+  '/m/admin/accounts': typeof AuthenticatedMAdminAccountsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -1675,8 +1693,10 @@ export interface FileRoutesById {
   '/_authenticated/m/projects/': typeof AuthenticatedMProjectsIndexRoute
   '/_authenticated/m/work-products/': typeof AuthenticatedMWorkProductsIndexRoute
   '/_authenticated/admin/sell-work/pilots/$pilotId': typeof AuthenticatedAdminSellWorkPilotsPilotIdRoute
+  '/_authenticated/m/admin/accounts/$id': typeof AuthenticatedMAdminAccountsIdRoute
   '/_authenticated/m/meet/$id_/room': typeof AuthenticatedMMeetIdRoomRoute
   '/api/internal/office/v1/render': typeof ApiInternalOfficeV1RenderRoute
+  '/_authenticated/m/admin/accounts/': typeof AuthenticatedMAdminAccountsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -1855,8 +1875,10 @@ export interface FileRouteTypes {
     | '/m/projects/'
     | '/m/work-products/'
     | '/admin/sell-work/pilots/$pilotId'
+    | '/m/admin/accounts/$id'
     | '/m/meet/$id/room'
     | '/api/internal/office/v1/render'
+    | '/m/admin/accounts/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -2030,8 +2052,10 @@ export interface FileRouteTypes {
     | '/m/projects'
     | '/m/work-products'
     | '/admin/sell-work/pilots/$pilotId'
+    | '/m/admin/accounts/$id'
     | '/m/meet/$id/room'
     | '/api/internal/office/v1/render'
+    | '/m/admin/accounts'
   id:
     | '__root__'
     | '/'
@@ -2209,8 +2233,10 @@ export interface FileRouteTypes {
     | '/_authenticated/m/projects/'
     | '/_authenticated/m/work-products/'
     | '/_authenticated/admin/sell-work/pilots/$pilotId'
+    | '/_authenticated/m/admin/accounts/$id'
     | '/_authenticated/m/meet/$id_/room'
     | '/api/internal/office/v1/render'
+    | '/_authenticated/m/admin/accounts/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -3481,6 +3507,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminSellWorkPilotsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/m/admin/accounts/': {
+      id: '/_authenticated/m/admin/accounts/'
+      path: '/admin/accounts'
+      fullPath: '/m/admin/accounts/'
+      preLoaderRoute: typeof AuthenticatedMAdminAccountsIndexRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
     '/api/internal/office/v1/render': {
       id: '/api/internal/office/v1/render'
       path: '/api/internal/office/v1/render'
@@ -3493,6 +3526,13 @@ declare module '@tanstack/react-router' {
       path: '/meet/$id/room'
       fullPath: '/m/meet/$id/room'
       preLoaderRoute: typeof AuthenticatedMMeetIdRoomRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
+    '/_authenticated/m/admin/accounts/$id': {
+      id: '/_authenticated/m/admin/accounts/$id'
+      path: '/admin/accounts/$id'
+      fullPath: '/m/admin/accounts/$id'
+      preLoaderRoute: typeof AuthenticatedMAdminAccountsIdRouteImport
       parentRoute: typeof AuthenticatedMRoute
     }
     '/_authenticated/admin/sell-work/pilots/$pilotId': {
@@ -3632,7 +3672,9 @@ interface AuthenticatedMRouteChildren {
   AuthenticatedMPeopleIndexRoute: typeof AuthenticatedMPeopleIndexRoute
   AuthenticatedMProjectsIndexRoute: typeof AuthenticatedMProjectsIndexRoute
   AuthenticatedMWorkProductsIndexRoute: typeof AuthenticatedMWorkProductsIndexRoute
+  AuthenticatedMAdminAccountsIdRoute: typeof AuthenticatedMAdminAccountsIdRoute
   AuthenticatedMMeetIdRoomRoute: typeof AuthenticatedMMeetIdRoomRoute
+  AuthenticatedMAdminAccountsIndexRoute: typeof AuthenticatedMAdminAccountsIndexRoute
 }
 
 const AuthenticatedMRouteChildren: AuthenticatedMRouteChildren = {
@@ -3683,7 +3725,9 @@ const AuthenticatedMRouteChildren: AuthenticatedMRouteChildren = {
   AuthenticatedMPeopleIndexRoute: AuthenticatedMPeopleIndexRoute,
   AuthenticatedMProjectsIndexRoute: AuthenticatedMProjectsIndexRoute,
   AuthenticatedMWorkProductsIndexRoute: AuthenticatedMWorkProductsIndexRoute,
+  AuthenticatedMAdminAccountsIdRoute: AuthenticatedMAdminAccountsIdRoute,
   AuthenticatedMMeetIdRoomRoute: AuthenticatedMMeetIdRoomRoute,
+  AuthenticatedMAdminAccountsIndexRoute: AuthenticatedMAdminAccountsIndexRoute,
 }
 
 const AuthenticatedMRouteWithChildren = AuthenticatedMRoute._addFileChildren(
