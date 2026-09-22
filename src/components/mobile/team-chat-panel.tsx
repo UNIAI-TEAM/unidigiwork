@@ -90,7 +90,7 @@ function ChannelList({ onOpenChannel }: { onOpenChannel: (channel: ChatChannelDT
   );
 }
 
-function ChannelRoom({ channelId, onBack }: { channelId: string; onBack: () => void }) {
+function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => void }) {
   const { t, lang } = useI18n();
   const queryClient = useQueryClient();
   const messagesFn = useServerFn(listChatMessages);
@@ -142,14 +142,16 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack: () => v
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <Button
-        variant="ghost"
-        className="mb-2 h-11 w-fit justify-start gap-2 px-2 text-sm"
-        onClick={onBack}
-      >
-        <ChevronLeft className="h-4 w-4" />
-        {t("m.ai.chat.back")}
-      </Button>
+      {onBack ? (
+        <Button
+          variant="ghost"
+          className="mb-2 h-11 w-fit justify-start gap-2 px-2 text-sm"
+          onClick={onBack}
+        >
+          <ChevronLeft className="h-4 w-4" />
+          {t("m.ai.chat.back")}
+        </Button>
+      ) : null}
 
       <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pb-2">
         {history.isLoading ? (
