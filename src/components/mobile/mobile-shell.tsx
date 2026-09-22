@@ -93,6 +93,10 @@ export function MobileShell() {
   return (
     <div
       onClickCapture={keepNavigationNative}
+      onTouchStart={startOpenSwipe}
+      onTouchMove={moveOpenSwipe}
+      onTouchEnd={endOpenSwipe}
+      onTouchCancel={endOpenSwipe}
       className="flex h-dvh min-h-dvh min-w-0 flex-col overflow-hidden bg-background"
     >
       <header className="z-40 flex min-h-16 shrink-0 items-center gap-2 bg-background px-[max(0.75rem,env(safe-area-inset-left))] pb-2 pt-[max(.5rem,env(safe-area-inset-top))]">
