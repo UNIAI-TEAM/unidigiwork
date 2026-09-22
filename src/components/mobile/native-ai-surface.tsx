@@ -16,6 +16,7 @@ import {
   Users,
   X,
   Zap,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -442,6 +443,22 @@ function Message({ message, latest = false }: { message: AiMessageDTO; latest?: 
                 </a>
               ))}
             </div>
+          ) : null}
+          {message.metadata?.workProductStatus === "CREATED" &&
+          message.metadata.workProductHref ? (
+            <a
+              href={message.metadata.workProductHref}
+              className="mt-3 flex min-h-11 w-fit max-w-full items-center gap-2 rounded-xl border border-border bg-surface px-3 text-sm font-medium text-foreground hover:bg-muted"
+            >
+              <FileText className="h-4 w-4 shrink-0" />
+              <span className="truncate">{t("m.ai.executiveBriefReady")}</span>
+              <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground" />
+            </a>
+          ) : null}
+          {message.metadata?.workProductStatus === "FAILED" ? (
+            <p className="mt-3 rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+              {t("m.ai.executiveBriefFailed")}
+            </p>
           ) : null}
         </MessageContent>
       </div>

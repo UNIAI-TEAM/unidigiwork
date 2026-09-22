@@ -68,6 +68,11 @@ export type AiMessageMetadata = {
     href: string;
     updatedAt: string | null;
   }>;
+  /** Executive Brief được lưu bền vững ngay sau khi AI trả lời. */
+  workProductId?: string;
+  workProductHref?: string;
+  workProductStatus?: "CREATED" | "FAILED";
+  workProductError?: string;
 };
 
 const openedLinkSchema = z.object({
@@ -107,6 +112,10 @@ const messageMetadataSchema = z.object({
     )
     .max(8)
     .optional(),
+  workProductId: z.string().uuid().optional(),
+  workProductHref: z.string().max(500).optional(),
+  workProductStatus: z.enum(["CREATED", "FAILED"]).optional(),
+  workProductError: z.string().max(500).optional(),
 });
 
 export type AiWorkspaceOption = { id: string; name: string };
@@ -604,7 +613,7 @@ export const sendAiMessage = createServerFn({ method: "POST" })
       // 4. Persist assistant message
       let assistantMessageId: string | null = null;
       if (status === "succeeded") {
-        const { data: aMsg } = await ctx.supabase
+        const { data: aMsg, error: assistantError } = await ctx.supabase
           .from("ai_messages")
           .insert({
             tenant_id: tenantId,
@@ -622,7 +631,47 @@ export const sendAiMessage = createServerFn({ method: "POST" })
           })
           .select("id")
           .single();
+        if (assistantError || !aMsg) {
+          throw new ApiError({
+            code: "AI_MESSAGE_CREATE_FAILED",
+            message: assistantError?.message ?? "Không lưu được phản hồi AI",
+          });
+        }
         assistantMessageId = (aMsg?.id as string) ?? null;
+
+        // Persist the exact Executive Brief without another model call. The RPC owns
+        // idempotency, tenant checks, source links, outbox emission and graph projection.
+        const root = data.rootEntity;
+        const supportedRoot =
+          root && ["WORKSPACE", "MEETING", "TASK", "DOCUMENT", "EMAIL"].includes(root.type)
+            ? root
+            : null;
+        const { error: workProductError } = await ctx.supabase.rpc(
+          "persist_chat_executive_brief",
+          {
+            _assistant_message_id: assistantMessageId,
+            _title: `${titleFrom(data.text)} — Executive Brief`,
+            _root_type: supportedRoot?.type ?? null,
+            _root_id: supportedRoot?.id ?? null,
+            _sources: sourceMetadata,
+            _idempotency_key: `chat-executive-brief:${assistantMessageId}`,
+            _correlation_id: conversationId,
+          },
+        );
+        if (workProductError) {
+          await ctx.supabase
+            .from("ai_messages")
+            .update({
+              metadata: {
+                source: "NATIVE_AI",
+                workspaceId,
+                sources: sourceMetadata,
+                workProductStatus: "FAILED",
+                workProductError: workProductError.message.slice(0, 500),
+              },
+            })
+            .eq("id", assistantMessageId);
+        }
       }
 
       // 5. Roll up conversation counters
