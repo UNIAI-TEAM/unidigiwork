@@ -1111,27 +1111,26 @@ function WorkProductDetail() {
                             </ul>
                           </div>
                         )}
-                        {data.versions.length > 1 && v.version !== data.versions[0].version && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="mt-2 mr-2"
-                            onClick={() =>
-                              setCompare({
-                                before: v.version,
-                                after: data.versions[0].version,
-                              })
-                            }
-                          >
-                            {t("wp.compare.open")}
-                          </Button>
-                        )}
-                        {canEdit && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="mt-2"
-                            onClick={() =>
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          {data.versions.length > 1 && v.version !== data.versions[0].version && (
+                            <Button
+                              variant="ghost"
+                              className="h-11 flex-1 sm:h-8 sm:flex-none"
+                              onClick={() =>
+                                setCompare({
+                                  before: v.version,
+                                  after: data.versions[0].version,
+                                })
+                              }
+                            >
+                              {t("wp.compare.open")}
+                            </Button>
+                          )}
+                          {canEdit && (
+                            <Button
+                              variant="outline"
+                              className="h-11 flex-1 sm:h-8 sm:flex-none"
+                              onClick={() =>
                               restoreWorkDeliverableVersion({
                                 data: {
                                   idempotencyKey: crypto.randomUUID(),
