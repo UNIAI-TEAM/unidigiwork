@@ -120,3 +120,10 @@
 - [ ] Thêm quản lý bộ phận từ hồ sơ nhân sự thật, không tạo nguồn dữ liệu thứ hai.
 - [ ] Thêm màn vai trò và quyền theo tổ chức, cùng chi tiết thành viên mobile-native.
 - [ ] Kiểm tra điều hướng `/m/*`, quyền máy chủ và giao diện 390/440/820px.
+
+## PWA — Menu kiểu ChatGPT
+
+- [x] Bỏ nút đóng menu và hỗ trợ vuốt sang trái để đóng.
+- [x] Tối giản danh sách Gần đây, bỏ dòng mô tả phụ dưới tiêu đề.
+- [x] Làm mới Tìm kiếm thành màn tìm hội thoại theo kiểu ChatGPT.
+- [x] Kiểm tra menu và tìm kiếm ở 390/440/820px.
