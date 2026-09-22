@@ -330,6 +330,13 @@
       "when": 1790062323224,
       "tag": "0046_task_messaging_role_permissions",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1790062593084,
+      "tag": "0047_correct_task_messaging_role_matrix",
+      "breakpoints": true
     }
   ]
 }
