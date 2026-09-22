@@ -122,7 +122,9 @@ function MobileMeetingDetail() {
             <Button
               variant="outline"
               className="mt-4 min-h-11 w-full"
-              onClick={() => void navigate({ to: summary.data.report.mobileHref ?? "/m/work-products" })}
+              onClick={() =>
+                void navigate({ to: summary.data?.report.mobileHref ?? "/m/work-products" })
+              }
             >
               <ExternalLink className="mr-2 h-4 w-4" />
               {t("mtg.report.open")}
