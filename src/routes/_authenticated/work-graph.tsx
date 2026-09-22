@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { z } from "zod";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  CalendarClock,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
@@ -14,12 +15,14 @@ import {
   Waypoints,
   Zap,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useI18n } from "@/lib/i18n";
 import { getWorkGraphOverview, listWorkGraphBoard } from "@/lib/api/work-graph.functions";
 import type { WorkGraphBoardItem } from "@/lib/api/work-graph.functions";
+import { setTaskDueAt } from "@/lib/api/tasks.functions";
 
 export const Route = createFileRoute("/_authenticated/work-graph")({
   validateSearch: z.object({ task: z.string().uuid().optional() }),
@@ -66,11 +69,25 @@ type Tab = "all" | "running" | "done" | "products";
 function WorkGraphPage() {
   const search = Route.useSearch();
   const { t, lang } = useI18n();
+  const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>("all");
   const [q, setQ] = useState("");
   const [term, setTerm] = useState("");
   const [page, setPage] = useState(1);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(() => new Set());
+  const [deadlineItems, setDeadlineItems] = useState<Set<string>>(() => new Set());
+  const [deadlineDrafts, setDeadlineDrafts] = useState<Record<string, string>>({});
+  const deadlineMutation = useMutation({
+    mutationFn: ({ taskId, dueAt }: { taskId: string; dueAt: string | null }) =>
+      setTaskDueAt({
+        data: { taskId, dueAt, idempotencyKey: crypto.randomUUID() },
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["work-graph-board"] });
+      toast.success(t("wg.deadlineSaved"));
+    },
+    onError: () => toast.error(t("wg.deadlineError")),
+  });
 
   useEffect(() => {
     const id = setTimeout(() => {
@@ -247,6 +264,11 @@ function WorkGraphPage() {
                         <span className="text-[11px] text-muted-foreground">
                           {t("wg.progress")} {i.progress}%
                         </span>
+                        {i.totalSteps > 0 ? (
+                          <span className="text-[11px] text-muted-foreground">
+                            · {t("wg.stepsDone").replace("{done}", String(i.completedSteps)).replace("{total}", String(i.totalSteps))}
+                          </span>
+                        ) : null}
                         {r && !isDone(i) ? (
                           <span
                             className={`text-[11px] ${
@@ -257,6 +279,77 @@ function WorkGraphPage() {
                           </span>
                         ) : null}
                       </span>
+                      {i.type === "TASK" ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="mt-0.5 min-h-11 px-1.5 text-xs text-muted-foreground sm:min-h-9"
+                          aria-expanded={deadlineItems.has(i.id)}
+                          onClick={() =>
+                            setDeadlineItems((current) => {
+                              const next = new Set(current);
+                              if (next.has(i.id)) next.delete(i.id);
+                              else {
+                                next.add(i.id);
+                                setDeadlineDrafts((drafts) => ({
+                                  ...drafts,
+                                  [i.id]: i.dueAt ? new Date(i.dueAt).toISOString().slice(0, 16) : "",
+                                }));
+                              }
+                              return next;
+                            })
+                          }
+                        >
+                          <CalendarClock className="h-4 w-4" />
+                          {i.dueAt ? t("wg.changeDeadline") : t("wg.setDeadline")}
+                        </Button>
+                      ) : null}
+                      {i.type === "TASK" && deadlineItems.has(i.id) ? (
+                        <div className="mt-1 flex flex-col gap-2 rounded-lg border bg-muted/30 p-2 sm:flex-row sm:items-center">
+                          <label className="sr-only" htmlFor={`deadline-${i.id}`}>
+                            {t("wg.deadline")}
+                          </label>
+                          <Input
+                            id={`deadline-${i.id}`}
+                            type="datetime-local"
+                            value={deadlineDrafts[i.id] ?? ""}
+                            onChange={(event) =>
+                              setDeadlineDrafts((drafts) => ({
+                                ...drafts,
+                                [i.id]: event.target.value,
+                              }))
+                            }
+                            className="h-11 min-w-0 text-sm sm:h-9"
+                          />
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              className="h-11 flex-1 sm:h-9 sm:flex-none"
+                              disabled={deadlineMutation.isPending}
+                              onClick={() => {
+                                const value = deadlineDrafts[i.id];
+                                deadlineMutation.mutate({
+                                  taskId: i.id,
+                                  dueAt: value ? new Date(value).toISOString() : null,
+                                });
+                              }}
+                            >
+                              {t("wg.saveDeadline")}
+                            </Button>
+                            {i.dueAt ? (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                className="h-11 flex-1 sm:h-9 sm:flex-none"
+                                disabled={deadlineMutation.isPending}
+                                onClick={() => deadlineMutation.mutate({ taskId: i.id, dueAt: null })}
+                              >
+                                {t("wg.clearDeadline")}
+                              </Button>
+                            ) : null}
+                          </div>
+                        </div>
+                      ) : null}
                       {hasLongContent ? (
                         <Button
                           type="button"
