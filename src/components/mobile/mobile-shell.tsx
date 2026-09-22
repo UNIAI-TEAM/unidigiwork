@@ -182,7 +182,7 @@ function NativeDrawer({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="left"
-        className="flex w-[78vw] max-w-[340px] flex-col gap-0 overflow-hidden border-mobile-menu-border bg-mobile-menu p-0 text-mobile-menu-foreground shadow-panel [&>button]:right-3 [&>button]:top-[max(.75rem,env(safe-area-inset-top))] [&>button]:grid [&>button]:h-11 [&>button]:w-11 [&>button]:place-items-center [&>button]:rounded-full [&>button]:border [&>button]:border-mobile-menu-border [&>button]:bg-mobile-menu-accent [&>button]:text-mobile-menu-foreground [&>button]:opacity-100"
+        className="flex w-[78vw] max-w-[340px] flex-col gap-0 overflow-hidden border-mobile-menu-border bg-mobile-menu p-0 text-mobile-menu-foreground shadow-panel [&>button:first-of-type]:right-3 [&>button:first-of-type]:top-[max(.75rem,env(safe-area-inset-top))] [&>button:first-of-type]:grid [&>button:first-of-type]:h-11 [&>button:first-of-type]:w-11 [&>button:first-of-type]:place-items-center [&>button:first-of-type]:rounded-full [&>button:first-of-type]:border [&>button:first-of-type]:border-mobile-menu-border [&>button:first-of-type]:bg-mobile-menu-accent [&>button:first-of-type]:text-mobile-menu-foreground [&>button:first-of-type]:opacity-100"
       >
         <SheetHeader className="px-4 pb-3 pt-[max(.75rem,env(safe-area-inset-top))] text-left">
           <SheetTitle className="flex min-h-11 items-center pr-14 text-xl text-mobile-menu-foreground">
@@ -313,7 +313,7 @@ function NativeDrawer({
 
         <button
           onClick={() => go("/settings")}
-          className="grid min-h-20 grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] items-center gap-2 border-t border-mobile-menu-border px-3 pb-[max(.75rem,env(safe-area-inset-bottom))] pt-3 text-left hover:bg-mobile-menu-accent"
+          className="relative grid w-full min-w-0 min-h-20 grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] items-center gap-2 border-t border-mobile-menu-border px-3 pb-[max(.75rem,env(safe-area-inset-bottom))] pt-3 text-left hover:bg-mobile-menu-accent"
         >
           <Avatar className="h-11 w-11">
             <AvatarFallback>{identity.initials}</AvatarFallback>
