@@ -309,6 +309,13 @@
       "when": 1790061651178,
       "tag": "0043_task_classification_candidates",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1790061846524,
+      "tag": "0044_fix_classified_subtask_assignee_conflict",
+      "breakpoints": true
     }
   ]
 }
