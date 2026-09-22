@@ -47,7 +47,7 @@ function Column({ rows, title }: { rows: DiffRow[]; title: string }) {
   return (
     <div className="min-w-0 flex-1 rounded-lg border bg-background">
       <div className="border-b px-3 py-2 text-xs font-medium text-muted-foreground">{title}</div>
-      <pre className="max-h-96 overflow-auto px-3 py-2 text-[12px] leading-5">
+      <pre className="max-h-64 overflow-auto px-3 py-2 text-[12px] leading-5 sm:max-h-96">
         {rows.map((r, idx) => (
           <div
             key={idx}
@@ -102,7 +102,7 @@ export function VersionCompare({
     <div className="space-y-2 rounded-lg border bg-muted/30 p-3">
       <div className="flex items-center gap-2">
         <p className="text-sm font-medium">{t("wp.compare.title")}</p>
-        <Button size="sm" variant="ghost" className="ml-auto h-8" onClick={onClose}>
+        <Button variant="ghost" className="ml-auto h-11 sm:h-8" onClick={onClose}>
           {t("wp.compare.close")}
         </Button>
       </div>

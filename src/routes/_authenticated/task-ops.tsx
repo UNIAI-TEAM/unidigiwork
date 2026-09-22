@@ -135,11 +135,13 @@ function TaskOpsPage() {
       </div>
 
       <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap items-center gap-3">
-          <Switch id="tops-done" checked={includeDone} onCheckedChange={setIncludeDone} />
-          <Label htmlFor="tops-done" className="text-sm text-muted-foreground">
-            {t("tops.includeDone")}
-          </Label>
+        <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto">
+          <div className="flex min-h-11 items-center gap-2">
+            <Switch id="tops-done" checked={includeDone} onCheckedChange={setIncludeDone} />
+            <Label htmlFor="tops-done" className="text-sm text-muted-foreground">
+              {t("tops.includeDone")}
+            </Label>
+          </div>
           <Select
             value={status}
             onValueChange={(v) => {
@@ -147,7 +149,10 @@ function TaskOpsPage() {
               setPage(1);
             }}
           >
-            <SelectTrigger className="h-9 w-44" aria-label={t("tops.statusFilter")}>
+            <SelectTrigger
+              className="h-11 w-full sm:h-9 sm:w-44"
+              aria-label={t("tops.statusFilter")}
+            >
               <SelectValue placeholder={t("tops.statusAll")} />
             </SelectTrigger>
             <SelectContent>
@@ -164,13 +169,13 @@ function TaskOpsPage() {
             </SelectContent>
           </Select>
         </div>
-        <div className="relative sm:w-72">
+        <div className="relative w-full sm:w-72">
           <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder={t("tops.searchPlaceholder")}
-            className="h-9 pl-8"
+            className="h-11 pl-8 text-base sm:h-9 sm:text-sm"
           />
         </div>
       </div>
@@ -196,7 +201,7 @@ function TaskOpsPage() {
                       <Link
                         to="/tasks/$id"
                         params={{ id: item.id }}
-                        className="block truncate text-sm font-medium hover:underline"
+                        className="block min-h-[24px] text-sm font-medium hover:underline max-sm:line-clamp-2 sm:truncate"
                       >
                         {item.title}
                       </Link>
@@ -234,7 +239,7 @@ function TaskOpsPage() {
                           reassign.mutate({ taskId: item.id, assigneeId: value })
                         }
                       >
-                        <SelectTrigger className="h-9 min-w-0 flex-1">
+                        <SelectTrigger className="h-11 min-w-0 flex-1 sm:h-9">
                           <SelectValue placeholder={t("tops.unassigned")} />
                         </SelectTrigger>
                         <SelectContent>
@@ -261,18 +266,18 @@ function TaskOpsPage() {
           {t("tops.total").replace("{n}", String(total))} ·{" "}
           {t("tops.pageOf").replace("{p}", String(page)).replace("{n}", String(pageCount))}
         </span>
-        <div className="flex items-center gap-2">
+        <div className="flex w-full items-center gap-2 sm:w-auto">
           <Button
-            size="sm"
             variant="outline"
+            className="h-11 flex-1 sm:h-9 sm:flex-none"
             disabled={page <= 1 || board.isFetching}
             onClick={() => setPage((p) => Math.max(1, p - 1))}
           >
             {t("tops.prev")}
           </Button>
           <Button
-            size="sm"
             variant="outline"
+            className="h-11 flex-1 sm:h-9 sm:flex-none"
             disabled={page >= pageCount || board.isFetching}
             onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
           >

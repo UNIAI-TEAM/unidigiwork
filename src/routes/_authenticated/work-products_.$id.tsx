@@ -874,7 +874,11 @@ function WorkProductDetail() {
                   </div>
                 </div>
                 <TabsList
-                  className={cn("mx-3 mt-3 grid", isImportedDocx ? "grid-cols-9" : "grid-cols-8")}
+                  className={cn(
+                    "mx-3 mt-3 flex w-auto justify-start gap-1 overflow-x-auto [scrollbar-width:none] [&>*]:h-10 [&>*]:min-w-11 [&>*]:shrink-0 [&::-webkit-scrollbar]:hidden",
+                    "sm:grid sm:gap-0 sm:overflow-visible sm:[&>*]:h-auto sm:[&>*]:min-w-0",
+                    isImportedDocx ? "sm:grid-cols-9" : "sm:grid-cols-8",
+                  )}
                 >
                   <TabsTrigger value="ai" aria-label={t("wp.tab.ai")}>
                     <Sparkles />
@@ -1032,8 +1036,7 @@ function WorkProductDetail() {
                         <p className="text-sm font-medium">{t("wp.revise.action")}</p>
                         <p className="mt-1 text-xs text-muted-foreground">{t("wp.revise.hint")}</p>
                         <Button
-                          size="sm"
-                          className="mt-2 gap-1"
+                          className="mt-2 h-11 w-full gap-1 sm:h-9 sm:w-auto"
                           disabled={revise.isPending}
                           onClick={() => revise.mutate()}
                         >
@@ -1108,42 +1111,42 @@ function WorkProductDetail() {
                             </ul>
                           </div>
                         )}
-                        {data.versions.length > 1 && v.version !== data.versions[0].version && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="mt-2 mr-2"
-                            onClick={() =>
-                              setCompare({
-                                before: v.version,
-                                after: data.versions[0].version,
-                              })
-                            }
-                          >
-                            {t("wp.compare.open")}
-                          </Button>
-                        )}
-                        {canEdit && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="mt-2"
-                            onClick={() =>
-                              restoreWorkDeliverableVersion({
-                                data: {
-                                  idempotencyKey: crypto.randomUUID(),
-                                  id,
-                                  version: v.version,
-                                },
-                              }).then(() => {
-                                toast.success(t("wp.versions.restored"));
-                                invalidate();
-                              })
-                            }
-                          >
-                            {t("wp.versions.restore")}
-                          </Button>
-                        )}
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          {data.versions.length > 1 && v.version !== data.versions[0].version && (
+                            <Button
+                              variant="ghost"
+                              className="h-11 flex-1 sm:h-8 sm:flex-none"
+                              onClick={() =>
+                                setCompare({
+                                  before: v.version,
+                                  after: data.versions[0].version,
+                                })
+                              }
+                            >
+                              {t("wp.compare.open")}
+                            </Button>
+                          )}
+                          {canEdit && (
+                            <Button
+                              variant="outline"
+                              className="h-11 flex-1 sm:h-8 sm:flex-none"
+                              onClick={() =>
+                                restoreWorkDeliverableVersion({
+                                  data: {
+                                    idempotencyKey: crypto.randomUUID(),
+                                    id,
+                                    version: v.version,
+                                  },
+                                }).then(() => {
+                                  toast.success(t("wp.versions.restored"));
+                                  invalidate();
+                                })
+                              }
+                            >
+                              {t("wp.versions.restore")}
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </TabsContent>
