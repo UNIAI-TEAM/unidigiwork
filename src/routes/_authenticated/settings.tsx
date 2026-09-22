@@ -34,6 +34,7 @@ import {
   KeyRound,
   Mail,
   Languages,
+  ArrowLeft,
 } from "lucide-react";
 import {
   Dialog,
@@ -50,6 +51,7 @@ import { PushDevicesPanel } from "@/components/push-devices-panel";
 import { notifyComingSoon } from "@/lib/coming-soon";
 import { useI18n, type Key as I18nKey } from "@/lib/i18n";
 import { FilterPageHeader } from "@/components/filter-page-header";
+import { Button } from "@/components/ui/button";
 
 const searchSchema = z.object({
   tab: z
@@ -914,39 +916,61 @@ export function SettingsPage() {
   const Body = RENDERS[section];
 
   if (isMobile) {
-    return (
-      <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col gap-4 overflow-x-hidden px-4 pb-[max(2rem,env(safe-area-inset-bottom))] pt-2">
-        <header className="py-2">
-          <h1 className="text-xl font-semibold">{t("ac.80")}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{t("ac.81")}</p>
-        </header>
-        <nav className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-2" aria-label={t("ac.80")}>
-          {SECTIONS.map((item) => {
-            const active = item.key === section;
-            return (
+    if (!parsedSection) {
+      return (
+        <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col overflow-x-hidden px-4 pb-[max(2rem,env(safe-area-inset-bottom))] pt-2">
+          <header className="pb-5 pt-2">
+            <h1 className="text-2xl font-semibold">{t("ac.80")}</h1>
+            <p className="mt-1 text-sm text-muted-foreground">{t("ac.81")}</p>
+          </header>
+          <nav
+            className="overflow-hidden rounded-xl border border-border bg-card"
+            aria-label={t("ac.80")}
+          >
+            {SECTIONS.map((item, index) => (
               <button
                 key={item.key}
                 type="button"
                 onClick={() =>
                   void navigate({ to: "/m/settings" as never, search: { tab: item.key } as never })
                 }
-                className={`flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors ${
-                  active
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border bg-surface text-muted-foreground"
-                }`}
+                className={`flex min-h-16 w-full items-center gap-3 px-4 text-left transition-colors active:bg-surface-2 ${index ? "border-t border-border" : ""}`}
               >
-                <item.icon className="h-4 w-4" />
-                {t(item.labelKey)}
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-surface-2 text-foreground">
+                  <item.icon className="h-5 w-5" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-semibold">{t(item.labelKey)}</span>
+                  <span className="block truncate text-xs text-muted-foreground">
+                    {t(item.descKey)}
+                  </span>
+                </span>
+                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
               </button>
-            );
-          })}
-        </nav>
-        <section className="min-w-0 rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5">
-          <div className="mb-5 border-b border-border pb-3">
-            <h2 className="text-lg font-semibold">{t(current.labelKey)}</h2>
-            <p className="text-xs text-muted-foreground">{t(current.descKey)}</p>
+            ))}
+          </nav>
+        </div>
+      );
+    }
+
+    return (
+      <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col overflow-x-hidden pb-[max(2rem,env(safe-area-inset-bottom))]">
+        <header className="sticky top-0 z-10 flex min-h-14 items-center gap-2 border-b border-border bg-background/95 px-2 backdrop-blur">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-11 w-11 shrink-0 rounded-full"
+            onClick={() => void navigate({ to: "/m/settings" as never })}
+            aria-label={t("wp.create.back")}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div className="min-w-0">
+            <h1 className="truncate text-base font-semibold">{t(current.labelKey)}</h1>
+            <p className="truncate text-xs text-muted-foreground">{t(current.descKey)}</p>
           </div>
+        </header>
+        <section className="min-w-0 px-4 py-5">
           <Body />
         </section>
       </div>

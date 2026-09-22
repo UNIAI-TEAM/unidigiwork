@@ -1,30 +1,29 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useActiveWorkspace } from "@/lib/active-workspace";
 import { listWorkDeliverables } from "@/lib/api/work-deliverables.functions";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { ChevronRight, FileText, Search, Star } from "lucide-react";
+import { ArrowDownUp, FileText, Search, Sparkles } from "lucide-react";
 import { format } from "date-fns";
-import { vi } from "date-fns/locale";
+import { enUS, vi } from "date-fns/locale";
+import { localeTag, useI18n, type Key } from "@/lib/i18n";
+import type { WorkDeliverableRow } from "@/lib/api/work-deliverables.functions";
 
 const SCOPES = [
-  { id: "all", label: "Tất cả" },
-  { id: "mine", label: "Của tôi" },
-  { id: "team", label: "Nhóm" },
-  { id: "ai", label: "AI tạo" },
+  { id: "all", label: "m.wp.scope.all" },
+  { id: "mine", label: "m.wp.scope.mine" },
+  { id: "ai", label: "m.wp.scope.ai" },
 ] as const;
 
 type ScopeId = (typeof SCOPES)[number]["id"];
 
-const STATUS_LABEL: Record<string, string> = {
-  DRAFT: "Bản nháp",
-  IN_REVIEW: "Đang duyệt",
-  APPROVED: "Đã duyệt",
-  PUBLISHED: "Đã phát hành",
-  ARCHIVED: "Lưu trữ",
+type MobileWorkProduct = WorkDeliverableRow & {
+  workspaceName?: string | null;
+  ownerName?: string | null;
 };
 
 export const Route = createFileRoute("/_authenticated/m/work-products/")({
@@ -43,6 +42,8 @@ export const Route = createFileRoute("/_authenticated/m/work-products/")({
 });
 
 function MobileWorkProductsPage() {
+  const { t, lang } = useI18n();
+  const navigate = useNavigate();
   const { workspaceId } = useActiveWorkspace();
   const [scope, setScope] = useState<ScopeId>("all");
   const [search, setSearch] = useState("");
@@ -57,14 +58,13 @@ function MobileWorkProductsPage() {
   });
 
   const items = useMemo(() => {
-    let list = ((data as any[] | undefined) ?? []).slice();
+    let list = ((data as MobileWorkProduct[] | undefined) ?? []).slice();
     if (scope === "ai") list = list.filter((p) => p.ai_generated);
     const q = search.trim().toLowerCase();
     if (q)
       list = list.filter(
         (p) =>
-          p.title?.toLowerCase().includes(q) ||
-          (p.tags ?? []).some((t: string) => t.toLowerCase().includes(q)),
+          p.title.toLowerCase().includes(q) || p.tags.some((tag) => tag.toLowerCase().includes(q)),
       );
     list.sort((a, b) => {
       const da = new Date(a.updated_at ?? a.created_at).getTime();
@@ -76,10 +76,9 @@ function MobileWorkProductsPage() {
 
   return (
     <div className="flex min-h-full flex-col gap-5 p-4 pb-24">
-      <header>
-        <p className="module-label text-primary">Work products</p>
-        <h1 className="mt-1 font-heading text-2xl font-bold">Kết quả công việc</h1>
-        <p className="text-sm text-muted-foreground">Mọi thành quả của bạn ở một nơi.</p>
+      <header className="pt-1">
+        <h1 className="text-2xl font-semibold">{t("wp.title")}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{t("m.wp.list.subtitle")}</p>
       </header>
 
       <div className="relative">
@@ -87,70 +86,84 @@ function MobileWorkProductsPage() {
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Tìm theo tên hoặc thẻ…"
-          className="pl-9"
+          placeholder={t("m.wp.list.search")}
+          aria-label={t("m.wp.list.search")}
+          className="h-12 rounded-xl pl-10"
         />
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-1">
         {SCOPES.map((s) => (
-          <button
+          <Button
             key={s.id}
+            variant={scope === s.id ? "default" : "outline"}
             onClick={() => setScope(s.id)}
             className={cn(
-              "min-h-10 shrink-0 rounded-xl px-4 text-xs font-semibold transition-colors",
-              scope === s.id
-                ? "bg-action text-action-foreground"
-                : "border border-border bg-background text-muted-foreground shadow-card",
+              "min-h-11 shrink-0 rounded-full px-4 text-xs",
+              scope !== s.id && "text-muted-foreground",
             )}
           >
-            {s.label}
-          </button>
+            {t(s.label as Key)}
+          </Button>
         ))}
-        <button
+        <Button
+          variant="ghost"
           onClick={() => setNewestFirst((v) => !v)}
-          className="min-h-10 shrink-0 rounded-xl border border-border bg-background px-4 text-xs font-semibold text-muted-foreground shadow-card"
+          className="min-h-11 shrink-0 rounded-full px-4 text-xs text-muted-foreground"
         >
-          {newestFirst ? "Mới nhất" : "Cũ nhất"}
-        </button>
+          <ArrowDownUp className="h-4 w-4" />
+          {newestFirst ? t("m.wp.sort.newest") : t("m.wp.sort.oldest")}
+        </Button>
       </div>
 
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">Đang tải…</p>
+        <div className="grid gap-2" aria-label={t("wp.loading")}>
+          {[0, 1, 2].map((item) => (
+            <div key={item} className="h-24 animate-pulse rounded-xl bg-surface-2" />
+          ))}
+        </div>
       ) : items.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border p-8 text-center">
           <FileText className="mx-auto h-6 w-6 text-muted-foreground" />
-          <p className="mt-2 text-sm text-muted-foreground">Chưa có kết quả công việc phù hợp.</p>
+          <p className="mt-2 text-sm font-medium">{t("wp.empty")}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{t("wp.emptyHint")}</p>
         </div>
       ) : (
         <ul className="grid gap-2">
           {items.map((p) => (
             <li key={p.id}>
-              <Link
-                to="/m/work-products/$id"
-                params={{ id: p.id }}
-                className="flex min-h-20 items-center gap-3 rounded-xl border border-border bg-card p-3 shadow-card active:bg-surface"
+              <button
+                type="button"
+                onClick={() => void navigate({ to: "/m/work-products/$id", params: { id: p.id } })}
+                className="flex min-h-24 w-full min-w-0 items-start gap-3 rounded-xl border border-border bg-card p-4 text-left shadow-card transition-colors active:bg-surface"
               >
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-surface-2 text-foreground">
                   <FileText className="h-5 w-5" />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium">{p.title}</span>
-                  <span className="block truncate text-xs text-muted-foreground">
-                    {p.business_type} · v{p.current_version ?? 1}
+                  <span className="line-clamp-2 block text-sm font-semibold leading-5">
+                    {p.title}
                   </span>
-                  <span className="block truncate text-[11px] text-muted-foreground">
-                    {format(new Date(p.updated_at ?? p.created_at), "d MMM yyyy", { locale: vi })}
+                  <span className="mt-1 block truncate text-xs text-muted-foreground">
+                    {t(`wp.type.${p.business_type}` as Key)} · v{p.current_version ?? 1}
+                    {p.workspaceName ? ` · ${p.workspaceName}` : ""}
+                  </span>
+                  <span className="mt-1 block truncate text-xs text-muted-foreground">
+                    {format(new Date(p.updated_at ?? p.created_at), "d MMM yyyy", {
+                      locale: lang === "vi" ? vi : enUS,
+                    })}
                   </span>
                 </span>
                 {p.ai_generated && (
-                  <Star className="h-4 w-4 shrink-0 text-warning" aria-label="AI tạo" />
+                  <Sparkles
+                    className="h-4 w-4 shrink-0 text-primary"
+                    aria-label={t("m.wp.scope.ai")}
+                  />
                 )}
                 <Badge variant="secondary" className="shrink-0 text-[10px]">
-                  {STATUS_LABEL[p.status] ?? p.status}
+                  {t(`wp.status.${p.status}` as Key)}
                 </Badge>
-                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-              </Link>
+              </button>
             </li>
           ))}
         </ul>
