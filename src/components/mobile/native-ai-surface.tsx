@@ -224,7 +224,7 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
             </div>
           )}
           <PromptInput
-            className="rounded-[1.75rem] border-border-strong bg-surface shadow-card"
+            className="rounded-[2rem] border-border-strong bg-surface shadow-card"
             onSubmit={({ text }) => submit(text)}
           >
             <PromptInputTextarea
@@ -235,38 +235,38 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
               onChange={(event) => setInput(event.currentTarget.value)}
               className="max-h-40 min-h-20 px-5 pt-4 text-base leading-6"
             />
-            <PromptInputFooter className="px-1.5 pb-1.5">
-              <PromptInputTools>
+            <PromptInputFooter className="px-3 pb-3">
+              <PromptInputTools className="gap-3">
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="h-11 w-11 shrink-0 rounded-full"
+                  className="h-12 w-12 shrink-0 rounded-full"
                   aria-label={t("m.ai.addContext")}
                   onClick={() => setContextOpen(true)}
                 >
-                  <Plus className="h-5 w-5" />
+                  <Plus className="!h-7 !w-7" />
                 </Button>
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="h-11 w-11 shrink-0 rounded-full"
+                  className="h-12 w-12 shrink-0 rounded-full"
                   aria-label={t("m.ai.voice")}
                 >
-                  <Mic className="h-4 w-4" />
+                  <Mic className="!h-6 !w-6" />
                 </Button>
               </PromptInputTools>
               <PromptInputSubmit
-                className="h-11 w-11 shrink-0 rounded-full"
+                className="h-12 w-12 shrink-0 rounded-full"
                 aria-label={t("m.ai.send")}
                 disabled={!input.trim() || send.isPending}
                 status={send.isPending ? "submitted" : "ready"}
               >
                 {send.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="!h-6 !w-6 animate-spin" />
                 ) : (
-                  <ArrowUp className="h-4 w-4" />
+                  <ArrowUp className="!h-6 !w-6" />
                 )}
               </PromptInputSubmit>
             </PromptInputFooter>
