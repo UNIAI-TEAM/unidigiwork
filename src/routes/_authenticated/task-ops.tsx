@@ -266,18 +266,18 @@ function TaskOpsPage() {
           {t("tops.total").replace("{n}", String(total))} ·{" "}
           {t("tops.pageOf").replace("{p}", String(page)).replace("{n}", String(pageCount))}
         </span>
-        <div className="flex items-center gap-2">
+        <div className="flex w-full items-center gap-2 sm:w-auto">
           <Button
-            size="sm"
             variant="outline"
+            className="h-11 flex-1 sm:h-9 sm:flex-none"
             disabled={page <= 1 || board.isFetching}
             onClick={() => setPage((p) => Math.max(1, p - 1))}
           >
             {t("tops.prev")}
           </Button>
           <Button
-            size="sm"
             variant="outline"
+            className="h-11 flex-1 sm:h-9 sm:flex-none"
             disabled={page >= pageCount || board.isFetching}
             onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
           >
