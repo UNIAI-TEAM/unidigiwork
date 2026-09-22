@@ -51,7 +51,7 @@ const LIBRARY_LINKS = [
 const PINNED_KEY = "uniwork.mobile.pinned-conversations";
 
 export function MobileShell() {
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -109,7 +109,7 @@ function NativeDrawer({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const navigate = useNavigate();
   const listFn = useServerFn(listAiConversations);
   const homeFn = useServerFn(getHomeSummary);
