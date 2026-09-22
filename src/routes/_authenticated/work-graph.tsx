@@ -167,13 +167,13 @@ function WorkGraphPage() {
             </button>
           ))}
         </div>
-        <div className="relative sm:w-64">
+        <div className="relative w-full sm:w-64">
           <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder={t("wg.searchPlaceholder")}
-            className="h-9 pl-8"
+            className="h-11 pl-8 text-base sm:h-9 sm:text-sm"
           />
         </div>
       </div>
