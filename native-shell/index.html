@@ -120,12 +120,26 @@
         });
       }
 
+      // Phiên bản binary thật lấy từ plugin App. Không xác định được -> null
+      // (bỏ qua cổng phiên bản, tránh chặn nhầm mọi bản cài).
       function nativeVersion() {
         try {
-          return (window.Capacitor && window.Capacitor.appVersion) || "0.0.0";
+          var cap = window.Capacitor;
+          var app = cap && cap.Plugins && cap.Plugins.App;
+          if (app && typeof app.getInfo === "function") {
+            return Promise.resolve(app.getInfo()).then(
+              function (info) {
+                return (info && info.version) || null;
+              },
+              function () {
+                return null;
+              },
+            );
+          }
         } catch (e) {
-          return "0.0.0";
+          /* khong xac dinh duoc */
         }
+        return Promise.resolve(null);
       }
 
       function cmp(a, b) {
@@ -145,7 +159,7 @@
         $("retry").style.display = "none";
         $("diag").style.display = "none";
         $("log").style.display = "none";
-        note("online=" + navigator.onLine + " native=" + nativeVersion());
+        note("online=" + navigator.onLine);
 
         if (!navigator.onLine) {
           note("thiết bị báo mất mạng");
@@ -153,34 +167,37 @@
           return;
         }
 
-        fetchWithTimeout(HEALTH)
-          .then(function (res) {
-            note("health HTTP " + res.status);
+        Promise.all([fetchWithTimeout(HEALTH), nativeVersion()])
+          .then(function (out) {
+            var res = out[0];
+            var nv = out[1];
+            note("health HTTP " + res.status + " native=" + (nv || "khong xac dinh"));
             if (!res.ok) throw new Error("HTTP " + res.status);
-            return res.json();
+            return res.json().then(function (h) {
+              return { h: h, nv: nv };
+            });
           })
-          .then(function (h) {
+          .then(function (ctx) {
+            var h = ctx.h;
+            var nv = ctx.nv;
             note("webVersion=" + h.webVersion + " minNative=" + h.minNativeVersion);
             // Guardrail 5: kill-switch từ xa.
             if (h.killSwitch) {
               fail("UniWork đang bảo trì", h.message || "Vui lòng thử lại sau ít phút.");
               return;
             }
-            // Guardrail 3: version handshake — binary cũ không được vào.
-            if (cmp(nativeVersion(), h.minNativeVersion) < 0) {
+            // Guardrail 3: version handshake — chỉ chặn khi biết chắc bản cài quá cũ.
+            if (nv && cmp(nv, h.minNativeVersion) < 0) {
               fail(
                 "Cần cập nhật ứng dụng",
-                "Bản cài " +
-                  nativeVersion() +
-                  " đã cũ. Cài bản " +
-                  h.minNativeVersion +
-                  " trở lên.",
+                "Bản cài " + nv + " đã cũ. Cài bản " + h.minNativeVersion + " trở lên.",
               );
               return;
             }
             // Guardrail 4: nạp bản web mới, kèm dấu phiên bản để tránh asset cũ.
             window.location.replace(REMOTE + "/m?v=" + encodeURIComponent(h.webVersion));
           })
+
           .catch(function (err) {
             note("health lỗi: " + (err && err.message ? err.message : err));
             fail(
