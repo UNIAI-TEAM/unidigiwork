@@ -133,7 +133,8 @@ export const adminMobileEn: Partial<Record<keyof typeof adminMobileVi, string>> 
   "m.admin.departmentSaved": "Department updated.",
   "m.admin.departmentError": "The department could not be updated.",
   "m.admin.roleScope": "Effective permissions",
-  "m.admin.role.tenant_owner.desc": "Full access, ownership transfer, and organization lifecycle management.",
+  "m.admin.role.tenant_owner.desc":
+    "Full access, ownership transfer, and organization lifecycle management.",
   "m.admin.role.tenant_admin.desc": "Manage members, roles, and people profiles.",
   "m.admin.role.manager.desc": "Coordinate work and members within granted access.",
   "m.admin.role.member.desc": "Complete work and collaborate in the organization.",

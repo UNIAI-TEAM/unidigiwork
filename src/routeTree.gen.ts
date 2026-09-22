@@ -185,14 +185,17 @@ import { Route as AuthenticatedMAiWorkforceIdRouteImport } from './routes/_authe
 import { Route as AuthenticatedMAiMarketIdRouteImport } from './routes/_authenticated/m/ai-market.$id'
 import { Route as AuthenticatedMAiBrainTrackingRouteImport } from './routes/_authenticated/m/ai-brain_.tracking'
 import { Route as AuthenticatedMAdminUsersRouteImport } from './routes/_authenticated/m/admin.users'
+import { Route as AuthenticatedMAdminRolesRouteImport } from './routes/_authenticated/m/admin.roles'
 import { Route as AuthenticatedMAdminOverviewRouteImport } from './routes/_authenticated/m/admin.overview'
 import { Route as AuthenticatedMAdminOrganizationRouteImport } from './routes/_authenticated/m/admin.organization'
 import { Route as AuthenticatedMAdminLimitsRouteImport } from './routes/_authenticated/m/admin.limits'
+import { Route as AuthenticatedMAdminDepartmentsRouteImport } from './routes/_authenticated/m/admin.departments'
 import { Route as AuthenticatedMAdminAccountsRouteImport } from './routes/_authenticated/m/admin.accounts'
 import { Route as AuthenticatedAdminSellWorkPilotsRouteImport } from './routes/_authenticated/admin.sell-work.pilots'
 import { Route as AuthenticatedMAdminAccountsIndexRouteImport } from './routes/_authenticated/m/admin.accounts.index'
 import { Route as ApiInternalOfficeV1RenderRouteImport } from './routes/api/internal/office/v1/render'
 import { Route as AuthenticatedMMeetIdRoomRouteImport } from './routes/_authenticated/m/meet.$id_.room'
+import { Route as AuthenticatedMAdminOrganizationIdRouteImport } from './routes/_authenticated/m/admin.organization.$id'
 import { Route as AuthenticatedMAdminAccountsIdRouteImport } from './routes/_authenticated/m/admin.accounts.$id'
 import { Route as AuthenticatedAdminSellWorkPilotsPilotIdRouteImport } from './routes/_authenticated/admin.sell-work.pilots.$pilotId'
 
@@ -1147,6 +1150,12 @@ const AuthenticatedMAdminUsersRoute =
     path: '/admin/users',
     getParentRoute: () => AuthenticatedMRoute,
   } as any)
+const AuthenticatedMAdminRolesRoute =
+  AuthenticatedMAdminRolesRouteImport.update({
+    id: '/admin/roles',
+    path: '/admin/roles',
+    getParentRoute: () => AuthenticatedMRoute,
+  } as any)
 const AuthenticatedMAdminOverviewRoute =
   AuthenticatedMAdminOverviewRouteImport.update({
     id: '/admin/overview',
@@ -1163,6 +1172,12 @@ const AuthenticatedMAdminLimitsRoute =
   AuthenticatedMAdminLimitsRouteImport.update({
     id: '/admin/limits',
     path: '/admin/limits',
+    getParentRoute: () => AuthenticatedMRoute,
+  } as any)
+const AuthenticatedMAdminDepartmentsRoute =
+  AuthenticatedMAdminDepartmentsRouteImport.update({
+    id: '/admin/departments',
+    path: '/admin/departments',
     getParentRoute: () => AuthenticatedMRoute,
   } as any)
 const AuthenticatedMAdminAccountsRoute =
@@ -1194,6 +1209,12 @@ const AuthenticatedMMeetIdRoomRoute =
     id: '/meet/$id_/room',
     path: '/meet/$id/room',
     getParentRoute: () => AuthenticatedMRoute,
+  } as any)
+const AuthenticatedMAdminOrganizationIdRoute =
+  AuthenticatedMAdminOrganizationIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedMAdminOrganizationRoute,
   } as any)
 const AuthenticatedMAdminAccountsIdRoute =
   AuthenticatedMAdminAccountsIdRouteImport.update({
@@ -1349,9 +1370,11 @@ export interface FileRoutesByFullPath {
   '/workspace/': typeof AuthenticatedWorkspaceIndexRoute
   '/admin/sell-work/pilots': typeof AuthenticatedAdminSellWorkPilotsRouteWithChildren
   '/m/admin/accounts': typeof AuthenticatedMAdminAccountsRouteWithChildren
+  '/m/admin/departments': typeof AuthenticatedMAdminDepartmentsRoute
   '/m/admin/limits': typeof AuthenticatedMAdminLimitsRoute
-  '/m/admin/organization': typeof AuthenticatedMAdminOrganizationRoute
+  '/m/admin/organization': typeof AuthenticatedMAdminOrganizationRouteWithChildren
   '/m/admin/overview': typeof AuthenticatedMAdminOverviewRoute
+  '/m/admin/roles': typeof AuthenticatedMAdminRolesRoute
   '/m/admin/users': typeof AuthenticatedMAdminUsersRoute
   '/m/ai-brain/tracking': typeof AuthenticatedMAiBrainTrackingRoute
   '/m/ai-market/$id': typeof AuthenticatedMAiMarketIdRoute
@@ -1391,6 +1414,7 @@ export interface FileRoutesByFullPath {
   '/m/work-products/': typeof AuthenticatedMWorkProductsIndexRoute
   '/admin/sell-work/pilots/$pilotId': typeof AuthenticatedAdminSellWorkPilotsPilotIdRoute
   '/m/admin/accounts/$id': typeof AuthenticatedMAdminAccountsIdRoute
+  '/m/admin/organization/$id': typeof AuthenticatedMAdminOrganizationIdRoute
   '/m/meet/$id/room': typeof AuthenticatedMMeetIdRoomRoute
   '/api/internal/office/v1/render': typeof ApiInternalOfficeV1RenderRoute
   '/m/admin/accounts/': typeof AuthenticatedMAdminAccountsIndexRoute
@@ -1532,9 +1556,11 @@ export interface FileRoutesByTo {
   '/m': typeof AuthenticatedMIndexRoute
   '/workspace': typeof AuthenticatedWorkspaceIndexRoute
   '/admin/sell-work/pilots': typeof AuthenticatedAdminSellWorkPilotsRouteWithChildren
+  '/m/admin/departments': typeof AuthenticatedMAdminDepartmentsRoute
   '/m/admin/limits': typeof AuthenticatedMAdminLimitsRoute
-  '/m/admin/organization': typeof AuthenticatedMAdminOrganizationRoute
+  '/m/admin/organization': typeof AuthenticatedMAdminOrganizationRouteWithChildren
   '/m/admin/overview': typeof AuthenticatedMAdminOverviewRoute
+  '/m/admin/roles': typeof AuthenticatedMAdminRolesRoute
   '/m/admin/users': typeof AuthenticatedMAdminUsersRoute
   '/m/ai-brain/tracking': typeof AuthenticatedMAiBrainTrackingRoute
   '/m/ai-market/$id': typeof AuthenticatedMAiMarketIdRoute
@@ -1574,6 +1600,7 @@ export interface FileRoutesByTo {
   '/m/work-products': typeof AuthenticatedMWorkProductsIndexRoute
   '/admin/sell-work/pilots/$pilotId': typeof AuthenticatedAdminSellWorkPilotsPilotIdRoute
   '/m/admin/accounts/$id': typeof AuthenticatedMAdminAccountsIdRoute
+  '/m/admin/organization/$id': typeof AuthenticatedMAdminOrganizationIdRoute
   '/m/meet/$id/room': typeof AuthenticatedMMeetIdRoomRoute
   '/api/internal/office/v1/render': typeof ApiInternalOfficeV1RenderRoute
   '/m/admin/accounts': typeof AuthenticatedMAdminAccountsIndexRoute
@@ -1721,9 +1748,11 @@ export interface FileRoutesById {
   '/_authenticated/workspace/': typeof AuthenticatedWorkspaceIndexRoute
   '/_authenticated/admin/sell-work/pilots': typeof AuthenticatedAdminSellWorkPilotsRouteWithChildren
   '/_authenticated/m/admin/accounts': typeof AuthenticatedMAdminAccountsRouteWithChildren
+  '/_authenticated/m/admin/departments': typeof AuthenticatedMAdminDepartmentsRoute
   '/_authenticated/m/admin/limits': typeof AuthenticatedMAdminLimitsRoute
-  '/_authenticated/m/admin/organization': typeof AuthenticatedMAdminOrganizationRoute
+  '/_authenticated/m/admin/organization': typeof AuthenticatedMAdminOrganizationRouteWithChildren
   '/_authenticated/m/admin/overview': typeof AuthenticatedMAdminOverviewRoute
+  '/_authenticated/m/admin/roles': typeof AuthenticatedMAdminRolesRoute
   '/_authenticated/m/admin/users': typeof AuthenticatedMAdminUsersRoute
   '/_authenticated/m/ai-brain_/tracking': typeof AuthenticatedMAiBrainTrackingRoute
   '/_authenticated/m/ai-market/$id': typeof AuthenticatedMAiMarketIdRoute
@@ -1763,6 +1792,7 @@ export interface FileRoutesById {
   '/_authenticated/m/work-products/': typeof AuthenticatedMWorkProductsIndexRoute
   '/_authenticated/admin/sell-work/pilots/$pilotId': typeof AuthenticatedAdminSellWorkPilotsPilotIdRoute
   '/_authenticated/m/admin/accounts/$id': typeof AuthenticatedMAdminAccountsIdRoute
+  '/_authenticated/m/admin/organization/$id': typeof AuthenticatedMAdminOrganizationIdRoute
   '/_authenticated/m/meet/$id_/room': typeof AuthenticatedMMeetIdRoomRoute
   '/api/internal/office/v1/render': typeof ApiInternalOfficeV1RenderRoute
   '/_authenticated/m/admin/accounts/': typeof AuthenticatedMAdminAccountsIndexRoute
@@ -1910,9 +1940,11 @@ export interface FileRouteTypes {
     | '/workspace/'
     | '/admin/sell-work/pilots'
     | '/m/admin/accounts'
+    | '/m/admin/departments'
     | '/m/admin/limits'
     | '/m/admin/organization'
     | '/m/admin/overview'
+    | '/m/admin/roles'
     | '/m/admin/users'
     | '/m/ai-brain/tracking'
     | '/m/ai-market/$id'
@@ -1952,6 +1984,7 @@ export interface FileRouteTypes {
     | '/m/work-products/'
     | '/admin/sell-work/pilots/$pilotId'
     | '/m/admin/accounts/$id'
+    | '/m/admin/organization/$id'
     | '/m/meet/$id/room'
     | '/api/internal/office/v1/render'
     | '/m/admin/accounts/'
@@ -2093,9 +2126,11 @@ export interface FileRouteTypes {
     | '/m'
     | '/workspace'
     | '/admin/sell-work/pilots'
+    | '/m/admin/departments'
     | '/m/admin/limits'
     | '/m/admin/organization'
     | '/m/admin/overview'
+    | '/m/admin/roles'
     | '/m/admin/users'
     | '/m/ai-brain/tracking'
     | '/m/ai-market/$id'
@@ -2135,6 +2170,7 @@ export interface FileRouteTypes {
     | '/m/work-products'
     | '/admin/sell-work/pilots/$pilotId'
     | '/m/admin/accounts/$id'
+    | '/m/admin/organization/$id'
     | '/m/meet/$id/room'
     | '/api/internal/office/v1/render'
     | '/m/admin/accounts'
@@ -2281,9 +2317,11 @@ export interface FileRouteTypes {
     | '/_authenticated/workspace/'
     | '/_authenticated/admin/sell-work/pilots'
     | '/_authenticated/m/admin/accounts'
+    | '/_authenticated/m/admin/departments'
     | '/_authenticated/m/admin/limits'
     | '/_authenticated/m/admin/organization'
     | '/_authenticated/m/admin/overview'
+    | '/_authenticated/m/admin/roles'
     | '/_authenticated/m/admin/users'
     | '/_authenticated/m/ai-brain_/tracking'
     | '/_authenticated/m/ai-market/$id'
@@ -2323,6 +2361,7 @@ export interface FileRouteTypes {
     | '/_authenticated/m/work-products/'
     | '/_authenticated/admin/sell-work/pilots/$pilotId'
     | '/_authenticated/m/admin/accounts/$id'
+    | '/_authenticated/m/admin/organization/$id'
     | '/_authenticated/m/meet/$id_/room'
     | '/api/internal/office/v1/render'
     | '/_authenticated/m/admin/accounts/'
@@ -3610,6 +3649,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMAdminUsersRouteImport
       parentRoute: typeof AuthenticatedMRoute
     }
+    '/_authenticated/m/admin/roles': {
+      id: '/_authenticated/m/admin/roles'
+      path: '/admin/roles'
+      fullPath: '/m/admin/roles'
+      preLoaderRoute: typeof AuthenticatedMAdminRolesRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
     '/_authenticated/m/admin/overview': {
       id: '/_authenticated/m/admin/overview'
       path: '/admin/overview'
@@ -3629,6 +3675,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/limits'
       fullPath: '/m/admin/limits'
       preLoaderRoute: typeof AuthenticatedMAdminLimitsRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
+    '/_authenticated/m/admin/departments': {
+      id: '/_authenticated/m/admin/departments'
+      path: '/admin/departments'
+      fullPath: '/m/admin/departments'
+      preLoaderRoute: typeof AuthenticatedMAdminDepartmentsRouteImport
       parentRoute: typeof AuthenticatedMRoute
     }
     '/_authenticated/m/admin/accounts': {
@@ -3665,6 +3718,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/m/meet/$id/room'
       preLoaderRoute: typeof AuthenticatedMMeetIdRoomRouteImport
       parentRoute: typeof AuthenticatedMRoute
+    }
+    '/_authenticated/m/admin/organization/$id': {
+      id: '/_authenticated/m/admin/organization/$id'
+      path: '/$id'
+      fullPath: '/m/admin/organization/$id'
+      preLoaderRoute: typeof AuthenticatedMAdminOrganizationIdRouteImport
+      parentRoute: typeof AuthenticatedMAdminOrganizationRoute
     }
     '/_authenticated/m/admin/accounts/$id': {
       id: '/_authenticated/m/admin/accounts/$id'
@@ -3807,6 +3867,21 @@ const AuthenticatedMAdminAccountsRouteWithChildren =
     AuthenticatedMAdminAccountsRouteChildren,
   )
 
+interface AuthenticatedMAdminOrganizationRouteChildren {
+  AuthenticatedMAdminOrganizationIdRoute: typeof AuthenticatedMAdminOrganizationIdRoute
+}
+
+const AuthenticatedMAdminOrganizationRouteChildren: AuthenticatedMAdminOrganizationRouteChildren =
+  {
+    AuthenticatedMAdminOrganizationIdRoute:
+      AuthenticatedMAdminOrganizationIdRoute,
+  }
+
+const AuthenticatedMAdminOrganizationRouteWithChildren =
+  AuthenticatedMAdminOrganizationRoute._addFileChildren(
+    AuthenticatedMAdminOrganizationRouteChildren,
+  )
+
 interface AuthenticatedMRouteChildren {
   AuthenticatedMSplatRoute: typeof AuthenticatedMSplatRoute
   AuthenticatedMAiRoute: typeof AuthenticatedMAiRoute
@@ -3835,9 +3910,11 @@ interface AuthenticatedMRouteChildren {
   AuthenticatedMWorkflowsRoute: typeof AuthenticatedMWorkflowsRouteWithChildren
   AuthenticatedMIndexRoute: typeof AuthenticatedMIndexRoute
   AuthenticatedMAdminAccountsRoute: typeof AuthenticatedMAdminAccountsRouteWithChildren
+  AuthenticatedMAdminDepartmentsRoute: typeof AuthenticatedMAdminDepartmentsRoute
   AuthenticatedMAdminLimitsRoute: typeof AuthenticatedMAdminLimitsRoute
-  AuthenticatedMAdminOrganizationRoute: typeof AuthenticatedMAdminOrganizationRoute
+  AuthenticatedMAdminOrganizationRoute: typeof AuthenticatedMAdminOrganizationRouteWithChildren
   AuthenticatedMAdminOverviewRoute: typeof AuthenticatedMAdminOverviewRoute
+  AuthenticatedMAdminRolesRoute: typeof AuthenticatedMAdminRolesRoute
   AuthenticatedMAdminUsersRoute: typeof AuthenticatedMAdminUsersRoute
   AuthenticatedMAiBrainTrackingRoute: typeof AuthenticatedMAiBrainTrackingRoute
   AuthenticatedMAiMarketIdRoute: typeof AuthenticatedMAiMarketIdRoute
@@ -3892,9 +3969,12 @@ const AuthenticatedMRouteChildren: AuthenticatedMRouteChildren = {
   AuthenticatedMIndexRoute: AuthenticatedMIndexRoute,
   AuthenticatedMAdminAccountsRoute:
     AuthenticatedMAdminAccountsRouteWithChildren,
+  AuthenticatedMAdminDepartmentsRoute: AuthenticatedMAdminDepartmentsRoute,
   AuthenticatedMAdminLimitsRoute: AuthenticatedMAdminLimitsRoute,
-  AuthenticatedMAdminOrganizationRoute: AuthenticatedMAdminOrganizationRoute,
+  AuthenticatedMAdminOrganizationRoute:
+    AuthenticatedMAdminOrganizationRouteWithChildren,
   AuthenticatedMAdminOverviewRoute: AuthenticatedMAdminOverviewRoute,
+  AuthenticatedMAdminRolesRoute: AuthenticatedMAdminRolesRoute,
   AuthenticatedMAdminUsersRoute: AuthenticatedMAdminUsersRoute,
   AuthenticatedMAiBrainTrackingRoute: AuthenticatedMAiBrainTrackingRoute,
   AuthenticatedMAiMarketIdRoute: AuthenticatedMAiMarketIdRoute,
