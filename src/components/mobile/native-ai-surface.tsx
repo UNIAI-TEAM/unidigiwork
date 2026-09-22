@@ -8,6 +8,7 @@ import {
   FileText,
   Image,
   Loader2,
+  MessageSquare,
   Mic,
   Paperclip,
   Plus,
