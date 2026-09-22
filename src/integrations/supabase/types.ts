@@ -58,6 +58,7 @@ export type Database = {
           action_type: string
           ai_worker_id: string | null
           confirmed_at: string | null
+          conversation_id: string | null
           created_at: string
           description: string | null
           error_code: string | null
@@ -86,6 +87,7 @@ export type Database = {
           action_type: string
           ai_worker_id?: string | null
           confirmed_at?: string | null
+          conversation_id?: string | null
           created_at?: string
           description?: string | null
           error_code?: string | null
@@ -114,6 +116,7 @@ export type Database = {
           action_type?: string
           ai_worker_id?: string | null
           confirmed_at?: string | null
+          conversation_id?: string | null
           created_at?: string
           description?: string | null
           error_code?: string | null
@@ -144,6 +147,13 @@ export type Database = {
             columns: ["ai_worker_id"]
             isOneToOne: false
             referencedRelation: "ai_workers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_action_proposals_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "ai_conversations"
             referencedColumns: ["id"]
           },
           {
