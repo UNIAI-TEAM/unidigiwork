@@ -28,7 +28,7 @@ const STATUS_KEY = {
 type Filter = "all" | "scheduled" | "live" | "ended";
 const FILTERS: Filter[] = ["all", "scheduled", "live", "ended"];
 
-export const Route = createFileRoute("/_authenticated/m/meet")({
+export const Route = createFileRoute("/_authenticated/m/meet/")({
   head: () => ({
     meta: [
       { title: "Meet · UNIWORK" },
