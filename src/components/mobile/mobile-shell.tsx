@@ -3,19 +3,18 @@ import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
-  AlertCircle,
   Building2,
   CalendarDays,
-  CheckCircle2,
   ChevronDown,
   ChevronRight,
   FileText,
   Folder,
   Menu,
+  MessageSquare,
   Plus,
   Search,
   Settings,
-  Workflow,
+  Video,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -27,16 +26,15 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { listAiConversations } from "@/lib/api/ai-chat.functions";
-import { getHomeSummary } from "@/lib/api/home.functions";
 import { useActiveWorkspace } from "@/lib/active-workspace";
 import { useCurrentIdentity } from "@/lib/use-current-identity";
 import { useI18n, type Key } from "@/lib/i18n";
 import { toMobileHref } from "@/lib/mobile-routes";
 
-const INBOX_LINKS = [
-  { label: "m.nav.attention" as Key, icon: AlertCircle },
-  { label: "m.nav.working" as Key, icon: Workflow },
-  { label: "m.nav.review" as Key, icon: CheckCircle2 },
+const QUICK_LINKS = [
+  { label: "m.nav.chat" as Key, icon: MessageSquare, to: "/m/chat" },
+  { label: "m.nav.video" as Key, icon: Video, to: "/m/meet" },
+  { label: "m.nav.file" as Key, icon: Folder, to: "/m/documents" },
 ];
 
 const LIBRARY_LINKS = [
