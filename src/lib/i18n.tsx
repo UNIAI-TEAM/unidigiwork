@@ -2361,7 +2361,8 @@ const dict = {
     "m.settings.integrations.identity": "Được dùng để đăng nhập",
     "m.settings.integrations.none": "Chưa có kết nối ngoài",
     "m.settings.integrations.noneHint": "Tài khoản hiện chỉ dùng email",
-    "m.settings.integrations.note": "Chỉ các kết nối đã xác nhận từ tài khoản mới xuất hiện tại đây.",
+    "m.settings.integrations.note":
+      "Chỉ các kết nối đã xác nhận từ tài khoản mới xuất hiện tại đây.",
     "m.settings.team.empty": "Tổ chức chưa có thành viên.",
     "m.settings.team.count": "{n} thành viên",
     "m.settings.team.you": "Bạn",
