@@ -1138,14 +1138,15 @@ function WorkProductDetail() {
                                   version: v.version,
                                 },
                               }).then(() => {
-                                toast.success(t("wp.versions.restored"));
-                                invalidate();
-                              })
-                            }
-                          >
-                            {t("wp.versions.restore")}
-                          </Button>
-                        )}
+                                  toast.success(t("wp.versions.restored"));
+                                  invalidate();
+                                })
+                              }
+                            >
+                              {t("wp.versions.restore")}
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </TabsContent>
