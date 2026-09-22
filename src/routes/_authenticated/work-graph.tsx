@@ -371,7 +371,10 @@ function WorkGraphPage() {
                               {t("wg.messageCount").replace("{n}", String(i.interactionCount))}
                             </span>
                             {i.teamResponseCount > 0 ? (
-                              <Badge variant="outline" className="h-5 px-1.5 text-[10px] font-normal">
+                              <Badge
+                                variant="outline"
+                                className="h-5 px-1.5 text-[10px] font-normal"
+                              >
                                 {t("wg.teamResponses")
                                   .replace("{n}", String(i.teamResponseCount))
                                   .replace(
@@ -384,7 +387,10 @@ function WorkGraphPage() {
                               </Badge>
                             ) : null}
                             {i.aiResponseCount > 0 ? (
-                              <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-normal">
+                              <Badge
+                                variant="secondary"
+                                className="h-5 px-1.5 text-[10px] font-normal"
+                              >
                                 {t("wg.aiResponses")
                                   .replace("{n}", String(i.aiResponseCount))
                                   .replace(

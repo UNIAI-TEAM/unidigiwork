@@ -535,9 +535,7 @@ export const listWorkGraphBoard = createServerFn({ method: "GET" })
         }>
       ).map((person) => [person.id, person.display_name || person.primary_email || "—"]),
     );
-    const taskIds = list
-      .filter((row) => row.entity_type === "TASK")
-      .map((row) => row.entity_id);
+    const taskIds = list.filter((row) => row.entity_type === "TASK").map((row) => row.entity_id);
     const { data: responseRows, error: responseError } = taskIds.length
       ? await context.supabase.rpc("list_work_graph_task_response_sources", {
           _tenant_id: tenantId,
