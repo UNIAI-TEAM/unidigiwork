@@ -222,6 +222,80 @@ export const commentTask = createServerFn({ method: "POST" })
     });
     return ensureOk(res, "TASK_NOT_FOUND");
   });
+
+export type TaskMessageRecipient = {
+  id: string;
+  name: string;
+  email: string;
+};
+
+/** Người đang được giao task, đã được tenant/RLS kiểm tra ở phía máy chủ. */
+export const listTaskMessageRecipients = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ taskId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }): Promise<TaskMessageRecipient[]> => {
+    const { data: task, error: taskError } = await context.supabase
+      .from("tasks")
+      .select("tenant_id")
+      .eq("id", data.taskId)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (taskError) mapPgError(taskError);
+    if (!task) throw new Error("TASK_NOT_FOUND");
+
+    const { data: assignments, error: assignmentError } = await context.supabase
+      .from("task_assignees")
+      .select("user_id")
+      .eq("task_id", data.taskId);
+    if (assignmentError) mapPgError(assignmentError);
+    const ids = new Set((assignments ?? []).map((row) => row.user_id));
+    if (ids.size === 0) return [];
+
+    const { data: people, error: peopleError } = await context.supabase.rpc(
+      "list_tenant_member_profiles",
+      { _tenant_id: task.tenant_id },
+    );
+    if (peopleError) mapPgError(peopleError, "TENANT_ACCESS_DENIED");
+
+    return (
+      (people ?? []) as Array<{
+        id: string;
+        display_name: string | null;
+        primary_email: string | null;
+      }>
+    )
+      .filter((person) => ids.has(person.id))
+      .map((person) => ({
+        id: person.id,
+        name: person.display_name || person.primary_email || "—",
+        email: person.primary_email ?? "",
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name, "vi"));
+  });
+
+/** Lưu tin nhắn task và phát thông báo đích danh trong cùng giao dịch. */
+export const sendTaskMessage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        ...commandMetadataSchema.shape,
+        taskId: z.string().uuid(),
+        recipientId: z.string().uuid(),
+        body: z.string().min(1).max(10000),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const res = await context.supabase.rpc("comment_task_to_assignee", {
+      _task_id: data.taskId,
+      _recipient_id: data.recipientId,
+      _body: data.body,
+      _idempotency_key: data.idempotencyKey,
+      _correlation_id: data.correlationId ?? undefined,
+    });
+    return ensureOk(res, "TASK_NOT_FOUND");
+  });
 // ---- Batch: Task detail (comments, attachments, subtasks, due reminders) ----
 
 export const getTaskDetail = createServerFn({ method: "GET" })
