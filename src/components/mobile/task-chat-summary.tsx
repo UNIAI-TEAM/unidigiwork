@@ -230,8 +230,8 @@ export function TaskChatSummary({ taskId, taskTitle }: { taskId: string; taskTit
             </TabsList>
             <TabsContent value="team" className="mt-3 min-w-0">
               <div className="max-h-80 space-y-3 overflow-y-auto rounded-xl border border-border bg-background p-3">
-                {comments.length ? (
-                  comments.map((comment: any) => (
+                {teamComments.length ? (
+                  teamComments.map((comment: any) => (
                     <Message
                       key={comment.id}
                       from={comment.author_id === identity.userId ? "user" : "assistant"}
@@ -247,6 +247,14 @@ export function TaskChatSummary({ taskId, taskTitle }: { taskId: string; taskTit
                               timeStyle: "short",
                             })}
                           </span>
+                          {comment.metadata?.classification?.label &&
+                          comment.metadata.classification.label !== "OTHER" ? (
+                            <Badge variant="secondary">
+                              {t(
+                                `m.taskChat.classification.${String(comment.metadata.classification.label).toLowerCase()}`,
+                              )}
+                            </Badge>
+                          ) : null}
                         </div>
                         <p className="whitespace-pre-wrap break-words leading-6">{comment.body}</p>
                       </MessageContent>
