@@ -57,7 +57,7 @@ export function MobileTaskDetail({ id }: { id: string }) {
   if (detail.isError || !task) return <main className="p-4"><p className="text-sm text-muted-foreground">{t("m.tasks.notFound")}</p><Button variant="outline" className="mt-3 min-h-11" onClick={() => navigate({ to: "/m/tasks" })}>{t("m.tasks.back")}</Button></main>;
 
   const subtasks = (detail.data?.subtasks ?? []) as Array<{ id: string; title: string; status: Status; row_version?: number }>;
-  const comments = (detail.data?.comments ?? []) as Array<{ id: string; body: string; created_at: string; author_name: string | null }>;
+  const comments = (detail.data?.comments ?? []) as unknown as Array<{ id: string; body: string; created_at: string; author_name: string | null }>;
   const attachments = (detail.data?.attachments ?? []) as Array<{ id: string; file_name: string; storage_path: string; size_bytes: number | null }>;
   const assignees = (detail.data?.assignees ?? []) as Array<{ user_id: string; role: string | null }>;
   const done = subtasks.filter((item) => item.status === "done").length;
