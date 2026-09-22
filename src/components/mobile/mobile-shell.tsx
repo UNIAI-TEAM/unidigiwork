@@ -239,7 +239,7 @@ function NativeDrawer({
               />
             </button>
             {workspacesOpen && (
-              <div className="space-y-0.5">
+              <div>
                 {workspaces.slice(0, 8).map((workspace) => (
                   <button
                     key={workspace.id}
@@ -316,8 +316,8 @@ function DrawerSection({
   children: React.ReactNode;
 }) {
   return (
-    <section className="mt-6">
-      <div className="mb-1 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-1">
+    <section className="mt-5">
+      <div className="mb-0.5 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-1">
         <p className="truncate text-sm font-semibold text-mobile-menu-foreground">{label}</p>
         {action && onAction ? (
           <button onClick={onAction} className="min-h-11 px-2 text-xs text-mobile-menu-muted">
@@ -325,7 +325,7 @@ function DrawerSection({
           </button>
         ) : null}
       </div>
-      <div className="space-y-0.5">{children}</div>
+      <div>{children}</div>
     </section>
   );
 }
@@ -350,7 +350,7 @@ function DrawerLink({
   return (
     <button
       onClick={onClick}
-      className={`grid min-h-12 w-full grid-cols-[2.5rem_minmax(0,1fr)_auto_2.5rem] items-center gap-1 rounded-lg text-left text-[15px] transition-colors ${strong || active ? "bg-mobile-menu-accent text-mobile-menu-foreground" : "text-mobile-menu-foreground hover:bg-mobile-menu-accent"}`}
+      className={`grid min-h-11 w-full grid-cols-[2.5rem_minmax(0,1fr)_auto_2.5rem] items-center gap-1 rounded-lg text-left text-[15px] transition-colors ${strong || active ? "bg-mobile-menu-accent text-mobile-menu-foreground" : "text-mobile-menu-foreground hover:bg-mobile-menu-accent"}`}
     >
       <Icon className="mx-auto h-5 w-5 shrink-0" />
       <span className="min-w-0 flex-1 truncate font-medium">{label}</span>
