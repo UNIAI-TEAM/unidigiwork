@@ -1,14 +1,35 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Crown, UserRound } from "lucide-react";
+import { useMemo, useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Crown, MailPlus, Search, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import {
   useActiveTenant,
-  useChangeMemberRole,
-  useChangeMemberStatus,
+  useChangeTenantStatus,
+  useCreateInvitation,
+  useRevokeInvitation,
+  useTenantInvitations,
   useTenantMembers,
-  useTransferOwnership,
 } from "@/features/tenants/hooks";
 import type { TenantRole } from "@/contracts/tenants/tenant";
+import { MobileListItem } from "@/components/mobile/mobile-list-item";
+import {
+  MobileAdminLayout,
+  MobileAdminLoading,
+  MobileAdminMessage,
+  ReadOnlyNotice,
+} from "@/components/mobile/mobile-admin-layout";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -16,23 +37,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  MobileAdminLayout,
-  MobileAdminLoading,
-  MobileAdminMessage,
-  ReadOnlyNotice,
-} from "@/components/mobile/mobile-admin-layout";
 import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/m/admin/organization")({
   head: () => ({
     meta: [
-      { title: "Quản trị tổ chức mobile — UNIWORK" },
-      { name: "description", content: "Quản lý vai trò và trạng thái thành viên tổ chức." },
-      { property: "og:title", content: "Quản trị tổ chức mobile — UNIWORK" },
-      { property: "og:description", content: "Quản lý vai trò và trạng thái thành viên tổ chức." },
+      { title: "Quản lý tổ chức mobile — UNIWORK" },
+      {
+        name: "description",
+        content: "Quản lý thành viên, lời mời và trạng thái tổ chức trên PWA UNIWORK.",
+      },
+      { property: "og:title", content: "Quản lý tổ chức mobile — UNIWORK" },
+      {
+        property: "og:description",
+        content: "Quản lý thành viên, lời mời và trạng thái tổ chức trên PWA UNIWORK.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -49,12 +68,29 @@ const MEMBER_ROLES: Exclude<TenantRole, "tenant_owner">[] = [
 
 function MobileOrganizationAdmin() {
   const { t } = useI18n();
+  const navigate = useNavigate();
   const active = useActiveTenant();
   const tenantId = active.data?.tenantId;
   const members = useTenantMembers(tenantId);
-  const changeRole = useChangeMemberRole(tenantId ?? "");
-  const changeStatus = useChangeMemberStatus(tenantId ?? "");
-  const transferOwnership = useTransferOwnership(tenantId ?? "");
+  const invitations = useTenantInvitations(tenantId);
+  const createInvitation = useCreateInvitation(tenantId ?? "");
+  const revokeInvitation = useRevokeInvitation(tenantId ?? "");
+  const changeTenantStatus = useChangeTenantStatus(tenantId ?? "");
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("all");
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [email, setEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState<Exclude<TenantRole, "tenant_owner">>("member");
+  const rows = useMemo(
+    () =>
+      (members.data ?? []).filter((member) => {
+        const matchesText = `${member.display_name ?? ""} ${member.email ?? ""}`
+          .toLowerCase()
+          .includes(search.toLowerCase());
+        return matchesText && (status === "all" || member.status === status);
+      }),
+    [members.data, search, status],
+  );
 
   if (active.isLoading)
     return (
@@ -68,13 +104,27 @@ function MobileOrganizationAdmin() {
         <MobileAdminMessage>{t("m.admin.noActiveOrganization")}</MobileAdminMessage>
       </MobileAdminLayout>
     );
-
   const tenant = active.data;
   const canManage = tenant.role === "tenant_owner" || tenant.role === "tenant_admin";
   const isOwner = tenant.role === "tenant_owner";
-  const busy = changeRole.isPending || changeStatus.isPending || transferOwnership.isPending;
-  const fail = (error: unknown) =>
-    toast.error(error instanceof Error ? error.message : t("m.admin.memberError"));
+  const pending = (invitations.data ?? []).filter((invitation) => invitation.status === "pending");
+  const submitInvite = () =>
+    createInvitation.mutate(
+      {
+        email,
+        role: inviteRole,
+        ttlSeconds: 60 * 60 * 24 * 7,
+        idempotencyKey: crypto.randomUUID(),
+      },
+      {
+        onSuccess: () => {
+          setInviteOpen(false);
+          setEmail("");
+          toast.success(t("m.admin.inviteSent"));
+        },
+        onError: () => toast.error(t("m.admin.inviteError")),
+      },
+    );
 
   return (
     <MobileAdminLayout
@@ -83,118 +133,183 @@ function MobileOrganizationAdmin() {
       backTo="/m/admin"
     >
       {!canManage ? <ReadOnlyNotice /> : null}
-      {members.isLoading ? <MobileAdminLoading /> : null}
-      {members.isError ? (
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge variant="outline">{t(`m.admin.status.${tenant.tenantStatus}` as never)}</Badge>
+        <Badge variant="outline">
+          {t("m.admin.departmentMembers").replace("{count}", String(members.data?.length ?? 0))}
+        </Badge>
+        {canManage ? (
+          <Button className="ml-auto min-h-11" onClick={() => setInviteOpen(true)}>
+            <MailPlus className="mr-2 h-4 w-4" />
+            {t("m.admin.invite")}
+          </Button>
+        ) : null}
+      </div>
+      {isOwner ? (
+        <div className="flex gap-2">
+          {tenant.tenantStatus !== "active" ? (
+            <Button
+              variant="outline"
+              className="min-h-11 flex-1"
+              disabled={changeTenantStatus.isPending}
+              onClick={() => changeTenantStatus.mutate("active")}
+            >
+              {t("m.admin.activate")}
+            </Button>
+          ) : null}
+          {tenant.tenantStatus === "active" ? (
+            <Button
+              variant="outline"
+              className="min-h-11 flex-1"
+              disabled={changeTenantStatus.isPending}
+              onClick={() => changeTenantStatus.mutate("suspended")}
+            >
+              {t("m.admin.suspend")}
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
+      <div className="grid grid-cols-[1fr_auto] gap-2">
+        <div className="relative">
+          <Search className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder={t("m.admin.search")}
+            className="min-h-11 pl-9"
+          />
+        </div>
+        <Select value={status} onValueChange={setStatus}>
+          <SelectTrigger className="min-h-11 w-32" aria-label={t("m.admin.filterAll")}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{t("m.admin.filterAll")}</SelectItem>
+            {["active", "invited", "suspended", "removed"].map((value) => (
+              <SelectItem key={value} value={value}>
+                {t(`m.admin.status.${value}` as never)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      {members.isLoading ? (
+        <MobileAdminLoading />
+      ) : members.isError ? (
         <MobileAdminMessage retry={() => void members.refetch()}>
           {t("m.admin.memberError")}
         </MobileAdminMessage>
       ) : null}
-      <div className="grid gap-3">
-        {(members.data ?? []).map((member) => {
-          const isSelf = member.user_id === tenant.actorId;
-          const memberIsOwner = member.role === "tenant_owner";
-          const label =
-            member.display_name ??
-            member.email ??
-            `${t("m.admin.memberId")} ${member.user_id.slice(0, 8)}`;
-          return (
-            <section key={member.id} className="rounded-xl border border-border bg-card p-4">
-              <div className="flex min-w-0 items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-2">
-                  {memberIsOwner ? (
-                    <Crown className="h-5 w-5" />
-                  ) : (
-                    <UserRound className="h-5 w-5" />
-                  )}
-                </div>
+      <div className="grid gap-2">
+        {rows.map((member) => (
+          <MobileListItem
+            key={member.id}
+            title={
+              member.display_name ??
+              member.email ??
+              `${t("m.admin.memberId")} ${member.user_id.slice(0, 8)}`
+            }
+            subtitle={member.display_name ? (member.email ?? undefined) : undefined}
+            icon={
+              member.role === "tenant_owner" ? (
+                <Crown className="h-5 w-5" />
+              ) : (
+                <UserRound className="h-5 w-5" />
+              )
+            }
+            badge={<Badge variant="outline">{t(`m.admin.role.${member.role}` as never)}</Badge>}
+            meta={t(`m.admin.status.${member.status}` as never)}
+            onClick={() =>
+              void navigate({
+                to: "/m/admin/organization/$id" as never,
+                params: { id: member.user_id } as never,
+              })
+            }
+          />
+        ))}
+      </div>
+      {pending.length ? (
+        <section>
+          <h2 className="mb-2 text-sm font-semibold">{t("m.admin.pendingInvites")}</h2>
+          <div className="grid gap-2">
+            {pending.map((invitation) => (
+              <div
+                key={invitation.id}
+                className="flex min-h-14 items-center gap-3 rounded-xl border border-border p-3"
+              >
                 <div className="min-w-0 flex-1">
-                  <p className="break-words text-sm font-medium">{label}</p>
-                  {member.display_name && member.email ? (
-                    <p className="truncate text-xs text-muted-foreground">{member.email}</p>
-                  ) : null}
+                  <p className="truncate text-sm font-medium">{invitation.email}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t(`m.admin.role.${invitation.role}` as never)}
+                  </p>
                 </div>
-                <Badge variant="outline">{t(`m.admin.status.${member.status}` as never)}</Badge>
-              </div>
-              <div className="mt-4 grid gap-3">
-                {memberIsOwner ? (
-                  <div className="min-h-11 rounded-xl border border-border px-3 py-3 text-sm">
-                    {t("m.admin.role.tenant_owner")}
-                  </div>
-                ) : (
-                  <Select
-                    value={member.role}
-                    disabled={!canManage || isSelf || busy}
-                    onValueChange={(newRole) =>
-                      changeRole.mutate(
-                        {
-                          userId: member.user_id,
-                          newRole: newRole as Exclude<TenantRole, "tenant_owner">,
-                        },
-                        {
-                          onSuccess: () => toast.success(t("m.admin.memberRoleSaved")),
-                          onError: fail,
-                        },
-                      )
+                {canManage ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="min-h-11"
+                    disabled={revokeInvitation.isPending}
+                    onClick={() =>
+                      revokeInvitation.mutate(invitation.id, {
+                        onSuccess: () => toast.success(t("m.admin.inviteRevoked")),
+                      })
                     }
                   >
-                    <SelectTrigger aria-label={t("m.admin.organizationRoles")}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {MEMBER_ROLES.map((role) => (
-                        <SelectItem key={role} value={role}>
-                          {t(`m.admin.role.${role}` as never)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-                {canManage && !memberIsOwner && !isSelf ? (
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="min-h-11"
-                      disabled={busy}
-                      onClick={() =>
-                        changeStatus.mutate(
-                          {
-                            userId: member.user_id,
-                            newStatus: member.status === "suspended" ? "active" : "suspended",
-                          },
-                          {
-                            onSuccess: () => toast.success(t("m.admin.memberStatusSaved")),
-                            onError: fail,
-                          },
-                        )
-                      }
-                    >
-                      {member.status === "suspended" ? t("m.admin.activate") : t("m.admin.suspend")}
-                    </Button>
-                    {isOwner ? (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="min-h-11"
-                        disabled={busy}
-                        onClick={() => {
-                          if (!window.confirm(t("m.admin.transferConfirm"))) return;
-                          transferOwnership.mutate(member.user_id, {
-                            onSuccess: () => toast.success(t("m.admin.ownerTransferred")),
-                            onError: fail,
-                          });
-                        }}
-                      >
-                        {t("m.admin.transferOwner")}
-                      </Button>
-                    ) : null}
-                  </div>
+                    {t("m.admin.revoke")}
+                  </Button>
                 ) : null}
               </div>
-            </section>
-          );
-        })}
-      </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+      <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("m.admin.invite")}</DialogTitle>
+            <DialogDescription>{tenant.tenantName}</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="invite-email">{t("m.admin.inviteEmail")}</Label>
+              <Input
+                id="invite-email"
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                className="min-h-11"
+              />
+            </div>
+            <Select
+              value={inviteRole}
+              onValueChange={(value) => setInviteRole(value as typeof inviteRole)}
+            >
+              <SelectTrigger className="min-h-11">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {MEMBER_ROLES.map((role) => (
+                  <SelectItem key={role} value={role}>
+                    {t(`m.admin.role.${role}` as never)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" className="min-h-11" onClick={() => setInviteOpen(false)}>
+              {t("m.admin.cancel")}
+            </Button>
+            <Button
+              className="min-h-11"
+              disabled={!email.includes("@") || createInvitation.isPending}
+              onClick={submitInvite}
+            >
+              {t("m.admin.invite")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </MobileAdminLayout>
   );
 }

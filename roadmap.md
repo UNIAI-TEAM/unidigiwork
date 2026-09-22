@@ -113,3 +113,10 @@
 - [x] Hoàn thiện Quy trình danh sách/chi tiết, trạng thái chạy và AI Agent bằng API thật.
 - [x] Hoàn thiện AI Brain tổng quan, theo dõi, đề xuất và Skill bằng API thật.
 - [x] Xóa mọi liên kết nội bộ của sáu nhóm còn thoát khỏi `/m/*`; kiểm tra 390/440/820px và các cổng kiến trúc.
+
+## Đợt PWA — Tổ chức, bộ phận và vai trò
+
+- [ ] Hoàn thiện quản lý tổ chức và lời mời thành viên bằng dữ liệu thật.
+- [ ] Thêm quản lý bộ phận từ hồ sơ nhân sự thật, không tạo nguồn dữ liệu thứ hai.
+- [ ] Thêm màn vai trò và quyền theo tổ chức, cùng chi tiết thành viên mobile-native.
+- [ ] Kiểm tra điều hướng `/m/*`, quyền máy chủ và giao diện 390/440/820px.
