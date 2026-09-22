@@ -246,6 +246,7 @@ export function TaskChatSummary({ taskId, taskTitle }: { taskId: string; taskTit
                 onRecipientChange={setRecipientId}
                 recipientPlaceholder={t("m.taskChat.selectRecipient")}
                 noRecipientsLabel={t("m.taskChat.noRecipients")}
+                recipientsLoading={recipients.isLoading}
               />
             </TabsContent>
             <TabsContent value="ai" className="mt-3 min-w-0">
@@ -390,6 +391,7 @@ function TaskMessageComposer({
   onRecipientChange,
   recipientPlaceholder,
   noRecipientsLabel,
+  recipientsLoading,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -402,6 +404,7 @@ function TaskMessageComposer({
   onRecipientChange?: (value: string) => void;
   recipientPlaceholder?: string;
   noRecipientsLabel?: string;
+  recipientsLoading?: boolean;
 }) {
   const needsRecipient = Boolean(recipients);
   return (
@@ -421,7 +424,11 @@ function TaskMessageComposer({
       />
       <PromptInputFooter className="flex-col items-stretch gap-2 px-1.5 pb-1.5 sm:flex-row sm:items-center sm:justify-between">
         {recipients ? (
-          recipients.length ? (
+          recipientsLoading ? (
+            <span className="flex min-h-11 items-center gap-2 text-xs text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> {recipientPlaceholder}
+            </span>
+          ) : recipients.length ? (
             <Select value={recipientId} onValueChange={onRecipientChange}>
               <SelectTrigger className="h-11 min-w-0 sm:max-w-64">
                 <SelectValue placeholder={recipientPlaceholder} />

@@ -82,6 +82,87 @@ function isDone(i: WorkGraphBoardItem) {
   return i.status === "ACCEPTED" || i.status === "DELIVERED";
 }
 
+function WorkGraphMessageForm({ taskId }: { taskId: string }) {
+  const { t } = useI18n();
+  const queryClient = useQueryClient();
+  const [body, setBody] = useState("");
+  const [recipientId, setRecipientId] = useState("");
+  const recipients = useQuery({
+    queryKey: ["task-message-recipients", taskId],
+    queryFn: () => listTaskMessageRecipients({ data: { taskId } }),
+  });
+  const send = useMutation({
+    mutationFn: () =>
+      sendTaskMessage({
+        data: { taskId, recipientId, body: body.trim(), idempotencyKey: crypto.randomUUID() },
+      }),
+    onSuccess: async () => {
+      setBody("");
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["work-graph-board"] }),
+        queryClient.invalidateQueries({ queryKey: ["task-chat-detail", taskId] }),
+        queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+      ]);
+      toast.success(t("wg.messageSent"));
+    },
+    onError: () => toast.error(t("wg.messageError")),
+  });
+
+  return (
+    <form
+      className="mt-1 grid min-w-0 gap-2 rounded-lg border bg-muted/30 p-2 sm:grid-cols-[minmax(10rem,0.8fr)_minmax(12rem,1fr)_auto]"
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (body.trim() && recipientId) send.mutate();
+      }}
+    >
+      {recipients.isLoading ? (
+        <span className="flex h-11 items-center gap-2 px-2 text-xs text-muted-foreground sm:h-9">
+          <Loader2 className="h-4 w-4 animate-spin" /> {t("wg.selectRecipient")}
+        </span>
+      ) : (recipients.data ?? []).length ? (
+        <Select value={recipientId} onValueChange={setRecipientId}>
+          <SelectTrigger className="h-11 min-w-0 sm:h-9">
+            <SelectValue placeholder={t("wg.selectRecipient")} />
+          </SelectTrigger>
+          <SelectContent>
+            {(recipients.data ?? []).map((person) => (
+              <SelectItem key={person.id} value={person.id} className="min-h-11">
+                {person.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      ) : (
+        <span className="flex min-h-11 items-center px-2 text-xs text-muted-foreground sm:min-h-9">
+          {t("wg.noRecipients")}
+        </span>
+      )}
+      <Input
+        value={body}
+        onChange={(event) => setBody(event.target.value)}
+        placeholder={t("wg.messagePlaceholder")}
+        aria-label={t("wg.messagePlaceholder")}
+        maxLength={2000}
+        className="h-11 min-w-0 text-base sm:h-9 sm:text-sm"
+      />
+      <Button
+        type="submit"
+        size="icon"
+        className="h-11 w-full shrink-0 sm:h-9 sm:w-9"
+        disabled={send.isPending || !body.trim() || !recipientId}
+        aria-label={t("wg.sendMessage")}
+      >
+        {send.isPending ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Send className="h-4 w-4" />
+        )}
+      </Button>
+    </form>
+  );
+}
+
 type Tab = "all" | "running" | "done" | "products";
 type DueFilter = "all" | "overdue" | "due_soon" | "scheduled" | "none";
 
