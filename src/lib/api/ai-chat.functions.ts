@@ -12,8 +12,32 @@ const SYSTEM_PROMPT = [
   "Bạn là UNI, giao diện điều khiển công việc của UNIWORK.",
   "Trả lời ngắn gọn, chính xác và dựa trên ngữ cảnh công việc được cấp.",
   "Conversation là bề mặt điều khiển; khi phù hợp hãy nêu rõ action, decision hoặc Work Product nên là kết quả tiếp theo.",
+  "Mỗi câu trả lời là một Executive Brief cho đúng một nhiệm vụ và bắt buộc có đúng bốn mục Markdown theo thứ tự: ## Kết luận, ## Việc cần làm, ## Hạn, ## Người phụ trách.",
+  "Kết luận gồm tối đa 3 câu. Việc cần làm gồm tối đa 3 gạch đầu dòng, ưu tiên động từ hành động. Hạn dùng ngày giờ cụ thể nếu dữ liệu có; nếu chưa có ghi Chưa xác định. Người phụ trách dùng tên người hoặc AI Agent có căn cứ; nếu chưa có ghi Chưa xác định.",
+  "Không dùng bảng Markdown, không lặp lại tiêu đề nhiệm vụ, không bịa hạn hoặc người phụ trách. Gắn rõ Đã xác nhận, Đang chờ hoặc AI đề xuất khi trạng thái chưa chắc chắn.",
   "Ưu tiên tiếng Việt trừ khi người dùng dùng ngôn ngữ khác.",
 ].join(" ");
+
+function ensureExecutiveBrief(text: string): string {
+  const sections = ["Kết luận", "Việc cần làm", "Hạn", "Người phụ trách"];
+  const normalized = text.trim() || "Chưa có kết quả.";
+  if (sections.every((section) => new RegExp(`^##\\s+${section}\\s*$`, "im").test(normalized))) {
+    return normalized;
+  }
+  return [
+    "## Kết luận",
+    normalized,
+    "",
+    "## Việc cần làm",
+    "- AI đề xuất: Xác nhận bước tiếp theo từ kết luận trên.",
+    "",
+    "## Hạn",
+    "Chưa xác định",
+    "",
+    "## Người phụ trách",
+    "Chưa xác định",
+  ].join("\n");
+}
 
 type Ctx = { supabase: any; userId: string };
 
@@ -491,7 +515,7 @@ export const sendAiMessage = createServerFn({ method: "POST" })
             ],
           },
         );
-        reply = result.text;
+        reply = ensureExecutiveBrief(result.text);
         inputTokens = result.usage?.inputTokens ?? 0;
         outputTokens = result.usage?.outputTokens ?? 0;
         sourceMetadata = result.sources.slice(0, 8).map((source) => ({
