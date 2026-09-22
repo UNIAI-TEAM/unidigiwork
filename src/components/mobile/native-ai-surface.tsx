@@ -178,19 +178,19 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
         onValueChange={setSurfaceTab}
         className="flex min-h-0 flex-1 flex-col overflow-hidden"
       >
-        <div className="shrink-0 px-4 pt-2 sm:px-6">
-          <TabsList className="grid h-11 w-full grid-cols-2">
-            <TabsTrigger value="chat" className="min-h-9">
+        <div className="shrink-0 px-4 pt-3 sm:px-6">
+          <TabsList className="grid h-11 w-full grid-cols-2 rounded-full bg-surface p-1">
+            <TabsTrigger value="chat" className="min-h-9 rounded-full">
               {t("m.taskChat.tab.chat")}
             </TabsTrigger>
-            <TabsTrigger value="tasks" className="min-h-9">
+            <TabsTrigger value="tasks" className="min-h-9 rounded-full">
               {t("m.taskChat.tab.tasks")}
             </TabsTrigger>
           </TabsList>
         </div>
         <TabsContent value="chat" className="mt-0 flex min-h-0 flex-1 flex-col overflow-hidden">
           <Conversation className="min-h-0 flex-1">
-            <ConversationContent className="min-h-full gap-6 px-4 pb-6 pt-4 sm:px-6">
+            <ConversationContent className="min-h-full gap-6 px-4 pb-6 pt-5 sm:px-6">
               {messages.isLoading ? (
                 <div className="flex min-h-72 items-center justify-center text-muted-foreground">
                   <Loader2 className="h-5 w-5 animate-spin" />
@@ -237,7 +237,7 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
               {contexts.map((item) => (
                 <span
                   key={item.id}
-                  className="flex min-h-9 shrink-0 items-center gap-2 rounded-lg border border-border bg-surface px-3 text-xs"
+                   className="flex min-h-9 shrink-0 items-center gap-2 rounded-full border border-border bg-surface px-3 text-xs"
                 >
                   {item.kind === "file" ? (
                     <Paperclip className="h-3.5 w-3.5" />
@@ -261,7 +261,7 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
             </div>
           )}
           <PromptInput
-            className="rounded-2xl border-border bg-surface shadow-panel"
+            className="rounded-[1.75rem] border-border bg-surface shadow-panel"
             onSubmit={({ text }) => submit(text)}
           >
             <PromptInputTextarea
@@ -270,7 +270,7 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
               aria-label={t("m.ai.composer")}
               placeholder={t("m.ai.composer")}
               onChange={(event) => setInput(event.currentTarget.value)}
-              className="max-h-32 min-h-14 px-4 pt-3 text-base leading-6"
+              className="max-h-32 min-h-14 px-5 pt-3.5 text-base leading-6"
             />
             <PromptInputFooter className="px-1.5 pb-1.5">
               <PromptInputTools>
@@ -278,7 +278,7 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="h-11 w-11 shrink-0 rounded-xl"
+                  className="h-11 w-11 shrink-0 rounded-full"
                   aria-label={t("m.ai.addContext")}
                   onClick={() => setContextOpen(true)}
                 >
@@ -288,14 +288,14 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="h-11 w-11 shrink-0 rounded-xl"
+                  className="h-11 w-11 shrink-0 rounded-full"
                   aria-label={t("m.ai.voice")}
                 >
                   <Mic className="h-4 w-4" />
                 </Button>
               </PromptInputTools>
               <PromptInputSubmit
-                className="h-11 w-11 shrink-0 rounded-xl"
+                className="h-11 w-11 shrink-0 rounded-full"
                 aria-label={t("m.ai.send")}
                 disabled={!input.trim() || send.isPending}
                 status={send.isPending ? "submitted" : "ready"}
@@ -349,7 +349,7 @@ function EmptyState({ firstName, onPick }: { firstName: string; onPick: (value: 
   return (
     <section className="flex min-h-full flex-col justify-center py-8 sm:py-16">
       <div className="mx-auto w-full max-w-xl text-center">
-        <span className="mx-auto grid h-12 w-12 place-items-center rounded-xl border border-border bg-surface text-primary shadow-card">
+        <span className="mx-auto grid h-12 w-12 place-items-center rounded-full border border-border bg-surface text-primary shadow-card">
           <Sparkles className="h-5 w-5" />
         </span>
         <h1 className="mt-6 text-3xl font-semibold leading-tight">
@@ -362,7 +362,7 @@ function EmptyState({ firstName, onPick }: { firstName: string; onPick: (value: 
           <Button
             key={key}
             variant="outline"
-            className="h-auto min-h-28 items-start justify-start whitespace-normal rounded-xl p-4 text-left shadow-card"
+            className="h-auto min-h-28 items-start justify-start whitespace-normal rounded-2xl p-4 text-left shadow-card"
             onClick={() => onPick(t(`m.ai.starter.${key}.prompt` as never))}
           >
             <span className="flex h-full flex-col items-start gap-2">
@@ -432,7 +432,7 @@ function Message({ message, latest = false }: { message: AiMessageDTO; latest?: 
 function UserMessage({ content }: { content: string }) {
   return (
     <AiMessage from="user">
-      <MessageContent className="max-w-[86%] rounded-2xl rounded-br-md bg-secondary text-secondary-foreground">
+      <MessageContent className="max-w-[86%] rounded-[1.5rem] rounded-br-lg bg-secondary px-4 py-3 text-secondary-foreground">
         <p className="whitespace-pre-wrap text-sm leading-6">{content}</p>
       </MessageContent>
     </AiMessage>

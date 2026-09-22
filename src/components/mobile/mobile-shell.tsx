@@ -13,9 +13,9 @@ import {
   FileText,
   Folder,
   Menu,
-  MessageSquarePlus,
   MoreHorizontal,
   Pin,
+  Plus,
   Search,
   Settings,
   Workflow,
@@ -80,11 +80,13 @@ export function MobileShell() {
         </button>
         <Button
           variant="ghost"
-          className="min-h-11 shrink-0 rounded-xl px-3 text-sm font-medium"
+          size="icon"
+          className="h-11 w-11 shrink-0 rounded-full border border-border bg-surface-2 shadow-card hover:bg-surface-3"
           onClick={startNew}
+          aria-label={t("m.nav.newWork")}
+          title={t("m.nav.newWork")}
         >
-          <MessageSquarePlus className="h-4 w-4" />
-          {t("m.nav.new")}
+          <Plus className="h-6 w-6" strokeWidth={2.25} />
         </Button>
       </header>
 
@@ -195,7 +197,7 @@ function NativeDrawer({
 
         <nav className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3">
           <DrawerLink
-            icon={MessageSquarePlus}
+            icon={Plus}
             label={t("m.nav.newWork")}
             onClick={() => go("/m")}
           />
