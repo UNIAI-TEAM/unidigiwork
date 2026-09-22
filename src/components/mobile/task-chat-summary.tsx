@@ -11,6 +11,7 @@ import { getTaskConversations } from "@/lib/api/ai-chat.functions";
 import { getTaskDetail } from "@/lib/api/tasks.functions";
 import { getWorkContext, listWorkGraphBoard } from "@/lib/api/work-graph.functions";
 import { localeTag, useI18n } from "@/lib/i18n";
+import { CollapsibleChatContent } from "@/components/mobile/collapsible-chat-content";
 
 export function TaskChatHub() {
   const { t } = useI18n();
@@ -142,9 +143,11 @@ export function TaskChatSummary({ taskId, taskTitle }: { taskId: string; taskTit
                           {message.role === "assistant" ? "UNI" : t("m.taskChat.you")}
                         </span>
                         {message.role === "assistant" ? (
-                          <MessageResponse className="mt-1 text-sm leading-6 [&_h2]:my-2 [&_h2]:text-xs [&_h2]:uppercase [&_h2]:text-muted-foreground">
-                            {message.content}
-                          </MessageResponse>
+                          <CollapsibleChatContent content={message.content} className="mt-1">
+                            <MessageResponse className="text-sm leading-6 [&_h2]:my-2 [&_h2]:text-xs [&_h2]:uppercase [&_h2]:text-muted-foreground">
+                              {message.content}
+                            </MessageResponse>
+                          </CollapsibleChatContent>
                         ) : (
                           <p className="mt-1 whitespace-pre-wrap break-words">{message.content}</p>
                         )}
