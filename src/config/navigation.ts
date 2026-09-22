@@ -105,6 +105,7 @@ export const NAV_ITEMS: NavItem[] = [
     match: ["/dashboard"],
     visibility: "everyone",
     order: 0,
+    mobile: { placement: "more", href: "/m", order: 0 },
   },
   {
     id: "my-space",
@@ -116,6 +117,7 @@ export const NAV_ITEMS: NavItem[] = [
     visibility: "everyone",
     order: 1,
     badge: "notifications",
+    mobile: { placement: "more", href: "/m/notifications", order: 0.5 },
   },
   {
     id: "calendar",
@@ -139,6 +141,7 @@ export const NAV_ITEMS: NavItem[] = [
     match: ["/workspace"],
     visibility: "everyone",
     order: 1,
+    mobile: { placement: "more", href: "/m/workspace", order: 1.5 },
   },
   {
     id: "projects",
@@ -160,6 +163,7 @@ export const NAV_ITEMS: NavItem[] = [
     match: ["/tasks"],
     visibility: "everyone",
     order: 3,
+    mobile: { placement: "more", href: "/m/tasks", order: 2.5 },
   },
   {
     id: "workflows",
@@ -243,6 +247,7 @@ export const NAV_ITEMS: NavItem[] = [
     match: ["/task-ops"],
     visibility: "everyone",
     order: 1.55,
+    mobile: { placement: "more", href: "/m/task-ops", order: 3.25 },
   },
   {
     id: "work-graph",
@@ -345,6 +350,7 @@ export const NAV_ITEMS: NavItem[] = [
     match: ["/work-catalog"],
     visibility: "everyone",
     order: 3,
+    mobile: { placement: "more", href: "/m/work-catalog", order: 7.6 },
   },
   {
     id: "decisions",
@@ -366,6 +372,7 @@ export const NAV_ITEMS: NavItem[] = [
     match: ["/decision-history"],
     visibility: "everyone",
     order: 3.6,
+    mobile: { placement: "more", href: "/m/decisions", order: 7.9 },
   },
   {
     id: "ai-market",
@@ -468,6 +475,7 @@ export const NAV_ITEMS: NavItem[] = [
     match: ["/workspace/audit"],
     visibility: "admin",
     order: 4,
+    mobile: { placement: "more", href: "/m/workspace/audit", order: 10.5 },
   },
   {
     id: "billing",

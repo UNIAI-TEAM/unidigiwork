@@ -265,7 +265,7 @@ function MobileWorkProductDetail() {
   };
 
   const shareUrl =
-    typeof window !== "undefined" ? `${window.location.origin}/work-products/${id}` : "";
+    typeof window !== "undefined" ? `${window.location.origin}/m/work-products/${id}` : "";
   const share = async () => {
     try {
       if (navigator.share) await navigator.share({ title: product?.title, url: shareUrl });

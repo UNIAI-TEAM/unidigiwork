@@ -34,6 +34,7 @@ import { getHomeSummary } from "@/lib/api/home.functions";
 import { useActiveWorkspace } from "@/lib/active-workspace";
 import { useCurrentIdentity } from "@/lib/use-current-identity";
 import { localeTag, useI18n, type Key } from "@/lib/i18n";
+import { toMobileHref } from "@/lib/mobile-routes";
 
 const INBOX_LINKS = [
   { label: "m.nav.attention" as Key, icon: AlertCircle },
@@ -58,8 +59,23 @@ export function MobileShell() {
 
   const startNew = () => void navigate({ to: "/m" as never });
 
+  const keepNavigationNative = (event: React.MouseEvent<HTMLDivElement>) => {
+    const anchor = (event.target as HTMLElement).closest("a");
+    if (!anchor || anchor.target === "_blank" || event.metaKey || event.ctrlKey) return;
+    const url = new URL(anchor.href, window.location.origin);
+    if (url.origin !== window.location.origin) return;
+    const currentHref = `${url.pathname}${url.search}${url.hash}`;
+    const mobileHref = toMobileHref(currentHref);
+    if (mobileHref === currentHref) return;
+    event.preventDefault();
+    void navigate({ to: mobileHref as never });
+  };
+
   return (
-    <div className="flex h-dvh min-h-dvh min-w-0 flex-col overflow-hidden bg-background">
+    <div
+      onClickCapture={keepNavigationNative}
+      className="flex h-dvh min-h-dvh min-w-0 flex-col overflow-hidden bg-background"
+    >
       <header className="z-40 flex min-h-16 shrink-0 items-center gap-2 bg-background px-[max(0.75rem,env(safe-area-inset-left))] pb-2 pt-[max(.5rem,env(safe-area-inset-top))]">
         <Button
           variant="ghost"

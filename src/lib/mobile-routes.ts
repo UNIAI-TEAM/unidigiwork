@@ -1,4 +1,5 @@
 export function toMobileHref(href: string): string {
+  if (href === "/m" || href.startsWith("/m/")) return href;
   const mappings: Array<[RegExp, string]> = [
     [/^\/tasks\/([^/?#]+)/, "/m/tasks/$1"],
     [/^\/work-products\/([^/?#]+)/, "/m/work-products/$1"],
@@ -21,19 +22,40 @@ export function toMobileHref(href: string): string {
     [/^\/workflows/, "/m/workflows"],
     [/^\/knowledge/, "/m/knowledge"],
     [/^\/ai-brain\/skills/, "/m/ai-skills"],
+    [/^\/ai-brain\/tracking/, "/m/ai-brain/tracking"],
     [/^\/ai-brain/, "/m/ai-brain"],
     [/^\/work-approvals/, "/m/work-approvals"],
     [/^\/decision-history/, "/m/decisions"],
     [/^\/decisions/, "/m/decisions"],
+    [/^\/ceo\/(.+)/, "/m/ceo/$1"],
     [/^\/ceo/, "/m/ceo"],
+    [/^\/reports\/(.+)/, "/m/reports/$1"],
     [/^\/reports/, "/m/reports"],
+    [/^\/admin\/(.+)/, "/m/admin/$1"],
     [/^\/admin/, "/m/admin"],
     [/^\/billing/, "/m/billing"],
+    [/^\/notifications\/(.+)/, "/m/notifications/$1"],
+    [/^\/notifications/, "/m/notifications"],
+    [/^\/workspace\/(.+)/, "/m/workspace/$1"],
+    [/^\/workspace/, "/m/workspace"],
+    [/^\/task-ops/, "/m/task-ops"],
+    [/^\/work-board/, "/m/work-board"],
+    [/^\/work-catalog\/(.+)/, "/m/work-catalog/$1"],
+    [/^\/work-catalog/, "/m/work-catalog"],
+    [/^\/ai-market\/(.+)/, "/m/ai-market/$1"],
+    [/^\/ai-market/, "/m/ai-market"],
+    [/^\/ai-workforce\/(.+)/, "/m/ai-workforce/$1"],
+    [/^\/ai-workforce/, "/m/ai-workforce"],
+    [/^\/email\/(.+)/, "/m/email/$1"],
+    [/^\/email/, "/m/email"],
+    [/^\/chat\/([^/?#]+)/, "/m/c/$1"],
+    [/^\/chat/, "/m/chat"],
+    [/^\/dashboard/, "/m"],
+    [/^\/home/, "/m"],
+    [/^\/help/, "/m/knowledge"],
   ];
   for (const [pattern, replacement] of mappings) {
     if (pattern.test(href)) return href.replace(pattern, replacement);
   }
-  // Không tạo deep-link đến một route mobile không tồn tại. Các module chưa có
-  // presentation mobile riêng vẫn mở route thật trong responsive shell.
-  return href;
+  return href.startsWith("/") ? `/m/${href.slice(1)}` : href;
 }

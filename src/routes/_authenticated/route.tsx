@@ -82,7 +82,10 @@ function AuthenticatedLayout() {
             <AlertTriangle className="h-3.5 w-3.5" />
             <span>{banner.text}</span>
           </div>
-          <Link to="/admin/tenant" className="rounded-md px-2 py-1 hover:bg-surface">
+          <Link
+            to={(location.pathname.startsWith("/m") ? "/m/admin/tenant" : "/admin/tenant") as never}
+            className="rounded-md px-2 py-1 hover:bg-surface"
+          >
             Quản trị tenant
           </Link>
         </div>
