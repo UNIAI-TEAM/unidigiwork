@@ -10,8 +10,10 @@ import {
   ClipboardList,
   ListChecks,
   Loader2,
+  MessageSquare,
   PlayCircle,
   Search,
+  Send,
   UserRound,
   Waypoints,
   Zap,
@@ -35,6 +37,7 @@ import {
 } from "@/lib/api/work-graph.functions";
 import type { WorkGraphBoardItem } from "@/lib/api/work-graph.functions";
 import { setTaskDueAt } from "@/lib/api/tasks.functions";
+import { commentTask } from "@/lib/api/tasks.functions";
 
 export const Route = createFileRoute("/_authenticated/work-graph")({
   validateSearch: z.object({ task: z.string().uuid().optional() }),
@@ -92,6 +95,26 @@ function WorkGraphPage() {
   const [expandedItems, setExpandedItems] = useState<Set<string>>(() => new Set());
   const [deadlineItems, setDeadlineItems] = useState<Set<string>>(() => new Set());
   const [deadlineDrafts, setDeadlineDrafts] = useState<Record<string, string>>({});
+  const [messageItems, setMessageItems] = useState<Set<string>>(() => new Set());
+  const [messageDrafts, setMessageDrafts] = useState<Record<string, string>>({});
+  const messageMutation = useMutation({
+    mutationFn: ({ taskId, body }: { taskId: string; body: string }) =>
+      commentTask({ data: { taskId, body, idempotencyKey: crypto.randomUUID() } }),
+    onSuccess: async (_, variables) => {
+      setMessageDrafts((current) => ({ ...current, [variables.taskId]: "" }));
+      setMessageItems((current) => {
+        const next = new Set(current);
+        next.delete(variables.taskId);
+        return next;
+      });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["work-graph-board"] }),
+        queryClient.invalidateQueries({ queryKey: ["task-chat-detail", variables.taskId] }),
+      ]);
+      toast.success(t("wg.messageSent"));
+    },
+    onError: () => toast.error(t("wg.messageError")),
+  });
   const deadlineMutation = useMutation({
     mutationFn: ({ taskId, dueAt }: { taskId: string; dueAt: string | null }) =>
       setTaskDueAt({
@@ -363,33 +386,103 @@ function WorkGraphPage() {
                             · {r.text}
                           </span>
                         ) : null}
+                        {i.type === "TASK" ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                            · <MessageSquare className="h-3 w-3" />
+                            {t("wg.messageCount").replace("{n}", String(i.interactionCount))}
+                            {i.lastInteractionAt
+                              ? ` · ${t("wg.lastInteraction").replace(
+                                  "{time}",
+                                  new Date(i.lastInteractionAt).toLocaleString(
+                                    lang === "vi" ? "vi-VN" : "en-US",
+                                    { dateStyle: "short", timeStyle: "short" },
+                                  ),
+                                )}`
+                              : ""}
+                          </span>
+                        ) : null}
                       </span>
                       {i.type === "TASK" ? (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          className="mt-0.5 min-h-11 px-1.5 text-xs text-muted-foreground sm:min-h-9"
-                          aria-expanded={deadlineItems.has(i.id)}
-                          onClick={() =>
-                            setDeadlineItems((current) => {
-                              const next = new Set(current);
-                              if (next.has(i.id)) next.delete(i.id);
-                              else {
-                                next.add(i.id);
-                                setDeadlineDrafts((drafts) => ({
-                                  ...drafts,
-                                  [i.id]: i.dueAt
-                                    ? new Date(i.dueAt).toISOString().slice(0, 16)
-                                    : "",
-                                }));
-                              }
-                              return next;
-                            })
-                          }
+                        <span className="mt-0.5 flex flex-wrap gap-1">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            className="min-h-11 px-1.5 text-xs text-muted-foreground sm:min-h-9"
+                            aria-expanded={messageItems.has(i.id)}
+                            onClick={() =>
+                              setMessageItems((current) => {
+                                const next = new Set(current);
+                                if (next.has(i.id)) next.delete(i.id);
+                                else next.add(i.id);
+                                return next;
+                              })
+                            }
+                          >
+                            <MessageSquare className="h-4 w-4" /> {t("wg.sendMessage")}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            className="min-h-11 px-1.5 text-xs text-muted-foreground sm:min-h-9"
+                            aria-expanded={deadlineItems.has(i.id)}
+                            onClick={() =>
+                              setDeadlineItems((current) => {
+                                const next = new Set(current);
+                                if (next.has(i.id)) next.delete(i.id);
+                                else {
+                                  next.add(i.id);
+                                  setDeadlineDrafts((drafts) => ({
+                                    ...drafts,
+                                    [i.id]: i.dueAt
+                                      ? new Date(i.dueAt).toISOString().slice(0, 16)
+                                      : "",
+                                  }));
+                                }
+                                return next;
+                              })
+                            }
+                          >
+                            <CalendarClock className="h-4 w-4" />
+                            {i.dueAt ? t("wg.changeDeadline") : t("wg.setDeadline")}
+                          </Button>
+                        </span>
+                      ) : null}
+                      {i.type === "TASK" && messageItems.has(i.id) ? (
+                        <form
+                          className="mt-1 flex min-w-0 gap-2 rounded-lg border bg-muted/30 p-2"
+                          onSubmit={(event) => {
+                            event.preventDefault();
+                            const body = messageDrafts[i.id]?.trim();
+                            if (body) messageMutation.mutate({ taskId: i.id, body });
+                          }}
                         >
-                          <CalendarClock className="h-4 w-4" />
-                          {i.dueAt ? t("wg.changeDeadline") : t("wg.setDeadline")}
-                        </Button>
+                          <Input
+                            value={messageDrafts[i.id] ?? ""}
+                            onChange={(event) =>
+                              setMessageDrafts((current) => ({
+                                ...current,
+                                [i.id]: event.target.value,
+                              }))
+                            }
+                            placeholder={t("wg.messagePlaceholder")}
+                            aria-label={t("wg.messagePlaceholder")}
+                            maxLength={2000}
+                            className="h-11 min-w-0 text-base sm:h-9 sm:text-sm"
+                          />
+                          <Button
+                            type="submit"
+                            size="icon"
+                            className="h-11 w-11 shrink-0 sm:h-9 sm:w-9"
+                            disabled={messageMutation.isPending || !messageDrafts[i.id]?.trim()}
+                            aria-label={t("wg.sendMessage")}
+                          >
+                            {messageMutation.isPending ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Send className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </form>
                       ) : null}
                       {i.type === "TASK" && deadlineItems.has(i.id) ? (
                         <div className="mt-1 flex flex-col gap-2 rounded-lg border bg-muted/30 p-2 sm:flex-row sm:items-center">
