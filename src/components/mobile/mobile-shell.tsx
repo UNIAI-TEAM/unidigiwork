@@ -131,7 +131,6 @@ function NativeDrawer({
   const { t } = useI18n();
   const navigate = useNavigate();
   const listFn = useServerFn(listAiConversations);
-  const homeFn = useServerFn(getHomeSummary);
   const identity = useCurrentIdentity();
   const { workspaces, workspaceId, select } = useActiveWorkspace();
   const [workspacesOpen, setWorkspacesOpen] = useState(true);
@@ -143,18 +142,6 @@ function NativeDrawer({
     queryFn: () => listFn({ data: { limit: 6, sort: "recent" } }),
     enabled: open,
   });
-  const home = useQuery({
-    queryKey: ["home", "summary", "mobile-drawer"],
-    queryFn: () => homeFn(),
-    enabled: open,
-    staleTime: 60_000,
-  });
-
-  const inboxCounts = {
-    attention: home.data?.counts.attention ?? 0,
-    working: home.data?.myWork.filter((task) => task.status === "in_progress").length ?? 0,
-    review: home.data?.counts.approvals ?? 0,
-  };
 
   const go = (to: string) => {
     onOpenChange(false);
