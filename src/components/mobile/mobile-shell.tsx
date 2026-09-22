@@ -44,7 +44,7 @@ const INBOX_LINKS = [
 const LIBRARY_LINKS = [
   { label: "nav.workProducts" as Key, icon: FileText, to: "/m/work-products" },
   { label: "nav.meetings" as Key, icon: CalendarDays, to: "/m/meet" },
-  { label: "nav.documents" as Key, icon: Folder, to: "/documents" },
+  { label: "nav.documents" as Key, icon: Folder, to: "/m/documents" },
 ];
 
 const PINNED_KEY = "uniwork.mobile.pinned-conversations";

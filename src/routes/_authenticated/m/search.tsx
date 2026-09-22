@@ -23,6 +23,7 @@ import { useActiveWorkspace } from "@/lib/active-workspace";
 import { readSearchScope, writeSearchScope } from "@/lib/search-scope";
 import { universalSearch } from "@/lib/api/search-universal.functions";
 import { SEARCH_KINDS, type SearchKind } from "@/lib/api/search-universal.server";
+import { toMobileHref } from "@/lib/mobile-routes";
 
 const PAGE_SIZE = 30;
 
@@ -98,25 +99,24 @@ function MobileSearchPage() {
 
   const runSearch = useServerFn(universalSearch);
   const enabled = debounced.length >= 2;
-  const { data, isFetching, isFetchingNextPage, hasNextPage, fetchNextPage } =
-    useInfiniteQuery({
-      queryKey: ["m-search", debounced, kind, scope],
-      initialPageParam: 0,
-      queryFn: ({ pageParam }) =>
-        runSearch({
-          data: {
-            q: debounced,
-            kinds: kind ? [kind] : undefined,
-            workspaceId: scope ?? undefined,
-            limit: PAGE_SIZE,
-            offset: pageParam as number,
-            expandGraph: false,
-          },
-        }),
-      getNextPageParam: (last) => (last.hasMore ? last.nextOffset : undefined),
-      enabled,
-      staleTime: 30_000,
-    });
+  const { data, isFetching, isFetchingNextPage, hasNextPage, fetchNextPage } = useInfiniteQuery({
+    queryKey: ["m-search", debounced, kind, scope],
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) =>
+      runSearch({
+        data: {
+          q: debounced,
+          kinds: kind ? [kind] : undefined,
+          workspaceId: scope ?? undefined,
+          limit: PAGE_SIZE,
+          offset: pageParam as number,
+          expandGraph: false,
+        },
+      }),
+    getNextPageParam: (last) => (last.hasMore ? last.nextOffset : undefined),
+    enabled,
+    staleTime: 30_000,
+  });
 
   const firstPage = data?.pages?.[0];
   const counts = firstPage?.counts;
@@ -157,7 +157,9 @@ function MobileSearchPage() {
             aria-label="Tìm kiếm toàn workspace"
             className="h-11 w-full min-w-0 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
           />
-          {isFetching && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />}
+          {isFetching && (
+            <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />
+          )}
           {q && !isFetching && (
             <button
               type="button"
@@ -233,13 +235,11 @@ function MobileSearchPage() {
                 key={`${item.entityType}-${item.id}`}
                 title={item.title}
                 subtitle={item.snippet || item.subtitle || undefined}
-                meta={
-                  [KIND_LABEL[item.kind], item.workspaceName ?? undefined]
-                    .filter(Boolean)
-                    .join(" · ")
-                }
+                meta={[KIND_LABEL[item.kind], item.workspaceName ?? undefined]
+                  .filter(Boolean)
+                  .join(" · ")}
                 icon={<Icon className="h-4 w-4 text-muted-foreground" />}
-                onClick={() => navigate({ href: item.href } as never)}
+                onClick={() => navigate({ href: toMobileHref(item.href) } as never)}
               />
             );
           })

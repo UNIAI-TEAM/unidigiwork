@@ -1,18 +1,25 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useActiveWorkspace } from "@/lib/active-workspace";
-import { supabase } from "@/integrations/supabase/client";
+import { createTask, listTasks } from "@/lib/api/tasks.functions";
 import { MobileListItem } from "@/components/mobile/mobile-list-item";
 import { MobileFAB } from "@/components/mobile/mobile-fab";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { Search, X } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
-import type { Database } from "@/integrations/supabase/types";
-
-type Task = Database["public"]["Tables"]["tasks"]["Row"];
+import { toast } from "sonner";
 
 const statusLabel: Record<string, string> = {
   todo: "Chưa làm",
@@ -46,19 +53,38 @@ function MobileTasksPage() {
   const { workspaceId } = useActiveWorkspace();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<string>("all");
+  const [createOpen, setCreateOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const queryClient = useQueryClient();
 
-  const { data: tasks } = useSuspenseQuery({
+  const { data: tasks } = useQuery({
     queryKey: ["mobile-tasks", workspaceId],
     queryFn: async () => {
       if (!workspaceId) return [];
-      const { data } = await supabase
-        .from("tasks")
-        .select("id, title, status, priority, due_at, tags")
-        .eq("workspace_id", workspaceId)
-        .is("deleted_at", null)
-        .order("due_at", { ascending: true, nullsFirst: false });
-      return data ?? [];
+      return listTasks({ data: { workspaceId, limit: 200 } });
     },
+    enabled: Boolean(workspaceId),
+  });
+  const createMutation = useMutation({
+    mutationFn: () =>
+      createTask({
+        data: {
+          workspaceId: workspaceId as string,
+          title: title.trim(),
+          description: description.trim() || undefined,
+          priority: "normal",
+          idempotencyKey: crypto.randomUUID(),
+        },
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["mobile-tasks", workspaceId] });
+      setTitle("");
+      setDescription("");
+      setCreateOpen(false);
+      toast.success("Đã tạo công việc");
+    },
+    onError: () => toast.error("Không thể tạo công việc"),
   });
 
   const filtered = (tasks ?? []).filter((t) => {
@@ -132,7 +158,41 @@ function MobileTasksPage() {
         </div>
       )}
 
-      <MobileFAB label="Tạo công việc" to="/tasks" />
+      <MobileFAB label="Tạo công việc" onClick={() => setCreateOpen(true)} />
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent className="w-[calc(100%-2rem)] max-w-md rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>Tạo công việc</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-3">
+            <Input
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              placeholder="Tên công việc"
+              className="h-11"
+              autoFocus
+            />
+            <Textarea
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              placeholder="Mô tả"
+              className="min-h-28"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" className="min-h-11" onClick={() => setCreateOpen(false)}>
+              Hủy
+            </Button>
+            <Button
+              className="min-h-11"
+              disabled={!workspaceId || !title.trim() || createMutation.isPending}
+              onClick={() => createMutation.mutate()}
+            >
+              Tạo công việc
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouterState, useSearch } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -900,14 +900,58 @@ const RENDERS: Record<SectionKey, React.FC> = {
   data: DataSection,
 };
 
-function SettingsPage() {
+export function SettingsPage() {
   const { t } = useI18n();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const navigate = useNavigate({ from: Route.fullPath });
-  const search = Route.useSearch();
-  const section: SectionKey = search.tab ?? "profile";
-  const current = SECTIONS.find((s) => s.key === section)!;
+  const navigate = useNavigate();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const rawSearch = useSearch({ strict: false }) as { tab?: string };
+  const isMobile = pathname.startsWith("/m/");
+  const parsedSection = SECTIONS.find((item) => item.key === rawSearch.tab)?.key;
+  const section: SectionKey = parsedSection ?? "profile";
+  const current = SECTIONS.find((s) => s.key === section) ?? SECTIONS[0];
+  if (!current) return null;
   const Body = RENDERS[section];
+
+  if (isMobile) {
+    return (
+      <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col gap-4 overflow-x-hidden px-4 pb-[max(2rem,env(safe-area-inset-bottom))] pt-2">
+        <header className="py-2">
+          <h1 className="text-xl font-semibold">{t("ac.80")}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{t("ac.81")}</p>
+        </header>
+        <nav className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-2" aria-label={t("ac.80")}>
+          {SECTIONS.map((item) => {
+            const active = item.key === section;
+            return (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() =>
+                  void navigate({ to: "/m/settings" as never, search: { tab: item.key } as never })
+                }
+                className={`flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors ${
+                  active
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-surface text-muted-foreground"
+                }`}
+              >
+                <item.icon className="h-4 w-4" />
+                {t(item.labelKey)}
+              </button>
+            );
+          })}
+        </nav>
+        <section className="min-w-0 rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5">
+          <div className="mb-5 border-b border-border pb-3">
+            <h2 className="text-lg font-semibold">{t(current.labelKey)}</h2>
+            <p className="text-xs text-muted-foreground">{t(current.descKey)}</p>
+          </div>
+          <Body />
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
@@ -927,7 +971,7 @@ function SettingsPage() {
                 return (
                   <button
                     key={s.key}
-                    onClick={() => navigate({ search: { tab: s.key } })}
+                    onClick={() => navigate({ to: "/settings", search: { tab: s.key } })}
                     className={`flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors ${active ? "bg-pale-purple text-primary" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"}`}
                   >
                     <s.icon className="h-4 w-4 shrink-0" />
