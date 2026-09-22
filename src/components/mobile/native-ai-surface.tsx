@@ -188,6 +188,7 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
           workspaceId: workspaceId ?? null,
           rootEntity: root ? { type: root.type, id: root.id } : null,
           targetTaskId: root?.type === "TASK" ? root.id : null,
+          conversationId: conversationId ?? null,
         },
       } as never)) as ProposedAiAction;
       setTurns((current) => [

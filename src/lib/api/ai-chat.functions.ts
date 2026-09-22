@@ -329,6 +329,17 @@ export const getTaskConversations = createServerFn({ method: "GET" })
     if (candidateError)
       throw new ApiError({ code: "AI_MESSAGE_LIST_FAILED", message: candidateError.message });
 
+    const { data: actionRows, error: actionError } = await ctx.supabase
+      .from("ai_action_proposals")
+      .select("conversation_id")
+      .eq("tenant_id", tenantId)
+      .eq("status", "SUCCEEDED")
+      .eq("action_type", "CREATE_TASK")
+      .not("conversation_id", "is", null)
+      .contains("result", { entityType: "TASK", entityId: data.taskId });
+    if (actionError)
+      throw new ApiError({ code: "AI_MESSAGE_LIST_FAILED", message: actionError.message });
+
     const referencesTask = (metadata: unknown) => {
       if (!metadata || typeof metadata !== "object") return false;
       const value = metadata as AiMessageMetadata;
@@ -342,9 +353,14 @@ export const getTaskConversations = createServerFn({ method: "GET" })
     };
     const conversationIds = Array.from(
       new Set(
-        ((candidates ?? []) as Array<{ conversation_id: string; metadata: unknown }>)
-          .filter((row) => referencesTask(row.metadata))
-          .map((row) => row.conversation_id),
+        [
+          ...((candidates ?? []) as Array<{ conversation_id: string; metadata: unknown }>)
+            .filter((row) => referencesTask(row.metadata))
+            .map((row) => row.conversation_id),
+          ...((actionRows ?? []) as Array<{ conversation_id: string | null }>).flatMap((row) =>
+            row.conversation_id ? [row.conversation_id] : [],
+          ),
+        ],
       ),
     ).slice(0, 20);
     if (!conversationIds.length) return [];

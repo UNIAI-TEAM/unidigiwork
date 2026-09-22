@@ -31,6 +31,7 @@ const ProposeSchema = z.object({
   source: z.enum(AI_ACTION_SOURCES).default("UNI_COPILOT"),
   workspaceId: z.string().uuid().nullish(),
   targetTaskId: z.string().uuid().nullish(),
+    conversationId: z.string().uuid().nullish(),
   rootEntity: z.object({ type: z.string().max(40), id: z.string().uuid() }).nullish(),
   sourceRefs: z
     .array(
@@ -80,6 +81,15 @@ export const proposeAiAction = createServerFn({ method: "POST" })
 
     const tenantId = getCookie(ACTIVE_TENANT_COOKIE) ?? null;
     const scope = await resolveActorWorkspace(context as never, tenantId, data.workspaceId ?? null);
+    if (data.conversationId) {
+      const { data: conversation } = await context.supabase
+        .from("ai_conversations")
+        .select("id")
+        .eq("id", data.conversationId)
+        .eq("tenant_id", scope.tenantId)
+        .maybeSingle();
+      if (!conversation) throw fail("ACTION_FORBIDDEN", "Hội thoại không thuộc phạm vi của bạn.");
+    }
 
     // Hồ sơ kỹ năng AI quyết định AI được đề xuất gì. Nếu tổ chức có khai báo kỹ năng
     // cho loại hành động này mà tất cả đều đang tắt → không cho đề xuất.
@@ -260,6 +270,7 @@ export const proposeAiAction = createServerFn({ method: "POST" })
         target_id: targetId,
         source_refs: sourceRefs,
         status: "PROPOSED",
+        conversation_id: data.conversationId ?? null,
         expected_row_version: expectedRowVersion,
       })
       .select("id, status, expires_at")
