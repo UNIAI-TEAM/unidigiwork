@@ -234,26 +234,9 @@ export const listTaskMessageRecipients = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ taskId: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }): Promise<TaskMessageRecipient[]> => {
-    const { data: task, error: taskError } = await context.supabase
-      .from("tasks")
-      .select("tenant_id")
-      .eq("id", data.taskId)
-      .is("deleted_at", null)
-      .maybeSingle();
-    if (taskError) mapPgError(taskError);
-    if (!task) throw new Error("TASK_NOT_FOUND");
-
-    const { data: assignments, error: assignmentError } = await context.supabase
-      .from("task_assignees")
-      .select("user_id")
-      .eq("task_id", data.taskId);
-    if (assignmentError) mapPgError(assignmentError);
-    const ids = new Set((assignments ?? []).map((row) => row.user_id));
-    if (ids.size === 0) return [];
-
     const { data: people, error: peopleError } = await context.supabase.rpc(
-      "list_tenant_member_profiles",
-      { _tenant_id: task.tenant_id },
+      "list_task_message_recipients",
+      { _task_id: data.taskId },
     );
     if (peopleError) mapPgError(peopleError, "TENANT_ACCESS_DENIED");
 
@@ -264,7 +247,6 @@ export const listTaskMessageRecipients = createServerFn({ method: "GET" })
         primary_email: string | null;
       }>
     )
-      .filter((person) => ids.has(person.id))
       .map((person) => ({
         id: person.id,
         name: person.display_name || person.primary_email || "—",

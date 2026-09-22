@@ -641,6 +641,7 @@ const dict = {
     "m.taskChat.sendAi": "Gửi cho UNI AI",
     "m.taskChat.selectRecipient": "Chọn người nhận",
     "m.taskChat.noRecipients": "Công việc chưa có người phụ trách.",
+    "m.taskChat.messageSent": "Đã gửi tin nhắn cho người phụ trách.",
     "m.taskChat.sendError": "Không thể gửi tin nhắn. Vui lòng thử lại.",
     // command palette
     "cmd.group.result": "Kết quả",
@@ -2924,6 +2925,7 @@ const dict = {
     "m.taskChat.sendAi": "Send to UNI AI",
     "m.taskChat.selectRecipient": "Choose recipient",
     "m.taskChat.noRecipients": "This task has no assignee.",
+    "m.taskChat.messageSent": "Message sent to the assignee.",
     "m.taskChat.sendError": "Could not send the message. Please try again.",
     // command palette
     "cmd.group.result": "Results",

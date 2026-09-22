@@ -147,8 +147,13 @@ export function TaskChatSummary({ taskId, taskTitle }: { taskId: string; taskTit
       }),
     onSuccess: async () => {
       setDraft("");
-      await queryClient.invalidateQueries({ queryKey: ["task-chat-detail", taskId] });
-      await queryClient.invalidateQueries({ queryKey: ["m-task-detail", taskId] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["task-chat-detail", taskId] }),
+        queryClient.invalidateQueries({ queryKey: ["m-task-detail", taskId] }),
+        queryClient.invalidateQueries({ queryKey: ["work-graph-board"] }),
+        queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+      ]);
+      toast.success(t("m.taskChat.messageSent"));
     },
     onError: (error) =>
       toast.error(error instanceof Error ? error.message : t("m.taskChat.sendError")),
