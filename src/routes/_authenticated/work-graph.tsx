@@ -466,6 +466,18 @@ function WorkGraphPage() {
                               : ""}
                           </span>
                         ) : null}
+                        {i.type === "TASK" && i.unreadMessageCount > 0 ? (
+                          <Badge
+                            variant="default"
+                            className="h-5 px-1.5 text-[10px]"
+                            aria-label={t("wg.newMessages").replace(
+                              "{n}",
+                              String(i.unreadMessageCount),
+                            )}
+                          >
+                            {t("wg.newMessages").replace("{n}", String(i.unreadMessageCount))}
+                          </Badge>
+                        ) : null}
                       </span>
                       {i.type === "TASK" ? (
                         <span className="mt-0.5 flex flex-wrap gap-1">

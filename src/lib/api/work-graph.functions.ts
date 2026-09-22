@@ -399,6 +399,8 @@ export type WorkGraphBoardItem = {
   /** Tổng bình luận nhóm và tin nhắn AI trong các hội thoại gắn task. */
   interactionCount: number;
   lastInteractionAt: string | null;
+  /** Số thông báo tin nhắn task chưa đọc của người đang xem. */
+  unreadMessageCount: number;
 };
 
 export type WorkGraphBoard = {
@@ -494,6 +496,7 @@ export const listWorkGraphBoard = createServerFn({ method: "GET" })
         links: number;
         interaction_count: number;
         last_interaction_at: string | null;
+        unread_message_count: number;
       }>;
       total?: number;
       counts?: { all?: number; running?: number; done?: number; products?: number };
@@ -545,6 +548,7 @@ export const listWorkGraphBoard = createServerFn({ method: "GET" })
       ownerName: row.owner_id ? (ownerNames.get(row.owner_id) ?? "—") : null,
       interactionCount: Number(row.interaction_count ?? 0),
       lastInteractionAt: row.last_interaction_at,
+      unreadMessageCount: Number(row.unread_message_count ?? 0),
     }));
 
     return {

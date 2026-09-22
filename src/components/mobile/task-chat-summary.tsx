@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -28,6 +28,7 @@ import { getTaskConversations, sendAiMessage } from "@/lib/api/ai-chat.functions
 import {
   getTaskDetail,
   listTaskMessageRecipients,
+  markTaskMessagesRead,
   sendTaskMessage,
 } from "@/lib/api/tasks.functions";
 import { getWorkContext, listWorkGraphBoard } from "@/lib/api/work-graph.functions";
@@ -116,6 +117,7 @@ export function TaskChatSummary({ taskId, taskTitle }: { taskId: string; taskTit
   const sendAiFn = useServerFn(sendAiMessage);
   const recipientsFn = useServerFn(listTaskMessageRecipients);
   const sendTeamFn = useServerFn(sendTaskMessage);
+  const markReadFn = useServerFn(markTaskMessagesRead);
   const [draft, setDraft] = useState("");
   const [recipientId, setRecipientId] = useState("");
   const chats = useQuery({
@@ -139,6 +141,15 @@ export function TaskChatSummary({ taskId, taskTitle }: { taskId: string; taskTit
   const related = graph.data?.relationships ?? [];
   const loading = chats.isLoading || detail.isLoading || graph.isLoading;
   const latestConversation = chats.data?.[0] ?? null;
+
+  useEffect(() => {
+    void markReadFn({ data: { taskId } }).then(() =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["work-graph-board"] }),
+        queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+      ]),
+    );
+  }, [markReadFn, queryClient, taskId]);
 
   const sendTeam = useMutation({
     mutationFn: ({ body, recipientId }: { body: string; recipientId: string }) =>
