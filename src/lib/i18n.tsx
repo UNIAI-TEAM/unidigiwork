@@ -10,11 +10,13 @@ import { meetingsHomeEn, meetingsHomeVi } from "./i18n-locales/meetings-home";
 import { meetingsRoomEn, meetingsRoomVi } from "./i18n-locales/meetings-room";
 import { meetingsPanelsEn, meetingsPanelsVi } from "./i18n-locales/meetings-panels";
 import { documentsMobileEn, documentsMobileVi } from "./i18n-locales/documents-mobile";
+import { adminMobileEn, adminMobileVi } from "./i18n-locales/admin-mobile";
 
 export type Lang = "vi" | "en" | "my" | "km" | "lo" | "id" | "ms";
 
 const dict = {
   vi: {
+    ...adminMobileVi,
     ...documentsMobileVi,
     // module Họp (tách file riêng cho dễ bảo trì)
     ...meetingsListVi,
@@ -2468,6 +2470,7 @@ const dict = {
     "em.157": "Trân trọng,",
   },
   en: {
+    ...adminMobileEn,
     ...documentsMobileEn,
     ...meetingsListEn,
     ...meetingsHomeEn,

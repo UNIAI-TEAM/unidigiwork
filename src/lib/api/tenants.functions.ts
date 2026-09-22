@@ -239,7 +239,20 @@ export const listTenantMembers = createServerFn({ method: "GET" })
       .eq("tenant_id", data.tenantId)
       .order("created_at", { ascending: true });
     if (error) throw toApiError(error);
-    return rows ?? [];
+    const userIds = [...new Set((rows ?? []).map((row) => row.user_id))];
+    const { data: profiles, error: profileError } = userIds.length
+      ? await supabase.from("profiles").select("id, email, display_name").in("id", userIds)
+      : { data: [], error: null };
+    if (profileError) throw toApiError(profileError);
+    const profileById = new Map((profiles ?? []).map((profile) => [profile.id, profile]));
+    return (rows ?? []).map((row) => {
+      const profile = profileById.get(row.user_id);
+      return {
+        ...row,
+        email: profile?.email ?? null,
+        display_name: profile?.display_name ?? null,
+      };
+    });
   });
 
 export const listTenantInvitations = createServerFn({ method: "GET" })

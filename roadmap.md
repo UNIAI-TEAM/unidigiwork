@@ -91,5 +91,9 @@
 - [x] Đợt 3: thêm màn mobile-native cho Dự án, Lịch, Nhân sự, Knowledge, Quy trình, AI Brain, phê duyệt, quyết định, báo cáo, điều hành, quản trị và thanh toán.
 - [x] Đợt 3: chuyển menu và deep link PWA sang namespace `/m`, không còn mở bố cục web từ các điểm vào chính.
 ## Đợt PWA — Quản trị mobile-native
-- [ ] Rà soát màn quản trị, đổi mật khẩu và cấp quyền hiện có.
-- [ ] Lập kế hoạch giao diện quản trị PWA dùng dữ liệu và quyền thật, không mở trang web.
+- [x] Rà soát màn quản trị, đổi mật khẩu và cấp quyền hiện có.
+- [x] Lập kế hoạch giao diện quản trị PWA dùng dữ liệu và quyền thật, không mở trang web.
+- [ ] Làm mới trung tâm Quản trị, danh sách và chi tiết tài khoản mobile-native.
+- [ ] Tách rõ quyền hệ thống và vai trò tổ chức, giữ kiểm tra quyền phía máy chủ.
+- [ ] Thêm đặt lại mật khẩu và giới hạn tài khoản theo tổ chức trên PWA.
+- [ ] Kiểm tra 390/440/820px, typecheck và các cổng kiến trúc liên quan.
