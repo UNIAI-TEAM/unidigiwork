@@ -502,6 +502,12 @@ function AddContextDrawer({
                 </Button>
               ))}
             </div>
+          ) : mode === "chat" ? (
+            <TeamChatPanel
+              channelId={chatChannelId}
+              onOpenChannel={(channel) => setChatChannelId(channel.id)}
+              onBack={() => setChatChannelId(null)}
+            />
           ) : (
             <div className="space-y-3">
               <div className="flex items-center gap-2 rounded-xl border border-border bg-surface px-3">
