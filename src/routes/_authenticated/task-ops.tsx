@@ -239,7 +239,7 @@ function TaskOpsPage() {
                           reassign.mutate({ taskId: item.id, assigneeId: value })
                         }
                       >
-                        <SelectTrigger className="h-9 min-w-0 flex-1">
+                        <SelectTrigger className="h-11 min-w-0 flex-1 sm:h-9">
                           <SelectValue placeholder={t("tops.unassigned")} />
                         </SelectTrigger>
                         <SelectContent>
