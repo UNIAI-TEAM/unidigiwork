@@ -16,6 +16,7 @@ import {
   Users,
   X,
   Zap,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -50,8 +51,6 @@ import { universalSearch } from "@/lib/api/search-universal.functions";
 import type { UniversalSearchItem } from "@/lib/api/search-universal.server";
 import type { AiContextEntityType } from "@/domain/ai-context/contracts";
 import { WORK_ENTITY_TYPES } from "@/domain/work-graph/relationship-types";
-import { WorkProductRun } from "@/components/mobile/build-work-product";
-import { detectWorkProductKinds } from "@/domain/ai-orchestration/work-product-intent";
 import { useActiveWorkspace } from "@/lib/active-workspace";
 import { useCurrentIdentity } from "@/lib/use-current-identity";
 import { useI18n } from "@/lib/i18n";
@@ -172,32 +171,6 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
   const isEmpty = displayMessages.length === 0 && !pendingText;
   const firstName = identity.displayName.trim().split(/\s+/).at(-1) || t("m.ai.user");
 
-  // Build Work Product: chỉ hiện sau khi AI đã trả lời xong lượt gần nhất.
-  const lastMessage = displayMessages.at(-1);
-  const lastUserRequest = [...displayMessages].reverse().find((m) => m.role === "user")?.content;
-  const requestedKinds = detectWorkProductKinds(lastUserRequest ?? "");
-  const canBuildWorkProduct =
-    !send.isPending &&
-    !pendingText &&
-    lastMessage?.role === "assistant" &&
-    Boolean(lastUserRequest) &&
-    requestedKinds.length > 0;
-  const buildBrief = canBuildWorkProduct
-    ? `${lastUserRequest}\n\nKẾT QUẢ AI VỪA HOÀN THÀNH:\n${lastMessage?.content ?? ""}`
-    : "";
-  // Chips trong composer đã bị xoá sau khi gửi, nên lấy lại ngữ cảnh đã lưu
-  // của lượt hỏi gần nhất để giữ provenance cho Work Product.
-  const lastUserMessage = [...displayMessages].reverse().find((m) => m.role === "user");
-  const persistedSources = (lastUserMessage?.metadata?.contextEntities ?? []).flatMap((item) =>
-    (WORK_ENTITY_TYPES as readonly string[]).includes(item.type)
-      ? [{ type: item.type as AiContextEntityType, id: item.id }]
-      : [],
-  );
-  const composerSources = contexts
-    .filter((item) => item.root)
-    .map((item) => ({ type: item.root!.type, id: item.root!.id }));
-  const buildSources = composerSources.length > 0 ? composerSources : persistedSources;
-
   return (
     <div className="mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col overflow-hidden">
       <Tabs
@@ -234,15 +207,6 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
                       latest={index >= Math.max(0, displayMessages.length - 2)}
                     />
                   ))}
-                  {canBuildWorkProduct && (
-                    <WorkProductRun
-                      key={lastMessage?.id}
-                      kinds={requestedKinds}
-                      brief={buildBrief}
-                      workspaceId={workspaceId}
-                      sourceEntities={buildSources}
-                    />
-                  )}
                   {pendingText && (
                     <>
                       <UserMessage content={pendingText} />
@@ -416,6 +380,7 @@ function EmptyState({ firstName, onPick }: { firstName: string; onPick: (value: 
 }
 
 function Message({ message, latest = false }: { message: AiMessageDTO; latest?: boolean }) {
+  const { t } = useI18n();
   if (message.role === "user") return <UserMessage content={message.content} />;
   return (
     <AiMessage
@@ -442,6 +407,21 @@ function Message({ message, latest = false }: { message: AiMessageDTO; latest?: 
                 </a>
               ))}
             </div>
+          ) : null}
+          {message.metadata?.workProductStatus === "CREATED" && message.metadata.workProductHref ? (
+            <a
+              href={message.metadata.workProductHref}
+              className="mt-3 flex min-h-11 w-fit max-w-full items-center gap-2 rounded-xl border border-border bg-surface px-3 text-sm font-medium text-foreground hover:bg-muted"
+            >
+              <FileText className="h-4 w-4 shrink-0" />
+              <span className="truncate">{t("m.ai.executiveBriefReady")}</span>
+              <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground" />
+            </a>
+          ) : null}
+          {message.metadata?.workProductStatus === "FAILED" ? (
+            <p className="mt-3 rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+              {t("m.ai.executiveBriefFailed")}
+            </p>
           ) : null}
         </MessageContent>
       </div>

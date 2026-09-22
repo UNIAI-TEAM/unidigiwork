@@ -11171,6 +11171,18 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      persist_chat_executive_brief: {
+        Args: {
+          _assistant_message_id: string
+          _correlation_id?: string
+          _idempotency_key?: string
+          _root_id?: string
+          _root_type?: string
+          _sources?: Json
+          _title: string
+        }
+        Returns: Json
+      }
       persist_work_quality: {
         Args: {
           _assessment: Json

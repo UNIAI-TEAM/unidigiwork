@@ -316,6 +316,13 @@
       "when": 1790061846524,
       "tag": "0044_fix_classified_subtask_assignee_conflict",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1790062053139,
+      "tag": "0045_persist_chat_executive_brief_work_product",
+      "breakpoints": true
     }
   ]
 }
