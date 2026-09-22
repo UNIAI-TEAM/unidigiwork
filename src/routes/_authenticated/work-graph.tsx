@@ -35,9 +35,7 @@ import {
   listWorkGraphBoard,
 } from "@/lib/api/work-graph.functions";
 import type { WorkGraphBoardItem } from "@/lib/api/work-graph.functions";
-import {
-  setTaskDueAt,
-} from "@/lib/api/tasks.functions";
+import { setTaskDueAt } from "@/lib/api/tasks.functions";
 
 export const Route = createFileRoute("/_authenticated/work-graph")({
   validateSearch: z.object({ task: z.string().uuid().optional() }),

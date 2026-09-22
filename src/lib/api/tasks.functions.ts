@@ -285,11 +285,13 @@ export const listTaskSuperiorRecipients = createServerFn({ method: "GET" })
       _task_id: data.taskId,
     });
     if (error) mapPgError(error, "TENANT_ACCESS_DENIED");
-    return ((people ?? []) as Array<{
-      id: string;
-      display_name: string | null;
-      primary_email: string | null;
-    }>).map((person) => ({
+    return (
+      (people ?? []) as Array<{
+        id: string;
+        display_name: string | null;
+        primary_email: string | null;
+      }>
+    ).map((person) => ({
       id: person.id,
       name: person.display_name || person.primary_email || "—",
       email: person.primary_email ?? "",
