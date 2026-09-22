@@ -163,32 +163,32 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
     <div className="mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col overflow-hidden">
       <Conversation className="min-h-0 flex-1">
         <ConversationContent className="min-h-full gap-6 px-4 pb-6 pt-3 sm:px-6">
-              {messages.isLoading ? (
-                <div className="flex min-h-72 items-center justify-center text-muted-foreground">
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  <span className="ml-2 text-sm">{t("m.ai.loading")}</span>
-                </div>
-              ) : isEmpty ? (
-                <EmptyState firstName={firstName} onPick={submit} />
-              ) : (
-                  <div className="mx-auto w-full max-w-2xl space-y-7 pb-4">
-                  {displayMessages.map((message, index) => (
-                    <Message
-                      key={message.id}
-                      message={message}
-                      latest={index >= Math.max(0, displayMessages.length - 2)}
-                    />
-                  ))}
-                  {pendingText && (
-                    <>
-                      <UserMessage content={pendingText} />
-                      <div className="text-sm text-muted-foreground" role="status">
-                        <Shimmer className="text-sm">{t("m.ai.working")}</Shimmer>
-                      </div>
-                    </>
-                  )}
-                </div>
+          {messages.isLoading ? (
+            <div className="flex min-h-72 items-center justify-center text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span className="ml-2 text-sm">{t("m.ai.loading")}</span>
+            </div>
+          ) : isEmpty ? (
+            <EmptyState firstName={firstName} onPick={submit} />
+          ) : (
+            <div className="mx-auto w-full max-w-2xl space-y-7 pb-4">
+              {displayMessages.map((message, index) => (
+                <Message
+                  key={message.id}
+                  message={message}
+                  latest={index >= Math.max(0, displayMessages.length - 2)}
+                />
+              ))}
+              {pendingText && (
+                <>
+                  <UserMessage content={pendingText} />
+                  <div className="text-sm text-muted-foreground" role="status">
+                    <Shimmer className="text-sm">{t("m.ai.working")}</Shimmer>
+                  </div>
+                </>
               )}
+            </div>
+          )}
         </ConversationContent>
         <ConversationScrollButton aria-label={t("m.ai.scrollLatest")} />
       </Conversation>
@@ -205,7 +205,7 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
                   {item.kind === "file" ? (
                     <Paperclip className="h-3.5 w-3.5" />
                   ) : (
-                     <FileText className="h-3.5 w-3.5 text-primary" />
+                    <FileText className="h-3.5 w-3.5 text-primary" />
                   )}
                   <span className="max-w-48 truncate">{item.label}</span>
                   <Button
@@ -223,8 +223,8 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
               ))}
             </div>
           )}
-           <PromptInput
-             className="rounded-[1.75rem] border-border-strong bg-surface shadow-card"
+          <PromptInput
+            className="rounded-[1.75rem] border-border-strong bg-surface shadow-card"
             onSubmit={({ text }) => submit(text)}
           >
             <PromptInputTextarea
@@ -233,7 +233,7 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
               aria-label={t("m.ai.composer")}
               placeholder={t("m.ai.composer")}
               onChange={(event) => setInput(event.currentTarget.value)}
-               className="max-h-40 min-h-20 px-5 pt-4 text-base leading-6"
+              className="max-h-40 min-h-20 px-5 pt-4 text-base leading-6"
             />
             <PromptInputFooter className="px-1.5 pb-1.5">
               <PromptInputTools>
@@ -271,11 +271,9 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
               </PromptInputSubmit>
             </PromptInputFooter>
           </PromptInput>
-           <p className="mt-2 text-center text-xs text-muted-foreground">
-            {t("m.ai.disclaimer")}
-          </p>
-         </div>
-       </div>
+          <p className="mt-2 text-center text-xs text-muted-foreground">{t("m.ai.disclaimer")}</p>
+        </div>
+      </div>
 
       <input
         ref={fileRef}
@@ -327,39 +325,39 @@ function Message({ message, latest = false }: { message: AiMessageDTO; latest?: 
   return (
     <AiMessage from="assistant" className={latest ? "max-w-full" : "max-w-full"}>
       <MessageContent className="min-w-0 flex-1 overflow-visible">
-          <CollapsibleChatContent content={message.content}>
-            <MessageResponse className="executive-brief text-sm leading-7 [&_h2]:mb-2 [&_h2]:mt-5 [&_h2]:text-xs [&_h2]:font-semibold [&_h2]:uppercase [&_h2]:text-muted-foreground [&_li]:my-1 [&_ul]:my-2">
-              {message.content}
-            </MessageResponse>
-          </CollapsibleChatContent>
-          {message.metadata?.sources?.length ? (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {message.metadata.sources.slice(0, 4).map((source) => (
-                <a
-                  key={source.sourceId}
-                  href={source.href}
-                  className="max-w-full truncate rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground"
-                >
-                  {source.title}
-                </a>
-              ))}
-            </div>
-          ) : null}
-          {message.metadata?.workProductStatus === "CREATED" && message.metadata.workProductHref ? (
-            <a
-              href={message.metadata.workProductHref}
-              className="mt-3 flex min-h-11 w-fit max-w-full items-center gap-2 rounded-xl border border-border bg-surface px-3 text-sm font-medium text-foreground hover:bg-muted"
-            >
-              <FileText className="h-4 w-4 shrink-0" />
-              <span className="truncate">{t("m.ai.executiveBriefReady")}</span>
-              <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground" />
-            </a>
-          ) : null}
-          {message.metadata?.workProductStatus === "FAILED" ? (
-            <p className="mt-3 rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-              {t("m.ai.executiveBriefFailed")}
-            </p>
-          ) : null}
+        <CollapsibleChatContent content={message.content}>
+          <MessageResponse className="executive-brief text-sm leading-7 [&_h2]:mb-2 [&_h2]:mt-5 [&_h2]:text-xs [&_h2]:font-semibold [&_h2]:uppercase [&_h2]:text-muted-foreground [&_li]:my-1 [&_ul]:my-2">
+            {message.content}
+          </MessageResponse>
+        </CollapsibleChatContent>
+        {message.metadata?.sources?.length ? (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {message.metadata.sources.slice(0, 4).map((source) => (
+              <a
+                key={source.sourceId}
+                href={source.href}
+                className="max-w-full truncate rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground"
+              >
+                {source.title}
+              </a>
+            ))}
+          </div>
+        ) : null}
+        {message.metadata?.workProductStatus === "CREATED" && message.metadata.workProductHref ? (
+          <a
+            href={message.metadata.workProductHref}
+            className="mt-3 flex min-h-11 w-fit max-w-full items-center gap-2 rounded-xl border border-border bg-surface px-3 text-sm font-medium text-foreground hover:bg-muted"
+          >
+            <FileText className="h-4 w-4 shrink-0" />
+            <span className="truncate">{t("m.ai.executiveBriefReady")}</span>
+            <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground" />
+          </a>
+        ) : null}
+        {message.metadata?.workProductStatus === "FAILED" ? (
+          <p className="mt-3 rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            {t("m.ai.executiveBriefFailed")}
+          </p>
+        ) : null}
       </MessageContent>
     </AiMessage>
   );
