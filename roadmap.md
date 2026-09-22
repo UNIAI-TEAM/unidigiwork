@@ -99,3 +99,6 @@
 - [x] Tách rõ quyền hệ thống và vai trò tổ chức, giữ kiểm tra quyền phía máy chủ.
 - [x] Thêm đặt lại mật khẩu và giới hạn tài khoản theo tổ chức trên PWA.
 - [x] Kiểm tra 390/440/820px, typecheck và các cổng kiến trúc liên quan.
+
+- [x] Báo cáo tự động từ biên bản họp thành Work Product REPORT, liên kết Task/Person và Work Graph.
+- [x] Hiển thị trạng thái và lối mở báo cáo trên Cuộc họp mobile và bảng AI họp.

@@ -139,13 +139,19 @@ export const transcribeMeetingRecording = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ inserted: number; characters: number }> => {
     const apiKey = process.env["LOVABLE_API_KEY"];
     if (!apiKey) {
-      throw new ApiError({ code: "AI_GATEWAY_UNAVAILABLE", message: "Chưa thể phiên âm. Vui lòng thử lại." });
+      throw new ApiError({
+        code: "AI_GATEWAY_UNAVAILABLE",
+        message: "Chưa thể phiên âm. Vui lòng thử lại.",
+      });
     }
     const { transcribeAudio, splitTranscriptText } = await import("./meeting-transcription.server");
 
     const binary = Uint8Array.from(atob(data.base64), (c) => c.charCodeAt(0));
     if (binary.byteLength < 2048) {
-      throw new ApiError({ code: "VALIDATION_FAILED", message: "File ghi âm rỗng hoặc quá ngắn. Hãy ghi âm lại." });
+      throw new ApiError({
+        code: "VALIDATION_FAILED",
+        message: "File ghi âm rỗng hoặc quá ngắn. Hãy ghi âm lại.",
+      });
     }
 
     let text = "";
@@ -161,10 +167,16 @@ export const transcribeMeetingRecording = createServerFn({ method: "POST" })
             : status === 400
               ? "Định dạng file ghi âm không được hỗ trợ. Hãy dùng WAV hoặc MP3."
               : "Không phiên âm được file ghi âm. Vui lòng thử lại.";
-      throw new ApiError({ code: status === 402 ? "QUOTA_EXCEEDED" : "AI_GATEWAY_UNAVAILABLE", message });
+      throw new ApiError({
+        code: status === 402 ? "QUOTA_EXCEEDED" : "AI_GATEWAY_UNAVAILABLE",
+        message,
+      });
     }
     if (!text) {
-      throw new ApiError({ code: "VALIDATION_FAILED", message: "Không nhận được nội dung nào từ file ghi âm." });
+      throw new ApiError({
+        code: "VALIDATION_FAILED",
+        message: "Không nhận được nội dung nào từ file ghi âm.",
+      });
     }
 
     const segments = splitTranscriptText(text, data.durationSeconds ?? null);
@@ -199,12 +211,14 @@ export const generateMeetingSummary = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => meetingIdSchema.parse(i))
   .handler(async ({ data, context }): Promise<MeetingSummary> => {
-    const { mapSummaryRow, checkMeetingSummaryRateLimit, writeSummaryProgress } = await import(
-      "./meeting-intelligence.server"
-    );
+    const { mapSummaryRow, checkMeetingSummaryRateLimit, writeSummaryProgress } =
+      await import("./meeting-intelligence.server");
 
     if (!checkMeetingSummaryRateLimit(context.userId)) {
-      throw new ApiError({ code: "RATE_LIMITED", message: "Bạn đang tạo tóm tắt quá nhanh. Thử lại sau ít phút." });
+      throw new ApiError({
+        code: "RATE_LIMITED",
+        message: "Bạn đang tạo tóm tắt quá nhanh. Thử lại sau ít phút.",
+      });
     }
 
     // Họp 2–3 giờ: nạp theo trang để không mất phần cuối transcript.
@@ -241,7 +255,11 @@ export const generateMeetingSummary = createServerFn({ method: "POST" })
     }
 
     const apiKey = process.env["LOVABLE_API_KEY"];
-    if (!apiKey) throw new ApiError({ code: "AI_GATEWAY_UNAVAILABLE", message: "Chưa thể tạo tóm tắt. Vui lòng thử lại." });
+    if (!apiKey)
+      throw new ApiError({
+        code: "AI_GATEWAY_UNAVAILABLE",
+        message: "Chưa thể tạo tóm tắt. Vui lòng thử lại.",
+      });
     const { createLovableResponsesProvider } = await import("@/lib/ai-gateway.server");
     const provider = createLovableResponsesProvider(apiKey);
     const startAt = segments[0]?.createdAt ?? "";
@@ -283,7 +301,11 @@ export const generateMeetingSummary = createServerFn({ method: "POST" })
           });
         },
       });
-      if (staged.failedStages > 0 && staged.parsed.decisions.length === 0 && !staged.parsed.summary) {
+      if (
+        staged.failedStages > 0 &&
+        staged.parsed.decisions.length === 0 &&
+        !staged.parsed.summary
+      ) {
         await writeSummaryProgress(context.supabase, {
           meetingId: data.meetingId,
           runId,
@@ -292,7 +314,10 @@ export const generateMeetingSummary = createServerFn({ method: "POST" })
           truncated: staged.truncated,
           chunks: [],
         });
-        throw new ApiError({ code: "AI_GATEWAY_UNAVAILABLE", message: "Chưa thể tạo tóm tắt. Vui lòng thử lại." });
+        throw new ApiError({
+          code: "AI_GATEWAY_UNAVAILABLE",
+          message: "Chưa thể tạo tóm tắt. Vui lòng thử lại.",
+        });
       }
       parsed = staged.parsed;
       sources = staged.sources;
@@ -334,7 +359,12 @@ export const generateMeetingSummary = createServerFn({ method: "POST" })
           maxOutputTokens: 1600,
           temperature: 0.2,
           providerOptions: {
-            openai: { forceReasoning: true, reasoningEffort: "low", reasoningSummary: "auto", store: false },
+            openai: {
+              forceReasoning: true,
+              reasoningEffort: "low",
+              reasoningSummary: "auto",
+              store: false,
+            },
           },
         });
         raw = await result.text;
@@ -347,9 +377,15 @@ export const generateMeetingSummary = createServerFn({ method: "POST" })
           truncated,
           chunks: [],
         });
-        throw new ApiError({ code: "AI_GATEWAY_UNAVAILABLE", message: "Chưa thể tạo tóm tắt. Vui lòng thử lại." });
+        throw new ApiError({
+          code: "AI_GATEWAY_UNAVAILABLE",
+          message: "Chưa thể tạo tóm tắt. Vui lòng thử lại.",
+        });
       }
-      parsed = parseMeetingSummaryOutput(raw, sources.map((s) => s.sourceId));
+      parsed = parseMeetingSummaryOutput(
+        raw,
+        sources.map((s) => s.sourceId),
+      );
     }
 
     await writeSummaryProgress(context.supabase, {
@@ -385,7 +421,85 @@ export const generateMeetingSummary = createServerFn({ method: "POST" })
       _transcript_checksum: transcriptChecksum(segments),
     });
     if (sErr) mapPgError(sErr, "MEETING_NOT_FOUND");
-    return mapSummaryRow(saved as unknown as Record<string, unknown>);
+    let summary = mapSummaryRow(saved as unknown as Record<string, unknown>);
+
+    // Báo cáo là Work Product riêng, được ghi qua RPC tenant-scoped. Lỗi báo cáo
+    // không làm mất bản tóm tắt vừa hoàn thành và được lưu để có thể thử lại.
+    try {
+      await context.supabase.rpc("mark_meeting_report_generating", {
+        _meeting_id: data.meetingId,
+        _summary_version: summary.version,
+      });
+      const { data: reportContext, error: contextError } = await context.supabase.rpc(
+        "get_meeting_report_context",
+        { _meeting_id: data.meetingId },
+      );
+      if (contextError || !reportContext)
+        throw new Error(contextError?.message ?? "REPORT_CONTEXT_EMPTY");
+      const { fallbackMeetingReport } = await import("./meeting-intelligence.server");
+      const typedContext =
+        reportContext as unknown as import("./meeting-intelligence.server").MeetingReportContext;
+      const fallback = fallbackMeetingReport(typedContext);
+      let reportContent = fallback;
+      try {
+        const reportResult = streamText({
+          model: provider.responses("openai/gpt-6-astra"),
+          system:
+            "Bạn là UNIWORK Meeting Report Engine. Soạn báo cáo Markdown tiếng Việt từ dữ liệu thật được cung cấp. Bắt buộc có đúng các mục: # Báo cáo cuộc họp, ## Tóm tắt điều hành, ## Mục tiêu, ## Chỉ tiêu/KPI, ## Kế hoạch hành động, ## Deadline, ## Phân công, ## Tiến độ Work Graph, ## Quyết định đã xác nhận, ## Rủi ro và kiến nghị, ## Nguồn. Không bịa dữ liệu. Dữ liệu thiếu phải ghi Chưa xác định hoặc AI đề xuất. Chỉ coi Task trong tasks là công việc đã xác nhận.",
+          prompt: JSON.stringify(typedContext),
+          temperature: 0.2,
+          providerOptions: {
+            openai: {
+              forceReasoning: true,
+              reasoningEffort: "low",
+              reasoningSummary: "auto",
+              store: false,
+            },
+          },
+        });
+        const generated = (await reportResult.text).trim();
+        if (generated) reportContent = generated;
+      } catch {
+        reportContent = fallback;
+      }
+      const { data: report, error: reportError } = await context.supabase.rpc(
+        "persist_meeting_report",
+        {
+          _meeting_id: data.meetingId,
+          _summary_version: summary.version,
+          _content: reportContent,
+          _report_metadata: {
+            generator: "meeting-full-report-v1",
+            taskCount: typedContext.tasks?.length ?? 0,
+            sourceCount: typedContext.summary?.sources?.length ?? 0,
+          },
+          _idempotency_key: `meeting-report:${data.meetingId}:v${summary.version}`,
+          _correlation_id: runId,
+        },
+      );
+      if (reportError) throw new Error(reportError.message);
+      const reportRow = (report ?? {}) as Record<string, unknown>;
+      summary = {
+        ...summary,
+        report: {
+          workProductId: String(reportRow.id),
+          status: "READY",
+          error: null,
+          generatedAt: new Date().toISOString(),
+          href: String(reportRow.href),
+          mobileHref: String(reportRow.mobileHref),
+        },
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "REPORT_GENERATION_FAILED";
+      await context.supabase.rpc("mark_meeting_report_failed", {
+        _meeting_id: data.meetingId,
+        _summary_version: summary.version,
+        _error: message,
+      });
+      summary = { ...summary, report: { ...summary.report, status: "FAILED", error: message } };
+    }
+    return summary;
   });
 
 /* ------------------- Action item: PROPOSE → CONFIRM → TASK ------------------- */
@@ -463,7 +577,12 @@ export const confirmMeetingActionItemsBulk = createServerFn({ method: "POST" })
     async ({
       data,
       context,
-    }): Promise<{ created: number; failed: number; assigned: number; states: ActionItemState[] }> => {
+    }): Promise<{
+      created: number;
+      failed: number;
+      assigned: number;
+      states: ActionItemState[];
+    }> => {
       // Thành viên workspace để tự gán theo tên/email người phụ trách do AI đề xuất.
       const { data: members } = await context.supabase
         .from("workspace_members")
@@ -471,20 +590,25 @@ export const confirmMeetingActionItemsBulk = createServerFn({ method: "POST" })
         .eq("workspace_id", data.workspaceId);
       const memberIds = ((members ?? []) as Array<{ user_id: string }>).map((m) => m.user_id);
       const { data: profiles } = memberIds.length
-        ? await context.supabase.from("profiles").select("id, display_name, email").in("id", memberIds)
+        ? await context.supabase
+            .from("profiles")
+            .select("id, display_name, email")
+            .in("id", memberIds)
         : { data: [] as Array<{ id: string; display_name: string | null; email: string | null }> };
-      const people = ((profiles ?? []) as Array<{ id: string; display_name: string | null; email: string | null }>).map(
-        (p) => ({
-          id: p.id,
-          keys: [p.display_name ?? "", p.email ?? "", (p.email ?? "").split("@")[0] ?? ""]
-            .map((s) => s.trim().toLowerCase())
-            .filter(Boolean),
-        }),
-      );
+      const people = (
+        (profiles ?? []) as Array<{ id: string; display_name: string | null; email: string | null }>
+      ).map((p) => ({
+        id: p.id,
+        keys: [p.display_name ?? "", p.email ?? "", (p.email ?? "").split("@")[0] ?? ""]
+          .map((s) => s.trim().toLowerCase())
+          .filter(Boolean),
+      }));
       const matchAssignee = (owner?: string | null): string | undefined => {
         const q = (owner ?? "").trim().toLowerCase();
         if (q.length < 2) return undefined;
-        const hit = people.find((p) => p.keys.some((k) => k === q || k.includes(q) || q.includes(k)));
+        const hit = people.find((p) =>
+          p.keys.some((k) => k === q || k.includes(q) || q.includes(k)),
+        );
         return hit?.id;
       };
 
@@ -511,7 +635,10 @@ export const confirmMeetingActionItemsBulk = createServerFn({ method: "POST" })
         states.push(mapStateRow(row as unknown as Record<string, unknown>));
       }
       if (created === 0) {
-        throw new ApiError({ code: "VALIDATION_FAILED", message: "Không tạo được công việc nào từ biên bản." });
+        throw new ApiError({
+          code: "VALIDATION_FAILED",
+          message: "Không tạo được công việc nào từ biên bản.",
+        });
       }
       return { created, failed, assigned, states };
     },
@@ -520,7 +647,9 @@ export const confirmMeetingActionItemsBulk = createServerFn({ method: "POST" })
 export const dismissMeetingActionItem = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    meetingIdSchema.extend({ itemKey: z.string().min(1).max(200), title: z.string().max(200).default("") }).parse(i),
+    meetingIdSchema
+      .extend({ itemKey: z.string().min(1).max(200), title: z.string().max(200).default("") })
+      .parse(i),
   )
   .handler(async ({ data, context }): Promise<ActionItemState> => {
     const { data: row, error } = await context.supabase.rpc("dismiss_meeting_action_item", {
@@ -555,4 +684,3 @@ export const extractMeetingDecisions = createServerFn({ method: "POST" })
       };
     },
   );
-

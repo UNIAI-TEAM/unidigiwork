@@ -28,9 +28,10 @@ export function checkMeetingSummaryRateLimit(userId: string): boolean {
   return true;
 }
 
-const arr = <T,>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
+const arr = <T>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
 
 export function mapSummaryRow(row: Record<string, unknown>): MeetingSummary {
+  const reportWorkProductId = (row.report_work_product_id as string | null) ?? null;
   return {
     meetingId: String(row.meeting_id),
     status: (row.status as MeetingSummary["status"]) ?? "ready",
@@ -50,7 +51,117 @@ export function mapSummaryRow(row: Record<string, unknown>): MeetingSummary {
         : null,
     transcriptChecksum: (row.transcript_checksum as string | null) ?? null,
     version: Number(row.version ?? 1),
+    report: {
+      workProductId: reportWorkProductId,
+      status: (row.report_status as MeetingSummary["report"]["status"]) ?? "PENDING",
+      error: (row.report_error as string | null) ?? null,
+      generatedAt: (row.report_generated_at as string | null) ?? null,
+      href: reportWorkProductId ? `/work-products/${reportWorkProductId}` : null,
+      mobileHref: reportWorkProductId ? `/m/work-products/${reportWorkProductId}` : null,
+    },
   };
+}
+
+type MeetingReportTask = {
+  taskId: string;
+  title: string;
+  status: string;
+  priority: string;
+  dueAt: string | null;
+  progressPct: number;
+  assignees: Array<{ userId: string; name: string; role: string }>;
+};
+
+export type MeetingReportContext = {
+  meeting: { id: string; title: string; agenda: string | null; startAt: string; endAt: string };
+  summary: {
+    id: string;
+    version: number;
+    summary: string;
+    highlights: string[];
+    decisions: Array<{ text?: string; title?: string; status?: string }>;
+    actionItems: Array<{ title?: string; owner?: string; dueAt?: string }>;
+    risks: Array<{ text?: string; title?: string }>;
+    openQuestions: Array<{ text?: string; question?: string }>;
+    sources: Array<{ sourceId?: string; excerpt?: string }>;
+  };
+  tasks: MeetingReportTask[];
+};
+
+const line = (value: unknown, fallback = "Chưa xác định") => {
+  const text = String(value ?? "").trim();
+  return text || fallback;
+};
+
+const list = (rows: unknown[], render: (row: Record<string, unknown>, index: number) => string) =>
+  rows.length
+    ? rows.map((row, index) => render((row ?? {}) as Record<string, unknown>, index)).join("\n")
+    : "- Chưa xác định";
+
+export function fallbackMeetingReport(context: MeetingReportContext): string {
+  const tasks = context.tasks ?? [];
+  const completed = tasks.filter((task) => task.status === "done").length;
+  const average = tasks.length
+    ? Math.round(tasks.reduce((sum, task) => sum + Number(task.progressPct ?? 0), 0) / tasks.length)
+    : 0;
+  return [
+    `# Báo cáo cuộc họp — ${line(context.meeting.title, "Cuộc họp")}`,
+    "",
+    "## Tóm tắt điều hành",
+    line(context.summary.summary),
+    "",
+    "## Mục tiêu",
+    context.summary.highlights?.length
+      ? context.summary.highlights.map((item) => `- ${line(item)}`).join("\n")
+      : `- ${line(context.meeting.agenda)}`,
+    "",
+    "## Chỉ tiêu/KPI",
+    tasks.length
+      ? `- Hoàn thành ${completed}/${tasks.length} công việc đã xác nhận\n- Tiến độ trung bình: ${average}%`
+      : "- AI đề xuất: Chưa có công việc được xác nhận để đo tiến độ.",
+    "",
+    "## Kế hoạch hành động",
+    list(tasks, (task, index) => `${index + 1}. ${line(task.title)} — ${line(task.status)}`),
+    "",
+    "## Deadline",
+    list(
+      tasks,
+      (task) =>
+        `- ${line(task.title)}: ${task.dueAt ? new Date(String(task.dueAt)).toISOString() : "Chưa xác định"}`,
+    ),
+    "",
+    "## Phân công",
+    tasks.length
+      ? tasks
+          .map(
+            (task) =>
+              `- ${task.title}: ${task.assignees?.map((person) => person.name).join(", ") || "Chưa xác định"}`,
+          )
+          .join("\n")
+      : "- Chưa xác định",
+    "",
+    "## Tiến độ Work Graph",
+    tasks.length
+      ? tasks
+          .map((task) => `- ${task.title}: ${task.progressPct ?? 0}% · ${task.status}`)
+          .join("\n")
+      : "- Chưa có Task thật được liên kết từ cuộc họp.",
+    "",
+    "## Quyết định đã xác nhận",
+    list(
+      context.summary.decisions ?? [],
+      (decision) =>
+        `- ${line(decision.text ?? decision.title)}${decision.status ? ` — ${decision.status}` : ""}`,
+    ),
+    "",
+    "## Rủi ro và kiến nghị",
+    list(context.summary.risks ?? [], (risk) => `- ${line(risk.text ?? risk.title)}`),
+    "",
+    "## Nguồn",
+    `- Cuộc họp: ${context.meeting.id}`,
+    `- Tóm tắt phiên bản: ${context.summary.version}`,
+    ...tasks.map((task) => `- Task: ${task.taskId}`),
+  ].join("\n");
 }
 /* ---------------- Tiến độ staged summarization ---------------- */
 

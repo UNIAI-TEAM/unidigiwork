@@ -11,6 +11,7 @@ import {
   Copy,
   Download,
   FileText,
+  ExternalLink,
   Gavel,
   HelpCircle,
   ListTodo,
@@ -729,6 +730,28 @@ export function MeetingIntelligencePanel({ meetingId }: { meetingId: string }) {
                   })}
                 </span>
                 <span>{new Date(summary.generatedAt).toLocaleString(locale)}</span>
+              </div>
+              <div className="flex min-h-11 flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-card px-3 py-2">
+                <div className="min-w-0">
+                  <p className="font-medium text-foreground">{t("mtg.report.title")}</p>
+                  <p className="text-muted-foreground">
+                    {summary.report.status === "READY"
+                      ? t("mtg.report.ready")
+                      : summary.report.status === "GENERATING"
+                        ? t("mtg.report.generating")
+                        : summary.report.status === "FAILED"
+                          ? t("mtg.report.failed")
+                          : t("mtg.report.pending")}
+                  </p>
+                </div>
+                {summary.report.href ? (
+                  <Button asChild size="sm" variant="outline" className="min-h-11">
+                    <Link to={summary.report.href}>
+                      <ExternalLink className="h-4 w-4" />
+                      {t("mtg.report.open")}
+                    </Link>
+                  </Button>
+                ) : null}
               </div>
               {isStale && (
                 <div className="flex items-start gap-1.5 rounded-md border border-warning/40 bg-warning/10 p-2 text-foreground">
