@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { isToday, isTomorrow } from "date-fns";
-import { Search, X, Video } from "lucide-react";
+import { History, Search, Settings2, X, Video } from "lucide-react";
 import { useActiveWorkspace } from "@/lib/active-workspace";
 import { listMeetings, scheduleMeeting } from "@/lib/api/meetings.functions";
 import { localeTag, useI18n } from "@/lib/i18n";
@@ -111,6 +111,29 @@ function MobileMeetPage() {
 
   return (
     <div className="flex min-h-full flex-col gap-3 p-4 pb-24">
+      <header className="flex min-h-11 items-center justify-between gap-3">
+        <h1 className="text-xl font-semibold">Meet</h1>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-11 w-11 rounded-full"
+            onClick={() => void navigate({ to: "/m/meet/history" })}
+          >
+            <History className="h-5 w-5" />
+            <span className="sr-only">{t("mtg.home.history")}</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-11 w-11 rounded-full"
+            onClick={() => void navigate({ to: "/m/meetings-manage" })}
+          >
+            <Settings2 className="h-5 w-5" />
+            <span className="sr-only">Quản lý lịch họp</span>
+          </Button>
+        </div>
+      </header>
       <div className="relative">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
