@@ -7,7 +7,10 @@ export const Route = createFileRoute("/_authenticated/m/admin/")({
       { title: "Quản trị mobile — UNIWORK" },
       { name: "description", content: "Quản trị tài khoản, quyền và tổ chức trên điện thoại." },
       { property: "og:title", content: "Quản trị mobile — UNIWORK" },
-      { property: "og:description", content: "Quản trị tài khoản, quyền và tổ chức trên điện thoại." },
+      {
+        property: "og:description",
+        content: "Quản trị tài khoản, quyền và tổ chức trên điện thoại.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],

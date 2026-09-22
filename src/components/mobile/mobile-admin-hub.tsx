@@ -41,9 +41,7 @@ export function MobileAdminHubNative() {
       {!access.data.canWrite ? <ReadOnlyNotice /> : null}
       <div className="flex flex-wrap gap-2">
         <Badge variant="outline">
-          {access.data.isAdmin
-            ? t("m.admin.role.admin")
-            : t("m.admin.role.moderator")}
+          {access.data.isAdmin ? t("m.admin.role.admin") : t("m.admin.role.moderator")}
         </Badge>
         {tenant.data ? (
           <Badge variant="outline">{t(`m.admin.role.${tenant.data.role}` as never)}</Badge>
@@ -66,7 +64,9 @@ export function MobileAdminHubNative() {
           title={t("m.admin.organization")}
           subtitle={t("m.admin.organizationHint")}
           icon={<Building2 className="h-5 w-5" />}
-          badge={tenantCanManage ? undefined : <Badge variant="outline">{t("m.admin.readOnly")}</Badge>}
+          badge={
+            tenantCanManage ? undefined : <Badge variant="outline">{t("m.admin.readOnly")}</Badge>
+          }
           onClick={() => void navigate({ to: "/m/admin/organization" })}
         />
         <MobileListItem

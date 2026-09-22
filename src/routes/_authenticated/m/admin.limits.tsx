@@ -25,7 +25,10 @@ export const Route = createFileRoute("/_authenticated/m/admin/limits")({
       { title: "Giới hạn tài khoản mobile — UNIWORK" },
       { name: "description", content: "Quản lý giới hạn tài khoản theo tổ chức trên điện thoại." },
       { property: "og:title", content: "Giới hạn tài khoản mobile — UNIWORK" },
-      { property: "og:description", content: "Quản lý giới hạn tài khoản theo tổ chức trên điện thoại." },
+      {
+        property: "og:description",
+        content: "Quản lý giới hạn tài khoản theo tổ chức trên điện thoại.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -48,7 +51,9 @@ function MobileAdminLimits() {
   });
   useEffect(() => {
     if (!limits.data) return;
-    setDrafts(Object.fromEntries(limits.data.map((item) => [item.id, item.max_users?.toString() ?? ""])));
+    setDrafts(
+      Object.fromEntries(limits.data.map((item) => [item.id, item.max_users?.toString() ?? ""])),
+    );
   }, [limits.data]);
   const save = useMutation({
     mutationFn: ({ tenantId, value }: { tenantId: string; value: string }) => {
@@ -62,30 +67,70 @@ function MobileAdminLimits() {
       await queryClient.invalidateQueries({ queryKey: ["m-admin-limits"] });
       toast.success(t("m.admin.limitSaved"));
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : t("m.admin.limitError")),
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : t("m.admin.limitError")),
   });
 
   return (
-    <MobileAdminLayout title={t("m.admin.limits")} subtitle={t("m.admin.limitsSubtitle")} backTo="/m/admin">
+    <MobileAdminLayout
+      title={t("m.admin.limits")}
+      subtitle={t("m.admin.limitsSubtitle")}
+      backTo="/m/admin"
+    >
       {access.isLoading ? <MobileAdminLoading /> : null}
-      {access.data && !access.data.canRead ? <MobileAdminMessage>{t("m.admin.denied")}</MobileAdminMessage> : null}
+      {access.data && !access.data.canRead ? (
+        <MobileAdminMessage>{t("m.admin.denied")}</MobileAdminMessage>
+      ) : null}
       {access.data?.canRead ? (
         <>
           {!access.data.canWrite ? <ReadOnlyNotice /> : null}
           {limits.isLoading ? <MobileAdminLoading /> : null}
-          {limits.isError ? <MobileAdminMessage retry={() => void limits.refetch()}>{t("m.admin.limitError")}</MobileAdminMessage> : null}
+          {limits.isError ? (
+            <MobileAdminMessage retry={() => void limits.refetch()}>
+              {t("m.admin.limitError")}
+            </MobileAdminMessage>
+          ) : null}
           <div className="grid gap-3">
             {(limits.data ?? []).map((item) => (
               <section key={item.id} className="rounded-xl border border-border bg-card p-4">
                 <div className="flex min-w-0 items-start gap-3">
                   <Building2 className="mt-0.5 h-5 w-5 shrink-0" />
-                  <div className="min-w-0 flex-1"><h2 className="truncate text-sm font-medium">{item.name}</h2><p className="truncate text-xs text-muted-foreground">{item.slug}</p></div>
+                  <div className="min-w-0 flex-1">
+                    <h2 className="truncate text-sm font-medium">{item.name}</h2>
+                    <p className="truncate text-xs text-muted-foreground">{item.slug}</p>
+                  </div>
                   <Badge variant="outline">{item.status}</Badge>
                 </div>
-                <p className="mt-3 text-sm text-muted-foreground">{fmt(t("m.admin.used"), { used: item.used })} · {item.max_users ?? t("m.admin.unlimited")}</p>
+                <p className="mt-3 text-sm text-muted-foreground">
+                  {fmt(t("m.admin.used"), { used: item.used })} ·{" "}
+                  {item.max_users ?? t("m.admin.unlimited")}
+                </p>
                 <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2">
-                  <div className="grid gap-1.5"><Label htmlFor={`limit-${item.id}`}>{t("m.admin.limit")}</Label><Input id={`limit-${item.id}`} type="number" inputMode="numeric" min={1} max={100000} placeholder={t("m.admin.unlimited")} value={drafts[item.id] ?? ""} onChange={(event) => setDrafts((current) => ({ ...current, [item.id]: event.target.value }))} disabled={!access.data.canWrite} className="min-h-11" /></div>
-                  <Button type="button" className="min-h-11" disabled={!access.data.canWrite || save.isPending} onClick={() => save.mutate({ tenantId: item.id, value: drafts[item.id] ?? "" })}>{t("m.admin.save")}</Button>
+                  <div className="grid gap-1.5">
+                    <Label htmlFor={`limit-${item.id}`}>{t("m.admin.limit")}</Label>
+                    <Input
+                      id={`limit-${item.id}`}
+                      type="number"
+                      inputMode="numeric"
+                      min={1}
+                      max={100000}
+                      placeholder={t("m.admin.unlimited")}
+                      value={drafts[item.id] ?? ""}
+                      onChange={(event) =>
+                        setDrafts((current) => ({ ...current, [item.id]: event.target.value }))
+                      }
+                      disabled={!access.data.canWrite}
+                      className="min-h-11"
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    className="min-h-11"
+                    disabled={!access.data.canWrite || save.isPending}
+                    onClick={() => save.mutate({ tenantId: item.id, value: drafts[item.id] ?? "" })}
+                  >
+                    {t("m.admin.save")}
+                  </Button>
                 </div>
               </section>
             ))}

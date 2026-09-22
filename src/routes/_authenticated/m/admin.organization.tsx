@@ -85,42 +85,67 @@ function MobileOrganizationAdmin() {
       {!canManage ? <ReadOnlyNotice /> : null}
       {members.isLoading ? <MobileAdminLoading /> : null}
       {members.isError ? (
-        <MobileAdminMessage retry={() => void members.refetch()}>{t("m.admin.memberError")}</MobileAdminMessage>
+        <MobileAdminMessage retry={() => void members.refetch()}>
+          {t("m.admin.memberError")}
+        </MobileAdminMessage>
       ) : null}
       <div className="grid gap-3">
         {(members.data ?? []).map((member) => {
           const isSelf = member.user_id === tenant.actorId;
           const memberIsOwner = member.role === "tenant_owner";
-          const label = member.display_name ?? member.email ?? `${t("m.admin.memberId")} ${member.user_id.slice(0, 8)}`;
+          const label =
+            member.display_name ??
+            member.email ??
+            `${t("m.admin.memberId")} ${member.user_id.slice(0, 8)}`;
           return (
             <section key={member.id} className="rounded-xl border border-border bg-card p-4">
               <div className="flex min-w-0 items-start gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-2">
-                  {memberIsOwner ? <Crown className="h-5 w-5" /> : <UserRound className="h-5 w-5" />}
+                  {memberIsOwner ? (
+                    <Crown className="h-5 w-5" />
+                  ) : (
+                    <UserRound className="h-5 w-5" />
+                  )}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="break-words text-sm font-medium">{label}</p>
-                  {member.display_name && member.email ? <p className="truncate text-xs text-muted-foreground">{member.email}</p> : null}
+                  {member.display_name && member.email ? (
+                    <p className="truncate text-xs text-muted-foreground">{member.email}</p>
+                  ) : null}
                 </div>
                 <Badge variant="outline">{t(`m.admin.status.${member.status}` as never)}</Badge>
               </div>
               <div className="mt-4 grid gap-3">
                 {memberIsOwner ? (
-                  <div className="min-h-11 rounded-xl border border-border px-3 py-3 text-sm">{t("m.admin.role.tenant_owner")}</div>
+                  <div className="min-h-11 rounded-xl border border-border px-3 py-3 text-sm">
+                    {t("m.admin.role.tenant_owner")}
+                  </div>
                 ) : (
                   <Select
                     value={member.role}
                     disabled={!canManage || isSelf || busy}
                     onValueChange={(newRole) =>
                       changeRole.mutate(
-                        { userId: member.user_id, newRole: newRole as Exclude<TenantRole, "tenant_owner"> },
-                        { onSuccess: () => toast.success(t("m.admin.memberRoleSaved")), onError: fail },
+                        {
+                          userId: member.user_id,
+                          newRole: newRole as Exclude<TenantRole, "tenant_owner">,
+                        },
+                        {
+                          onSuccess: () => toast.success(t("m.admin.memberRoleSaved")),
+                          onError: fail,
+                        },
                       )
                     }
                   >
-                    <SelectTrigger aria-label={t("m.admin.organizationRoles")}><SelectValue /></SelectTrigger>
+                    <SelectTrigger aria-label={t("m.admin.organizationRoles")}>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
-                      {MEMBER_ROLES.map((role) => <SelectItem key={role} value={role}>{t(`m.admin.role.${role}` as never)}</SelectItem>)}
+                      {MEMBER_ROLES.map((role) => (
+                        <SelectItem key={role} value={role}>
+                          {t(`m.admin.role.${role}` as never)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 )}
@@ -131,10 +156,18 @@ function MobileOrganizationAdmin() {
                       variant="outline"
                       className="min-h-11"
                       disabled={busy}
-                      onClick={() => changeStatus.mutate(
-                        { userId: member.user_id, newStatus: member.status === "suspended" ? "active" : "suspended" },
-                        { onSuccess: () => toast.success(t("m.admin.memberStatusSaved")), onError: fail },
-                      )}
+                      onClick={() =>
+                        changeStatus.mutate(
+                          {
+                            userId: member.user_id,
+                            newStatus: member.status === "suspended" ? "active" : "suspended",
+                          },
+                          {
+                            onSuccess: () => toast.success(t("m.admin.memberStatusSaved")),
+                            onError: fail,
+                          },
+                        )
+                      }
                     >
                       {member.status === "suspended" ? t("m.admin.activate") : t("m.admin.suspend")}
                     </Button>
