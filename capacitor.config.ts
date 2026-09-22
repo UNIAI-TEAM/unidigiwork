@@ -2,16 +2,20 @@ import type { CapacitorConfig } from "@capacitor/cli";
 
 /**
  * Bản app nội bộ (không phát hành lên kho ứng dụng).
- * App nạp trực tiếp bản đã publish của UniWork, nên mọi thay đổi code
- * chỉ cần publish lại — không phải dựng lại file cài.
+ * App KHÔNG bootstrap thẳng vào bản web từ xa nữa: nó mở màn hình bootstrap
+ * cục bộ (`native-shell/index.html`) để health-check, kiểm tra kill-switch và
+ * phiên bản tối thiểu, rồi mới chuyển sang bản web đã publish.
+ * Đặt CAPACITOR_SERVER_URL khi cần trỏ thẳng remote (dev).
  */
+const remoteOverride = process.env["CAPACITOR_SERVER_URL"];
+
 const config: CapacitorConfig = {
   appId: "vn.ubos.uniwork",
   appName: "UniWork",
-  // Không build tĩnh: app trỏ tới bản web đã publish. webDir chỉ là fallback.
-  webDir: "public",
+  // Màn hình bootstrap/dự phòng nằm trong binary.
+  webDir: "native-shell",
   server: {
-    url: process.env["CAPACITOR_SERVER_URL"] ?? "https://unidigiwork.lovable.app",
+    ...(remoteOverride ? { url: remoteOverride } : {}),
     cleartext: false,
     androidScheme: "https",
     // Cho phép điều hướng ra ngoài khi đăng nhập bằng nhà cung cấp khác.
