@@ -63,3 +63,4 @@
 - [x] Add real task deadlines, automatic overdue projection/alerts, and step-based Work Graph progress.
 - [x] Optimize Task and Work Product loading with source pagination and assignee/deadline filters.
 - [x] Replace task chat samples with persisted messages and enable employee messaging to the task team or UNI AI.
+- [x] Show task interaction counts/latest activity and enable direct team messaging from Work Graph.
