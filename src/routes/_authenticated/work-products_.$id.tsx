@@ -1131,13 +1131,13 @@ function WorkProductDetail() {
                               variant="outline"
                               className="h-11 flex-1 sm:h-8 sm:flex-none"
                               onClick={() =>
-                              restoreWorkDeliverableVersion({
-                                data: {
-                                  idempotencyKey: crypto.randomUUID(),
-                                  id,
-                                  version: v.version,
-                                },
-                              }).then(() => {
+                                restoreWorkDeliverableVersion({
+                                  data: {
+                                    idempotencyKey: crypto.randomUUID(),
+                                    id,
+                                    version: v.version,
+                                  },
+                                }).then(() => {
                                   toast.success(t("wp.versions.restored"));
                                   invalidate();
                                 })
