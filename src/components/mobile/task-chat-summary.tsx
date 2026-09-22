@@ -30,6 +30,7 @@ import { getWorkContext, listWorkGraphBoard } from "@/lib/api/work-graph.functio
 import { localeTag, useI18n } from "@/lib/i18n";
 import { CollapsibleChatContent } from "@/components/mobile/collapsible-chat-content";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useCurrentIdentity } from "@/lib/use-current-identity";
 
 export function TaskChatHub() {
   const { t } = useI18n();
@@ -96,6 +97,7 @@ export function TaskChatHub() {
 
 export function TaskChatSummary({ taskId, taskTitle }: { taskId: string; taskTitle?: string }) {
   const { t, lang } = useI18n();
+  const identity = useCurrentIdentity();
   const queryClient = useQueryClient();
   const chatFn = useServerFn(getTaskConversations);
   const detailFn = useServerFn(getTaskDetail);
@@ -187,7 +189,10 @@ export function TaskChatSummary({ taskId, taskTitle }: { taskId: string; taskTit
               <div className="max-h-80 space-y-3 overflow-y-auto rounded-xl border border-border bg-background p-3">
                 {comments.length ? (
                   comments.map((comment: any) => (
-                    <Message key={comment.id} from={comment.author_id ? "user" : "assistant"}>
+                    <Message
+                      key={comment.id}
+                      from={comment.author_id === identity.userId ? "user" : "assistant"}
+                    >
                       <MessageContent className="max-w-[92%]">
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <span className="font-semibold text-foreground">
