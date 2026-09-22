@@ -28,7 +28,7 @@ export function checkMeetingSummaryRateLimit(userId: string): boolean {
   return true;
 }
 
-const arr = <T,>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
+const arr = <T>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
 
 export function mapSummaryRow(row: Record<string, unknown>): MeetingSummary {
   const reportWorkProductId = (row.report_work_product_id as string | null) ?? null;
@@ -124,22 +124,35 @@ export function fallbackMeetingReport(context: MeetingReportContext): string {
     list(tasks, (task, index) => `${index + 1}. ${line(task.title)} — ${line(task.status)}`),
     "",
     "## Deadline",
-    list(tasks, (task) => `- ${line(task.title)}: ${task.dueAt ? new Date(String(task.dueAt)).toISOString() : "Chưa xác định"}`),
+    list(
+      tasks,
+      (task) =>
+        `- ${line(task.title)}: ${task.dueAt ? new Date(String(task.dueAt)).toISOString() : "Chưa xác định"}`,
+    ),
     "",
     "## Phân công",
     tasks.length
       ? tasks
-          .map((task) => `- ${task.title}: ${task.assignees?.map((person) => person.name).join(", ") || "Chưa xác định"}`)
+          .map(
+            (task) =>
+              `- ${task.title}: ${task.assignees?.map((person) => person.name).join(", ") || "Chưa xác định"}`,
+          )
           .join("\n")
       : "- Chưa xác định",
     "",
     "## Tiến độ Work Graph",
     tasks.length
-      ? tasks.map((task) => `- ${task.title}: ${task.progressPct ?? 0}% · ${task.status}`).join("\n")
+      ? tasks
+          .map((task) => `- ${task.title}: ${task.progressPct ?? 0}% · ${task.status}`)
+          .join("\n")
       : "- Chưa có Task thật được liên kết từ cuộc họp.",
     "",
     "## Quyết định đã xác nhận",
-    list(context.summary.decisions ?? [], (decision) => `- ${line(decision.text ?? decision.title)}${decision.status ? ` — ${decision.status}` : ""}`),
+    list(
+      context.summary.decisions ?? [],
+      (decision) =>
+        `- ${line(decision.text ?? decision.title)}${decision.status ? ` — ${decision.status}` : ""}`,
+    ),
     "",
     "## Rủi ro và kiến nghị",
     list(context.summary.risks ?? [], (risk) => `- ${line(risk.text ?? risk.title)}`),

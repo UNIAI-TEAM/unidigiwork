@@ -185,7 +185,9 @@ export function buildTranscriptWindow(segments: TranscriptSegment[]): {
   };
 }
 
-export function renderTranscriptForModel(window: (TranscriptSegment & { sourceId: string })[]): string {
+export function renderTranscriptForModel(
+  window: (TranscriptSegment & { sourceId: string })[],
+): string {
   return window
     .map(
       (s) =>
@@ -428,9 +430,14 @@ export function parseMeetingSummaryOutput(
   followUp: MeetingFollowUp | null;
 } {
   const valid = new Set(validSourceIds);
-  const cleaned = (raw ?? "").replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+  const cleaned = (raw ?? "")
+    .replace(/^```(?:json)?/i, "")
+    .replace(/```$/, "")
+    .trim();
   const keepIds = (v: unknown): string[] =>
-    Array.isArray(v) ? v.filter((x): x is string => typeof x === "string" && valid.has(x)).slice(0, 5) : [];
+    Array.isArray(v)
+      ? v.filter((x): x is string => typeof x === "string" && valid.has(x)).slice(0, 5)
+      : [];
 
   try {
     const p = JSON.parse(cleaned) as Record<string, unknown>;
@@ -446,7 +453,9 @@ export function parseMeetingSummaryOutput(
       // Grounding bắt buộc: quyết định không có nguồn hợp lệ bị loại.
       .filter((d) => d.title && d.sourceIds.length > 0)
       .slice(0, MEETING_SUMMARY_BUDGET.maxDecisions);
-    const actionItems = (Array.isArray(p.actionItems) ? (p.actionItems as Record<string, unknown>[]) : [])
+    const actionItems = (
+      Array.isArray(p.actionItems) ? (p.actionItems as Record<string, unknown>[]) : []
+    )
       .map((a) => ({
         title: str(a.title, 200),
         owner: str(a.owner, 120) || null,
@@ -463,7 +472,9 @@ export function parseMeetingSummaryOutput(
       .map((r) => ({ title: str(r.title, 240), sourceIds: keepIds(r.sourceIds) }))
       .filter((r) => r.title && r.sourceIds.length > 0)
       .slice(0, 6);
-    const openQuestions = (Array.isArray(p.openQuestions) ? (p.openQuestions as Record<string, unknown>[]) : [])
+    const openQuestions = (
+      Array.isArray(p.openQuestions) ? (p.openQuestions as Record<string, unknown>[]) : []
+    )
       .map((q) => ({ question: str(q.question, 240), sourceIds: keepIds(q.sourceIds) }))
       .filter((q) => q.question)
       .slice(0, 6);

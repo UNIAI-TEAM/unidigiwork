@@ -1,6 +1,14 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, CalendarClock, ExternalLink, FileText, MapPin, Users, Video } from "lucide-react";
+import {
+  ArrowLeft,
+  CalendarClock,
+  ExternalLink,
+  FileText,
+  MapPin,
+  Users,
+  Video,
+} from "lucide-react";
 import { getMeeting } from "@/lib/api/meetings.functions";
 import { getMeetingSummary } from "@/lib/api/meeting-intelligence.functions";
 import { Button } from "@/components/ui/button";
