@@ -43,7 +43,6 @@ import { PushDevicesPanel } from "@/components/push-devices-panel";
 import {
   getMyNotifPrefs,
   updateMyNotifPrefs,
-  PREF_KEYS,
   type NotifPrefs,
   type PrefKey,
 } from "@/lib/api/notif-prefs.functions";
