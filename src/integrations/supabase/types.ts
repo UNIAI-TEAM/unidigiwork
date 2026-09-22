@@ -11217,6 +11217,8 @@ export type Database = {
           _assistant_message_id: string
           _correlation_id?: string
           _idempotency_key?: string
+          _report_content?: string
+          _report_metadata?: Json
           _root_id?: string
           _root_type?: string
           _sources?: Json
