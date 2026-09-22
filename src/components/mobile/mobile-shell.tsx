@@ -201,21 +201,6 @@ function NativeDrawer({
           <DrawerLink icon={Plus} label={t("m.nav.newWork")} onClick={() => go("/m")} />
           <DrawerLink icon={Search} label={t("cmd.group.search")} onClick={() => go("/m/search")} />
 
-          <DrawerSection label={t("m.nav.recent")}>
-            {(conversations.data?.conversations ?? []).map((conversation) => (
-              <button
-                key={conversation.id}
-                onClick={() => go(`/m/c/${conversation.id}`)}
-                aria-label={conversation.title}
-                className="grid min-h-11 w-full min-w-0 grid-cols-[minmax(0,1fr)] items-center rounded-lg px-2 text-left hover:bg-mobile-menu-accent"
-              >
-                <span className="block min-w-0 truncate text-[15px] font-normal">
-                  {conversation.title}
-                </span>
-              </button>
-            ))}
-          </DrawerSection>
-
           <DrawerSection label={t("m.nav.inbox")}>
             {INBOX_LINKS.map((item, index) => (
               <DrawerLink
@@ -270,6 +255,21 @@ function NativeDrawer({
                 label={t(item.label)}
                 onClick={() => go(item.to)}
               />
+            ))}
+          </DrawerSection>
+
+          <DrawerSection label={t("m.nav.recent")}>
+            {(conversations.data?.conversations ?? []).map((conversation) => (
+              <button
+                key={conversation.id}
+                onClick={() => go(`/m/c/${conversation.id}`)}
+                aria-label={conversation.title}
+                className="grid min-h-11 w-full min-w-0 grid-cols-[minmax(0,1fr)] items-center rounded-lg px-2 text-left hover:bg-mobile-menu-accent"
+              >
+                <span className="block min-w-0 truncate text-[15px] font-normal">
+                  {conversation.title}
+                </span>
+              </button>
             ))}
           </DrawerSection>
         </nav>
