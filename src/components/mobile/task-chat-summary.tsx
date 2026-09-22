@@ -1,17 +1,36 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, ExternalLink, Link2, Loader2, MessageSquare, Search } from "lucide-react";
+import {
+  ArrowLeft,
+  Bot,
+  ExternalLink,
+  Link2,
+  Loader2,
+  MessageSquare,
+  Search,
+  Send,
+  Users,
+} from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { MessageResponse } from "@/components/ai-elements/message";
-import { getTaskConversations } from "@/lib/api/ai-chat.functions";
-import { getTaskDetail } from "@/lib/api/tasks.functions";
+import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
+import {
+  PromptInput,
+  PromptInputFooter,
+  PromptInputSubmit,
+  PromptInputTextarea,
+} from "@/components/ai-elements/prompt-input";
+import { getTaskConversations, sendAiMessage } from "@/lib/api/ai-chat.functions";
+import { commentTask, getTaskDetail } from "@/lib/api/tasks.functions";
 import { getWorkContext, listWorkGraphBoard } from "@/lib/api/work-graph.functions";
 import { localeTag, useI18n } from "@/lib/i18n";
 import { CollapsibleChatContent } from "@/components/mobile/collapsible-chat-content";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useCurrentIdentity } from "@/lib/use-current-identity";
 
 export function TaskChatHub() {
   const { t } = useI18n();
@@ -78,9 +97,14 @@ export function TaskChatHub() {
 
 export function TaskChatSummary({ taskId, taskTitle }: { taskId: string; taskTitle?: string }) {
   const { t, lang } = useI18n();
+  const identity = useCurrentIdentity();
+  const queryClient = useQueryClient();
   const chatFn = useServerFn(getTaskConversations);
   const detailFn = useServerFn(getTaskDetail);
   const graphFn = useServerFn(getWorkContext);
+  const sendAiFn = useServerFn(sendAiMessage);
+  const commentFn = useServerFn(commentTask);
+  const [draft, setDraft] = useState("");
   const chats = useQuery({
     queryKey: ["task-conversations", taskId],
     queryFn: () => chatFn({ data: { taskId } }),
@@ -97,6 +121,39 @@ export function TaskChatSummary({ taskId, taskTitle }: { taskId: string; taskTit
   const comments = detail.data?.comments ?? [];
   const related = graph.data?.relationships ?? [];
   const loading = chats.isLoading || detail.isLoading || graph.isLoading;
+  const latestConversation = chats.data?.[0] ?? null;
+
+  const sendTeam = useMutation({
+    mutationFn: (body: string) =>
+      commentFn({ data: { taskId, body, idempotencyKey: crypto.randomUUID() } }),
+    onSuccess: async () => {
+      setDraft("");
+      await queryClient.invalidateQueries({ queryKey: ["task-chat-detail", taskId] });
+      await queryClient.invalidateQueries({ queryKey: ["m-task-detail", taskId] });
+    },
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : t("m.taskChat.sendError")),
+  });
+
+  const sendAi = useMutation({
+    mutationFn: (text: string) =>
+      sendAiFn({
+        data: {
+          text,
+          ...(latestConversation ? { conversationId: latestConversation.id } : {}),
+          rootEntity: { type: "TASK", id: taskId },
+          contextEntities: [{ type: "TASK", id: taskId, label: title }],
+          metadata: { contextLabels: [title] },
+        },
+      }),
+    onSuccess: async () => {
+      setDraft("");
+      await queryClient.invalidateQueries({ queryKey: ["task-conversations", taskId] });
+      await queryClient.invalidateQueries({ queryKey: ["mobile-ai-conversations"] });
+    },
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : t("m.taskChat.sendError")),
+  });
 
   return (
     <section className="min-w-0 space-y-4">
@@ -119,6 +176,89 @@ export function TaskChatSummary({ taskId, taskTitle }: { taskId: string; taskTit
         </div>
       ) : (
         <>
+          <Tabs defaultValue="team" className="min-w-0">
+            <TabsList className="grid h-11 w-full grid-cols-2">
+              <TabsTrigger value="team" className="min-h-9 gap-2">
+                <Users className="h-4 w-4" /> {t("m.taskChat.team")}
+              </TabsTrigger>
+              <TabsTrigger value="ai" className="min-h-9 gap-2">
+                <Bot className="h-4 w-4" /> {t("m.taskChat.askAi")}
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="team" className="mt-3 min-w-0">
+              <div className="max-h-80 space-y-3 overflow-y-auto rounded-xl border border-border bg-background p-3">
+                {comments.length ? (
+                  comments.map((comment: any) => (
+                    <Message
+                      key={comment.id}
+                      from={comment.author_id === identity.userId ? "user" : "assistant"}
+                    >
+                      <MessageContent className="max-w-[92%]">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span className="font-semibold text-foreground">
+                            {comment.author_name ?? t("m.taskChat.member")}
+                          </span>
+                          <span>
+                            {new Date(comment.created_at).toLocaleString(localeTag(lang), {
+                              dateStyle: "short",
+                              timeStyle: "short",
+                            })}
+                          </span>
+                        </div>
+                        <p className="whitespace-pre-wrap break-words leading-6">{comment.body}</p>
+                      </MessageContent>
+                    </Message>
+                  ))
+                ) : (
+                  <Empty text={t("m.taskChat.noTeamMessages")} />
+                )}
+              </div>
+              <TaskMessageComposer
+                value={draft}
+                onChange={setDraft}
+                onSubmit={(text) => sendTeam.mutate(text)}
+                pending={sendTeam.isPending}
+                placeholder={t("m.taskChat.teamPlaceholder")}
+                sendLabel={t("m.taskChat.sendTeam")}
+              />
+            </TabsContent>
+            <TabsContent value="ai" className="mt-3 min-w-0">
+              <div className="max-h-80 space-y-3 overflow-y-auto rounded-xl border border-border bg-background p-3">
+                {latestConversation?.messages.length ? (
+                  latestConversation.messages.map((message) => (
+                    <Message key={message.id} from={message.role}>
+                      <MessageContent className="max-w-[92%]">
+                        {message.role === "assistant" ? (
+                          <MessageResponse className="text-sm leading-6 [&_h2]:my-2 [&_h2]:text-xs [&_h2]:uppercase [&_h2]:text-muted-foreground">
+                            {message.content}
+                          </MessageResponse>
+                        ) : (
+                          <p className="whitespace-pre-wrap break-words leading-6">
+                            {message.content}
+                          </p>
+                        )}
+                      </MessageContent>
+                    </Message>
+                  ))
+                ) : (
+                  <Empty text={t("m.taskChat.noAiMessages")} />
+                )}
+                {sendAi.isPending ? (
+                  <div className="flex min-h-11 items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" /> {t("m.ai.working")}
+                  </div>
+                ) : null}
+              </div>
+              <TaskMessageComposer
+                value={draft}
+                onChange={setDraft}
+                onSubmit={(text) => sendAi.mutate(text)}
+                pending={sendAi.isPending}
+                placeholder={t("m.taskChat.aiPlaceholder")}
+                sendLabel={t("m.taskChat.sendAi")}
+              />
+            </TabsContent>
+          </Tabs>
           <SummarySection title={t("m.taskChat.history")} count={chats.data?.length ?? 0}>
             {(chats.data ?? []).length ? (
               chats.data?.map((conversation) => (
@@ -209,6 +349,50 @@ export function TaskChatSummary({ taskId, taskTitle }: { taskId: string; taskTit
         </>
       )}
     </section>
+  );
+}
+
+function TaskMessageComposer({
+  value,
+  onChange,
+  onSubmit,
+  pending,
+  placeholder,
+  sendLabel,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  onSubmit: (value: string) => void;
+  pending: boolean;
+  placeholder: string;
+  sendLabel: string;
+}) {
+  return (
+    <PromptInput
+      className="mt-2 rounded-xl border-border bg-surface"
+      onSubmit={({ text }) => {
+        const clean = text.trim();
+        if (clean && !pending) onSubmit(clean);
+      }}
+    >
+      <PromptInputTextarea
+        value={value}
+        onChange={(event) => onChange(event.currentTarget.value)}
+        placeholder={placeholder}
+        aria-label={placeholder}
+        className="max-h-28 min-h-14 px-3 pt-3 text-base leading-6"
+      />
+      <PromptInputFooter className="justify-end px-1.5 pb-1.5">
+        <PromptInputSubmit
+          status={pending ? "submitted" : "ready"}
+          disabled={!value.trim() || pending}
+          aria-label={sendLabel}
+          className="h-10 w-10"
+        >
+          {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+        </PromptInputSubmit>
+      </PromptInputFooter>
+    </PromptInput>
   );
 }
 
