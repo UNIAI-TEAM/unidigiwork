@@ -60,7 +60,7 @@ export function toMobileHref(href: string): string {
     [/^\/ai-workforce/, "/m/ai-workforce"],
     [/^\/email\/(.+)/, "/m/email/$1"],
     [/^\/email/, "/m/email"],
-    [/^\/chat\/([^/?#]+)/, "/m/c/$1"],
+    [/^\/chat\/([^/?#]+)/, "/m/chat/$1"],
     [/^\/chat/, "/m/chat"],
     [/^\/dashboard/, "/m"],
     [/^\/home/, "/m"],
