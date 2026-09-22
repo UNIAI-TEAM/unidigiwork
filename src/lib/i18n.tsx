@@ -452,6 +452,11 @@ const dict = {
     "offline.pending": "{n} thay đổi chờ gửi",
     "offline.synced": "Đã đồng bộ {n} thay đổi",
     "offline.queued": "Đang ngoại tuyến · đã lưu, sẽ gửi khi có mạng",
+    "guard.maintenanceTitle": "UniWork đang tạm dừng",
+    "guard.upgradeTitle": "Cần cập nhật ứng dụng",
+    "guard.upgradeBody":
+      "Bản cài trên máy ({current}) đã cũ. Vui lòng cài bản {required} trở lên để dùng tiếp.",
+    "guard.retry": "Thử lại",
     "wg.prev": "Trước",
     "wg.next": "Sau",
     "wg.type.task": "Công việc",
