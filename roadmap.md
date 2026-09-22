@@ -126,4 +126,4 @@
 - [x] Bỏ nút đóng menu và hỗ trợ vuốt sang trái để đóng.
 - [x] Tối giản danh sách Gần đây, bỏ dòng mô tả phụ dưới tiêu đề.
 - [x] Làm mới Tìm kiếm thành màn tìm hội thoại theo kiểu ChatGPT.
-- [ ] Kiểm tra menu và tìm kiếm ở 390/440/820px.
+- [x] Kiểm tra menu và tìm kiếm ở 390/440/820px.
