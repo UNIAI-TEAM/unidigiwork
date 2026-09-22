@@ -10,7 +10,7 @@ const resultSchema = z.object({
   confidence: z.number().min(0).max(1),
   taskTitle: z.string().max(500).nullable(),
   relatedTaskId: z.string().uuid().nullable(),
-  suggestedDueAt: z.string().datetime({ offset: true }).nullable(),
+  suggestedDueAt: z.string().datetime({ offset: true }).nullable().default(null),
 });
 
 export type TaskMessageClassification = z.infer<typeof resultSchema> & {
