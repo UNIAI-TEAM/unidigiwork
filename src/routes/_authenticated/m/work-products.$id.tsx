@@ -277,12 +277,12 @@ function MobileWorkProductDetail() {
           <p className="mt-1 text-xs text-muted-foreground">
             {product.business_type} · v{product.current_version ?? 1} ·{" "}
             {format(new Date(product.updated_at ?? product.created_at), "d MMM yyyy", {
-              locale: vi,
+              locale: lang === "vi" ? undefined : undefined,
             })}
           </p>
         </div>
         <Badge variant="secondary" className="col-span-2 w-fit">
-          {STATUS_LABEL[product.status] ?? product.status}
+          {t(`wp.status.${product.status}` as Key)}
         </Badge>
       </header>
 
@@ -440,7 +440,7 @@ function MobileWorkProductDetail() {
                   <div className="mt-2 flex items-center gap-2">
                     <span className="text-[11px] text-muted-foreground">
                       {c.authorName ?? "Thành viên"} ·{" "}
-                      {format(new Date(c.created_at), "d MMM HH:mm", { locale: vi })}
+                      {new Intl.DateTimeFormat(localeTag(lang), { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(c.created_at))}
                     </span>
                     <Button
                       variant="ghost"
