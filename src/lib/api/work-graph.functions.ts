@@ -419,11 +419,13 @@ export const listWorkGraphAssignees = createServerFn({ method: "GET" })
       _tenant_id: tenantId,
     });
     if (error) mapPgError(error, "TENANT_ACCESS_DENIED");
-    return ((data ?? []) as Array<{
-      id: string;
-      display_name: string | null;
-      primary_email: string | null;
-    }>)
+    return (
+      (data ?? []) as Array<{
+        id: string;
+        display_name: string | null;
+        primary_email: string | null;
+      }>
+    )
       .map((person) => ({
         id: person.id,
         name: person.display_name || person.primary_email || "—",
@@ -513,14 +515,13 @@ export const listWorkGraphBoard = createServerFn({ method: "GET" })
       : { data: [], error: null };
     if (memberError) mapPgError(memberError);
     const ownerNames = new Map(
-      ((memberRows ?? []) as Array<{
-        id: string;
-        display_name: string | null;
-        primary_email: string | null;
-      }>).map((person) => [
-        person.id,
-        person.display_name || person.primary_email || "—",
-      ]),
+      (
+        (memberRows ?? []) as Array<{
+          id: string;
+          display_name: string | null;
+          primary_email: string | null;
+        }>
+      ).map((person) => [person.id, person.display_name || person.primary_email || "—"]),
     );
 
     const items: WorkGraphBoardItem[] = list.map((row) => ({

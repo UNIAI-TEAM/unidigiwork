@@ -202,36 +202,36 @@ function WorkGraphPage() {
 
       <div className="mt-5 flex flex-col gap-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="-mx-4 flex gap-1 overflow-x-auto rounded-none bg-transparent px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:rounded-lg sm:bg-muted sm:p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {tabs.map(({ id, label, count, icon: Icon }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => {
-                setTab(id);
-                setPage(1);
-              }}
-              className={`flex h-11 shrink-0 items-center gap-1.5 rounded-lg border px-3 text-sm font-medium transition-colors sm:h-8 sm:rounded-md sm:border-0 ${
-                tab === id
-                  ? "border-primary/40 bg-background text-foreground shadow-sm"
-                  : "border-transparent bg-muted text-muted-foreground hover:text-foreground sm:bg-transparent"
-              }`}
-            >
-              <Icon className="h-3.5 w-3.5" />
-              {label}
-              <span className="text-xs text-muted-foreground">{count}</span>
-            </button>
-          ))}
-        </div>
-        <div className="relative w-full sm:w-64">
-          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder={t("wg.searchPlaceholder")}
-            className="h-11 pl-8 text-base sm:h-9 sm:text-sm"
-          />
-        </div>
+          <div className="-mx-4 flex gap-1 overflow-x-auto rounded-none bg-transparent px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:rounded-lg sm:bg-muted sm:p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {tabs.map(({ id, label, count, icon: Icon }) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => {
+                  setTab(id);
+                  setPage(1);
+                }}
+                className={`flex h-11 shrink-0 items-center gap-1.5 rounded-lg border px-3 text-sm font-medium transition-colors sm:h-8 sm:rounded-md sm:border-0 ${
+                  tab === id
+                    ? "border-primary/40 bg-background text-foreground shadow-sm"
+                    : "border-transparent bg-muted text-muted-foreground hover:text-foreground sm:bg-transparent"
+                }`}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {label}
+                <span className="text-xs text-muted-foreground">{count}</span>
+              </button>
+            ))}
+          </div>
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder={t("wg.searchPlaceholder")}
+              className="h-11 pl-8 text-base sm:h-9 sm:text-sm"
+            />
+          </div>
         </div>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <Select
