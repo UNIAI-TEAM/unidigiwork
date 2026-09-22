@@ -442,28 +442,40 @@ function AddContextDrawer({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[78dvh] rounded-t-2xl">
-        <DrawerHeader className="text-left">
+      <DrawerContent
+        className={
+          mode === "menu"
+            ? "mx-3 mb-[max(1rem,env(safe-area-inset-bottom))] h-[50dvh] rounded-3xl border border-border-strong bg-surface p-2 shadow-card after:hidden"
+            : "max-h-[78dvh] rounded-t-3xl"
+        }
+      >
+        <DrawerHeader className={mode === "menu" ? "sr-only" : "text-left"}>
           <DrawerTitle>
             {mode === "menu" ? t("m.ai.addContext") : t("m.ai.context.search")}
           </DrawerTitle>
           <DrawerDescription>{t("m.ai.context.description")}</DrawerDescription>
         </DrawerHeader>
-        <div className="overflow-y-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+        <div
+          className={
+            mode === "menu"
+              ? "flex flex-1 flex-col justify-center overflow-y-auto px-2 py-2"
+              : "overflow-y-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
+          }
+        >
           {mode === "menu" ? (
-            <div className="grid gap-2">
+            <div className="grid gap-1">
               {options.map(({ id, label, icon: Icon, action }) => (
                 <Button
                   key={id}
                   variant="ghost"
-                  className="min-h-14 justify-start rounded-xl px-3"
+                  className="min-h-14 justify-start gap-4 rounded-2xl px-3 text-base font-normal"
                   onClick={() => {
                     action();
                     if (id === "files" || id === "camera" || id === "apps") onOpenChange(false);
                   }}
                 >
-                  <span className="grid h-9 w-9 place-items-center rounded-lg bg-surface-2 text-primary">
-                    <Icon className="h-4 w-4" />
+                  <span className="grid h-11 w-11 place-items-center rounded-full bg-surface-2 text-foreground">
+                    <Icon className="!h-5 !w-5" />
                   </span>
                   {label}
                 </Button>
