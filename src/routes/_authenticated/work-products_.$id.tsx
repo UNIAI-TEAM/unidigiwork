@@ -874,7 +874,11 @@ function WorkProductDetail() {
                   </div>
                 </div>
                 <TabsList
-                  className={cn("mx-3 mt-3 grid", isImportedDocx ? "grid-cols-9" : "grid-cols-8")}
+                  className={cn(
+                    "mx-3 mt-3 flex w-auto justify-start gap-1 overflow-x-auto [scrollbar-width:none] [&>*]:h-10 [&>*]:min-w-11 [&>*]:shrink-0 [&::-webkit-scrollbar]:hidden",
+                    "sm:grid sm:gap-0 sm:overflow-visible sm:[&>*]:h-auto sm:[&>*]:min-w-0",
+                    isImportedDocx ? "sm:grid-cols-9" : "sm:grid-cols-8",
+                  )}
                 >
                   <TabsTrigger value="ai" aria-label={t("wp.tab.ai")}>
                     <Sparkles />
