@@ -31,6 +31,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { listAiConversations } from "@/lib/api/ai-chat.functions";
+import { listWorkGraphBoard } from "@/lib/api/work-graph.functions";
 import { useActiveWorkspace } from "@/lib/active-workspace";
 import { useCurrentIdentity } from "@/lib/use-current-identity";
 import { useI18n, type Key } from "@/lib/i18n";
