@@ -4,14 +4,18 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Building2,
-  CalendarDays,
+  CheckCircle2,
   ChevronDown,
   ChevronRight,
+  CircleAlert,
   FileText,
   Folder,
+  FolderKanban,
+  ListChecks,
+  Mail,
   Menu,
   MessageSquare,
-  Plus,
+  RefreshCw,
   Search,
   Settings,
   SquarePen,
@@ -27,20 +31,25 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { listAiConversations } from "@/lib/api/ai-chat.functions";
+import { listWorkGraphBoard } from "@/lib/api/work-graph.functions";
 import { useActiveWorkspace } from "@/lib/active-workspace";
 import { useCurrentIdentity } from "@/lib/use-current-identity";
 import { useI18n, type Key } from "@/lib/i18n";
 import { toMobileHref } from "@/lib/mobile-routes";
 
-const QUICK_LINKS = [
+const WORK_LINKS = [
+  { label: "m.nav.projects" as Key, icon: FolderKanban, to: "/m/projects" },
+  { label: "nav.taskList" as Key, icon: ListChecks, to: "/m/tasks" },
+];
+
+const TOOL_LINKS = [
   { label: "m.nav.chat" as Key, icon: MessageSquare, to: "/m/chat" },
-  { label: "m.nav.video" as Key, icon: Video, to: "/m/meet" },
-  { label: "m.nav.file" as Key, icon: Folder, to: "/m/documents" },
+  { label: "m.nav.meetings" as Key, icon: Video, to: "/m/meet" },
+  { label: "m.nav.email" as Key, icon: Mail, to: "/m/email" },
 ];
 
 const LIBRARY_LINKS = [
   { label: "nav.workProducts" as Key, icon: FileText, to: "/m/work-products" },
-  { label: "nav.meetings" as Key, icon: CalendarDays, to: "/m/meet" },
   { label: "nav.documents" as Key, icon: Folder, to: "/m/documents" },
 ];
 
@@ -168,11 +177,19 @@ function NativeDrawer({
   const swipeStartX = useRef<number | null>(null);
   const swipeDistance = useRef(0);
   const drawerRef = useRef<HTMLDivElement>(null);
+  const boardFn = useServerFn(listWorkGraphBoard);
   const conversations = useQuery({
     queryKey: ["mobile-ai-conversations"],
     queryFn: () => listFn({ data: { limit: 6, sort: "recent" } }),
     enabled: open,
   });
+  const board = useQuery({
+    queryKey: ["mobile-menu-board"],
+    queryFn: () => boardFn({ data: { tab: "all", page: 1, pageSize: 10 } }),
+    enabled: open,
+    staleTime: 30_000,
+  });
+  const counts = board.data?.counts ?? { all: 0, running: 0, done: 0, products: 0 };
 
   const go = (to: string) => {
     onOpenChange(false);
@@ -216,23 +233,45 @@ function NativeDrawer({
         onPointerCancel={endSwipe}
         className="flex w-[86vw] max-w-[360px] touch-pan-y flex-col gap-0 overflow-hidden border-mobile-menu-border bg-mobile-menu p-0 text-mobile-menu-foreground shadow-panel"
       >
-        <SheetHeader className="px-5 pb-4 pt-[max(1rem,env(safe-area-inset-top))] text-left">
-          <SheetTitle className="flex min-h-11 items-center text-xl text-mobile-menu-foreground">
-            UniWork
-          </SheetTitle>
-          <SheetDescription className="sr-only">{t("m.nav.tagline")}</SheetDescription>
+        <SheetHeader className="grid grid-cols-[minmax(0,1fr)_2.75rem] items-center gap-2 px-5 pb-3 pt-[max(1rem,env(safe-area-inset-top))] text-left">
+          <span className="min-w-0">
+            <SheetTitle className="text-xl text-mobile-menu-foreground">UniWork</SheetTitle>
+            <SheetDescription className="mt-0.5 truncate text-xs text-mobile-menu-muted">
+              {t("m.nav.tagline")}
+            </SheetDescription>
+          </span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-11 w-11 rounded-full bg-mobile-menu-accent"
+            onClick={() => go("/m/search")}
+            aria-label={t("cmd.group.search")}
+          >
+            <Search className="h-5 w-5" />
+          </Button>
         </SheetHeader>
 
         <nav className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-3">
-          <DrawerLink icon={Plus} label={t("m.nav.newWork")} onClick={() => go("/m")} />
-          {QUICK_LINKS.map((item) => (
+          <DrawerSection label={t("m.nav.inbox")}>
             <DrawerLink
-              key={item.to}
-              icon={item.icon}
-              label={t(item.label)}
-              onClick={() => go(item.to)}
+              icon={CircleAlert}
+              label={t("m.nav.attention")}
+              count={counts.all}
+              onClick={() => go("/m/work-graph")}
             />
-          ))}
+            <DrawerLink
+              icon={RefreshCw}
+              label={t("m.nav.working")}
+              count={counts.running}
+              onClick={() => go("/m/work-graph?tab=running")}
+            />
+            <DrawerLink
+              icon={CheckCircle2}
+              label={t("m.nav.review")}
+              count={counts.done}
+              onClick={() => go("/m/work-graph?tab=done")}
+            />
+          </DrawerSection>
 
           <DrawerSection label={t("m.nav.workspaces")}>
             <button
@@ -267,6 +306,28 @@ function NativeDrawer({
             )}
           </DrawerSection>
 
+          <DrawerSection label={t("m.nav.work")}>
+            {WORK_LINKS.map((item) => (
+              <DrawerLink
+                key={item.to}
+                icon={item.icon}
+                label={t(item.label)}
+                onClick={() => go(item.to)}
+              />
+            ))}
+          </DrawerSection>
+
+          <DrawerSection label={t("m.nav.tools")}>
+            {TOOL_LINKS.map((item) => (
+              <DrawerLink
+                key={item.to}
+                icon={item.icon}
+                label={t(item.label)}
+                onClick={() => go(item.to)}
+              />
+            ))}
+          </DrawerSection>
+
           <DrawerSection label={t("m.nav.library")}>
             {LIBRARY_LINKS.map((item) => (
               <DrawerLink
@@ -293,6 +354,16 @@ function NativeDrawer({
             ))}
           </DrawerSection>
         </nav>
+
+        <div className="px-4 pb-2">
+          <Button
+            className="h-12 w-full rounded-full text-base font-semibold"
+            onClick={() => go("/m")}
+          >
+            <SquarePen className="h-5 w-5" />
+            {t("m.nav.newWork")}
+          </Button>
+        </div>
 
         <button
           onClick={() => go("/m/settings")}
