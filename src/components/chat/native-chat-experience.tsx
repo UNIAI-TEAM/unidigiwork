@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChatRoomView } from "@/components/mobile/team-chat-panel";
 import { NewDirectMessageButton } from "@/components/chat/new-direct-message";
+import { ChatRoomManagerButton } from "@/components/chat/chat-room-manager";
 import { ensureTenantGeneralChannel, listChatChannels } from "@/lib/api/chat.functions";
 import { localeTag, useI18n } from "@/lib/i18n";
 
@@ -96,6 +97,7 @@ export function NativeChatExperience({
           </Button>
         )}
         <NewDirectMessageButton onOpened={(id) => select(id)} />
+        <ChatRoomManagerButton />
         <div className="min-h-0 flex-1 space-y-1 overflow-y-auto pr-1">
           {isLoading &&
             [0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-14 w-full rounded-2xl" />)}
