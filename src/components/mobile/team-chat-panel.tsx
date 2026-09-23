@@ -28,6 +28,7 @@ import { askChatAi } from "@/lib/api/chat-ai.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { Link } from "@tanstack/react-router";
+import { TaskFollowButton } from "@/components/chat/task-follow-button";
 
 export function TeamChatPanel({
   channelId,
@@ -281,14 +282,17 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {linkedTaskId ? (
-        <Link
-          to="/m/tasks/$id"
-          params={{ id: linkedTaskId }}
-          className="mb-2 inline-flex min-h-11 items-center gap-2 self-start rounded-full border px-3 text-sm"
-        >
-          <ListTodo className="h-4 w-4" />
-          {t("m.chat.openTask")}
-        </Link>
+        <div className="mb-2 flex flex-wrap items-center gap-2">
+          <Link
+            to="/m/tasks/$id"
+            params={{ id: linkedTaskId }}
+            className="inline-flex min-h-11 items-center gap-2 rounded-full border px-3 text-sm"
+          >
+            <ListTodo className="h-4 w-4" />
+            {t("m.chat.openTask")}
+          </Link>
+          <TaskFollowButton taskId={linkedTaskId} />
+        </div>
       ) : null}
       {onBack ? (
         <Button
