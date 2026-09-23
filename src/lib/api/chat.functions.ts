@@ -129,7 +129,9 @@ export const listChatChannels = createServerFn({ method: "GET" })
 
     const { data: chans, error } = await ctx.supabase
       .from("chat_channels")
-      .select("id, name, description, kind, is_private, last_message_at, created_by, meeting_id, is_general")
+      .select(
+        "id, name, description, kind, is_private, last_message_at, created_by, meeting_id, is_general",
+      )
       .eq("tenant_id", scope.tenantId)
       .is("deleted_at", null)
       .order("last_message_at", { ascending: false, nullsFirst: false })
@@ -799,8 +801,7 @@ export const ensureTenantGeneralChannel = createServerFn({ method: "POST" })
   .handler(async ({ context }): Promise<{ channelId: string }> => {
     const ctx = context as unknown as Ctx;
     const scope = await resolveScope(ctx);
-    if (!scope)
-      throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "Chưa có tổ chức" });
+    if (!scope) throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "Chưa có tổ chức" });
     const { data: channelId, error } = await ctx.supabase.rpc("ensure_tenant_general_channel", {
       _tenant_id: scope.tenantId,
     });

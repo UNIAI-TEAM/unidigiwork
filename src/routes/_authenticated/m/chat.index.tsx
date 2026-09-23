@@ -127,7 +127,9 @@ function MobileChatList() {
               }
               icon={
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface-2 text-foreground">
-                  {channel.meetingId ? (
+                  {channel.isGeneral ? (
+                    <Users className="h-4 w-4" />
+                  ) : channel.meetingId ? (
                     <Video className="h-4 w-4" />
                   ) : channel.kind === "dm" ? (
                     <User className="h-4 w-4" />
@@ -141,6 +143,8 @@ function MobileChatList() {
               badge={
                 channel.unread > 0 ? (
                   <Badge>{channel.unread}</Badge>
+                ) : channel.isGeneral ? (
+                  <Badge variant="outline">{t("m.chat.generalRoom")}</Badge>
                 ) : channel.meetingId ? (
                   <Badge variant="outline">{t("m.chat.meetingRoom")}</Badge>
                 ) : null
