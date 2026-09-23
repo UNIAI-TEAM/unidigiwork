@@ -13,6 +13,7 @@ import { ChatRoomView } from "@/components/mobile/team-chat-panel";
 import { NewDirectMessageButton } from "@/components/chat/new-direct-message";
 import { ChatRoomManagerButton } from "@/components/chat/chat-room-manager";
 import { ensureTenantGeneralChannel, listChatChannels } from "@/lib/api/chat.functions";
+import { useActiveTenant } from "@/features/tenants/hooks";
 import { localeTag, useI18n } from "@/lib/i18n";
 
 export function NativeChatExperience({
