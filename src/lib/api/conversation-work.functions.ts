@@ -377,7 +377,7 @@ export const approveExtractionProposal = createServerFn({ method: "POST" })
           title: data.title.trim().slice(0, 200),
           detail: (data.description ?? "").trim() || null,
           status: "CANDIDATE",
-          origin: "CONVERSATION",
+          origin: "CHAT",
           source_type: run?.source_type ?? null,
           source_id: run?.source_id ?? null,
           decided_by: ctx.userId,
