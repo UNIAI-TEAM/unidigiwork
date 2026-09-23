@@ -875,7 +875,7 @@ export const listTaskChatMessages = createServerFn({ method: "GET" })
         created_at: string;
         is_ai: boolean | null;
       }>;
-      const names = await resolveDisplayNames(
+      const names = await displayNames(
         ctx,
         list.map((r) => r.author_id),
       );
