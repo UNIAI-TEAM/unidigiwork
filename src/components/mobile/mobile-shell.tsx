@@ -36,15 +36,19 @@ import { useCurrentIdentity } from "@/lib/use-current-identity";
 import { useI18n, type Key } from "@/lib/i18n";
 import { toMobileHref } from "@/lib/mobile-routes";
 
-const QUICK_LINKS = [
+const WORK_LINKS = [
+  { label: "m.nav.projects" as Key, icon: FolderKanban, to: "/m/projects" },
+  { label: "nav.taskList" as Key, icon: ListChecks, to: "/m/tasks" },
+];
+
+const TOOL_LINKS = [
   { label: "m.nav.chat" as Key, icon: MessageSquare, to: "/m/chat" },
-  { label: "m.nav.video" as Key, icon: Video, to: "/m/meet" },
-  { label: "m.nav.file" as Key, icon: Folder, to: "/m/documents" },
+  { label: "m.nav.meetings" as Key, icon: Video, to: "/m/meet" },
+  { label: "m.nav.email" as Key, icon: Mail, to: "/m/email" },
 ];
 
 const LIBRARY_LINKS = [
   { label: "nav.workProducts" as Key, icon: FileText, to: "/m/work-products" },
-  { label: "nav.meetings" as Key, icon: CalendarDays, to: "/m/meet" },
   { label: "nav.documents" as Key, icon: Folder, to: "/m/documents" },
 ];
 
