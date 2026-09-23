@@ -86,7 +86,7 @@ export const askChatAi = createServerFn({ method: "POST" })
     } catch (error) {
       const reason = error instanceof AiConsumerError ? error.reason : "PROVIDER_FAILED";
       throw new ApiError({
-        code: "AI_UNAVAILABLE",
+        code: "AI_PROVIDER_UNAVAILABLE",
         message:
           reason === "NO_API_KEY"
             ? "Trợ lý AI chưa được cấu hình."
