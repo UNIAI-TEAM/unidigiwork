@@ -109,40 +109,76 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => 
   const markReadFn = useServerFn(markChatChannelRead);
   const askAiFn = useServerFn(askChatAi);
   const [body, setBody] = useState("");
+  const [pending, setPending] = useState<{ id: string; body: string; createdAt: string }[]>([]);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const stickToBottom = useRef(true);
 
   const history = useQuery({
     queryKey: ["mobile-plus-chat-messages", channelId],
     queryFn: () => messagesFn({ data: { channelId, limit: 50 } }),
     refetchInterval: 10_000,
+    placeholderData: (previous) => previous,
   });
 
-  const messages = useMemo(() => history.data?.messages ?? [], [history.data]);
+  const serverMessages = useMemo(() => history.data?.messages ?? [], [history.data]);
+  // Tin đang gửi hiển thị ngay, gỡ khi server đã trả về cùng nội dung.
+  const messages = useMemo(() => {
+    const serverBodies = new Set(serverMessages.filter((m) => m.isMine).map((m) => m.body));
+    const optimistic = pending
+      .filter((p) => !serverBodies.has(p.body))
+      .map((p) => ({
+        id: p.id,
+        body: p.body,
+        createdAt: p.createdAt,
+        isMine: true,
+        isAi: false,
+        authorName: "",
+        optimistic: true as const,
+      }));
+    return [...serverMessages.map((m) => ({ ...m, optimistic: false as const })), ...optimistic];
+  }, [serverMessages, pending]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ block: "end" });
+    if (pending.length === 0) return;
+    const serverBodies = new Set(serverMessages.filter((m) => m.isMine).map((m) => m.body));
+    setPending((current) => current.filter((p) => !serverBodies.has(p.body)));
+  }, [serverMessages, pending.length]);
+
+  useEffect(() => {
+    if (!stickToBottom.current) return;
+    bottomRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
   }, [messages.length]);
+
+  const onScroll = () => {
+    const el = listRef.current;
+    if (!el) return;
+    stickToBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+  };
 
   useEffect(() => {
     void markReadFn({ data: { channelId } }).catch(() => undefined);
   }, [channelId, markReadFn]);
 
   const send = useMutation({
-    mutationFn: async (text: string) => {
+    mutationFn: async (input: { id: string; text: string }) => {
       try {
-        return await sendFn({ data: { channelId, body: text } });
+        return await sendFn({ data: { channelId, body: input.text } });
       } catch (error) {
         // Chưa là thành viên kênh công khai → tham gia rồi gửi lại.
         await joinFn({ data: { channelId } });
-        return await sendFn({ data: { channelId, body: text } });
+        return await sendFn({ data: { channelId, body: input.text } });
       }
     },
     onSuccess: () => {
-      setBody("");
       void queryClient.invalidateQueries({ queryKey: ["mobile-plus-chat-messages", channelId] });
       void queryClient.invalidateQueries({ queryKey: ["mobile-plus-chat-channels"] });
     },
-    onError: () => toast.error(t("m.ai.chat.sendFailed")),
+    onError: (_error, input) => {
+      setPending((current) => current.filter((p) => p.id !== input.id));
+      setBody((current) => current || input.text);
+      toast.error(t("m.ai.chat.sendFailed"));
+    },
   });
 
   const askAi = useMutation({
@@ -155,17 +191,23 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => 
     onError: () => toast.error(t("m.ai.chat.aiFailed")),
   });
 
-  const busy = send.isPending || askAi.isPending;
+  const busy = askAi.isPending;
 
   const submit = () => {
     const text = body.trim();
-    if (!text || busy) return;
-    send.mutate(text);
+    if (!text) return;
+    const id = `pending-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    setBody("");
+    stickToBottom.current = true;
+    setPending((current) => [...current, { id, body: text, createdAt: new Date().toISOString() }]);
+    send.mutate({ id, text });
   };
 
   const submitAi = () => {
     const text = body.trim();
     if (!text || busy) return;
+    setBody("");
+    stickToBottom.current = true;
     askAi.mutate(text);
   };
 
@@ -182,8 +224,12 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => 
         </Button>
       ) : null}
 
-      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pb-2">
-        {history.isLoading ? (
+      <div
+        ref={listRef}
+        onScroll={onScroll}
+        className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain pb-2"
+      >
+        {history.isLoading && messages.length === 0 ? (
           <PanelHint>{t("m.ai.chat.loading")}</PanelHint>
         ) : messages.length === 0 ? (
           <PanelHint>{t("m.ai.chat.noMessages")}</PanelHint>
@@ -192,11 +238,12 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => 
             <div
               key={message.id}
               className={
-                message.isAi
+                (message.optimistic ? "opacity-60 " : "") +
+                (message.isAi
                   ? "mr-auto max-w-[92%] rounded-2xl rounded-bl-md border border-primary/30 bg-primary/5 px-3 py-2"
                   : message.isMine
                     ? "ml-auto max-w-[86%] rounded-2xl rounded-br-md bg-secondary px-3 py-2 text-secondary-foreground"
-                    : "mr-auto max-w-[86%] rounded-2xl rounded-bl-md border border-border bg-surface px-3 py-2"
+                    : "mr-auto max-w-[86%] rounded-2xl rounded-bl-md border border-border bg-surface px-3 py-2")
               }
             >
               {message.isAi ? (
@@ -259,15 +306,12 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => 
         <Button
           size="icon"
           className="h-11 w-11 shrink-0 rounded-full"
-          disabled={!body.trim() || busy}
+          disabled={!body.trim()}
           onClick={submit}
           aria-label={t("m.ai.chat.send")}
         >
-          {send.isPending ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
-          ) : (
-            <ArrowUp className="h-5 w-5" />
-          )}
+          <ArrowUp className="h-5 w-5" />
+          {pending.length > 0 ? <span className="sr-only">{t("m.ai.chat.loading")}</span> : null}
         </Button>
       </div>
     </div>
