@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { MobileFAB } from "@/components/mobile/mobile-fab";
 import { MobileListItem } from "@/components/mobile/mobile-list-item";
+import { OpenChatRoomButton } from "@/components/chat/open-chat-room-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
