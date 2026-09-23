@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useI18n, type Key } from "@/lib/i18n";
 import type { LucideIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -68,6 +68,12 @@ import {
   type AdvancedFilters,
 } from "@/components/email-features";
 import { listEmailLabels, searchEmails, type EmailLabel } from "@/lib/api/email-hub.functions";
+import {
+  EmailRibbon,
+  ExternalMailboxDialog,
+  EmailHistoryPanel,
+  type HistoryItem,
+} from "@/components/email-ribbon";
 import { buildForwardBody, buildReplyBody, stripPrefix } from "@/lib/email-quote";
 import { notifyComingSoon } from "@/lib/coming-soon";
 import { useActiveWorkspace } from "@/lib/active-workspace";
@@ -199,6 +205,7 @@ function DonutChart({ stats, centerValue }: { stats: StatSlice[]; centerValue?: 
 
 function EmailHubPage() {
   const { t } = useI18n();
+  const navigate = useNavigate();
   const { workspaceId } = useActiveWorkspace();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeMailbox, setActiveMailbox] = useState("inbox");
@@ -216,6 +223,8 @@ function EmailHubPage() {
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(1);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [view, setView] = useState<"mail" | "calendar">("mail");
+  const [externalOpen, setExternalOpen] = useState(false);
   const PAGE_SIZE = 6;
 
   // Debounce search to avoid a query per keystroke.
@@ -266,6 +275,31 @@ function EmailHubPage() {
     queryFn: () => listEmailLabels(),
     staleTime: 60_000,
   });
+  const historyQuery = useQuery({
+    queryKey: ["emails", "history", workspaceId, activeMailbox],
+    queryFn: () =>
+      searchEmails({
+        data: { folder, starred_only: starredMode, limit: 100, offset: 0 },
+      }),
+    enabled: view === "calendar",
+    staleTime: 30_000,
+  });
+  const historyItems: HistoryItem[] = useMemo(
+    () =>
+      (historyQuery.data?.items ?? []).map((r) => {
+        const when = r.sent_at ?? r.created_at;
+        return {
+          id: r.message_id,
+          subject: r.subject,
+          from: r.sender_name ?? r.sender_email ?? "",
+          time: formatEmailTime(when),
+          day: new Date(when).toLocaleDateString(),
+          unread: !r.is_read,
+        } satisfies HistoryItem;
+      }),
+    [historyQuery.data],
+  );
+
   const labels: EmailLabel[] = labelsQuery.data ?? [];
   const labelNameById = useMemo(
     () => new Map(labels.map((l) => [l.id, l.name] as const)),
@@ -544,6 +578,36 @@ function EmailHubPage() {
       <main className="flex min-w-0 flex-1 flex-col">
         <AppTopbar variant="documents" onOpenSidebar={() => setSidebarOpen(true)} />
 
+        <EmailRibbon
+          view={view}
+          onView={setView}
+          hasSelection={!!selectedEmail || checkedIds.size > 0}
+          onCompose={() => setComposeOpen(true)}
+          onNewMeeting={() => void navigate({ to: "/meetings-manage" })}
+          onArchive={() => (checkedIds.size ? bulkMove("archive") : messageAction("archive"))}
+          onDelete={() => (checkedIds.size ? bulkMove("trash") : messageAction("trash"))}
+          onReply={() => replySelected(false)}
+          onReplyAll={() => replySelected(true)}
+          onForward={forwardSelected}
+          onMarkRead={() =>
+            checkedIds.size
+              ? bulkRead(true)
+              : selectedEmail && bulkReadMut.mutate({ ids: [selectedEmail.id], is_read: true })
+          }
+          onMarkUnread={() =>
+            checkedIds.size
+              ? bulkRead(false)
+              : selectedEmail && bulkReadMut.mutate({ ids: [selectedEmail.id], is_read: false })
+          }
+          onLabels={() => setLabelsOpen(true)}
+          onAdvanced={() => setAdvancedOpen(true)}
+          onSync={() => {
+            void dbQuery.refetch();
+            void countsQuery.refetch();
+          }}
+          onExternal={() => setExternalOpen(true)}
+        />
+
         <div className="flex min-w-0 flex-1 overflow-hidden">
           {/* Mailboxes column */}
           <aside className="hidden w-[260px] shrink-0 flex-col border-r border-border bg-surface md:flex">
@@ -719,639 +783,676 @@ function EmailHubPage() {
             </div>
           </aside>
 
-          {/* Email list column */}
-          <section
-            className={`flex-col border-r border-border bg-background ${detailOpen ? "hidden" : "flex w-full"} lg:flex lg:w-[360px] lg:shrink-0`}
-          >
-            <div className="border-b border-border px-4 py-3">
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={t("em.34")}
-                  className="w-full rounded-lg border border-border bg-surface-2 py-2 pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-                />
-              </div>
-              <div className="mt-3 flex items-center gap-1.5">
-                <button
-                  onClick={() => setFilterUnread((v) => !v)}
-                  className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs ${filterUnread ? "border-primary bg-primary/15 text-foreground" : "border-border bg-surface hover:bg-surface-2"}`}
-                >
-                  <MailOpen className="h-3.5 w-3.5" /> {t("em.10")}
-                </button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs ${sortBy !== "time" ? "border-primary bg-primary/15 text-foreground" : "border-border bg-surface hover:bg-surface-2"}`}
-                    >
-                      <ArrowUpDown className="h-3.5 w-3.5" /> Sắp xếp{" "}
-                      <ChevronDown className="h-3 w-3" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="min-w-[14rem]">
-                    <DropdownMenuItem onClick={() => setSortBy("time")} className="cursor-pointer">
-                      <Clock className="h-4 w-4" />
-                      <span className="flex-1">{t("em.35")}</span>
-                      {sortBy === "time" && <Check className="h-4 w-4 text-primary" />}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => setSortBy("priority")}
-                      className="cursor-pointer"
-                    >
-                      <AlertCircle className="h-4 w-4" />
-                      <span className="flex-1">{t("em.36")}</span>
-                      {sortBy === "priority" && <Check className="h-4 w-4 text-primary" />}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                {(searchQuery || filterLabel || filterUnread) && (
-                  <button
-                    onClick={() => {
-                      setSearchQuery("");
-                      setFilterLabel(null);
-                      setFilterUnread(false);
-                    }}
-                    className="ml-auto inline-flex items-center gap-1 rounded-lg border border-border bg-surface px-2 py-1 text-xs text-muted-foreground hover:bg-surface-2"
-                  >
-                    <X className="h-3 w-3" /> {t("em.37")}
-                  </button>
-                )}
-                <button
-                  onClick={() => setAdvancedOpen(true)}
-                  className="ml-auto inline-flex items-center gap-1 rounded-lg border border-border bg-surface px-2 py-1 text-xs text-muted-foreground hover:bg-surface-2"
-                >
-                  <Filter className="h-3 w-3" /> {t("em.38")}
-                </button>
-              </div>
-              <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                {searchQuery && (
-                  <Badge variant="secondary" className="text-[11px]">
-                    <Search className="mr-1 h-3 w-3" />
-                    {searchQuery}
-                    <X className="ml-1 h-3 w-3 cursor-pointer" onClick={() => setSearchQuery("")} />
-                  </Badge>
-                )}
-                {filterLabel && (
-                  <Badge variant="secondary" className="text-[11px]">
-                    <Tag className="mr-1 h-3 w-3" />
-                    {filterLabel}
-                    <X
-                      className="ml-1 h-3 w-3 cursor-pointer"
-                      onClick={() => setFilterLabel(null)}
-                    />
-                  </Badge>
-                )}
-                {filterUnread && (
-                  <Badge variant="secondary" className="text-[11px]">
-                    <MailOpen className="mr-1 h-3 w-3" />
-                    {t("em.10")}
-                    <X
-                      className="ml-1 h-3 w-3 cursor-pointer"
-                      onClick={() => setFilterUnread(false)}
-                    />
-                  </Badge>
-                )}
-                <span className="ml-auto text-[11px] text-muted-foreground">
-                  {effectiveTotal} thư
-                </span>
-              </div>
-            </div>
-
-            {/* Bulk select bar */}
-            <div className="flex items-center gap-2 border-b border-border bg-surface/40 px-4 py-2">
-              <button
-                onClick={toggleAllOnPage}
-                className="inline-flex items-center gap-1.5 rounded-md px-1.5 py-1 text-xs text-muted-foreground hover:bg-surface-2 hover:text-foreground"
-                title={allOnPageChecked ? t("em.39") : t("em.40")}
+          {view === "calendar" ? (
+            <EmailHistoryPanel
+              items={historyItems}
+              onOpen={(id) => {
+                setView("mail");
+                openEmail(id);
+              }}
+            />
+          ) : (
+            <>
+              {/* Email list column */}
+              <section
+                className={`flex-col border-r border-border bg-background ${detailOpen ? "hidden" : "flex w-full"} lg:flex lg:w-[360px] lg:shrink-0`}
               >
-                {allOnPageChecked ? (
-                  <CheckSquare className="h-4 w-4 text-primary" />
-                ) : (
-                  <Square className={`h-4 w-4 ${someOnPageChecked ? "text-primary" : ""}`} />
-                )}
-                <span>{checkedIds.size > 0 ? `Đã chọn ${checkedIds.size}` : "Chọn"}</span>
-              </button>
-              {checkedIds.size > 0 ? (
-                <div className="ml-1 flex items-center gap-0.5">
-                  <BulkBtn icon={Archive} label={t("em.41")} onClick={() => bulkMove("archive")} />
-                  <BulkBtn icon={Trash2} label={t("em.42")} onClick={() => bulkMove("trash")} />
-                  <BulkBtn icon={MailOpen} label={t("em.43")} onClick={() => bulkRead(true)} />
-                  <BulkBtn icon={Mail} label={t("em.44")} onClick={() => bulkRead(false)} />
-                  <BulkBtn icon={Inbox} label={t("em.45")} onClick={() => bulkMove("inbox")} />
-                  <button
-                    onClick={clearChecked}
-                    className="ml-1 rounded p-1 text-muted-foreground hover:bg-surface-2"
-                    title={t("em.46")}
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => dbQuery.refetch()}
-                  className="ml-1 rounded p-1 text-muted-foreground hover:bg-surface-2"
-                  title={t("em.47")}
-                >
-                  <RefreshCw
-                    className={`h-3.5 w-3.5 ${dbQuery.isFetching ? "animate-spin" : ""}`}
-                  />
-                </button>
-              )}
-              <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
-                {effectiveTotal === 0
-                  ? "0"
-                  : `${(currentPage - 1) * PAGE_SIZE + 1}-${Math.min(currentPage * PAGE_SIZE, effectiveTotal)} / ${effectiveTotal}`}
-              </span>
-              <div className="flex items-center gap-0.5">
-                <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage <= 1}
-                  className="rounded p-1 text-muted-foreground hover:bg-surface-2 disabled:opacity-40"
-                >
-                  <ChevronLeft className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={currentPage >= totalPages}
-                  className="rounded p-1 text-muted-foreground hover:bg-surface-2 disabled:opacity-40"
-                >
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto">
-              {dbQuery.isLoading ? (
-                <div className="flex h-full flex-col items-center justify-center gap-2 px-6 py-16 text-center text-sm text-muted-foreground">
-                  <RefreshCw className="h-6 w-6 animate-spin opacity-60" />
-                  <span className="text-xs">{t("em.48")}</span>
-                </div>
-              ) : dbQuery.error ? (
-                <div className="flex h-full flex-col items-center justify-center gap-2 px-6 py-16 text-center text-sm text-destructive">
-                  <AlertCircle className="h-6 w-6" />
-                  <span className="font-medium">{t("em.49")}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {(dbQuery.error as Error).message}
-                  </span>
-                </div>
-              ) : effectiveTotal === 0 ? (
-                <div className="flex h-full flex-col items-center justify-center gap-2 px-6 py-16 text-center text-sm text-muted-foreground">
-                  <Inbox className="h-8 w-8 opacity-50" />
-                  <span className="font-medium">{debouncedSearch ? t("em.50") : t("em.51")}</span>
-                  <span className="text-xs">{debouncedSearch ? t("em.52") : t("em.53")}</span>
-                </div>
-              ) : null}
-              {Object.entries(groups).map(([group, items]) => (
-                <div key={group}>
-                  <div className="sticky top-0 z-10 bg-background/95 px-4 py-1.5 text-[11px] font-semibold text-muted-foreground backdrop-blur">
-                    {GROUP_KEYS[group] ? t(GROUP_KEYS[group] as Key) : group}
-                  </div>
-                  <ul>
-                    {items.map((e) => {
-                      const isActive = e.id === selected;
-                      const isChecked = checkedIds.has(e.id);
-                      return (
-                        <li key={e.id}>
-                          <div
-                            className={`group flex w-full gap-3 border-l-2 px-4 py-3 text-left transition-colors ${
-                              isActive
-                                ? "border-primary bg-primary/10"
-                                : "border-transparent hover:bg-surface-2/60"
-                            }`}
-                          >
-                            <div
-                              className="relative flex h-9 w-9 shrink-0 items-center justify-center"
-                              onClick={(ev) => ev.stopPropagation()}
-                            >
-                              <img
-                                src={avatar(e.from)}
-                                alt=""
-                                className={`h-9 w-9 rounded-full object-cover ${isChecked ? "hidden" : "group-hover:hidden"}`}
-                                onClick={() => openEmail(e.id)}
-                              />
-                              <div
-                                className={`${isChecked ? "flex" : "hidden group-hover:flex"} h-9 w-9 items-center justify-center`}
-                              >
-                                <Checkbox
-                                  checked={isChecked}
-                                  onCheckedChange={() => toggleOne(e.id)}
-                                />
-                              </div>
-                            </div>
-                            <button
-                              onClick={() => openEmail(e.id)}
-                              className="min-w-0 flex-1 text-left"
-                            >
-                              <div className="flex items-center justify-between gap-2">
-                                <span
-                                  className={`truncate text-sm ${e.unread ? "font-semibold" : "font-medium text-muted-foreground"}`}
-                                >
-                                  {e.from}
-                                </span>
-                                <span className="shrink-0 text-[11px] text-muted-foreground">
-                                  {e.time}
-                                </span>
-                              </div>
-                              <div
-                                className={`truncate text-sm ${e.unread ? "text-foreground" : "text-muted-foreground"}`}
-                              >
-                                {e.subject}
-                              </div>
-                              <div className="mt-0.5 flex items-center gap-1.5">
-                                <span className="line-clamp-1 flex-1 text-xs text-muted-foreground">
-                                  {e.preview}
-                                </span>
-                                {e.hasAttachment && (
-                                  <Paperclip className="h-3 w-3 text-muted-foreground" />
-                                )}
-                                {e.starred && (
-                                  <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                                )}
-                              </div>
-                            </button>
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              ))}
-
-              {/* Pagination footer */}
-              {effectiveTotal > 0 && (
-                <div className="flex items-center justify-between border-t border-border px-4 py-2.5 text-xs text-muted-foreground">
-                  <span>
-                    Trang {currentPage} / {totalPages}
-                  </span>
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: totalPages }).map((_, i) => {
-                      const p = i + 1;
-                      const isCur = p === currentPage;
-                      return (
-                        <button
-                          key={p}
-                          onClick={() => setPage(p)}
-                          className={`h-6 min-w-6 rounded px-1.5 text-[11px] tabular-nums ${
-                            isCur
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-surface-2 hover:bg-surface"
-                          }`}
-                        >
-                          {p}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-          </section>
-
-          {/* Reading pane */}
-          <section
-            className={`min-w-0 flex-1 flex-col overflow-hidden bg-background ${detailOpen ? "flex" : "hidden"} lg:flex`}
-          >
-            {!selectedEmail ? (
-              <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 text-center">
-                <Mail className="h-10 w-10 text-muted-foreground/50" />
-                <div className="text-sm font-medium">{t("em.54")}</div>
-                <p className="text-xs text-muted-foreground">{t("em.55")}</p>
-              </div>
-            ) : (
-              <>
-                <div className="flex shrink-0 flex-wrap items-center gap-1 border-b border-border px-4 py-2">
-                  <button
-                    onClick={() => setDetailOpen(false)}
-                    className="rounded-lg p-2 text-muted-foreground hover:bg-surface-2 lg:hidden"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                  </button>
-                  <ToolBtn icon={Reply} label={t("em.56")} onClick={() => replySelected(false)} />
-                  <ToolBtn icon={ReplyAll} label={t("em.57")} onClick={() => replySelected(true)} />
-                  <ToolBtn icon={Forward} label={t("em.12")} onClick={forwardSelected} />
-                  <ToolBtn
-                    icon={Archive}
-                    label={t("em.41")}
-                    onClick={() => messageAction("archive")}
-                  />
-                  <ToolBtn
-                    icon={Trash2}
-                    label={t("em.42")}
-                    onClick={() => messageAction("trash")}
-                  />
-                  <ToolBtn icon={Sparkles} label={t("em.58")} onClick={() => setAiOpen(true)} />
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        aria-label={t("em.59")}
-                        className="ml-auto rounded-lg p-2 text-muted-foreground hover:bg-surface-2"
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() => {
-                          const ids = realIds(selectedEmail ? [selectedEmail.id] : []);
-                          if (!ids.length) return toast.info(t("em.23"));
-                          bulkReadMut.mutate({ ids, is_read: false });
-                        }}
-                      >
-                        {t("em.44")}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => messageAction("archive")}>
-                        {t("em.41")}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => messageAction("trash")}>
-                        {t("em.60")}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setLabelsOpen(true)}>
-                        {t("em.61")}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-
-                <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <h1 className="text-xl font-semibold tracking-tight">
-                      {selectedEmail.subject}
-                      {selectedEmail.labels && selectedEmail.labels.length > 0 && (
-                        <span className="ml-2 align-middle rounded bg-primary/15 px-2 py-0.5 text-[11px] font-medium text-primary">
-                          {selectedEmail.labels[0]}
-                        </span>
-                      )}
-                    </h1>
-                  </div>
-
-                  <div className="mt-4 flex items-start gap-3">
-                    <img
-                      src={avatar(selectedEmail.from)}
-                      alt=""
-                      className="h-10 w-10 rounded-full object-cover"
+                <div className="border-b border-border px-4 py-3">
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder={t("em.34")}
+                      className="w-full rounded-lg border border-border bg-surface-2 py-2 pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                     />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2 text-sm">
-                        <span className="font-medium">{selectedEmail.from}</span>
-                        <span className="text-muted-foreground">
-                          &lt;
-                          {selectedEmail.fromEmail ||
-                            `${selectedEmail.from.toLowerCase().replace(/\s+/g, ".")}@company.vn`}
-                          &gt;
-                        </span>
-                        <span className="ml-auto text-xs text-muted-foreground">
-                          {selectedEmail.time}
-                        </span>
-                        <button
-                          onClick={() => notifyComingSoon()}
-                          title={t("em.62")}
-                          className="rounded p-1 text-muted-foreground hover:bg-surface-2"
-                        >
-                          <Star
-                            className={`h-4 w-4 ${selectedEmail.starred ? "fill-amber-400 text-amber-400" : ""}`}
-                          />
-                        </button>
-                        <button
-                          onClick={() => replySelected(false)}
-                          title={t("em.56")}
-                          className="rounded p-1 text-muted-foreground hover:bg-surface-2"
-                        >
-                          <Reply className="h-4 w-4" />
-                        </button>
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        đến {selectedEmail.to || t("em.63")}
-                        {selectedEmail.cc && <span> · Cc: {selectedEmail.cc}</span>}
-                        <ChevronDown className="inline h-3 w-3" />
-                      </div>
-                    </div>
                   </div>
-
-                  <div className="mt-5 space-y-3 text-sm leading-relaxed">
-                    {selectedEmail.body ? (
-                      selectedEmail.body.split("\n\n").map((para, i) => <p key={i}>{para}</p>)
-                    ) : (
-                      <p className="text-muted-foreground">{t("em.64")}</p>
+                  <div className="mt-3 flex items-center gap-1.5">
+                    <button
+                      onClick={() => setFilterUnread((v) => !v)}
+                      className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs ${filterUnread ? "border-primary bg-primary/15 text-foreground" : "border-border bg-surface hover:bg-surface-2"}`}
+                    >
+                      <MailOpen className="h-3.5 w-3.5" /> {t("em.10")}
+                    </button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs ${sortBy !== "time" ? "border-primary bg-primary/15 text-foreground" : "border-border bg-surface hover:bg-surface-2"}`}
+                        >
+                          <ArrowUpDown className="h-3.5 w-3.5" /> Sắp xếp{" "}
+                          <ChevronDown className="h-3 w-3" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="min-w-[14rem]">
+                        <DropdownMenuItem
+                          onClick={() => setSortBy("time")}
+                          className="cursor-pointer"
+                        >
+                          <Clock className="h-4 w-4" />
+                          <span className="flex-1">{t("em.35")}</span>
+                          {sortBy === "time" && <Check className="h-4 w-4 text-primary" />}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => setSortBy("priority")}
+                          className="cursor-pointer"
+                        >
+                          <AlertCircle className="h-4 w-4" />
+                          <span className="flex-1">{t("em.36")}</span>
+                          {sortBy === "priority" && <Check className="h-4 w-4 text-primary" />}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    {(searchQuery || filterLabel || filterUnread) && (
+                      <button
+                        onClick={() => {
+                          setSearchQuery("");
+                          setFilterLabel(null);
+                          setFilterUnread(false);
+                        }}
+                        className="ml-auto inline-flex items-center gap-1 rounded-lg border border-border bg-surface px-2 py-1 text-xs text-muted-foreground hover:bg-surface-2"
+                      >
+                        <X className="h-3 w-3" /> {t("em.37")}
+                      </button>
                     )}
+                    <button
+                      onClick={() => setAdvancedOpen(true)}
+                      className="ml-auto inline-flex items-center gap-1 rounded-lg border border-border bg-surface px-2 py-1 text-xs text-muted-foreground hover:bg-surface-2"
+                    >
+                      <Filter className="h-3 w-3" /> {t("em.38")}
+                    </button>
                   </div>
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    {searchQuery && (
+                      <Badge variant="secondary" className="text-[11px]">
+                        <Search className="mr-1 h-3 w-3" />
+                        {searchQuery}
+                        <X
+                          className="ml-1 h-3 w-3 cursor-pointer"
+                          onClick={() => setSearchQuery("")}
+                        />
+                      </Badge>
+                    )}
+                    {filterLabel && (
+                      <Badge variant="secondary" className="text-[11px]">
+                        <Tag className="mr-1 h-3 w-3" />
+                        {filterLabel}
+                        <X
+                          className="ml-1 h-3 w-3 cursor-pointer"
+                          onClick={() => setFilterLabel(null)}
+                        />
+                      </Badge>
+                    )}
+                    {filterUnread && (
+                      <Badge variant="secondary" className="text-[11px]">
+                        <MailOpen className="mr-1 h-3 w-3" />
+                        {t("em.10")}
+                        <X
+                          className="ml-1 h-3 w-3 cursor-pointer"
+                          onClick={() => setFilterUnread(false)}
+                        />
+                      </Badge>
+                    )}
+                    <span className="ml-auto text-[11px] text-muted-foreground">
+                      {effectiveTotal} thư
+                    </span>
+                  </div>
+                </div>
 
-                  {selectedEmail.attachments && selectedEmail.attachments.length > 0 && (
-                    <div className="mt-6">
-                      <div className="text-sm font-medium">
-                        {selectedEmail.attachments.length} tệp đính kèm
+                {/* Bulk select bar */}
+                <div className="flex items-center gap-2 border-b border-border bg-surface/40 px-4 py-2">
+                  <button
+                    onClick={toggleAllOnPage}
+                    className="inline-flex items-center gap-1.5 rounded-md px-1.5 py-1 text-xs text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+                    title={allOnPageChecked ? t("em.39") : t("em.40")}
+                  >
+                    {allOnPageChecked ? (
+                      <CheckSquare className="h-4 w-4 text-primary" />
+                    ) : (
+                      <Square className={`h-4 w-4 ${someOnPageChecked ? "text-primary" : ""}`} />
+                    )}
+                    <span>{checkedIds.size > 0 ? `Đã chọn ${checkedIds.size}` : "Chọn"}</span>
+                  </button>
+                  {checkedIds.size > 0 ? (
+                    <div className="ml-1 flex items-center gap-0.5">
+                      <BulkBtn
+                        icon={Archive}
+                        label={t("em.41")}
+                        onClick={() => bulkMove("archive")}
+                      />
+                      <BulkBtn icon={Trash2} label={t("em.42")} onClick={() => bulkMove("trash")} />
+                      <BulkBtn icon={MailOpen} label={t("em.43")} onClick={() => bulkRead(true)} />
+                      <BulkBtn icon={Mail} label={t("em.44")} onClick={() => bulkRead(false)} />
+                      <BulkBtn icon={Inbox} label={t("em.45")} onClick={() => bulkMove("inbox")} />
+                      <button
+                        onClick={clearChecked}
+                        className="ml-1 rounded p-1 text-muted-foreground hover:bg-surface-2"
+                        title={t("em.46")}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => dbQuery.refetch()}
+                      className="ml-1 rounded p-1 text-muted-foreground hover:bg-surface-2"
+                      title={t("em.47")}
+                    >
+                      <RefreshCw
+                        className={`h-3.5 w-3.5 ${dbQuery.isFetching ? "animate-spin" : ""}`}
+                      />
+                    </button>
+                  )}
+                  <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
+                    {effectiveTotal === 0
+                      ? "0"
+                      : `${(currentPage - 1) * PAGE_SIZE + 1}-${Math.min(currentPage * PAGE_SIZE, effectiveTotal)} / ${effectiveTotal}`}
+                  </span>
+                  <div className="flex items-center gap-0.5">
+                    <button
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage <= 1}
+                      className="rounded p-1 text-muted-foreground hover:bg-surface-2 disabled:opacity-40"
+                    >
+                      <ChevronLeft className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={currentPage >= totalPages}
+                      className="rounded p-1 text-muted-foreground hover:bg-surface-2 disabled:opacity-40"
+                    >
+                      <ChevronRight className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto">
+                  {dbQuery.isLoading ? (
+                    <div className="flex h-full flex-col items-center justify-center gap-2 px-6 py-16 text-center text-sm text-muted-foreground">
+                      <RefreshCw className="h-6 w-6 animate-spin opacity-60" />
+                      <span className="text-xs">{t("em.48")}</span>
+                    </div>
+                  ) : dbQuery.error ? (
+                    <div className="flex h-full flex-col items-center justify-center gap-2 px-6 py-16 text-center text-sm text-destructive">
+                      <AlertCircle className="h-6 w-6" />
+                      <span className="font-medium">{t("em.49")}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {(dbQuery.error as Error).message}
+                      </span>
+                    </div>
+                  ) : effectiveTotal === 0 ? (
+                    <div className="flex h-full flex-col items-center justify-center gap-2 px-6 py-16 text-center text-sm text-muted-foreground">
+                      <Inbox className="h-8 w-8 opacity-50" />
+                      <span className="font-medium">
+                        {debouncedSearch ? t("em.50") : t("em.51")}
+                      </span>
+                      <span className="text-xs">{debouncedSearch ? t("em.52") : t("em.53")}</span>
+                    </div>
+                  ) : null}
+                  {Object.entries(groups).map(([group, items]) => (
+                    <div key={group}>
+                      <div className="sticky top-0 z-10 bg-background/95 px-4 py-1.5 text-[11px] font-semibold text-muted-foreground backdrop-blur">
+                        {GROUP_KEYS[group] ? t(GROUP_KEYS[group] as Key) : group}
                       </div>
-                      <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                        {selectedEmail.attachments.map((att, i) => (
-                          <AttachmentCard
-                            key={i}
-                            icon={
-                              att.type === "excel"
-                                ? FileSpreadsheet
-                                : att.type === "image"
-                                  ? Image
-                                  : FileText
-                            }
-                            color={
-                              att.type === "pdf"
-                                ? "bg-rose-500/15 text-rose-300"
-                                : att.type === "excel"
-                                  ? "bg-emerald-500/15 text-emerald-300"
-                                  : att.type === "image"
-                                    ? "bg-sky-500/15 text-sky-300"
-                                    : "bg-violet-500/15 text-violet-300"
-                            }
-                            name={att.name}
-                            size={att.size}
-                          />
-                        ))}
+                      <ul>
+                        {items.map((e) => {
+                          const isActive = e.id === selected;
+                          const isChecked = checkedIds.has(e.id);
+                          return (
+                            <li key={e.id}>
+                              <div
+                                className={`group flex w-full gap-3 border-l-2 px-4 py-3 text-left transition-colors ${
+                                  isActive
+                                    ? "border-primary bg-primary/10"
+                                    : "border-transparent hover:bg-surface-2/60"
+                                }`}
+                              >
+                                <div
+                                  className="relative flex h-9 w-9 shrink-0 items-center justify-center"
+                                  onClick={(ev) => ev.stopPropagation()}
+                                >
+                                  <img
+                                    src={avatar(e.from)}
+                                    alt=""
+                                    className={`h-9 w-9 rounded-full object-cover ${isChecked ? "hidden" : "group-hover:hidden"}`}
+                                    onClick={() => openEmail(e.id)}
+                                  />
+                                  <div
+                                    className={`${isChecked ? "flex" : "hidden group-hover:flex"} h-9 w-9 items-center justify-center`}
+                                  >
+                                    <Checkbox
+                                      checked={isChecked}
+                                      onCheckedChange={() => toggleOne(e.id)}
+                                    />
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={() => openEmail(e.id)}
+                                  className="min-w-0 flex-1 text-left"
+                                >
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span
+                                      className={`truncate text-sm ${e.unread ? "font-semibold" : "font-medium text-muted-foreground"}`}
+                                    >
+                                      {e.from}
+                                    </span>
+                                    <span className="shrink-0 text-[11px] text-muted-foreground">
+                                      {e.time}
+                                    </span>
+                                  </div>
+                                  <div
+                                    className={`truncate text-sm ${e.unread ? "text-foreground" : "text-muted-foreground"}`}
+                                  >
+                                    {e.subject}
+                                  </div>
+                                  <div className="mt-0.5 flex items-center gap-1.5">
+                                    <span className="line-clamp-1 flex-1 text-xs text-muted-foreground">
+                                      {e.preview}
+                                    </span>
+                                    {e.hasAttachment && (
+                                      <Paperclip className="h-3 w-3 text-muted-foreground" />
+                                    )}
+                                    {e.starred && (
+                                      <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                                    )}
+                                  </div>
+                                </button>
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  ))}
+
+                  {/* Pagination footer */}
+                  {effectiveTotal > 0 && (
+                    <div className="flex items-center justify-between border-t border-border px-4 py-2.5 text-xs text-muted-foreground">
+                      <span>
+                        Trang {currentPage} / {totalPages}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: totalPages }).map((_, i) => {
+                          const p = i + 1;
+                          const isCur = p === currentPage;
+                          return (
+                            <button
+                              key={p}
+                              onClick={() => setPage(p)}
+                              className={`h-6 min-w-6 rounded px-1.5 text-[11px] tabular-nums ${
+                                isCur
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-surface-2 hover:bg-surface"
+                              }`}
+                            >
+                              {p}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
+                </div>
+              </section>
 
-                  <div className="mt-6 flex flex-wrap gap-2">
-                    <ActionBtn icon={Reply} onClick={() => replySelected(false)}>
-                      {t("em.56")}
-                    </ActionBtn>
-                    <ActionBtn icon={ReplyAll} onClick={() => replySelected(true)}>
-                      {t("em.57")}
-                    </ActionBtn>
-                    <ActionBtn icon={Forward} onClick={forwardSelected}>
-                      {t("em.12")}
-                    </ActionBtn>
+              {/* Reading pane */}
+              <section
+                className={`min-w-0 flex-1 flex-col overflow-hidden bg-background ${detailOpen ? "flex" : "hidden"} lg:flex`}
+              >
+                {!selectedEmail ? (
+                  <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 text-center">
+                    <Mail className="h-10 w-10 text-muted-foreground/50" />
+                    <div className="text-sm font-medium">{t("em.54")}</div>
+                    <p className="text-xs text-muted-foreground">{t("em.55")}</p>
                   </div>
-
-                  {/* AI Assistant inline */}
-                  <div className="mt-6 rounded-2xl border border-primary/30 bg-primary/5 p-5">
-                    <div className="flex items-center gap-2 text-sm font-semibold">
-                      <Sparkles className="h-4 w-4 text-primary" /> AI Email Assistant
+                ) : (
+                  <>
+                    <div className="flex shrink-0 flex-wrap items-center gap-1 border-b border-border px-4 py-2">
                       <button
-                        onClick={() => setAiOpen(true)}
-                        className="ml-auto inline-flex items-center gap-1 rounded-lg border border-primary/40 bg-primary/15 px-2 py-1 text-[11px] font-medium text-primary hover:bg-primary/25"
+                        onClick={() => setDetailOpen(false)}
+                        className="rounded-lg p-2 text-muted-foreground hover:bg-surface-2 lg:hidden"
                       >
-                        <Sparkles className="h-3 w-3" /> {t("em.65")}
+                        <ArrowLeft className="h-4 w-4" />
                       </button>
-                    </div>
-                    <div className="mt-3 text-sm font-medium">{t("em.66")}</div>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {selectedEmail.body
-                        ? selectedEmail.body.substring(0, 180).replace(/\n/g, " ") +
-                          (selectedEmail.body.length > 180 ? "..." : "")
-                        : t("em.67")}
-                    </p>
-                    <div className="mt-4 text-sm font-medium">{t("em.68")}</div>
-                    <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                      <SuggestBtn
-                        icon={FileText}
-                        title={t("em.69")}
-                        desc={selectedEmail.subject.substring(0, 30)}
+                      <ToolBtn
+                        icon={Reply}
+                        label={t("em.56")}
+                        onClick={() => replySelected(false)}
                       />
-                      <SuggestBtn icon={Bot} title={t("em.70")} desc={t("em.71")} />
-                      <SuggestBtn
-                        icon={Tag}
-                        title={t("em.72")}
-                        desc={selectedEmail.labels?.[0] || t("em.73")}
+                      <ToolBtn
+                        icon={ReplyAll}
+                        label={t("em.57")}
+                        onClick={() => replySelected(true)}
                       />
-                      <SuggestBtn icon={Reply} title={t("em.74")} desc={t("em.75")} />
+                      <ToolBtn icon={Forward} label={t("em.12")} onClick={forwardSelected} />
+                      <ToolBtn
+                        icon={Archive}
+                        label={t("em.41")}
+                        onClick={() => messageAction("archive")}
+                      />
+                      <ToolBtn
+                        icon={Trash2}
+                        label={t("em.42")}
+                        onClick={() => messageAction("trash")}
+                      />
+                      <ToolBtn icon={Sparkles} label={t("em.58")} onClick={() => setAiOpen(true)} />
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            aria-label={t("em.59")}
+                            className="ml-auto rounded-lg p-2 text-muted-foreground hover:bg-surface-2"
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => {
+                              const ids = realIds(selectedEmail ? [selectedEmail.id] : []);
+                              if (!ids.length) return toast.info(t("em.23"));
+                              bulkReadMut.mutate({ ids, is_read: false });
+                            }}
+                          >
+                            {t("em.44")}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => messageAction("archive")}>
+                            {t("em.41")}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => messageAction("trash")}>
+                            {t("em.60")}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setLabelsOpen(true)}>
+                            {t("em.61")}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
+
+                    <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <h1 className="text-xl font-semibold tracking-tight">
+                          {selectedEmail.subject}
+                          {selectedEmail.labels && selectedEmail.labels.length > 0 && (
+                            <span className="ml-2 align-middle rounded bg-primary/15 px-2 py-0.5 text-[11px] font-medium text-primary">
+                              {selectedEmail.labels[0]}
+                            </span>
+                          )}
+                        </h1>
+                      </div>
+
+                      <div className="mt-4 flex items-start gap-3">
+                        <img
+                          src={avatar(selectedEmail.from)}
+                          alt=""
+                          className="h-10 w-10 rounded-full object-cover"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2 text-sm">
+                            <span className="font-medium">{selectedEmail.from}</span>
+                            <span className="text-muted-foreground">
+                              &lt;
+                              {selectedEmail.fromEmail ||
+                                `${selectedEmail.from.toLowerCase().replace(/\s+/g, ".")}@company.vn`}
+                              &gt;
+                            </span>
+                            <span className="ml-auto text-xs text-muted-foreground">
+                              {selectedEmail.time}
+                            </span>
+                            <button
+                              onClick={() => notifyComingSoon()}
+                              title={t("em.62")}
+                              className="rounded p-1 text-muted-foreground hover:bg-surface-2"
+                            >
+                              <Star
+                                className={`h-4 w-4 ${selectedEmail.starred ? "fill-amber-400 text-amber-400" : ""}`}
+                              />
+                            </button>
+                            <button
+                              onClick={() => replySelected(false)}
+                              title={t("em.56")}
+                              className="rounded p-1 text-muted-foreground hover:bg-surface-2"
+                            >
+                              <Reply className="h-4 w-4" />
+                            </button>
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            đến {selectedEmail.to || t("em.63")}
+                            {selectedEmail.cc && <span> · Cc: {selectedEmail.cc}</span>}
+                            <ChevronDown className="inline h-3 w-3" />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-5 space-y-3 text-sm leading-relaxed">
+                        {selectedEmail.body ? (
+                          selectedEmail.body.split("\n\n").map((para, i) => <p key={i}>{para}</p>)
+                        ) : (
+                          <p className="text-muted-foreground">{t("em.64")}</p>
+                        )}
+                      </div>
+
+                      {selectedEmail.attachments && selectedEmail.attachments.length > 0 && (
+                        <div className="mt-6">
+                          <div className="text-sm font-medium">
+                            {selectedEmail.attachments.length} tệp đính kèm
+                          </div>
+                          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                            {selectedEmail.attachments.map((att, i) => (
+                              <AttachmentCard
+                                key={i}
+                                icon={
+                                  att.type === "excel"
+                                    ? FileSpreadsheet
+                                    : att.type === "image"
+                                      ? Image
+                                      : FileText
+                                }
+                                color={
+                                  att.type === "pdf"
+                                    ? "bg-rose-500/15 text-rose-300"
+                                    : att.type === "excel"
+                                      ? "bg-emerald-500/15 text-emerald-300"
+                                      : att.type === "image"
+                                        ? "bg-sky-500/15 text-sky-300"
+                                        : "bg-violet-500/15 text-violet-300"
+                                }
+                                name={att.name}
+                                size={att.size}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="mt-6 flex flex-wrap gap-2">
+                        <ActionBtn icon={Reply} onClick={() => replySelected(false)}>
+                          {t("em.56")}
+                        </ActionBtn>
+                        <ActionBtn icon={ReplyAll} onClick={() => replySelected(true)}>
+                          {t("em.57")}
+                        </ActionBtn>
+                        <ActionBtn icon={Forward} onClick={forwardSelected}>
+                          {t("em.12")}
+                        </ActionBtn>
+                      </div>
+
+                      {/* AI Assistant inline */}
+                      <div className="mt-6 rounded-2xl border border-primary/30 bg-primary/5 p-5">
+                        <div className="flex items-center gap-2 text-sm font-semibold">
+                          <Sparkles className="h-4 w-4 text-primary" /> AI Email Assistant
+                          <button
+                            onClick={() => setAiOpen(true)}
+                            className="ml-auto inline-flex items-center gap-1 rounded-lg border border-primary/40 bg-primary/15 px-2 py-1 text-[11px] font-medium text-primary hover:bg-primary/25"
+                          >
+                            <Sparkles className="h-3 w-3" /> {t("em.65")}
+                          </button>
+                        </div>
+                        <div className="mt-3 text-sm font-medium">{t("em.66")}</div>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          {selectedEmail.body
+                            ? selectedEmail.body.substring(0, 180).replace(/\n/g, " ") +
+                              (selectedEmail.body.length > 180 ? "..." : "")
+                            : t("em.67")}
+                        </p>
+                        <div className="mt-4 text-sm font-medium">{t("em.68")}</div>
+                        <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                          <SuggestBtn
+                            icon={FileText}
+                            title={t("em.69")}
+                            desc={selectedEmail.subject.substring(0, 30)}
+                          />
+                          <SuggestBtn icon={Bot} title={t("em.70")} desc={t("em.71")} />
+                          <SuggestBtn
+                            icon={Tag}
+                            title={t("em.72")}
+                            desc={selectedEmail.labels?.[0] || t("em.73")}
+                          />
+                          <SuggestBtn icon={Reply} title={t("em.74")} desc={t("em.75")} />
+                        </div>
+                      </div>
+
+                      <div className="mt-6">
+                        <div className="text-sm font-medium">{t("em.76")}</div>
+                        <div className="mt-3 flex items-center justify-center">
+                          <button
+                            onClick={() => notifyComingSoon()}
+                            className="text-sm text-primary hover:underline"
+                          >
+                            {t("em.77")}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </section>
+
+              {/* Right rail */}
+              <aside className="hidden w-[320px] shrink-0 flex-col gap-4 border-l border-border bg-surface/60 px-4 py-5 xl:flex">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/20 text-primary">
+                    <Sparkles className="h-4 w-4" />
+                  </span>
+                  <div className="text-sm font-semibold">AI Email Assistant</div>
+                </div>
+
+                <div className="rounded-2xl border border-border bg-surface p-4">
+                  <div className="text-sm font-semibold">{t("em.78")}</div>
+                  <ul className="mt-3 space-y-2 text-sm">
+                    {quickSummary.map((q) => (
+                      <li key={q.label} className="flex items-center justify-between">
+                        <span className="text-muted-foreground">{q.label}</span>
+                        <span className="font-semibold tabular-nums">{q.value}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="rounded-2xl border border-border bg-surface p-4">
+                  <div className="text-sm font-semibold">{t("em.79")}</div>
+                  <ul className="mt-3 space-y-3">
+                    {priorityEmails.length === 0 ? (
+                      <li className="text-xs text-muted-foreground">{t("em.80")}</li>
+                    ) : null}
+                    {priorityEmails.map((p) => (
+                      <li key={p.id} className="flex gap-2">
+                        <img
+                          src={avatar(p.from)}
+                          alt=""
+                          className="h-8 w-8 rounded-full object-cover"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="line-clamp-2 text-sm font-medium">{p.subject}</div>
+                            <span
+                              className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium ${p.unread && p.starred ? "bg-rose-500/15 text-rose-300" : "bg-amber-500/15 text-amber-300"}`}
+                            >
+                              {p.unread && p.starred ? "Cao" : t("em.81")}
+                            </span>
+                          </div>
+                          <div className="mt-0.5 flex items-center justify-between text-[11px] text-muted-foreground">
+                            <span>{p.from}</span>
+                            <span>{p.time}</span>
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                  <button
+                    onClick={() => notifyComingSoon()}
+                    className="mt-3 w-full text-center text-xs text-primary hover:underline"
+                  >
+                    {t("em.82")}
+                  </button>
+                </div>
+
+                <div className="rounded-2xl border border-border bg-surface p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm font-semibold">{t("em.83")}</div>
+                    <button
+                      onClick={() => notifyComingSoon()}
+                      className="inline-flex items-center gap-1 rounded border border-border bg-surface-2 px-2 py-0.5 text-[11px] text-muted-foreground hover:bg-surface"
+                    >
+                      Tuần này <ChevronDown className="h-3 w-3" />
+                    </button>
                   </div>
-
-                  <div className="mt-6">
-                    <div className="text-sm font-medium">{t("em.76")}</div>
-                    <div className="mt-3 flex items-center justify-center">
-                      <button
-                        onClick={() => notifyComingSoon()}
-                        className="text-sm text-primary hover:underline"
-                      >
-                        {t("em.77")}
-                      </button>
-                    </div>
+                  <div className="mt-3 flex items-center gap-4">
+                    <DonutChart stats={statSlices} centerValue={countsQuery.data?.total ?? 0} />
+                    <ul className="flex-1 space-y-1.5 text-xs">
+                      {statSlices.map((s) => (
+                        <li key={s.label} className="flex items-center justify-between">
+                          <span className="flex items-center gap-1.5 text-muted-foreground">
+                            <span
+                              className="h-2 w-2 rounded-full"
+                              style={{ background: s.color }}
+                            />{" "}
+                            {s.label}
+                          </span>
+                          <span className="tabular-nums">
+                            {s.value} <span className="text-muted-foreground">({s.pct}%)</span>
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 </div>
-              </>
-            )}
-          </section>
 
-          {/* Right rail */}
-          <aside className="hidden w-[320px] shrink-0 flex-col gap-4 border-l border-border bg-surface/60 px-4 py-5 xl:flex">
-            <div className="flex items-center gap-2">
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/20 text-primary">
-                <Sparkles className="h-4 w-4" />
-              </span>
-              <div className="text-sm font-semibold">AI Email Assistant</div>
-            </div>
-
-            <div className="rounded-2xl border border-border bg-surface p-4">
-              <div className="text-sm font-semibold">{t("em.78")}</div>
-              <ul className="mt-3 space-y-2 text-sm">
-                {quickSummary.map((q) => (
-                  <li key={q.label} className="flex items-center justify-between">
-                    <span className="text-muted-foreground">{q.label}</span>
-                    <span className="font-semibold tabular-nums">{q.value}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="rounded-2xl border border-border bg-surface p-4">
-              <div className="text-sm font-semibold">{t("em.79")}</div>
-              <ul className="mt-3 space-y-3">
-                {priorityEmails.length === 0 ? (
-                  <li className="text-xs text-muted-foreground">{t("em.80")}</li>
-                ) : null}
-                {priorityEmails.map((p) => (
-                  <li key={p.id} className="flex gap-2">
-                    <img
-                      src={avatar(p.from)}
-                      alt=""
-                      className="h-8 w-8 rounded-full object-cover"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="line-clamp-2 text-sm font-medium">{p.subject}</div>
+                <div className="rounded-2xl border border-border bg-surface p-4">
+                  <div className="text-sm font-semibold">{t("em.84")}</div>
+                  <ul className="mt-3 space-y-3 text-sm">
+                    {ACCOUNTS.length === 0 && (
+                      <li className="text-xs text-muted-foreground">
+                        Chưa kết nối tài khoản email nào.
+                      </li>
+                    )}
+                    {ACCOUNTS.map((a, i) => (
+                      <li key={i} className="flex items-center gap-2">
                         <span
-                          className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium ${p.unread && p.starred ? "bg-rose-500/15 text-rose-300" : "bg-amber-500/15 text-amber-300"}`}
+                          className={`flex h-7 w-7 items-center justify-center rounded text-[11px] font-semibold text-white ${a.color}`}
                         >
-                          {p.unread && p.starred ? "Cao" : t("em.81")}
+                          {a.label}
                         </span>
-                      </div>
-                      <div className="mt-0.5 flex items-center justify-between text-[11px] text-muted-foreground">
-                        <span>{p.from}</span>
-                        <span>{p.time}</span>
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-              <button
-                onClick={() => notifyComingSoon()}
-                className="mt-3 w-full text-center text-xs text-primary hover:underline"
-              >
-                {t("em.82")}
-              </button>
-            </div>
-
-            <div className="rounded-2xl border border-border bg-surface p-4">
-              <div className="flex items-center justify-between">
-                <div className="text-sm font-semibold">{t("em.83")}</div>
-                <button
-                  onClick={() => notifyComingSoon()}
-                  className="inline-flex items-center gap-1 rounded border border-border bg-surface-2 px-2 py-0.5 text-[11px] text-muted-foreground hover:bg-surface"
-                >
-                  Tuần này <ChevronDown className="h-3 w-3" />
-                </button>
-              </div>
-              <div className="mt-3 flex items-center gap-4">
-                <DonutChart stats={statSlices} centerValue={countsQuery.data?.total ?? 0} />
-                <ul className="flex-1 space-y-1.5 text-xs">
-                  {statSlices.map((s) => (
-                    <li key={s.label} className="flex items-center justify-between">
-                      <span className="flex items-center gap-1.5 text-muted-foreground">
-                        <span className="h-2 w-2 rounded-full" style={{ background: s.color }} />{" "}
-                        {s.label}
-                      </span>
-                      <span className="tabular-nums">
-                        {s.value} <span className="text-muted-foreground">({s.pct}%)</span>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-border bg-surface p-4">
-              <div className="text-sm font-semibold">{t("em.84")}</div>
-              <ul className="mt-3 space-y-3 text-sm">
-                {ACCOUNTS.length === 0 && (
-                  <li className="text-xs text-muted-foreground">
-                    Chưa kết nối tài khoản email nào.
-                  </li>
-                )}
-                {ACCOUNTS.map((a, i) => (
-                  <li key={i} className="flex items-center gap-2">
-                    <span
-                      className={`flex h-7 w-7 items-center justify-center rounded text-[11px] font-semibold text-white ${a.color}`}
-                    >
-                      {a.label}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium">
-                        {a.provider === "M365" ? "Microsoft 365" : "Gmail"}
-                      </div>
-                      <div className="truncate text-[11px] text-muted-foreground">{a.email}</div>
-                    </div>
-                    <span className="text-[11px] text-success">{t("em.85")}</span>
-                  </li>
-                ))}
-              </ul>
-              <button
-                onClick={() => notifyComingSoon()}
-                className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border bg-surface-2/40 px-3 py-2 text-xs text-primary hover:bg-surface-2"
-              >
-                <Plus className="h-3.5 w-3.5" /> {t("em.86")}
-              </button>
-            </div>
-          </aside>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-medium">
+                            {a.provider === "M365" ? "Microsoft 365" : "Gmail"}
+                          </div>
+                          <div className="truncate text-[11px] text-muted-foreground">
+                            {a.email}
+                          </div>
+                        </div>
+                        <span className="text-[11px] text-success">{t("em.85")}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <button
+                    onClick={() => notifyComingSoon()}
+                    className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border bg-surface-2/40 px-3 py-2 text-xs text-primary hover:bg-surface-2"
+                  >
+                    <Plus className="h-3.5 w-3.5" /> {t("em.86")}
+                  </button>
+                </div>
+              </aside>
+            </>
+          )}
         </div>
       </main>
 
@@ -1377,6 +1478,7 @@ function EmailHubPage() {
         emailSubject={selectedEmail?.subject ?? ""}
       />
       <LabelsRulesDialog open={labelsOpen} onOpenChange={setLabelsOpen} />
+      <ExternalMailboxDialog open={externalOpen} onOpenChange={setExternalOpen} />
     </div>
   );
 }
