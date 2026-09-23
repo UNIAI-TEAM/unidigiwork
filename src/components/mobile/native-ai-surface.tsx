@@ -292,7 +292,7 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
             </div>
           )}
           <PromptInput
-            className="[&>[data-slot=input-group]]:h-16 [&>[data-slot=input-group]]:flex-row [&>[data-slot=input-group]]:rounded-full [&>[data-slot=input-group]]:border-border-strong [&>[data-slot=input-group]]:bg-surface [&>[data-slot=input-group]]:px-2 [&>[data-slot=input-group]]:shadow-card"
+            className="[&>[data-slot=input-group]]:!h-16 [&>[data-slot=input-group]]:flex-row [&>[data-slot=input-group]]:rounded-full [&>[data-slot=input-group]]:border-border-strong [&>[data-slot=input-group]]:bg-surface [&>[data-slot=input-group]]:px-2 [&>[data-slot=input-group]]:shadow-card [&>[data-slot=input-group]]:has-[[data-slot=input-group-control]:focus-visible]:ring-border-strong"
             onSubmit={({ text }) => submit(text)}
           >
             <Button
@@ -312,7 +312,8 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
               placeholder={t("m.ai.composer")}
               onChange={(event) => setInput(event.currentTarget.value)}
               rows={1}
-              className="h-12 min-h-0 min-w-0 flex-1 self-center px-2 py-3 text-base leading-6"
+              wrap="off"
+              className="h-12 min-h-0 min-w-0 flex-1 self-center overflow-x-auto overflow-y-hidden whitespace-nowrap px-2 py-3 text-base leading-6"
             />
             <Button
               type="button"
