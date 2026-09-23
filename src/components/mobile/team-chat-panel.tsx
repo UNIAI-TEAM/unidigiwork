@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowUp, ChevronLeft, Hash, Loader2, Lock, MessageSquare, User } from "lucide-react";
+import { ArrowUp, ChevronLeft, Hash, Loader2, Lock, MessageSquare, Sparkles, User } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +13,7 @@ import {
   markChatChannelRead,
   type ChatChannelDTO,
 } from "@/lib/api/chat.functions";
+import { askChatAi } from "@/lib/api/chat-ai.functions";
 import { useI18n } from "@/lib/i18n";
 
 export function TeamChatPanel({
