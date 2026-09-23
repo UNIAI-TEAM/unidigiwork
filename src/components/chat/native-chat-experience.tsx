@@ -3,7 +3,18 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Hash, ListTodo, Lock, MessageSquare, Search, User, Users, Video } from "lucide-react";
+import {
+  Hash,
+  ListTodo,
+  Lock,
+  MessageSquare,
+  MessageSquarePlus,
+  Search,
+  Sparkles,
+  User,
+  Users,
+  Video,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -15,6 +26,8 @@ import { ChatRoomManagerButton } from "@/components/chat/chat-room-manager";
 import { ensureTenantGeneralChannel, listChatChannels } from "@/lib/api/chat.functions";
 import { useActiveTenant } from "@/features/tenants/hooks";
 import { localeTag, useI18n } from "@/lib/i18n";
+import { SaveToUniworkDialog } from "@/components/conversation/save-to-uniwork-dialog";
+import { ConversationIntelligencePanel } from "@/components/conversation/conversation-intelligence-panel";
 
 export function NativeChatExperience({
   initialChannelId,
@@ -29,6 +42,8 @@ export function NativeChatExperience({
   const ensureGeneralFn = useServerFn(ensureTenantGeneralChannel);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<string | null>(initialChannelId ?? null);
+  const [saveOpen, setSaveOpen] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(false);
 
   // Tổ chức đang chọn: danh sách phòng phải tách theo tenant để đổi tổ chức không thấy phòng cũ.
   const activeTenant = useActiveTenant();
@@ -171,17 +186,47 @@ export function NativeChatExperience({
       >
         {selected ? (
           <>
-            <div className="mb-2 flex items-center gap-2 md:hidden">
+            <div className="mb-2 flex items-center gap-2">
               <Button
                 variant="ghost"
-                className="h-10 px-2 text-sm"
+                className="h-10 px-2 text-sm md:hidden"
                 onClick={() => setSelected(null)}
               >
                 {t("m.chat.backList")}
               </Button>
-              <span className="truncate text-sm font-medium">{active?.name}</span>
+              <span className="truncate text-sm font-medium md:hidden">{active?.name}</span>
+              <Button
+                variant="ghost"
+                className="ml-auto h-11 px-2"
+                title={t("cw.save")}
+                onClick={() => setSaveOpen(true)}
+              >
+                <MessageSquarePlus className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={panelOpen ? "secondary" : "ghost"}
+                className="h-11 px-2"
+                title={t("cw.panel")}
+                onClick={() => setPanelOpen((v) => !v)}
+              >
+                <Sparkles className="h-4 w-4" />
+              </Button>
             </div>
-            <ChatRoomView channelId={selected} />
+            <div className="flex min-h-0 flex-1 gap-3">
+              <div className="min-w-0 flex-1">
+                <ChatRoomView channelId={selected} />
+              </div>
+              {panelOpen && (
+                <div className="hidden w-[340px] shrink-0 overflow-y-auto rounded-2xl border border-border p-3 lg:block">
+                  <ConversationIntelligencePanel sourceType="CHAT_CHANNEL" sourceId={selected} />
+                </div>
+              )}
+            </div>
+            {panelOpen && (
+              <div className="mt-3 overflow-y-auto rounded-2xl border border-border p-3 lg:hidden">
+                <ConversationIntelligencePanel sourceType="CHAT_CHANNEL" sourceId={selected} />
+              </div>
+            )}
           </>
         ) : (
           <div className="grid flex-1 place-items-center text-center text-sm text-muted-foreground">
@@ -192,6 +237,11 @@ export function NativeChatExperience({
           </div>
         )}
       </section>
+      <SaveToUniworkDialog
+        open={saveOpen}
+        onOpenChange={setSaveOpen}
+        onSaved={() => navigate({ to: "/conversations" })}
+      />
     </div>
   );
 }
