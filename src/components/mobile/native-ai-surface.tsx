@@ -524,7 +524,7 @@ function AddContextDrawer({
       <DrawerContent
         className={
           mode === "menu"
-            ? "mx-3 mb-[max(1rem,env(safe-area-inset-bottom))] h-[50dvh] rounded-3xl border border-border-strong bg-surface p-2 shadow-card after:hidden"
+            ? "mx-3 mb-[max(1rem,env(safe-area-inset-bottom))] max-h-[70dvh] rounded-3xl border border-border-strong bg-surface p-2 pb-3 shadow-card after:hidden"
             : mode === "chat"
               ? "flex h-[86dvh] flex-col rounded-t-3xl"
               : "max-h-[78dvh] rounded-t-3xl"
@@ -543,7 +543,7 @@ function AddContextDrawer({
         <div
           className={
             mode === "menu"
-              ? "flex flex-1 flex-col justify-center overflow-y-auto px-2 py-2"
+              ? "flex flex-col overflow-y-auto px-2 py-1"
               : mode === "chat"
                 ? "flex min-h-0 flex-1 flex-col px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
                 : "overflow-y-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
