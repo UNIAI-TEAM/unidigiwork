@@ -39,6 +39,18 @@ async function loadWorkSnapshot(
   } | null;
   const items = payload?.items ?? [];
   if (!items.length) return "(chưa có công việc nào trong quyền truy cập)";
+  const { data: members } = await ctx.supabase.rpc("list_tenant_member_profiles", {
+    _tenant_id: tenantId,
+  });
+  const names = new Map<string, string>();
+  for (const m of (members as Array<Record<string, unknown>> | null) ?? []) {
+    const id = typeof m["id"] === "string" ? m["id"] : null;
+    const name =
+      (typeof m["display_name"] === "string" && m["display_name"]) ||
+      (typeof m["primary_email"] === "string" && m["primary_email"]) ||
+      null;
+    if (id && name) names.set(id, name);
+  }
   const stats = payload?.stats ? `TỔNG QUAN: ${JSON.stringify(payload.stats)}` : "";
   const lines = items.slice(0, 25).map((item) => {
     const due = typeof item["due_at"] === "string" ? item["due_at"].slice(0, 10) : "không hạn";
@@ -47,7 +59,11 @@ async function loadWorkSnapshot(
       `trạng thái ${String(item["status"] ?? "?")}`,
       `tiến độ ${String(item["progress"] ?? 0)}%`,
       `hạn ${due}`,
-      `phụ trách ${String(item["owner_name"] ?? item["owner_id"] ?? "chưa gán")}`,
+      `phụ trách ${
+        (typeof item["owner_name"] === "string" && item["owner_name"]) ||
+        (typeof item["owner_id"] === "string" && names.get(item["owner_id"] as string)) ||
+        "chưa gán"
+      }`,
     ].join(" · ");
   });
   return [stats, ...lines].filter(Boolean).join("\n");
