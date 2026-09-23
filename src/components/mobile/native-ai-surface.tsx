@@ -524,7 +524,7 @@ function AddContextDrawer({
       <DrawerContent
         className={
           mode === "menu"
-            ? "mx-3 mb-[max(1rem,env(safe-area-inset-bottom))] max-h-[70dvh] rounded-3xl border border-border-strong bg-surface p-2 pb-3 shadow-card after:hidden"
+            ? "mx-auto mb-[max(1rem,env(safe-area-inset-bottom))] w-[calc(100%-2.75rem)] max-w-[340px] max-h-[70dvh] rounded-[1.75rem] border border-border-strong bg-surface p-2.5 pb-2.5 shadow-card after:hidden"
             : mode === "chat"
               ? "flex h-[86dvh] flex-col rounded-t-3xl"
               : "max-h-[78dvh] rounded-t-3xl"
@@ -550,19 +550,19 @@ function AddContextDrawer({
           }
         >
           {mode === "menu" ? (
-            <div className="grid gap-1">
+            <div className="grid gap-0.5">
               {options.map(({ id, label, icon: Icon, action }) => (
                 <Button
                   key={id}
                   variant="ghost"
-                  className="min-h-14 justify-start gap-4 rounded-2xl px-3 text-base font-normal"
+                  className="min-h-12 justify-start gap-3 rounded-full px-2.5 text-[15px] font-normal"
                   onClick={() => {
                     action();
                     if (id === "files" || id === "camera" || id === "apps") onOpenChange(false);
                   }}
                 >
-                  <span className="grid h-11 w-11 place-items-center rounded-full bg-surface-2 text-foreground">
-                    <Icon className="!h-5 !w-5" />
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-surface-2 text-foreground">
+                    <Icon className="!h-[18px] !w-[18px]" />
                   </span>
                   {label}
                 </Button>
