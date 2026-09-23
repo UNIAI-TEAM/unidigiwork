@@ -130,6 +130,26 @@ export function TaskRoomChatCard({ taskId }: { taskId: string }) {
         </Button>
       </div>
 
+      <div className="mt-3">
+        <Select
+          disabled={progress.isPending}
+          onValueChange={(value) =>
+            progress.mutate(value as "todo" | "in_progress" | "blocked" | "done" | "canceled")
+          }
+        >
+          <SelectTrigger className="min-h-11" aria-label={t("m.tasks.room.progress")}>
+            <SelectValue placeholder={t("m.tasks.room.progress")} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todo">{t("m.tasks.status.todo")}</SelectItem>
+            <SelectItem value="in_progress">{t("m.tasks.status.in_progress")}</SelectItem>
+            <SelectItem value="blocked">{t("m.tasks.status.blocked")}</SelectItem>
+            <SelectItem value="done">{t("m.tasks.status.done")}</SelectItem>
+            <SelectItem value="canceled">{t("m.tasks.status.canceled")}</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       <div className="mt-3 space-y-2">
         {room.isLoading ? (
           <p className="text-sm text-muted-foreground">{t("m.ai.chat.loading")}</p>
