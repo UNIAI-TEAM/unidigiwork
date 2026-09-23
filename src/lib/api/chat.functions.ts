@@ -597,19 +597,17 @@ export const listChatPeople = createServerFn({ method: "GET" })
     const ctx = context as unknown as Ctx;
     const scope = await resolveScope(ctx);
     if (!scope) return [];
-    const { data: members, error } = await ctx.supabase
-      .from("tenant_members")
-      .select("user_id")
-      .eq("tenant_id", scope.tenantId)
-      .eq("status", "active")
-      .limit(500);
+    const { data: profiles, error } = await ctx.supabase.rpc("list_tenant_member_profiles", {
+      _tenant_id: scope.tenantId,
+    });
     if (error) mapPgError(error);
-    const ids = ((members ?? []) as Array<{ user_id: string }>).map((m) => m.user_id);
-    if (ids.length === 0) return [];
-    const { data: users } = await ctx.supabase
-      .from("users")
-      .select("id, display_name, primary_email")
-      .in("id", ids);
+    const users = (profiles ?? []) as Array<{
+      id: string;
+      display_name: string | null;
+      primary_email: string | null;
+    }>;
+    if (users.length === 0) return [];
+
     let inChannel = new Set<string>();
     if (data.channelId) {
       const { data: cm } = await ctx.supabase
