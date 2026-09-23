@@ -85,7 +85,7 @@ export const askChatAi = createServerFn({ method: "POST" })
 
     const { data: ch, error: chErr } = await ctx.supabase
       .from("chat_channels")
-      .select("id, tenant_id, workspace_id, name, task_id, meeting_id")
+      .select("id, tenant_id, workspace_id, name, task_id, meeting_id, is_general")
       .eq("id", data.channelId)
       .maybeSingle();
     if (chErr) mapPgError(chErr, "PERMISSION_DENIED");
