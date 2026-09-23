@@ -68,6 +68,12 @@ import {
   type AdvancedFilters,
 } from "@/components/email-features";
 import { listEmailLabels, searchEmails, type EmailLabel } from "@/lib/api/email-hub.functions";
+import {
+  EmailRibbon,
+  ExternalMailboxDialog,
+  EmailHistoryPanel,
+  type HistoryItem,
+} from "@/components/email-ribbon";
 import { buildForwardBody, buildReplyBody, stripPrefix } from "@/lib/email-quote";
 import { notifyComingSoon } from "@/lib/coming-soon";
 import { useActiveWorkspace } from "@/lib/active-workspace";
@@ -216,6 +222,8 @@ function EmailHubPage() {
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(1);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [view, setView] = useState<"mail" | "calendar">("mail");
+  const [externalOpen, setExternalOpen] = useState(false);
   const PAGE_SIZE = 6;
 
   // Debounce search to avoid a query per keystroke.
