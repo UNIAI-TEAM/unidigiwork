@@ -123,8 +123,7 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => 
     queryFn: () => channelsFn(),
     staleTime: 60_000,
   });
-  const linkedTaskId =
-    channels.data?.channels.find((c) => c.id === channelId)?.taskId ?? null;
+  const linkedTaskId = channels.data?.channels.find((c) => c.id === channelId)?.taskId ?? null;
 
   const history = useQuery({
     queryKey: ["mobile-plus-chat-messages", channelId],
