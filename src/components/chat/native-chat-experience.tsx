@@ -60,14 +60,22 @@ export function NativeChatExperience({
   });
 
   // Tự tạo phòng chung của tổ chức ngay lần đầu vào chat (idempotent, tenant-scoped).
-  const ensuredRef = useRef(false);
+  // Đổi tổ chức → chạy lại cho tenant mới, và bỏ chọn phòng thuộc tổ chức cũ.
+  const ensuredRef = useRef<string | null>(null);
   useEffect(() => {
-    if (isLoading || isError || hasGeneral || ensuredRef.current) return;
-    ensuredRef.current = true;
+    if (!tenantId) return;
+    if (isLoading || isError || hasGeneral || ensuredRef.current === tenantId) return;
+    ensuredRef.current = tenantId;
     void ensureGeneralFn()
       .then(() => queryClient.invalidateQueries({ queryKey: ["native-chat-channels"] }))
       .catch(() => undefined);
-  }, [isLoading, isError, hasGeneral, ensureGeneralFn, queryClient]);
+  }, [tenantId, isLoading, isError, hasGeneral, ensureGeneralFn, queryClient]);
+
+  useEffect(() => {
+    if (!tenantId || isLoading || isError || !selected) return;
+    const stillVisible = (data?.channels ?? []).some((c) => c.id === selected);
+    if (!stillVisible) setSelected(null);
+  }, [tenantId, data, isLoading, isError, selected]);
 
   const select = (id: string) => {
     setSelected(id);
