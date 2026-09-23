@@ -81,12 +81,15 @@ export const upsertEmailLabel = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const tenantId = await tenantOf(context as unknown as EmailCtx);
-    const { data: id, error } = await (context.supabase.rpc as unknown as RpcFn)("upsert_email_label", {
-      _tenant_id: tenantId,
-      _id: data.id ?? null,
-      _name: data.name,
-      _color: data.color,
-    });
+    const { data: id, error } = await (context.supabase.rpc as unknown as RpcFn)(
+      "upsert_email_label",
+      {
+        _tenant_id: tenantId,
+        _id: data.id ?? null,
+        _name: data.name,
+        _color: data.color,
+      },
+    );
     if (error) throw new Error(error.message);
     return { id: id as string };
   });
@@ -159,18 +162,21 @@ export const upsertEmailRule = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const tenantId = await tenantOf(context as unknown as EmailCtx);
-    const { data: id, error } = await (context.supabase.rpc as unknown as RpcFn)("upsert_email_rule", {
-      _tenant_id: tenantId,
-      _id: data.id ?? null,
-      _name: data.name,
-      _is_enabled: data.is_enabled,
-      _cond_from: data.cond_from,
-      _cond_subject_contains: data.cond_subject_contains,
-      _cond_has_attachment: data.cond_has_attachment,
-      _act_label_id: data.act_label_id ?? null,
-      _act_folder: data.act_folder ?? null,
-      _act_mark_read: data.act_mark_read,
-    });
+    const { data: id, error } = await (context.supabase.rpc as unknown as RpcFn)(
+      "upsert_email_rule",
+      {
+        _tenant_id: tenantId,
+        _id: data.id ?? null,
+        _name: data.name,
+        _is_enabled: data.is_enabled,
+        _cond_from: data.cond_from,
+        _cond_subject_contains: data.cond_subject_contains,
+        _cond_has_attachment: data.cond_has_attachment,
+        _act_label_id: data.act_label_id ?? null,
+        _act_folder: data.act_folder ?? null,
+        _act_mark_read: data.act_mark_read,
+      },
+    );
     if (error) throw new Error(error.message);
     return { id: id as string };
   });
@@ -206,19 +212,22 @@ export const searchEmails = createServerFn({ method: "GET" })
       .parse(input ?? {}),
   )
   .handler(async ({ data, context }): Promise<{ items: EmailSearchItem[]; total: number }> => {
-    const { data: rows, error } = await (context.supabase.rpc as unknown as RpcFn)("search_email_messages", {
-      _folder: data.folder ?? null,
-      _starred_only: data.starred_only,
-      _keyword: data.keyword,
-      _from_query: data.from,
-      _to_query: data.to,
-      _date_from: data.date_from ? new Date(data.date_from).toISOString() : null,
-      _date_to: data.date_to ? new Date(`${data.date_to}T23:59:59`).toISOString() : null,
-      _has_attachment: data.has_attachment,
-      _label_ids: data.label_ids,
-      _limit: data.limit,
-      _offset: data.offset,
-    });
+    const { data: rows, error } = await (context.supabase.rpc as unknown as RpcFn)(
+      "search_email_messages",
+      {
+        _folder: data.folder ?? null,
+        _starred_only: data.starred_only,
+        _keyword: data.keyword,
+        _from_query: data.from,
+        _to_query: data.to,
+        _date_from: data.date_from ? new Date(data.date_from).toISOString() : null,
+        _date_to: data.date_to ? new Date(`${data.date_to}T23:59:59`).toISOString() : null,
+        _has_attachment: data.has_attachment,
+        _label_ids: data.label_ids,
+        _limit: data.limit,
+        _offset: data.offset,
+      },
+    );
     if (error) throw new Error(error.message);
     const list = (rows ?? []) as (EmailSearchItem & { total_count: number })[];
     return {
@@ -261,13 +270,16 @@ export const registerEmailAttachment = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { data: id, error } = await (context.supabase.rpc as unknown as RpcFn)("register_email_attachment", {
-      _message_id: data.message_id,
-      _object_key: data.object_key,
-      _file_name: data.file_name,
-      _mime_type: data.mime_type ?? null,
-      _size_bytes: data.size_bytes,
-    });
+    const { data: id, error } = await (context.supabase.rpc as unknown as RpcFn)(
+      "register_email_attachment",
+      {
+        _message_id: data.message_id,
+        _object_key: data.object_key,
+        _file_name: data.file_name,
+        _mime_type: data.mime_type ?? null,
+        _size_bytes: data.size_bytes,
+      },
+    );
     if (error) throw new Error(error.message);
     return { id: id as string };
   });
