@@ -828,17 +828,28 @@ export const ensureTaskChatChannel = createServerFn({ method: "POST" })
     return { channelId: channelId as string };
   });
 
+export type TaskChatMessage = {
+  id: string;
+  body: string;
+  authorId: string;
+  authorName: string;
+  createdAt: string;
+  isAi: boolean;
+};
+
 /** Tin nhắn gần nhất của phòng gắn công việc — dùng cho dòng thời gian công việc. */
 export const listTaskChatMessages = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({ taskId: z.string().uuid(), limit: z.number().int().min(1).max(50).optional() }).parse(i),
+    z
+      .object({ taskId: z.string().uuid(), limit: z.number().int().min(1).max(50).optional() })
+      .parse(i),
   )
   .handler(
     async ({
       data,
       context,
-    }): Promise<{ channelId: string | null; messages: ChatMessageDTO[] }> => {
+    }): Promise<{ channelId: string | null; messages: TaskChatMessage[] }> => {
       const ctx = context as unknown as Ctx;
       const { data: ch, error } = await ctx.supabase
         .from("chat_channels")
@@ -848,9 +859,36 @@ export const listTaskChatMessages = createServerFn({ method: "GET" })
         .maybeSingle();
       if (error) mapPgError(error);
       if (!ch?.id) return { channelId: null, messages: [] };
-      const res = await listChatMessages({
-        data: { channelId: ch.id as string, limit: data.limit ?? 20 },
-      });
-      return { channelId: ch.id as string, messages: res.messages };
+      const channelId = ch.id as string;
+      const { data: rows, error: msgErr } = await ctx.supabase
+        .from("chat_messages")
+        .select("id, body, author_id, created_at, is_ai")
+        .eq("channel_id", channelId)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .limit(data.limit ?? 20);
+      if (msgErr) mapPgError(msgErr);
+      const list = (rows ?? []) as Array<{
+        id: string;
+        body: string | null;
+        author_id: string;
+        created_at: string;
+        is_ai: boolean | null;
+      }>;
+      const names = await resolveDisplayNames(
+        ctx,
+        list.map((r) => r.author_id),
+      );
+      return {
+        channelId,
+        messages: list.reverse().map((r) => ({
+          id: r.id,
+          body: r.body ?? "",
+          authorId: r.author_id,
+          authorName: names.get(r.author_id) ?? "Thành viên",
+          createdAt: r.created_at,
+          isAi: !!r.is_ai,
+        })),
+      };
     },
   );
