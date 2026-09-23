@@ -120,7 +120,7 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => 
 
   const channels = useQuery({
     queryKey: ["mobile-plus-chat-channels"],
-    queryFn: () => channelsFn({ data: {} }),
+    queryFn: () => channelsFn(),
     staleTime: 60_000,
   });
   const linkedTaskId =
@@ -253,7 +253,7 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => 
     <div className="flex min-h-0 flex-1 flex-col">
       {linkedTaskId ? (
         <Link
-          to="/m/tasks_/$id"
+          to="/m/tasks/$id"
           params={{ id: linkedTaskId }}
           className="mb-2 inline-flex min-h-11 items-center gap-2 self-start rounded-full border px-3 text-sm"
         >
