@@ -136,3 +136,4 @@
 
 - [ ] Trang quản lý người dùng theo vai trò: đồng nghiệp đăng ký vào tổ chức, xem công việc mình theo dõi
 - [ ] Kết nối hộp thư ngoài Outlook/Gmail vào Email Hub (đang làm)
+- [ ] Thiết kế lại Email Hub kiểu Outlook: ribbon soạn thư, lịch/lịch sử, nút mở hộp thư ngoài
