@@ -574,7 +574,27 @@ function WorkGraphPage() {
                             <CalendarClock className="h-4 w-4" />
                             {i.dueAt ? t("wg.changeDeadline") : t("wg.setDeadline")}
                           </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            className="min-h-11 px-1.5 text-xs text-muted-foreground sm:min-h-9"
+                            aria-expanded={scheduleItems.has(i.id)}
+                            onClick={() =>
+                              setScheduleItems((current) => {
+                                const next = new Set(current);
+                                if (next.has(i.id)) next.delete(i.id);
+                                else next.add(i.id);
+                                return next;
+                              })
+                            }
+                          >
+                            <CalendarDays className="h-4 w-4" />
+                            {t(scheduleItems.has(i.id) ? "wg.schedule.hide" : "wg.schedule.show")}
+                          </Button>
                         </span>
+                      ) : null}
+                      {i.type === "TASK" && scheduleItems.has(i.id) ? (
+                        <TaskSchedulePanel taskId={i.id} />
                       ) : null}
                       {i.type === "TASK" && messageItems.has(i.id) ? (
                         <WorkGraphTaskMessageForm taskId={i.id} />
