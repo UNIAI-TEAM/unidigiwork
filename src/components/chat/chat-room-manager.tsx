@@ -108,15 +108,13 @@ export function ChatRoomManagerButton({
   });
 
   const addMember = useMutation({
-    mutationFn: (userId: string) =>
-      addFn({ data: { channelId: managing as string, userId } }),
+    mutationFn: (userId: string) => addFn({ data: { channelId: managing as string, userId } }),
     onSuccess: refresh,
     onError: () => toast.error(t("m.chat.manage.memberError")),
   });
 
   const removeMember = useMutation({
-    mutationFn: (userId: string) =>
-      removeFn({ data: { channelId: managing as string, userId } }),
+    mutationFn: (userId: string) => removeFn({ data: { channelId: managing as string, userId } }),
     onSuccess: refresh,
     onError: () => toast.error(t("m.chat.manage.memberError")),
   });
