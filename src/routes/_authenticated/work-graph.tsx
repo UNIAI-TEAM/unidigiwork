@@ -393,6 +393,13 @@ function WorkGraphPage() {
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted">
                       <Icon className="h-4 w-4 text-muted-foreground" />
                     </span>
+                    {i.type === "TASK" || i.type === "MEETING" ? (
+                      <OpenChatRoomButton
+                        kind={i.type === "TASK" ? "task" : "meeting"}
+                        entityId={i.id}
+                        className="order-last h-9 w-9"
+                      />
+                    ) : null}
                     <span className="min-w-0 flex-1">
                       <Link
                         to={i.href as never}
