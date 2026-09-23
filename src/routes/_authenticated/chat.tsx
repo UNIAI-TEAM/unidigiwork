@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ChatWorkspace } from "@/components/chat/chat-workspace";
+import { NativeChatExperience } from "@/components/chat/native-chat-experience";
 
 export const Route = createFileRoute("/_authenticated/chat")({
   head: () => ({
@@ -12,5 +12,5 @@ export const Route = createFileRoute("/_authenticated/chat")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: () => <ChatWorkspace />,
+  component: () => <NativeChatExperience />,
 });
