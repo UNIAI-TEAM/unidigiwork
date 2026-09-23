@@ -10,6 +10,7 @@ import {
   Loader2,
   Lock,
   MessageSquare,
+  HelpCircle,
   Sparkles,
   User,
 } from "lucide-react";
@@ -315,6 +316,19 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => 
                 <p className="text-xs font-medium text-muted-foreground">{message.authorName}</p>
               ) : null}
               <p className="whitespace-pre-wrap break-words text-sm leading-6">{message.body}</p>
+              {message.isAi && /CHƯA ĐỦ DỮ LIỆU/i.test(message.body) ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBody(`${t("m.ai.chat.needInfoTemplate")}\n\n${message.body}`);
+                    setAutoAi(false);
+                  }}
+                  className="mt-2 inline-flex min-h-11 items-center gap-1.5 rounded-full border border-primary/40 px-3 text-xs font-medium text-primary"
+                >
+                  <HelpCircle className="h-3.5 w-3.5" />
+                  {t("m.ai.chat.needInfo")}
+                </button>
+              ) : null}
               <p className="mt-1 text-[11px] text-muted-foreground">
                 {new Date(message.createdAt).toLocaleTimeString(lang === "vi" ? "vi-VN" : "en-US", {
                   hour: "2-digit",

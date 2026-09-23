@@ -659,6 +659,9 @@ const dict = {
     "m.ai.chat.aiThinking": "UNI AI đang trả lời…",
     "m.ai.chat.aiFailed": "Trợ lý AI chưa trả lời được. Thử lại sau.",
     "m.ai.chat.autoAi": "Tự động hỏi UNI AI",
+    "m.ai.chat.needInfo": "Yêu cầu thêm thông tin",
+    "m.ai.chat.needInfoTemplate":
+      "Nhờ mọi người bổ sung thông tin còn thiếu để UNI AI trả lời chính xác:",
     "m.chat.title": "Trò chuyện",
     "m.chat.searchPlaceholder": "Tìm phòng trò chuyện…",
     "m.chat.empty": "Không tìm thấy phòng nào.",
@@ -3156,6 +3159,9 @@ const dict = {
     "m.ai.chat.aiThinking": "UNI AI is replying…",
     "m.ai.chat.aiFailed": "The AI assistant could not reply. Try again later.",
     "m.ai.chat.autoAi": "Auto-ask UNI AI",
+    "m.ai.chat.needInfo": "Request more information",
+    "m.ai.chat.needInfoTemplate":
+      "Please add the missing information so UNI AI can answer accurately:",
     "m.chat.title": "Chat",
     "m.chat.searchPlaceholder": "Search chat rooms…",
     "m.chat.empty": "No rooms found.",
