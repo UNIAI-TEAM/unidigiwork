@@ -393,7 +393,7 @@ function EmptyState({
 }) {
   const { t } = useI18n();
   return (
-    <section className="flex min-h-full flex-col justify-end pb-4 sm:justify-center sm:pb-0">
+    <section className="flex min-h-full flex-col justify-start pb-4 pt-2 sm:justify-center sm:pb-0 sm:pt-0">
       <div className="mx-auto w-full max-w-xl text-center">
         <h1 className="text-2xl font-semibold leading-tight">
           {t("m.ai.greeting").replace("{name}", firstName)}
