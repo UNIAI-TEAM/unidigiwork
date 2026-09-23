@@ -47,8 +47,21 @@ function MobileChatList() {
   const channels = useMemo(() => {
     const all = data?.channels ?? [];
     const q = search.trim().toLowerCase();
-    return q ? all.filter((c) => c.name.toLowerCase().includes(q)) : all;
+    const filtered = q ? all.filter((c) => c.name.toLowerCase().includes(q)) : all;
+    // Phòng chung của tổ chức luôn nằm đầu danh sách.
+    return [...filtered].sort((a, b) => Number(!!b.isGeneral) - Number(!!a.isGeneral));
   }, [data, search]);
+
+  const hasGeneral = (data?.channels ?? []).some((c) => c.isGeneral);
+  const ensureGeneralFn = useServerFn(ensureTenantGeneralChannel);
+  const openGeneral = useMutation({
+    mutationFn: () => ensureGeneralFn(),
+    onSuccess: (result) => {
+      void queryClient.invalidateQueries({ queryKey: ["mobile-chat-channels"] });
+      void navigate({ to: "/m/chat/$id", params: { id: result.channelId } });
+    },
+    onError: () => toast.error(t("m.chat.generalError")),
+  });
 
   return (
     <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col gap-3 overflow-x-hidden p-4 pb-24">
