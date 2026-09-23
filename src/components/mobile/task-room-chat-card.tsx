@@ -50,6 +50,25 @@ export function TaskRoomChatCard({ taskId }: { taskId: string }) {
     onError: () => toast.error(t("m.tasks.room.error")),
   });
 
+  // Đổi trạng thái công việc và tự đăng thông báo vào phòng chat.
+  const announceFn = useServerFn(announceTaskStatusInRoom);
+  const progress = useMutation({
+    mutationFn: async (status: "todo" | "in_progress" | "blocked" | "done" | "canceled") => {
+      await transitionTask({
+        data: { taskId, toStatus: status, idempotencyKey: crypto.randomUUID() },
+      });
+      await announceFn({ data: { taskId, status } });
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["task-room-chat", taskId] });
+      void queryClient.invalidateQueries({ queryKey: ["task-detail", taskId] });
+      void queryClient.invalidateQueries({ queryKey: ["task", taskId] });
+      toast.success(t("m.tasks.room.progressDone"));
+    },
+    onError: (error: unknown) =>
+      toast.error(error instanceof Error ? error.message : t("m.tasks.room.error")),
+  });
+
   const [draft, setDraft] = useState("");
   const sendFn = useServerFn(sendChatMessage);
   const channelId = room.data?.channelId ?? null;
