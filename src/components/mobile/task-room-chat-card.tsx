@@ -128,6 +128,32 @@ export function TaskRoomChatCard({ taskId }: { taskId: string }) {
           ))
         )}
       </div>
+
+      <div className="mt-3 flex items-end gap-2">
+        <Textarea
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+              event.preventDefault();
+              if (draft.trim() && !send.isPending) send.mutate(draft.trim());
+            }
+          }}
+          rows={2}
+          placeholder={t("m.chat.placeholder")}
+          aria-label={t("m.chat.placeholder")}
+          className="min-h-11 resize-none rounded-xl"
+        />
+        <Button
+          size="icon"
+          className="h-11 w-11 shrink-0 rounded-xl"
+          aria-label={t("m.chat.send")}
+          disabled={send.isPending || !draft.trim()}
+          onClick={() => send.mutate(draft.trim())}
+        >
+          <Send className="h-4 w-4" />
+        </Button>
+      </div>
     </section>
   );
 }
