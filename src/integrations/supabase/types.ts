@@ -1930,6 +1930,128 @@ export type Database = {
           },
         ]
       }
+      conversation_import_messages: {
+        Row: {
+          attachments: Json
+          author_label: string
+          body: string
+          created_at: string
+          id: string
+          import_id: string
+          sent_at: string | null
+          seq: number
+          tenant_id: string
+        }
+        Insert: {
+          attachments?: Json
+          author_label?: string
+          body: string
+          created_at?: string
+          id?: string
+          import_id: string
+          sent_at?: string | null
+          seq: number
+          tenant_id: string
+        }
+        Update: {
+          attachments?: Json
+          author_label?: string
+          body?: string
+          created_at?: string
+          id?: string
+          import_id?: string
+          sent_at?: string | null
+          seq?: number
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_import_messages_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "conversation_imports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversation_import_messages_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversation_imports: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          fingerprint: string
+          id: string
+          imported_by: string
+          ingest_mode: string
+          message_count: number
+          notes: string | null
+          original_at: string | null
+          row_version: number
+          shared_by_label: string | null
+          source_channel: string
+          source_group_name: string
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+          visibility: string
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          fingerprint: string
+          id?: string
+          imported_by: string
+          ingest_mode?: string
+          message_count?: number
+          notes?: string | null
+          original_at?: string | null
+          row_version?: number
+          shared_by_label?: string | null
+          source_channel: string
+          source_group_name: string
+          tenant_id: string
+          updated_at?: string
+          updated_by?: string | null
+          visibility?: string
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          fingerprint?: string
+          id?: string
+          imported_by?: string
+          ingest_mode?: string
+          message_count?: number
+          notes?: string | null
+          original_at?: string | null
+          row_version?: number
+          shared_by_label?: string | null
+          source_channel?: string
+          source_group_name?: string
+          tenant_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          visibility?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_imports_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       decision_links: {
         Row: {
           confirmed_at: string | null
@@ -2996,6 +3118,115 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      external_identity_map: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          external_id: string
+          external_label: string | null
+          id: string
+          provider: string
+          row_version: number
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          external_id: string
+          external_label?: string | null
+          id?: string
+          provider: string
+          row_version?: number
+          tenant_id: string
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          external_id?: string
+          external_label?: string | null
+          id?: string
+          provider?: string
+          row_version?: number
+          tenant_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_identity_map_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      external_messaging_connections: {
+        Row: {
+          capabilities: Json
+          created_at: string
+          created_by: string | null
+          display_name: string
+          id: string
+          last_error: string | null
+          last_health_at: string | null
+          provider: string
+          row_version: number
+          secret_ref: string | null
+          status: string
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          capabilities?: Json
+          created_at?: string
+          created_by?: string | null
+          display_name: string
+          id?: string
+          last_error?: string | null
+          last_health_at?: string | null
+          provider: string
+          row_version?: number
+          secret_ref?: string | null
+          status?: string
+          tenant_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          capabilities?: Json
+          created_at?: string
+          created_by?: string | null
+          display_name?: string
+          id?: string
+          last_error?: string | null
+          last_health_at?: string | null
+          provider?: string
+          row_version?: number
+          secret_ref?: string | null
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_messaging_connections_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -7212,6 +7443,146 @@ export type Database = {
           },
         ]
       }
+      work_extraction_proposals: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          confidence: number
+          created_at: string
+          created_by: string | null
+          created_entity_id: string | null
+          created_entity_type: string | null
+          description: string | null
+          evidence: string
+          evidence_ref: Json
+          id: string
+          kind: string
+          missing_fields: string[]
+          row_version: number
+          run_id: string
+          status: string
+          tenant_id: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          confidence?: number
+          created_at?: string
+          created_by?: string | null
+          created_entity_id?: string | null
+          created_entity_type?: string | null
+          description?: string | null
+          evidence?: string
+          evidence_ref?: Json
+          id?: string
+          kind: string
+          missing_fields?: string[]
+          row_version?: number
+          run_id: string
+          status?: string
+          tenant_id: string
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          confidence?: number
+          created_at?: string
+          created_by?: string | null
+          created_entity_id?: string | null
+          created_entity_type?: string | null
+          description?: string | null
+          evidence?: string
+          evidence_ref?: Json
+          id?: string
+          kind?: string
+          missing_fields?: string[]
+          row_version?: number
+          run_id?: string
+          status?: string
+          tenant_id?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_extraction_proposals_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "work_extraction_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_extraction_proposals_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_extraction_runs: {
+        Row: {
+          created_at: string
+          error: string | null
+          id: string
+          idempotency_key: string
+          model: string | null
+          requested_by: string
+          row_version: number
+          source_id: string
+          source_type: string
+          status: string
+          tenant_id: string
+          updated_at: string
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          idempotency_key: string
+          model?: string | null
+          requested_by: string
+          row_version?: number
+          source_id: string
+          source_type: string
+          status?: string
+          tenant_id: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          idempotency_key?: string
+          model?: string | null
+          requested_by?: string
+          row_version?: number
+          source_id?: string
+          source_type?: string
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_extraction_runs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_graph_public_shares: {
         Row: {
           created_at: string
@@ -8324,6 +8695,63 @@ export type Database = {
           user_creatable?: boolean
         }
         Relationships: []
+      }
+      work_source_citations: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          entity_id: string
+          entity_type: string
+          excerpt: string
+          id: string
+          message_id: string | null
+          proposal_id: string | null
+          source_id: string
+          source_type: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          entity_id: string
+          entity_type: string
+          excerpt?: string
+          id?: string
+          message_id?: string | null
+          proposal_id?: string | null
+          source_id: string
+          source_type: string
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          entity_id?: string
+          entity_type?: string
+          excerpt?: string
+          id?: string
+          message_id?: string | null
+          proposal_id?: string | null
+          source_id?: string
+          source_type?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_source_citations_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "work_extraction_proposals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_source_citations_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       work_units: {
         Row: {
@@ -9751,6 +10179,15 @@ export type Database = {
         }
         Returns: Json
       }
+      approve_extraction_proposal: {
+        Args: {
+          _entity_id: string
+          _entity_type: string
+          _excerpt: string
+          _proposal_id: string
+        }
+        Returns: Json
+      }
       archive_document: {
         Args: {
           _correlation_id?: string
@@ -9947,6 +10384,10 @@ export type Database = {
           _version: number
         }
         Returns: Json
+      }
+      can_access_conversation_source: {
+        Args: { _source_id: string; _source_type: string }
+        Returns: boolean
       }
       can_access_document: { Args: { _document_id: string }; Returns: boolean }
       can_edit_work_product: { Args: { _id: string }; Returns: boolean }
@@ -10444,6 +10885,21 @@ export type Database = {
         Args: { _message_id: string; _user_ids: string[] }
         Returns: number
       }
+      create_conversation_import: {
+        Args: {
+          _fingerprint: string
+          _messages: Json
+          _notes: string
+          _original_at: string
+          _shared_by_label: string
+          _source_channel: string
+          _source_group_name: string
+          _tenant_id: string
+          _visibility: string
+          _workspace_id: string
+        }
+        Returns: Json
+      }
       create_document: {
         Args: {
           _correlation_id?: string
@@ -10761,6 +11217,10 @@ export type Database = {
       delete_workflow_trigger: {
         Args: { _trigger_id: string }
         Returns: boolean
+      }
+      dismiss_extraction_proposal: {
+        Args: { _proposal_id: string }
+        Returns: Json
       }
       dismiss_meeting_action_item: {
         Args: { _item_key: string; _meeting_id: string; _title?: string }
@@ -11091,6 +11551,10 @@ export type Database = {
         Returns: Json
       }
       get_ai_task_brief: { Args: { _task_id: string }; Returns: Json }
+      get_conversation_source: {
+        Args: { _limit?: number; _source_id: string; _source_type: string }
+        Returns: Json
+      }
       get_dashboard_ai_summary: {
         Args: { _day_end?: string; _day_start?: string; _workspace_id?: string }
         Returns: Json
@@ -11837,6 +12301,18 @@ export type Database = {
       }
       record_execution_step_write_failure: {
         Args: { _execution_id: string; _kind: string; _reason: string }
+        Returns: Json
+      }
+      record_extraction_run: {
+        Args: {
+          _idempotency_key: string
+          _model: string
+          _proposals: Json
+          _source_id: string
+          _source_type: string
+          _tenant_id: string
+          _workspace_id: string
+        }
         Returns: Json
       }
       record_meeting_guest_token_fingerprint: {

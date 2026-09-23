@@ -63,6 +63,7 @@ import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedDecisionsRouteImport } from './routes/_authenticated/decisions'
 import { Route as AuthenticatedDecisionHistoryRouteImport } from './routes/_authenticated/decision-history'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedConversationsRouteImport } from './routes/_authenticated/conversations'
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/chat'
 import { Route as AuthenticatedCeoRouteImport } from './routes/_authenticated/ceo'
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar'
@@ -171,6 +172,7 @@ import { Route as ApiOfficeSessionsExchangeRouteImport } from './routes/api/offi
 import { Route as ApiOfficeSavePrepareRouteImport } from './routes/api/office/save.prepare'
 import { Route as ApiOfficeSaveCompleteRouteImport } from './routes/api/office/save.complete'
 import { Route as ApiAdminTraceCorrelationIdRouteImport } from './routes/api/admin/trace.$correlationId'
+import { Route as AuthenticatedSettingsIntegrationsMessagingRouteImport } from './routes/_authenticated/settings.integrations.messaging'
 import { Route as AuthenticatedMWorkflowsIdRouteImport } from './routes/_authenticated/m/workflows.$id'
 import { Route as AuthenticatedMWorkProductsIdRouteImport } from './routes/_authenticated/m/work-products.$id'
 import { Route as AuthenticatedMTasksIdRouteImport } from './routes/_authenticated/m/tasks_.$id'
@@ -477,6 +479,12 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedConversationsRoute =
+  AuthenticatedConversationsRouteImport.update({
+    id: '/conversations',
+    path: '/conversations',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedChatRoute = AuthenticatedChatRouteImport.update({
   id: '/chat',
   path: '/chat',
@@ -1073,6 +1081,12 @@ const ApiAdminTraceCorrelationIdRoute =
     path: '/api/admin/trace/$correlationId',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AuthenticatedSettingsIntegrationsMessagingRoute =
+  AuthenticatedSettingsIntegrationsMessagingRouteImport.update({
+    id: '/integrations/messaging',
+    path: '/integrations/messaging',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedMWorkflowsIdRoute =
   AuthenticatedMWorkflowsIdRouteImport.update({
     id: '/$id',
@@ -1267,6 +1281,7 @@ export interface FileRoutesByFullPath {
   '/calendar': typeof AuthenticatedCalendarRoute
   '/ceo': typeof AuthenticatedCeoRoute
   '/chat': typeof AuthenticatedChatRoute
+  '/conversations': typeof AuthenticatedConversationsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/decision-history': typeof AuthenticatedDecisionHistoryRoute
   '/decisions': typeof AuthenticatedDecisionsRoute
@@ -1282,7 +1297,7 @@ export interface FileRoutesByFullPath {
   '/people': typeof AuthenticatedPeopleRoute
   '/projects': typeof AuthenticatedProjectsRoute
   '/search': typeof AuthenticatedSearchRoute
-  '/settings': typeof AuthenticatedSettingsRoute
+  '/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/task-ops': typeof AuthenticatedTaskOpsRoute
   '/work-approvals': typeof AuthenticatedWorkApprovalsRoute
   '/work-board': typeof AuthenticatedWorkBoardRoute
@@ -1404,6 +1419,7 @@ export interface FileRoutesByFullPath {
   '/m/tasks/$id': typeof AuthenticatedMTasksIdRoute
   '/m/work-products/$id': typeof AuthenticatedMWorkProductsIdRoute
   '/m/workflows/$id': typeof AuthenticatedMWorkflowsIdRoute
+  '/settings/integrations/messaging': typeof AuthenticatedSettingsIntegrationsMessagingRoute
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
   '/api/office/save/complete': typeof ApiOfficeSaveCompleteRoute
   '/api/office/save/prepare': typeof ApiOfficeSavePrepareRoute
@@ -1457,6 +1473,7 @@ export interface FileRoutesByTo {
   '/calendar': typeof AuthenticatedCalendarRoute
   '/ceo': typeof AuthenticatedCeoRoute
   '/chat': typeof AuthenticatedChatRoute
+  '/conversations': typeof AuthenticatedConversationsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/decision-history': typeof AuthenticatedDecisionHistoryRoute
   '/decisions': typeof AuthenticatedDecisionsRoute
@@ -1471,7 +1488,7 @@ export interface FileRoutesByTo {
   '/people': typeof AuthenticatedPeopleRoute
   '/projects': typeof AuthenticatedProjectsRoute
   '/search': typeof AuthenticatedSearchRoute
-  '/settings': typeof AuthenticatedSettingsRoute
+  '/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/task-ops': typeof AuthenticatedTaskOpsRoute
   '/work-approvals': typeof AuthenticatedWorkApprovalsRoute
   '/work-board': typeof AuthenticatedWorkBoardRoute
@@ -1592,6 +1609,7 @@ export interface FileRoutesByTo {
   '/m/tasks/$id': typeof AuthenticatedMTasksIdRoute
   '/m/work-products/$id': typeof AuthenticatedMWorkProductsIdRoute
   '/m/workflows/$id': typeof AuthenticatedMWorkflowsIdRoute
+  '/settings/integrations/messaging': typeof AuthenticatedSettingsIntegrationsMessagingRoute
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
   '/api/office/save/complete': typeof ApiOfficeSaveCompleteRoute
   '/api/office/save/prepare': typeof ApiOfficeSavePrepareRoute
@@ -1649,6 +1667,7 @@ export interface FileRoutesById {
   '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
   '/_authenticated/ceo': typeof AuthenticatedCeoRoute
   '/_authenticated/chat': typeof AuthenticatedChatRoute
+  '/_authenticated/conversations': typeof AuthenticatedConversationsRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/decision-history': typeof AuthenticatedDecisionHistoryRoute
   '/_authenticated/decisions': typeof AuthenticatedDecisionsRoute
@@ -1664,7 +1683,7 @@ export interface FileRoutesById {
   '/_authenticated/people': typeof AuthenticatedPeopleRoute
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
   '/_authenticated/search': typeof AuthenticatedSearchRoute
-  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/_authenticated/task-ops': typeof AuthenticatedTaskOpsRoute
   '/_authenticated/work-approvals': typeof AuthenticatedWorkApprovalsRoute
   '/_authenticated/work-board': typeof AuthenticatedWorkBoardRoute
@@ -1786,6 +1805,7 @@ export interface FileRoutesById {
   '/_authenticated/m/tasks_/$id': typeof AuthenticatedMTasksIdRoute
   '/_authenticated/m/work-products/$id': typeof AuthenticatedMWorkProductsIdRoute
   '/_authenticated/m/workflows/$id': typeof AuthenticatedMWorkflowsIdRoute
+  '/_authenticated/settings/integrations/messaging': typeof AuthenticatedSettingsIntegrationsMessagingRoute
   '/api/admin/trace/$correlationId': typeof ApiAdminTraceCorrelationIdRoute
   '/api/office/save/complete': typeof ApiOfficeSaveCompleteRoute
   '/api/office/save/prepare': typeof ApiOfficeSavePrepareRoute
@@ -1843,6 +1863,7 @@ export interface FileRouteTypes {
     | '/calendar'
     | '/ceo'
     | '/chat'
+    | '/conversations'
     | '/dashboard'
     | '/decision-history'
     | '/decisions'
@@ -1980,6 +2001,7 @@ export interface FileRouteTypes {
     | '/m/tasks/$id'
     | '/m/work-products/$id'
     | '/m/workflows/$id'
+    | '/settings/integrations/messaging'
     | '/api/admin/trace/$correlationId'
     | '/api/office/save/complete'
     | '/api/office/save/prepare'
@@ -2033,6 +2055,7 @@ export interface FileRouteTypes {
     | '/calendar'
     | '/ceo'
     | '/chat'
+    | '/conversations'
     | '/dashboard'
     | '/decision-history'
     | '/decisions'
@@ -2168,6 +2191,7 @@ export interface FileRouteTypes {
     | '/m/tasks/$id'
     | '/m/work-products/$id'
     | '/m/workflows/$id'
+    | '/settings/integrations/messaging'
     | '/api/admin/trace/$correlationId'
     | '/api/office/save/complete'
     | '/api/office/save/prepare'
@@ -2224,6 +2248,7 @@ export interface FileRouteTypes {
     | '/_authenticated/calendar'
     | '/_authenticated/ceo'
     | '/_authenticated/chat'
+    | '/_authenticated/conversations'
     | '/_authenticated/dashboard'
     | '/_authenticated/decision-history'
     | '/_authenticated/decisions'
@@ -2361,6 +2386,7 @@ export interface FileRouteTypes {
     | '/_authenticated/m/tasks_/$id'
     | '/_authenticated/m/work-products/$id'
     | '/_authenticated/m/workflows/$id'
+    | '/_authenticated/settings/integrations/messaging'
     | '/api/admin/trace/$correlationId'
     | '/api/office/save/complete'
     | '/api/office/save/prepare'
@@ -2818,6 +2844,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/conversations': {
+      id: '/_authenticated/conversations'
+      path: '/conversations'
+      fullPath: '/conversations'
+      preLoaderRoute: typeof AuthenticatedConversationsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/chat': {
@@ -3576,6 +3609,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminTraceCorrelationIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/settings/integrations/messaging': {
+      id: '/_authenticated/settings/integrations/messaging'
+      path: '/integrations/messaging'
+      fullPath: '/settings/integrations/messaging'
+      preLoaderRoute: typeof AuthenticatedSettingsIntegrationsMessagingRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/m/workflows/$id': {
       id: '/_authenticated/m/workflows/$id'
       path: '/$id'
@@ -4061,6 +4101,20 @@ const AuthenticatedNotificationsRouteWithChildren =
     AuthenticatedNotificationsRouteChildren,
   )
 
+interface AuthenticatedSettingsRouteChildren {
+  AuthenticatedSettingsIntegrationsMessagingRoute: typeof AuthenticatedSettingsIntegrationsMessagingRoute
+}
+
+const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
+  AuthenticatedSettingsIntegrationsMessagingRoute:
+    AuthenticatedSettingsIntegrationsMessagingRoute,
+}
+
+const AuthenticatedSettingsRouteWithChildren =
+  AuthenticatedSettingsRoute._addFileChildren(
+    AuthenticatedSettingsRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedAiBrainRoute: typeof AuthenticatedAiBrainRoute
@@ -4069,6 +4123,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
   AuthenticatedCeoRoute: typeof AuthenticatedCeoRoute
   AuthenticatedChatRoute: typeof AuthenticatedChatRoute
+  AuthenticatedConversationsRoute: typeof AuthenticatedConversationsRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDecisionHistoryRoute: typeof AuthenticatedDecisionHistoryRoute
   AuthenticatedDecisionsRoute: typeof AuthenticatedDecisionsRoute
@@ -4084,7 +4139,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPeopleRoute: typeof AuthenticatedPeopleRoute
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
   AuthenticatedSearchRoute: typeof AuthenticatedSearchRoute
-  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
   AuthenticatedTaskOpsRoute: typeof AuthenticatedTaskOpsRoute
   AuthenticatedWorkApprovalsRoute: typeof AuthenticatedWorkApprovalsRoute
   AuthenticatedWorkBoardRoute: typeof AuthenticatedWorkBoardRoute
@@ -4125,6 +4180,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
   AuthenticatedCeoRoute: AuthenticatedCeoRoute,
   AuthenticatedChatRoute: AuthenticatedChatRoute,
+  AuthenticatedConversationsRoute: AuthenticatedConversationsRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDecisionHistoryRoute: AuthenticatedDecisionHistoryRoute,
   AuthenticatedDecisionsRoute: AuthenticatedDecisionsRoute,
@@ -4140,7 +4196,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPeopleRoute: AuthenticatedPeopleRoute,
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
   AuthenticatedSearchRoute: AuthenticatedSearchRoute,
-  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,
   AuthenticatedTaskOpsRoute: AuthenticatedTaskOpsRoute,
   AuthenticatedWorkApprovalsRoute: AuthenticatedWorkApprovalsRoute,
   AuthenticatedWorkBoardRoute: AuthenticatedWorkBoardRoute,
