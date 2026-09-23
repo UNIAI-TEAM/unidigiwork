@@ -10,6 +10,7 @@ import {
   Loader2,
   Lock,
   MessageSquare,
+  HelpCircle,
   Sparkles,
   User,
 } from "lucide-react";
