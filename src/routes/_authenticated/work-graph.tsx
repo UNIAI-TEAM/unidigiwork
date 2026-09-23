@@ -29,6 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { OpenChatRoomButton } from "@/components/chat/open-chat-room-button";
 import { useI18n } from "@/lib/i18n";
 import {
   getWorkGraphOverview,
@@ -393,6 +394,13 @@ function WorkGraphPage() {
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted">
                       <Icon className="h-4 w-4 text-muted-foreground" />
                     </span>
+                    {i.type === "TASK" ? (
+                      <OpenChatRoomButton
+                        kind="task"
+                        entityId={i.id}
+                        className="order-last h-9 w-9"
+                      />
+                    ) : null}
                     <span className="min-w-0 flex-1">
                       <Link
                         to={i.href as never}
