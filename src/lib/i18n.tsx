@@ -3159,6 +3159,9 @@ const dict = {
     "m.ai.chat.aiThinking": "UNI AI is replying…",
     "m.ai.chat.aiFailed": "The AI assistant could not reply. Try again later.",
     "m.ai.chat.autoAi": "Auto-ask UNI AI",
+    "m.ai.chat.needInfo": "Request more information",
+    "m.ai.chat.needInfoTemplate":
+      "Please add the missing information so UNI AI can answer accurately:",
     "m.chat.title": "Chat",
     "m.chat.searchPlaceholder": "Search chat rooms…",
     "m.chat.empty": "No rooms found.",
