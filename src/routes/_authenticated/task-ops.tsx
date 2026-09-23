@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { OpenChatRoomButton } from "@/components/chat/open-chat-room-button";
 import { useI18n } from "@/lib/i18n";
 import { listTaskOpsBoard } from "@/lib/api/task-ops.functions";
 import { runOrQueue } from "@/lib/offline/queue";
@@ -256,6 +257,7 @@ function TaskOpsPage() {
                       {pending === item.id && (
                         <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />
                       )}
+                      <OpenChatRoomButton kind="task" entityId={item.id} />
                     </div>
                   </div>
                 </li>
