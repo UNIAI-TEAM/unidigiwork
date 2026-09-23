@@ -21,6 +21,7 @@ export type ChatChannelDTO = {
   unread: number;
   lastMessageAt: string | null;
   meetingId: string | null;
+  isGeneral?: boolean;
 };
 
 export type ChatMessageDTO = {
@@ -128,7 +129,7 @@ export const listChatChannels = createServerFn({ method: "GET" })
 
     const { data: chans, error } = await ctx.supabase
       .from("chat_channels")
-      .select("id, name, description, kind, is_private, last_message_at, created_by, meeting_id")
+      .select("id, name, description, kind, is_private, last_message_at, created_by, meeting_id, is_general")
       .eq("tenant_id", scope.tenantId)
       .is("deleted_at", null)
       .order("last_message_at", { ascending: false, nullsFirst: false })
@@ -192,6 +193,7 @@ export const listChatChannels = createServerFn({ method: "GET" })
         unread: unread.get(r.id) ?? 0,
         lastMessageAt: r.last_message_at,
         meetingId: r.meeting_id ?? null,
+        isGeneral: !!r.is_general,
       };
     });
 
@@ -788,5 +790,22 @@ export const ensureMeetingChatChannel = createServerFn({ method: "POST" })
     if (error) mapPgError(error, "PERMISSION_DENIED");
     if (!channelId)
       throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "Không tạo được kênh họp" });
+    return { channelId: channelId as string };
+  });
+
+/** Phòng trò chuyện chung của tổ chức (tự tạo lần đầu, mọi thành viên đều thuộc phòng). */
+export const ensureTenantGeneralChannel = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ channelId: string }> => {
+    const ctx = context as unknown as Ctx;
+    const scope = await resolveScope(ctx);
+    if (!scope)
+      throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "Chưa có tổ chức" });
+    const { data: channelId, error } = await ctx.supabase.rpc("ensure_tenant_general_channel", {
+      _tenant_id: scope.tenantId,
+    });
+    if (error) mapPgError(error, "PERMISSION_DENIED");
+    if (!channelId)
+      throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "Không tạo được phòng chung" });
     return { channelId: channelId as string };
   });
