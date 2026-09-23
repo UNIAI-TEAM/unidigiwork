@@ -1182,7 +1182,16 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
                               className="max-h-32 min-h-[36px] flex-1 resize-none bg-transparent py-1.5 text-sm placeholder:text-muted-foreground focus:outline-none"
                             />
                             <button
-                              disabled={!input.trim() || sendM.isPending}
+                              disabled={!input.trim() || askAiM.isPending || sendM.isPending}
+                              onClick={() => askAiM.mutate()}
+                              className="rounded-lg border border-border p-2 text-primary hover:bg-surface-2 disabled:opacity-40"
+                              aria-label="Hỏi UNI AI"
+                              title="Hỏi UNI AI"
+                            >
+                              {askAiM.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                            </button>
+                            <button
+                              disabled={!input.trim() || sendM.isPending || askAiM.isPending}
                               onClick={() => sendM.mutate()}
                               className="rounded-lg bg-primary p-2 text-primary-foreground disabled:opacity-40"
                               aria-label="Gửi"
