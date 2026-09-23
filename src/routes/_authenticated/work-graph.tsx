@@ -43,6 +43,7 @@ import {
   sendTaskMessage,
   setTaskDueAt,
 } from "@/lib/api/tasks.functions";
+import { postTaskRoomMessage } from "@/lib/api/chat.functions";
 
 export const Route = createFileRoute("/_authenticated/work-graph")({
   validateSearch: z.object({ task: z.string().uuid().optional() }),
@@ -81,27 +82,34 @@ function WorkGraphTaskMessageForm({ taskId }: { taskId: string }) {
     queryKey: ["task-messaging-permissions", taskId],
     queryFn: () => getTaskMessagingPermissions({ data: { taskId } }),
   });
+  const canTeam = permissions.data?.canMessageTeam === true;
+  const canSuperior = permissions.data?.canMessageSuperior === true;
   const recipients = useQuery({
     queryKey: ["task-message-recipients", taskId],
     queryFn: () => listTaskMessageRecipients({ data: { taskId } }),
-    enabled: permissions.data?.canMessageTeam === true,
+    enabled: canTeam || canSuperior,
   });
   const send = useMutation({
-    mutationFn: () =>
-      sendTaskMessage({
+    mutationFn: async () => {
+      const text = body.trim();
+      const comment = await sendTaskMessage({
         data: {
           taskId,
           recipientId,
-          body: body.trim(),
-          source: "TASK_CHAT",
+          body: text,
+          source: canTeam ? "TASK_CHAT" : "PRIVATE_SUPERIOR",
           idempotencyKey: crypto.randomUUID(),
         },
-      }),
+      });
+      await postTaskRoomMessage({ data: { taskId, body: text } });
+      return comment;
+    },
     onSuccess: async () => {
       setBody("");
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["work-graph-board"] }),
         queryClient.invalidateQueries({ queryKey: ["task-chat-detail", taskId] }),
+        queryClient.invalidateQueries({ queryKey: ["task-room-chat"] }),
         queryClient.invalidateQueries({ queryKey: ["notifications"] }),
       ]);
       toast.success(t("wg.messageSent"));
@@ -112,7 +120,7 @@ function WorkGraphTaskMessageForm({ taskId }: { taskId: string }) {
   if (permissions.isLoading) {
     return <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />;
   }
-  if (!permissions.data?.canMessageTeam) return null;
+  if (!canTeam && !canSuperior) return null;
 
   return (
     <div className="mt-2 grid gap-2 rounded-lg border bg-muted/30 p-2 sm:grid-cols-[minmax(12rem,0.8fr)_minmax(16rem,1.6fr)_auto] sm:items-center">

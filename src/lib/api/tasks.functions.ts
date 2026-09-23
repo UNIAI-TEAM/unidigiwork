@@ -318,7 +318,7 @@ export const sendTaskMessage = createServerFn({ method: "POST" })
       _recipient_id: data.recipientId,
       _body: data.body,
       _idempotency_key: data.idempotencyKey,
-      _correlation_id: data.correlationId ?? undefined,
+      _correlation_id: data.correlationId ?? "",
       _source: data.source,
     });
     const comment = ensureOk(res, "TASK_NOT_FOUND") as { id: string };
