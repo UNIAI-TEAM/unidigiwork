@@ -65,9 +65,7 @@ function TenantAdminPage() {
       <div className="flex min-h-screen items-center justify-center px-4 text-center">
         <div>
           <ShieldAlert className="mx-auto h-10 w-10 text-muted-foreground" />
-          <p className="mt-3 text-sm text-muted-foreground">
-            Chưa có tenant đang hoạt động.
-          </p>
+          <p className="mt-3 text-sm text-muted-foreground">Chưa có tenant đang hoạt động.</p>
         </div>
       </div>
     );
@@ -94,7 +92,8 @@ function TenantAdminPage() {
 
             {!canManage && (
               <div className="rounded-lg border border-warning/40 bg-warning/5 p-3 text-sm">
-                Bạn không có quyền quản trị tenant này (vai trò: {tenant.role}). Một số hành động bị vô hiệu hoá.
+                Bạn không có quyền quản trị tenant này (vai trò: {tenant.role}). Một số hành động bị
+                vô hiệu hoá.
               </div>
             )}
 
@@ -122,10 +121,29 @@ function TenantAdminPage() {
               ))}
             </nav>
 
-            {tab === "overview" && <OverviewTab tenantId={tenant.tenantId} tenantStatus={tenant.tenantStatus} tenantName={tenant.tenantName} canManage={canManage} isOwner={tenant.role === "tenant_owner"} />}
-            {tab === "members" && <MembersTab tenantId={tenant.tenantId} canManage={canManage} isOwner={tenant.role === "tenant_owner"} actorId={tenant.actorId} />}
-            {tab === "invitations" && <InvitationsTab tenantId={tenant.tenantId} canManage={canManage} />}
-            {tab === "workspaces" && <WorkspacesTab tenantId={tenant.tenantId} canManage={canManage} />}
+            {tab === "overview" && (
+              <OverviewTab
+                tenantId={tenant.tenantId}
+                tenantStatus={tenant.tenantStatus}
+                tenantName={tenant.tenantName}
+                canManage={canManage}
+                isOwner={tenant.role === "tenant_owner"}
+              />
+            )}
+            {tab === "members" && (
+              <MembersTab
+                tenantId={tenant.tenantId}
+                canManage={canManage}
+                isOwner={tenant.role === "tenant_owner"}
+                actorId={tenant.actorId}
+              />
+            )}
+            {tab === "invitations" && (
+              <InvitationsTab tenantId={tenant.tenantId} canManage={canManage} />
+            )}
+            {tab === "workspaces" && (
+              <WorkspacesTab tenantId={tenant.tenantId} canManage={canManage} />
+            )}
             {tab === "audit" && <AuditTab tenantId={tenant.tenantId} canManage={canManage} />}
           </div>
         </main>
@@ -141,7 +159,9 @@ function StatusBadge({ status }: { status: string }) {
     archived: "bg-muted text-muted-foreground border-border",
   };
   return (
-    <span className={`rounded-full border px-3 py-1 text-xs font-semibold capitalize ${map[status] ?? map.archived}`}>
+    <span
+      className={`rounded-full border px-3 py-1 text-xs font-semibold capitalize ${map[status] ?? map.archived}`}
+    >
       {status}
     </span>
   );
@@ -169,7 +189,11 @@ function OverviewTab({
 
   return (
     <div className="grid gap-4 md:grid-cols-3">
-      <Card label="Thành viên hoạt động" value={String(active)} icon={<Users className="h-4 w-4" />} />
+      <Card
+        label="Thành viên hoạt động"
+        value={String(active)}
+        icon={<Users className="h-4 w-4" />}
+      />
       <Card label="Lời mời đang chờ" value={String(pending)} icon={<Mail className="h-4 w-4" />} />
       <Card label="Trạng thái" value={tenantStatus} icon={<Building2 className="h-4 w-4" />} />
 
@@ -189,7 +213,8 @@ function OverviewTab({
             {tenantStatus === "active" && (
               <button
                 onClick={() => {
-                  if (confirm(`Tạm ngưng tenant "${tenantName}"?`)) changeStatus.mutate("suspended");
+                  if (confirm(`Tạm ngưng tenant "${tenantName}"?`))
+                    changeStatus.mutate("suspended");
                 }}
                 disabled={!canManage || changeStatus.isPending}
                 className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-sm text-amber-500 hover:bg-amber-500/20 disabled:opacity-50"
@@ -200,7 +225,9 @@ function OverviewTab({
             {tenantStatus !== "archived" && (
               <button
                 onClick={() => {
-                  if (confirm(`LƯU TRỮ tenant "${tenantName}"? Hành động này không thể hoàn tác.`)) {
+                  if (
+                    confirm(`LƯU TRỮ tenant "${tenantName}"? Hành động này không thể hoàn tác.`)
+                  ) {
                     changeStatus.mutate("archived");
                   }
                 }}
@@ -272,7 +299,14 @@ function MembersTab({
             const isOwnerRow = m.role === "tenant_owner";
             return (
               <tr key={m.id} className="border-t border-border">
-                <td className="px-4 py-3 font-mono text-xs">{m.user_id.slice(0, 8)}…</td>
+                <td className="px-4 py-3">
+                  <div className="font-medium">
+                    {m.display_name || m.email || `${m.user_id.slice(0, 8)}…`}
+                  </div>
+                  {m.email && m.display_name ? (
+                    <div className="text-xs text-muted-foreground">{m.email}</div>
+                  ) : null}
+                </td>
                 <td className="px-4 py-3">
                   {isOwnerRow ? (
                     <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
@@ -284,10 +318,19 @@ function MembersTab({
                       disabled={!canManage || isSelf}
                       onChange={(e) =>
                         changeRole.mutate(
-                          { userId: m.user_id, newRole: e.target.value as "tenant_admin" | "manager" | "member" | "guest" },
+                          {
+                            userId: m.user_id,
+                            newRole: e.target.value as
+                              | "tenant_admin"
+                              | "manager"
+                              | "member"
+                              | "guest",
+                          },
                           {
                             onError: (err) =>
-                              toast.error(err instanceof Error ? err.message : "Không thể đổi vai trò"),
+                              toast.error(
+                                err instanceof Error ? err.message : "Không thể đổi vai trò",
+                              ),
                             onSuccess: () => toast.success("Đã cập nhật vai trò"),
                           },
                         )
@@ -320,10 +363,15 @@ function MembersTab({
                     {isOwner && !isOwnerRow && (
                       <button
                         onClick={() => {
-                          if (confirm(`Chuyển quyền chủ sở hữu cho user ${m.user_id.slice(0, 8)}…?`)) {
+                          if (
+                            confirm(`Chuyển quyền chủ sở hữu cho user ${m.user_id.slice(0, 8)}…?`)
+                          ) {
                             transferOwner.mutate(m.user_id, {
                               onSuccess: () => toast.success("Đã chuyển quyền chủ sở hữu"),
-                              onError: (err) => toast.error(err instanceof Error ? err.message : "Không thể chuyển quyền"),
+                              onError: (err) =>
+                                toast.error(
+                                  err instanceof Error ? err.message : "Không thể chuyển quyền",
+                                ),
                             });
                           }
                         }}
@@ -336,10 +384,16 @@ function MembersTab({
                       <button
                         onClick={() =>
                           changeStatus.mutate(
-                            { userId: m.user_id, newStatus: m.status === "suspended" ? "active" : "suspended" },
+                            {
+                              userId: m.user_id,
+                              newStatus: m.status === "suspended" ? "active" : "suspended",
+                            },
                             {
                               onSuccess: () => toast.success("Đã cập nhật trạng thái"),
-                              onError: (err) => toast.error(err instanceof Error ? err.message : "Không thể cập nhật"),
+                              onError: (err) =>
+                                toast.error(
+                                  err instanceof Error ? err.message : "Không thể cập nhật",
+                                ),
                             },
                           )
                         }
@@ -444,7 +498,9 @@ function InvitationsTab({ tenantId, canManage }: { tenantId: string; canManage: 
                 Link lời mời (chỉ hiển thị một lần)
               </div>
               <div className="flex items-center gap-2">
-                <code className="flex-1 truncate rounded bg-surface-2 px-2 py-1 text-xs">{inviteUrl}</code>
+                <code className="flex-1 truncate rounded bg-surface-2 px-2 py-1 text-xs">
+                  {inviteUrl}
+                </code>
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(inviteUrl).then(() => {
@@ -501,7 +557,8 @@ function InvitationsTab({ tenantId, canManage }: { tenantId: string; canManage: 
                         if (confirm(`Thu hồi lời mời tới ${inv.email}?`)) {
                           revoke.mutate(inv.id, {
                             onSuccess: () => toast.success("Đã thu hồi lời mời"),
-                            onError: (err) => toast.error(err instanceof Error ? err.message : "Không thể thu hồi"),
+                            onError: (err) =>
+                              toast.error(err instanceof Error ? err.message : "Không thể thu hồi"),
                           });
                         }
                       }}
@@ -626,7 +683,9 @@ function WorkspacesTab({ tenantId, canManage }: { tenantId: string; canManage: b
                 <tr key={w.id} className="border-t border-border">
                   <td className="px-4 py-3">
                     <div className="font-medium">{w.name}</div>
-                    <div className="font-mono text-[11px] text-muted-foreground">{w.id.slice(0, 8)}…</div>
+                    <div className="font-mono text-[11px] text-muted-foreground">
+                      {w.id.slice(0, 8)}…
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     <span
@@ -689,7 +748,8 @@ function WorkspacesTab({ tenantId, canManage }: { tenantId: string; canManage: b
       </div>
 
       <p className="rounded-md border border-border bg-surface-2 px-3 py-2 text-[11px] text-muted-foreground">
-        Hành động tạo/lưu trữ workspace sẽ được mở trong batch Collaboration Core (trusted command chưa sẵn sàng).
+        Hành động tạo/lưu trữ workspace sẽ được mở trong batch Collaboration Core (trusted command
+        chưa sẵn sàng).
       </p>
     </div>
   );
@@ -850,7 +910,8 @@ function AuditTab({ tenantId, canManage }: { tenantId: string; canManage: boolea
       </div>
 
       <p className="rounded-md border border-border bg-surface-2 px-3 py-2 text-[11px] text-muted-foreground">
-        Audit log là append-only. Nội dung nhạy cảm (before/after state, token, secret) không được hiển thị theo chính sách redaction.
+        Audit log là append-only. Nội dung nhạy cảm (before/after state, token, secret) không được
+        hiển thị theo chính sách redaction.
       </p>
     </div>
   );
