@@ -14,6 +14,7 @@ import {
   Plus,
   Search,
   Settings,
+  SquarePen,
   Video,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -118,22 +119,22 @@ export function MobileShell() {
         <Button
           variant="ghost"
           size="icon"
-          className="h-11 w-11 shrink-0 rounded-full hover:bg-surface-2"
-          onClick={() => void navigate({ to: "/m/search" as never })}
-          aria-label={t("cmd.group.search")}
-          title={t("cmd.group.search")}
-        >
-          <Search className="h-6 w-6" strokeWidth={2.25} />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-11 w-11 shrink-0 rounded-full hover:bg-surface-2"
+          className="h-11 w-11 shrink-0 rounded-full bg-surface-2 hover:bg-surface-2/80"
           onClick={startNew}
           aria-label={t("m.nav.newWork")}
           title={t("m.nav.newWork")}
         >
-          <Plus className="h-6 w-6" strokeWidth={2.25} />
+          <SquarePen className="h-[18px] w-[18px]" strokeWidth={2.25} />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-11 w-11 shrink-0 rounded-full bg-surface-2 hover:bg-surface-2/80"
+          onClick={() => void navigate({ to: "/m/search" as never })}
+          aria-label={t("cmd.group.search")}
+          title={t("cmd.group.search")}
+        >
+          <Search className="h-[18px] w-[18px]" strokeWidth={2.25} />
         </Button>
       </header>
 
