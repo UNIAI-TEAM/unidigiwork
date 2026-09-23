@@ -1844,6 +1844,7 @@ export type Database = {
           deleted_at: string | null
           edited_at: string | null
           id: string
+          is_ai: boolean
           parent_message_id: string | null
           pinned_at: string | null
           pinned_by: string | null
@@ -1860,6 +1861,7 @@ export type Database = {
           deleted_at?: string | null
           edited_at?: string | null
           id?: string
+          is_ai?: boolean
           parent_message_id?: string | null
           pinned_at?: string | null
           pinned_by?: string | null
@@ -1876,6 +1878,7 @@ export type Database = {
           deleted_at?: string | null
           edited_at?: string | null
           id?: string
+          is_ai?: boolean
           parent_message_id?: string | null
           pinned_at?: string | null
           pinned_by?: string | null
