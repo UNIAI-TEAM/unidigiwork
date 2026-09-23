@@ -324,7 +324,7 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
               aria-pressed={listening}
               onClick={toggleVoice}
             >
-              <Mic className={`!h-7 !w-7 ${listening ? "animate-pulse" : ""}`} />
+              <Mic className={`!h-6 !w-6 ${listening ? "animate-pulse" : ""}`} />
             </Button>
             <PromptInputSubmit
               className="h-12 w-12 shrink-0 rounded-full bg-action text-action-foreground hover:bg-action/90 disabled:bg-muted disabled:text-muted-foreground"
