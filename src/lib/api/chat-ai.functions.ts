@@ -108,8 +108,13 @@ export const askChatAi = createServerFn({ method: "POST" })
       .map((m) => `${m.is_ai ? "UNI AI" : "Thành viên"}: ${String(m.body).slice(0, 600)}`)
       .join("\n");
 
-    // Dữ liệu công việc thật của tổ chức (RPC tenant-scoped, RLS theo người hỏi).
-    const board = await loadWorkSnapshot(ctx, ch.tenant_id, ch.task_id ?? null);
+    // Mỗi phòng có timeline riêng: chỉ phòng gắn công việc hoặc phòng chung toàn tổ chức
+    // mới được nạp dữ liệu công việc; phòng khác chỉ dùng lịch sử của chính phòng đó.
+    const board = ch.task_id
+      ? await loadWorkSnapshot(ctx, ch.tenant_id, ch.task_id as string)
+      : ch.is_general
+        ? await loadWorkSnapshot(ctx, ch.tenant_id, null)
+        : "(phòng này không gắn công việc cụ thể — chỉ dùng nội dung trao đổi trong phòng)";
 
     // 1) Lưu câu hỏi của người dùng.
     const { data: qRow, error: qErr } = await ctx.supabase
