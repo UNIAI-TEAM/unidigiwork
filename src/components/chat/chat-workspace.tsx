@@ -182,6 +182,7 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
   const fetchChannels = useServerFn(listChatChannels);
   const fetchMessages = useServerFn(listChatMessages);
   const doSend = useServerFn(sendChatMessage);
+  const doAskAi = useServerFn(askChatAi);
   const doCreate = useServerFn(createChatChannel);
   const doJoin = useServerFn(joinChatChannel);
   const doLeave = useServerFn(leaveChatChannel);
@@ -737,7 +738,13 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
                             : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"
                         }`}
                       >
-                        {c.isPrivate ? <Lock className="h-4 w-4 shrink-0" /> : <Hash className="h-4 w-4 shrink-0" />}
+                        {c.meetingId ? (
+                          <Video className="h-4 w-4 shrink-0 text-primary" />
+                        ) : c.isPrivate ? (
+                          <Lock className="h-4 w-4 shrink-0" />
+                        ) : (
+                          <Hash className="h-4 w-4 shrink-0" />
+                        )}
                         <span className="min-w-0 flex-1 truncate text-left">{c.name}</span>
                         {c.unread > 0 && (
                           <span className="rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground">
