@@ -53,13 +53,14 @@ async function loadWorkSnapshot(
     if (id && name) names.set(id, name);
   }
   const stats = payload?.stats ? `TỔNG QUAN: ${JSON.stringify(payload.stats)}` : "";
-  const lines = items.slice(0, 25).map((item) => {
+  const lines = items.slice(0, 150).map((item) => {
     const due = typeof item["due_at"] === "string" ? item["due_at"].slice(0, 10) : "không hạn";
     return [
       `- ${String(item["title"] ?? "Công việc")}`,
       `trạng thái ${String(item["status"] ?? "?")}`,
       `tiến độ ${String(item["progress"] ?? 0)}%`,
       `hạn ${due}`,
+      `cập nhật ${typeof item["updated_at"] === "string" ? (item["updated_at"] as string).slice(0, 10) : "-"}`,
       `phụ trách ${
         (typeof item["owner_name"] === "string" && item["owner_name"]) ||
         (typeof item["owner_id"] === "string" && names.get(item["owner_id"] as string)) ||
