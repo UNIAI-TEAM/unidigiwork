@@ -51,6 +51,16 @@ export function NativeChatExperience({
     onError: () => toast.error(t("m.chat.generalError")),
   });
 
+  // Tự tạo phòng chung của tổ chức ngay lần đầu vào chat (idempotent, tenant-scoped).
+  const ensuredRef = useRef(false);
+  useEffect(() => {
+    if (isLoading || isError || hasGeneral || ensuredRef.current) return;
+    ensuredRef.current = true;
+    void ensureGeneralFn()
+      .then(() => queryClient.invalidateQueries({ queryKey: ["native-chat-channels"] }))
+      .catch(() => undefined);
+  }, [isLoading, isError, hasGeneral, ensureGeneralFn, queryClient]);
+
   const select = (id: string) => {
     setSelected(id);
     void navigate({ to: "/chat/$channelId", params: { channelId: id } });
