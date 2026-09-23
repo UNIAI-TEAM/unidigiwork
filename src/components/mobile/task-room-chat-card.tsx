@@ -2,17 +2,26 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useNavigate } from "@tanstack/react-router";
-import { MessageSquare, Send, Sparkles, UserRound } from "lucide-react";
+import { MessageSquare, Send, Share2, Sparkles, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
   announceTaskStatusInRoom,
   ensureTaskChatChannel,
+  listDirectMessagesWith,
   listTaskChatMessages,
   listTaskDirectConversations,
   openDirectMessage,
   sendChatMessage,
+  shareDirectMessageToTask,
 } from "@/lib/api/chat.functions";
 import { transitionTask } from "@/lib/api/tasks.functions";
 import {
@@ -255,33 +264,120 @@ function TaskDirectConversations({ taskId }: { taskId: string }) {
       <p className="mt-1 text-xs text-muted-foreground">{t("m.tasks.room.dmPrivacy")}</p>
       <ul className="mt-2 space-y-1">
         {people.map((p) => (
-          <li key={p.userId}>
-            <button
-              type="button"
-              disabled={open.isPending}
-              onClick={() => open.mutate(p.userId)}
-              className="flex min-h-11 w-full items-center gap-2 rounded-xl px-3 py-2 text-left transition-colors hover:bg-surface-2"
-            >
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{p.name}</p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {p.preview ?? t("m.tasks.room.dmStart")}
-                </p>
-              </div>
-              {p.lastMessageAt ? (
-                <span className="shrink-0 text-xs text-muted-foreground">
-                  {new Date(p.lastMessageAt).toLocaleString(localeTag, {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    day: "2-digit",
-                    month: "2-digit",
-                  })}
-                </span>
+          <li key={p.userId} className="rounded-xl hover:bg-surface-2">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                disabled={open.isPending}
+                onClick={() => open.mutate(p.userId)}
+                className="flex min-h-11 flex-1 items-center gap-2 rounded-xl px-3 py-2 text-left"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{p.name}</p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {p.preview ?? t("m.tasks.room.dmStart")}
+                  </p>
+                </div>
+                {p.lastMessageAt ? (
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {new Date(p.lastMessageAt).toLocaleString(localeTag, {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      day: "2-digit",
+                      month: "2-digit",
+                    })}
+                  </span>
+                ) : null}
+              </button>
+              {p.channelId ? (
+                <ShareDirectMessageDialog
+                  taskId={taskId}
+                  channelId={p.channelId}
+                  personName={p.name}
+                />
               ) : null}
-            </button>
+            </div>
           </li>
         ))}
       </ul>
     </div>
+  );
+}
+
+/** Chọn một tin nhắn riêng để đưa vào dòng thời gian công việc (người trong việc đều thấy). */
+function ShareDirectMessageDialog({
+  taskId,
+  channelId,
+  personName,
+}: {
+  taskId: string;
+  channelId: string;
+  personName: string;
+}) {
+  const { t } = useI18n();
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const listFn = useServerFn(listDirectMessagesWith);
+  const shareFn = useServerFn(shareDirectMessageToTask);
+
+  const messages = useQuery({
+    queryKey: ["dm-messages", channelId],
+    queryFn: () => listFn({ data: { channelId } }),
+    enabled: open,
+    staleTime: 10_000,
+  });
+
+  const share = useMutation({
+    mutationFn: (messageId: string) => shareFn({ data: { taskId, messageId } }),
+    onSuccess: () => {
+      toast.success(t("m.tasks.room.dmShared"));
+      setOpen(false);
+      void queryClient.invalidateQueries({ queryKey: ["task-room-chat", taskId] });
+      void queryClient.invalidateQueries({ queryKey: ["task-direct-conversations", taskId] });
+    },
+    onError: () => toast.error(t("m.tasks.room.dmShareError")),
+  });
+
+  const rows = messages.data?.messages ?? [];
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button
+          size="icon"
+          variant="ghost"
+          className="mr-1 h-11 w-11 shrink-0"
+          aria-label={t("m.tasks.room.dmShare")}
+          title={t("m.tasks.room.dmShare")}
+        >
+          <Share2 className="h-4 w-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-sm rounded-3xl">
+        <DialogHeader>
+          <DialogTitle>{t("m.tasks.room.dmShare")}</DialogTitle>
+        </DialogHeader>
+        <p className="text-xs text-muted-foreground">
+          {t("m.tasks.room.dmShareHint", { name: personName })}
+        </p>
+        <div className="max-h-72 space-y-1 overflow-y-auto">
+          {rows.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              disabled={share.isPending}
+              onClick={() => share.mutate(m.id)}
+              className="w-full rounded-xl px-3 py-2 text-left transition-colors hover:bg-surface-2"
+            >
+              <p className="text-xs text-muted-foreground">{m.authorName}</p>
+              <p className="mt-0.5 line-clamp-3 break-words text-sm">{m.body}</p>
+            </button>
+          ))}
+          {rows.length === 0 && (
+            <p className="px-3 py-2 text-sm text-muted-foreground">{t("m.tasks.room.empty")}</p>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
