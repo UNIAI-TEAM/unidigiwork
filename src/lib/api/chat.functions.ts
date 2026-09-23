@@ -880,6 +880,47 @@ export const announceTaskStatusInRoom = createServerFn({ method: "POST" })
     return { channelId: channelId as string };
   });
 
+/**
+ * Đăng tin nhắn của người dùng vào đúng phòng chat của công việc (idempotent tạo phòng).
+ * Dùng khi gửi tin từ Work Graph để tin xuất hiện cả trong phòng chat lẫn dòng thời gian.
+ */
+export const postTaskRoomMessage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        taskId: z.string().uuid(),
+        body: z.string().trim().min(1).max(10000),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }): Promise<{ channelId: string }> => {
+    const ctx = context as unknown as Ctx;
+    const { data: channelId, error } = await ctx.supabase.rpc("ensure_task_chat_channel", {
+      _task_id: data.taskId,
+    });
+    if (error) mapPgError(error, "PERMISSION_DENIED");
+    if (!channelId)
+      throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "Không tạo được phòng công việc" });
+
+    const { data: ch } = await ctx.supabase
+      .from("chat_channels")
+      .select("tenant_id")
+      .eq("id", channelId as string)
+      .maybeSingle();
+    if (!ch)
+      throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "Không tìm thấy kênh chat" });
+
+    const { error: insErr } = await ctx.supabase.from("chat_messages").insert({
+      channel_id: channelId as string,
+      tenant_id: ch.tenant_id,
+      author_id: ctx.userId,
+      body: data.body,
+    });
+    if (insErr) mapPgError(insErr, "PERMISSION_DENIED");
+    return { channelId: channelId as string };
+  });
+
 export type TaskChatMessage = {
   id: string;
   body: string;
