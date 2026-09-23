@@ -393,6 +393,13 @@
       "when": 1790127061102,
       "tag": "0055_task_chat_channel",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1790136821971,
+      "tag": "0056_soft_delete_chat_channel",
+      "breakpoints": true
     }
   ]
 }
