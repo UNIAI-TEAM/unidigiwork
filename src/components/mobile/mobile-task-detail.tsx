@@ -35,6 +35,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TaskRoomChatCard } from "@/components/mobile/task-room-chat-card";
 import { Textarea } from "@/components/ui/textarea";
 import {
   assignTask,
@@ -492,7 +493,8 @@ export function MobileTaskDetail({ id }: { id: string }) {
             <AiTaskExecutionPanel task={task as never} onChanged={() => void invalidate()} />
           </TabsContent>
 
-          <TabsContent value="chat" className="mt-4">
+          <TabsContent value="chat" className="mt-4 grid gap-4">
+            <TaskRoomChatCard taskId={id} />
             <TaskChatSummary taskId={id} taskTitle={task.title} />
           </TabsContent>
 

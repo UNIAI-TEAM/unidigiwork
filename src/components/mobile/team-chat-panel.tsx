@@ -25,6 +25,7 @@ import {
 import { askChatAi } from "@/lib/api/chat-ai.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
+import { Link } from "@tanstack/react-router";
 
 export function TeamChatPanel({
   channelId,
@@ -105,6 +106,7 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => 
   const { t, lang } = useI18n();
   const queryClient = useQueryClient();
   const messagesFn = useServerFn(listChatMessages);
+  const channelsFn = useServerFn(listChatChannels);
   const sendFn = useServerFn(sendChatMessage);
   const joinFn = useServerFn(joinChatChannel);
   const markReadFn = useServerFn(markChatChannelRead);
@@ -114,6 +116,14 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => 
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
   const stickToBottom = useRef(true);
+
+  const channels = useQuery({
+    queryKey: ["mobile-plus-chat-channels"],
+    queryFn: () => channelsFn({ data: {} }),
+    staleTime: 60_000,
+  });
+  const linkedTaskId =
+    channels.data?.channels.find((c) => c.id === channelId)?.taskId ?? null;
 
   const history = useQuery({
     queryKey: ["mobile-plus-chat-messages", channelId],
@@ -240,6 +250,16 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => 
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
+      {linkedTaskId ? (
+        <Link
+          to="/m/tasks_/$id"
+          params={{ id: linkedTaskId }}
+          className="mb-2 inline-flex min-h-11 items-center gap-2 self-start rounded-full border px-3 text-sm"
+        >
+          <ListTodo className="h-4 w-4" />
+          {t("m.chat.openTask")}
+        </Link>
+      ) : null}
       {onBack ? (
         <Button
           variant="ghost"
