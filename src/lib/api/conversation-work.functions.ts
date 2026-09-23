@@ -73,7 +73,13 @@ const importMessageSchema = z.object({
   sentAt: z.string().datetime({ offset: true }).nullish(),
   body: z.string().min(1).max(20000),
   attachments: z
-    .array(z.object({ name: z.string().max(300), url: z.string().max(2000), size: z.number().nullish() }))
+    .array(
+      z.object({
+        name: z.string().max(300),
+        url: z.string().max(2000),
+        size: z.number().nullish(),
+      }),
+    )
     .max(20)
     .default([]),
 });
@@ -143,7 +149,10 @@ export const listConversationImports = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
     z
-      .object({ limit: z.number().int().min(1).max(50).default(20), search: z.string().max(200).nullish() })
+      .object({
+        limit: z.number().int().min(1).max(50).default(20),
+        search: z.string().max(200).nullish(),
+      })
       .parse(i ?? {}),
   )
   .handler(async ({ data, context }): Promise<ConversationImportDTO[]> => {
@@ -222,14 +231,20 @@ export const extractWorkFromConversationSource = createServerFn({ method: "POST"
     if (!apiKey) throw new ApiError({ code: "VALIDATION_FAILED", message: "AI_NOT_CONFIGURED" });
 
     const { source, messages } = await loadSource(ctx, data.sourceType, data.sourceId);
-    if (!messages.length) throw new ApiError({ code: "VALIDATION_FAILED", message: "CONVERSATION_EMPTY" });
+    if (!messages.length)
+      throw new ApiError({ code: "VALIDATION_FAILED", message: "CONVERSATION_EMPTY" });
 
     const { extractWorkFromConversation } = await import("./conversation-extract.server");
     const proposals = await extractWorkFromConversation({
       apiKey,
       title: source.title,
       channel: source.channel,
-      messages: messages.map((m) => ({ id: m.id, author: m.author, sentAt: m.sentAt, body: m.body })),
+      messages: messages.map((m) => ({
+        id: m.id,
+        author: m.author,
+        sentAt: m.sentAt,
+        body: m.body,
+      })),
     });
 
     const idempotencyKey = await sha256Hex(
@@ -306,7 +321,9 @@ export const dismissExtractionProposal = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ proposalId: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     const ctx = context as unknown as Ctx;
-    const { error } = await ctx.supabase.rpc("dismiss_extraction_proposal", { _proposal_id: data.proposalId });
+    const { error } = await ctx.supabase.rpc("dismiss_extraction_proposal", {
+      _proposal_id: data.proposalId,
+    });
     if (error) mapPgError(error, "PERMISSION_DENIED");
     return { ok: true };
   });
@@ -334,7 +351,8 @@ export const approveExtractionProposal = createServerFn({ method: "POST" })
       .eq("id", data.proposalId)
       .maybeSingle();
     if (pErr) mapPgError(pErr, "PERMISSION_DENIED");
-    if (!proposal) throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "PROPOSAL_NOT_FOUND" });
+    if (!proposal)
+      throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "PROPOSAL_NOT_FOUND" });
     if (proposal.status === "APPROVED") {
       return { entityType: "EXISTING", entityId: proposal.created_entity_id as string };
     }
@@ -351,7 +369,8 @@ export const approveExtractionProposal = createServerFn({ method: "POST" })
     let entityId: string | null = null;
 
     if (kind === "TASK" || kind === "COMMITMENT") {
-      if (!workspaceId) throw new ApiError({ code: "VALIDATION_FAILED", message: "WORKSPACE_REQUIRED" });
+      if (!workspaceId)
+        throw new ApiError({ code: "VALIDATION_FAILED", message: "WORKSPACE_REQUIRED" });
       const { data: created, error } = await ctx.supabase.rpc("create_task", {
         _workspace_id: workspaceId,
         _title: data.title.trim(),
@@ -378,12 +397,17 @@ export const approveExtractionProposal = createServerFn({ method: "POST" })
           detail: (data.description ?? "").trim() || null,
           status: "CANDIDATE",
           origin: "CHAT",
-          source_type: run?.source_type ?? null,
-          source_id: run?.source_id ?? null,
+          source_type: run?.source_type === "CHAT_CHANNEL" ? "CHAT_CHANNEL" : null,
+          source_id: run?.source_type === "CHAT_CHANNEL" ? run.source_id : null,
           decided_by: ctx.userId,
           created_by: ctx.userId,
           updated_by: ctx.userId,
-          evidence: { excerpt: proposal.evidence, channel: "CONVERSATION_TO_WORK" },
+          evidence: {
+            excerpt: proposal.evidence,
+            channel: "CONVERSATION_TO_WORK",
+            sourceType: run?.source_type ?? null,
+            sourceId: run?.source_id ?? null,
+          },
         })
         .select("id")
         .single();
@@ -424,7 +448,10 @@ export const approveExtractionProposal = createServerFn({ method: "POST" })
     if (aErr) mapPgError(aErr, "PERMISSION_DENIED");
 
     // Nối vào Work Graph hiện có khi nguồn là hội thoại nội bộ.
-    if (run?.source_type === "CHAT_CHANNEL" && (entityType === "TASK" || entityType === "COMMITMENT")) {
+    if (
+      run?.source_type === "CHAT_CHANNEL" &&
+      (entityType === "TASK" || entityType === "COMMITMENT")
+    ) {
       await ctx.supabase.rpc("link_work_entities", {
         _source_type: "TASK",
         _source_id: entityId,
@@ -492,7 +519,12 @@ export const askConversationIntelligence = createServerFn({ method: "POST" })
       apiKey,
       question: data.question,
       title: source.title,
-      messages: messages.map((m) => ({ id: m.id, author: m.author, sentAt: m.sentAt, body: m.body })),
+      messages: messages.map((m) => ({
+        id: m.id,
+        author: m.author,
+        sentAt: m.sentAt,
+        body: m.body,
+      })),
     });
   });
 
