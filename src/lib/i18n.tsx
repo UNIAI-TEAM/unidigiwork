@@ -3192,6 +3192,8 @@ const dict = {
     "m.chat.badgeGeneral": "Whole organization",
     "m.chat.noMessages": "No messages yet",
     "m.chat.pickRoom": "Pick a room to start chatting.",
+    "m.chat.placeholder": "Message this task room…",
+    "m.chat.send": "Send",
     "m.ai.expand": "Show more",
     "m.ai.collapse": "Collapse",
     "m.taskChat.tab.chat": "Conversation",
