@@ -23,6 +23,7 @@ import {
   type ChatChannelDTO,
 } from "@/lib/api/chat.functions";
 import { askChatAi } from "@/lib/api/chat-ai.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 
 export function TeamChatPanel({
@@ -120,6 +121,32 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => 
     refetchInterval: 10_000,
     placeholderData: (previous) => previous,
   });
+
+  // Realtime: đồng bộ tin nhắn giữa điện thoại và máy tính ngay lập tức.
+  useEffect(() => {
+    const ch = supabase
+      .channel(`mobile-chat-${channelId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "chat_messages",
+          filter: `channel_id=eq.${channelId}`,
+        },
+        () => {
+          void queryClient.invalidateQueries({
+            queryKey: ["mobile-plus-chat-messages", channelId],
+          });
+          void queryClient.invalidateQueries({ queryKey: ["mobile-plus-chat-channels"] });
+          void queryClient.invalidateQueries({ queryKey: ["mobile-chat-channels"] });
+        },
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(ch);
+    };
+  }, [channelId, queryClient]);
 
   const serverMessages = useMemo(() => history.data?.messages ?? [], [history.data]);
   // Tin đang gửi hiển thị ngay, gỡ khi server đã trả về cùng nội dung.
