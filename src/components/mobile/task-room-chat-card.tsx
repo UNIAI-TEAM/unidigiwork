@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useNavigate } from "@tanstack/react-router";
-import { MessageSquare, Send, Sparkles } from "lucide-react";
+import { MessageSquare, Send, Sparkles, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,6 +10,8 @@ import {
   announceTaskStatusInRoom,
   ensureTaskChatChannel,
   listTaskChatMessages,
+  listTaskDirectConversations,
+  openDirectMessage,
   sendChatMessage,
 } from "@/lib/api/chat.functions";
 import { transitionTask } from "@/lib/api/tasks.functions";
@@ -212,6 +214,74 @@ export function TaskRoomChatCard({ taskId }: { taskId: string }) {
           <Send className="h-4 w-4" />
         </Button>
       </div>
+
+      <TaskDirectConversations taskId={taskId} />
     </section>
+  );
+}
+
+/** Trò chuyện 1-1 gắn với công việc: chỉ hiện DM mà chính tôi tham gia. */
+function TaskDirectConversations({ taskId }: { taskId: string }) {
+  const { t, lang } = useI18n();
+  const navigate = useNavigate();
+  const listFn = useServerFn(listTaskDirectConversations);
+  const openDm = useServerFn(openDirectMessage);
+  const localeTag = lang === "vi" ? "vi-VN" : "en-US";
+
+  const dms = useQuery({
+    queryKey: ["task-direct-conversations", taskId],
+    queryFn: () => listFn({ data: { taskId } }),
+    staleTime: 15_000,
+  });
+
+  const open = useMutation({
+    mutationFn: (userId: string) => openDm({ data: { userId } }),
+    onSuccess: (res) => {
+      const id = (res as { id?: string } | null)?.id;
+      if (id) void navigate({ to: "/chat/$channelId", params: { channelId: id } });
+    },
+    onError: () => toast.error(t("m.chat.dmError")),
+  });
+
+  const people = dms.data?.people ?? [];
+  if (people.length === 0) return null;
+
+  return (
+    <div className="mt-4 border-t pt-3">
+      <div className="flex items-center gap-2 text-sm font-semibold">
+        <UserRound className="h-4 w-4" />
+        {t("m.tasks.room.dmTitle")}
+      </div>
+      <p className="mt-1 text-xs text-muted-foreground">{t("m.tasks.room.dmPrivacy")}</p>
+      <ul className="mt-2 space-y-1">
+        {people.map((p) => (
+          <li key={p.userId}>
+            <button
+              type="button"
+              disabled={open.isPending}
+              onClick={() => open.mutate(p.userId)}
+              className="flex min-h-11 w-full items-center gap-2 rounded-xl px-3 py-2 text-left transition-colors hover:bg-surface-2"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">{p.name}</p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {p.preview ?? t("m.tasks.room.dmStart")}
+                </p>
+              </div>
+              {p.lastMessageAt ? (
+                <span className="shrink-0 text-xs text-muted-foreground">
+                  {new Date(p.lastMessageAt).toLocaleString(localeTag, {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    day: "2-digit",
+                    month: "2-digit",
+                  })}
+                </span>
+              ) : null}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
