@@ -4,6 +4,7 @@ import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   CalendarClock,
+  CalendarDays,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
@@ -45,6 +46,7 @@ import {
   setTaskDueAt,
 } from "@/lib/api/tasks.functions";
 import { postTaskRoomMessage } from "@/lib/api/chat.functions";
+import { TaskSchedulePanel } from "@/components/work-graph/task-schedule-panel";
 
 export const Route = createFileRoute("/_authenticated/work-graph")({
   validateSearch: z.object({ task: z.string().uuid().optional() }),
@@ -192,6 +194,7 @@ function WorkGraphPage() {
   const [expandedItems, setExpandedItems] = useState<Set<string>>(() => new Set());
   const [deadlineItems, setDeadlineItems] = useState<Set<string>>(() => new Set());
   const [messageItems, setMessageItems] = useState<Set<string>>(() => new Set());
+  const [scheduleItems, setScheduleItems] = useState<Set<string>>(() => new Set());
   const [deadlineDrafts, setDeadlineDrafts] = useState<Record<string, string>>({});
   const deadlineMutation = useMutation({
     mutationFn: ({ taskId, dueAt }: { taskId: string; dueAt: string | null }) =>

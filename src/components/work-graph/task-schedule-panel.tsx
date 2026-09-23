@@ -5,10 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useI18n } from "@/lib/i18n";
-import {
-  getWorkGraphTaskSchedule,
-  setWorkGraphTaskSchedule,
-} from "@/lib/api/work-graph.functions";
+import { getWorkGraphTaskSchedule, setWorkGraphTaskSchedule } from "@/lib/api/work-graph.functions";
 
 function toLocalInput(value: string | null) {
   if (!value) return "";
