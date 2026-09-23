@@ -114,12 +114,13 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
       recognitionRef.current?.stop();
       return;
     }
-    const SpeechRecognitionCtor = (
-      window as unknown as {
-        SpeechRecognition?: new () => SpeechRecognitionLike;
-        webkitSpeechRecognition?: new () => SpeechRecognitionLike;
-      }
-    ).SpeechRecognition ??
+    const SpeechRecognitionCtor =
+      (
+        window as unknown as {
+          SpeechRecognition?: new () => SpeechRecognitionLike;
+          webkitSpeechRecognition?: new () => SpeechRecognitionLike;
+        }
+      ).SpeechRecognition ??
       (window as unknown as { webkitSpeechRecognition?: new () => SpeechRecognitionLike })
         .webkitSpeechRecognition;
     if (!SpeechRecognitionCtor) {
@@ -291,10 +292,7 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
               ))}
             </div>
           )}
-          <PromptInput
-            className="mobile-ai-composer"
-            onSubmit={({ text }) => submit(text)}
-          >
+          <PromptInput className="mobile-ai-composer" onSubmit={({ text }) => submit(text)}>
             <Button
               type="button"
               variant="ghost"
