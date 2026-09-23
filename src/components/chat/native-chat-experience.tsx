@@ -1,5 +1,5 @@
 // Chat native dùng chung cho desktop và mobile (một trải nghiệm duy nhất, API thật, RLS).
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
