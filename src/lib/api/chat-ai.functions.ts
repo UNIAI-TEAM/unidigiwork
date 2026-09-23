@@ -110,13 +110,9 @@ export const askChatAi = createServerFn({ method: "POST" })
       .map((m) => `${m.is_ai ? "UNI AI" : "Thành viên"}: ${String(m.body).slice(0, 600)}`)
       .join("\n");
 
-    // Mỗi phòng có timeline riêng: chỉ phòng gắn công việc hoặc phòng chung toàn tổ chức
-    // mới được nạp dữ liệu công việc; phòng khác chỉ dùng lịch sử của chính phòng đó.
-    const board = ch.task_id
-      ? await loadWorkSnapshot(ctx, ch.tenant_id, ch.task_id as string)
-      : ch.is_general
-        ? await loadWorkSnapshot(ctx, ch.tenant_id, null)
-        : "(phòng này không gắn công việc cụ thể — chỉ dùng nội dung trao đổi trong phòng)";
+    // Timeline hội thoại vẫn riêng từng phòng; dữ liệu công việc thì nạp rộng hơn để đủ trả lời:
+    // phòng gắn công việc → ưu tiên việc đó và việc liên quan; phòng khác → toàn bộ việc trong quyền.
+    const board = await loadWorkSnapshot(ctx, ch.tenant_id, (ch.task_id as string | null) ?? null);
 
     // 1) Lưu câu hỏi của người dùng.
     const { data: qRow, error: qErr } = await ctx.supabase
