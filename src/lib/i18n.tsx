@@ -681,7 +681,8 @@ const dict = {
     "m.tasks.room.dmPrivacy": "Chỉ bạn và người nhận thấy nội dung tin nhắn riêng.",
     "m.tasks.room.dmStart": "Chưa có tin nhắn riêng — bấm để bắt đầu",
     "m.tasks.room.dmShare": "Đưa tin riêng vào công việc",
-    "m.tasks.room.dmShareHint": "Chọn tin để mọi người trong công việc cùng thấy. Trò chuyện riêng với:",
+    "m.tasks.room.dmShareHint":
+      "Chọn tin để mọi người trong công việc cùng thấy. Trò chuyện riêng với:",
     "m.tasks.room.dmShared": "Đã đưa tin vào dòng thời gian công việc",
     "m.tasks.room.dmShareError": "Không đưa được tin vào công việc",
     "m.chat.openGeneral": "Mở phòng chung của tổ chức",
