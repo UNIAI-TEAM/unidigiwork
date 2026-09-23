@@ -1717,6 +1717,7 @@ export type Database = {
           deleted_at: string | null
           description: string | null
           id: string
+          is_general: boolean
           is_private: boolean
           kind: string
           last_message_at: string | null
@@ -1734,6 +1735,7 @@ export type Database = {
           deleted_at?: string | null
           description?: string | null
           id?: string
+          is_general?: boolean
           is_private?: boolean
           kind?: string
           last_message_at?: string | null
@@ -1751,6 +1753,7 @@ export type Database = {
           deleted_at?: string | null
           description?: string | null
           id?: string
+          is_general?: boolean
           is_private?: boolean
           kind?: string
           last_message_at?: string | null
@@ -10594,6 +10597,10 @@ export type Database = {
       }
       ensure_meeting_chat_channel: {
         Args: { _meeting_id: string }
+        Returns: string
+      }
+      ensure_tenant_general_channel: {
+        Args: { _tenant_id: string }
         Returns: string
       }
       ensure_work_node: {

@@ -1,14 +1,16 @@
 // Danh sách phòng trò chuyện của tổ chức đang hoạt động (mobile-native, API thật, RLS).
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
-import { Hash, Lock, MessageSquare, Search, User, Video, X } from "lucide-react";
+import { Hash, Lock, MessageSquare, Search, User, Users, Video, X } from "lucide-react";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MobileListItem } from "@/components/mobile/mobile-list-item";
-import { listChatChannels } from "@/lib/api/chat.functions";
+import { ensureTenantGeneralChannel, listChatChannels } from "@/lib/api/chat.functions";
 import { fmt } from "@/lib/i18n-interpolate";
 import { localeTag, useI18n } from "@/lib/i18n";
 
@@ -34,6 +36,7 @@ function MobileChatList() {
   const { t, lang } = useI18n();
   const locale = localeTag(lang);
   const listFn = useServerFn(listChatChannels);
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
 
   const { data, isLoading, isError } = useQuery({
@@ -45,12 +48,36 @@ function MobileChatList() {
   const channels = useMemo(() => {
     const all = data?.channels ?? [];
     const q = search.trim().toLowerCase();
-    return q ? all.filter((c) => c.name.toLowerCase().includes(q)) : all;
+    const filtered = q ? all.filter((c) => c.name.toLowerCase().includes(q)) : all;
+    // Phòng chung của tổ chức luôn nằm đầu danh sách.
+    return [...filtered].sort((a, b) => Number(!!b.isGeneral) - Number(!!a.isGeneral));
   }, [data, search]);
+
+  const hasGeneral = (data?.channels ?? []).some((c) => c.isGeneral);
+  const ensureGeneralFn = useServerFn(ensureTenantGeneralChannel);
+  const openGeneral = useMutation({
+    mutationFn: () => ensureGeneralFn(),
+    onSuccess: (result) => {
+      void queryClient.invalidateQueries({ queryKey: ["mobile-chat-channels"] });
+      void navigate({ to: "/m/chat/$id", params: { id: result.channelId } });
+    },
+    onError: () => toast.error(t("m.chat.generalError")),
+  });
 
   return (
     <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col gap-3 overflow-x-hidden p-4 pb-24">
       <h1 className="text-xl font-semibold">{t("m.chat.title")}</h1>
+      {!hasGeneral ? (
+        <Button
+          variant="outline"
+          className="min-h-11 justify-start gap-2"
+          disabled={openGeneral.isPending}
+          onClick={() => openGeneral.mutate()}
+        >
+          <Users className="h-4 w-4" />
+          {t("m.chat.openGeneral")}
+        </Button>
+      ) : null}
       <div className="relative">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
@@ -100,7 +127,9 @@ function MobileChatList() {
               }
               icon={
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface-2 text-foreground">
-                  {channel.meetingId ? (
+                  {channel.isGeneral ? (
+                    <Users className="h-4 w-4" />
+                  ) : channel.meetingId ? (
                     <Video className="h-4 w-4" />
                   ) : channel.kind === "dm" ? (
                     <User className="h-4 w-4" />
@@ -114,6 +143,8 @@ function MobileChatList() {
               badge={
                 channel.unread > 0 ? (
                   <Badge>{channel.unread}</Badge>
+                ) : channel.isGeneral ? (
+                  <Badge variant="outline">{t("m.chat.generalRoom")}</Badge>
                 ) : channel.meetingId ? (
                   <Badge variant="outline">{t("m.chat.meetingRoom")}</Badge>
                 ) : null

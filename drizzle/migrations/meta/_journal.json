@@ -379,6 +379,13 @@
       "when": 1790124971166,
       "tag": "0053_chat_ai_message_flag",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1790126553394,
+      "tag": "0054_tenant_general_chat_channel",
+      "breakpoints": true
     }
   ]
 }
