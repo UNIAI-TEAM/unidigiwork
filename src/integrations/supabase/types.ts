@@ -2415,6 +2415,140 @@ export type Database = {
           },
         ]
       }
+      email_attachments: {
+        Row: {
+          bucket: string
+          created_at: string
+          created_by: string | null
+          file_name: string
+          id: string
+          message_id: string
+          mime_type: string | null
+          object_key: string
+          row_version: number
+          size_bytes: number
+          storage_provider: string
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          bucket?: string
+          created_at?: string
+          created_by?: string | null
+          file_name: string
+          id?: string
+          message_id: string
+          mime_type?: string | null
+          object_key: string
+          row_version?: number
+          size_bytes?: number
+          storage_provider?: string
+          tenant_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          bucket?: string
+          created_at?: string
+          created_by?: string | null
+          file_name?: string
+          id?: string
+          message_id?: string
+          mime_type?: string | null
+          object_key?: string
+          row_version?: number
+          size_bytes?: number
+          storage_provider?: string
+          tenant_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_attachments_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "email_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_labels: {
+        Row: {
+          color: string
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          row_version: number
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          row_version?: number
+          tenant_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          row_version?: number
+          tenant_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      email_message_labels: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          label_id: string
+          message_id: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          label_id: string
+          message_id: string
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          label_id?: string
+          message_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_message_labels_label_id_fkey"
+            columns: ["label_id"]
+            isOneToOne: false
+            referencedRelation: "email_labels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_message_labels_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "email_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_messages: {
         Row: {
           body: string
@@ -2500,6 +2634,110 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      email_rules: {
+        Row: {
+          act_folder: string | null
+          act_label_id: string | null
+          act_mark_read: boolean
+          cond_from: string | null
+          cond_has_attachment: boolean
+          cond_subject_contains: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_enabled: boolean
+          name: string
+          row_version: number
+          sort_order: number
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+        }
+        Insert: {
+          act_folder?: string | null
+          act_label_id?: string | null
+          act_mark_read?: boolean
+          cond_from?: string | null
+          cond_has_attachment?: boolean
+          cond_subject_contains?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_enabled?: boolean
+          name: string
+          row_version?: number
+          sort_order?: number
+          tenant_id: string
+          updated_at?: string
+          updated_by?: string | null
+          user_id: string
+        }
+        Update: {
+          act_folder?: string | null
+          act_label_id?: string | null
+          act_mark_read?: boolean
+          cond_from?: string | null
+          cond_has_attachment?: boolean
+          cond_subject_contains?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_enabled?: boolean
+          name?: string
+          row_version?: number
+          sort_order?: number
+          tenant_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_rules_act_label_id_fkey"
+            columns: ["act_label_id"]
+            isOneToOne: false
+            referencedRelation: "email_labels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_signatures: {
+        Row: {
+          body: string
+          created_at: string
+          created_by: string | null
+          is_enabled: boolean
+          row_version: number
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+        }
+        Insert: {
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          is_enabled?: boolean
+          row_version?: number
+          tenant_id: string
+          updated_at?: string
+          updated_by?: string | null
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          is_enabled?: boolean
+          row_version?: number
+          tenant_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       email_states: {
         Row: {
@@ -9480,6 +9718,10 @@ export type Database = {
         Args: { _meeting_id: string; _segments: Json; _source?: string }
         Returns: number
       }
+      apply_email_labels: {
+        Args: { _label_ids: string[]; _message_id: string }
+        Returns: boolean
+      }
       apply_task_message_classification: {
         Args: {
           _classifier_version: string
@@ -10499,6 +10741,11 @@ export type Database = {
         }
         Returns: Json
       }
+      delete_email_label: {
+        Args: { _id: string; _tenant_id: string }
+        Returns: boolean
+      }
+      delete_email_rule: { Args: { _id: string }; Returns: boolean }
       delete_human_agent: {
         Args: { _tenant_id: string; _user_id: string }
         Returns: boolean
@@ -11699,6 +11946,16 @@ export type Database = {
         Args: { _task_id: string }
         Returns: undefined
       }
+      register_email_attachment: {
+        Args: {
+          _file_name: string
+          _message_id: string
+          _mime_type: string
+          _object_key: string
+          _size_bytes: number
+        }
+        Returns: string
+      }
       remove_meeting_participant: {
         Args: {
           _correlation_id?: string
@@ -11939,6 +12196,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      run_email_rules_for_message: {
+        Args: { _message_id: string; _user_id: string }
+        Returns: number
+      }
       save_meeting_summary: {
         Args: {
           _action_items: Json
@@ -12064,6 +12325,39 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      search_email_messages: {
+        Args: {
+          _date_from: string
+          _date_to: string
+          _folder: string
+          _from_query: string
+          _has_attachment: boolean
+          _keyword: string
+          _label_ids: string[]
+          _limit: number
+          _offset: number
+          _starred_only: boolean
+          _to_query: string
+        }
+        Returns: {
+          attachment_count: number
+          body: string
+          created_at: string
+          folder: string
+          from_user_id: string
+          is_draft: boolean
+          is_read: boolean
+          is_starred: boolean
+          label_ids: string[]
+          message_id: string
+          sender_email: string
+          sender_name: string
+          sent_at: string
+          subject: string
+          thread_id: string
+          total_count: number
+        }[]
       }
       search_norm: { Args: { _t: string }; Returns: string }
       search_universal: {
@@ -12873,6 +13167,25 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      upsert_email_label: {
+        Args: { _color: string; _id: string; _name: string; _tenant_id: string }
+        Returns: string
+      }
+      upsert_email_rule: {
+        Args: {
+          _act_folder: string
+          _act_label_id: string
+          _act_mark_read: boolean
+          _cond_from: string
+          _cond_has_attachment: boolean
+          _cond_subject_contains: string
+          _id: string
+          _is_enabled: boolean
+          _name: string
+          _tenant_id: string
+        }
+        Returns: string
       }
       upsert_human_agent:
         | {

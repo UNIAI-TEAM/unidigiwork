@@ -428,6 +428,20 @@
       "when": 1790156856906,
       "tag": "0060_fix_task_following_assignee_order",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1790158884731,
+      "tag": "0061_email_hub_v2",
+      "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1790158980652,
+      "tag": "0062_email_attachments_storage_policies",
+      "breakpoints": true
     }
   ]
 }

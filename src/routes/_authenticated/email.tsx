@@ -241,14 +241,19 @@ function EmailHubPage() {
   const starredMode = activeMailbox === "starred";
   const folder: DbFolder = starredMode ? "inbox" : (activeMailbox as DbFolder);
   const dbQuery = useQuery({
-    queryKey: ["emails", workspaceId, activeMailbox, debouncedSearch, page],
+    queryKey: ["emails", workspaceId, activeMailbox, debouncedSearch, advanced, page],
     queryFn: () =>
-      listEmailMessages({
+      searchEmails({
         data: {
           folder,
-          search: debouncedSearch,
-          workspace_id: workspaceId ?? null,
           starred_only: starredMode,
+          keyword: debouncedSearch || advanced.keyword,
+          from: advanced.from,
+          to: advanced.to,
+          date_from: advanced.dateFrom || null,
+          date_to: advanced.dateTo || null,
+          has_attachment: advanced.hasAttachment,
+          label_ids: advanced.labels,
           limit: PAGE_SIZE,
           offset: (page - 1) * PAGE_SIZE,
         },
@@ -261,35 +266,38 @@ function EmailHubPage() {
     queryFn: () => getEmailFolderCounts({ data: { workspace_id: workspaceId ?? null } }),
     staleTime: 30_000,
   });
+  const labelsQuery = useQuery({
+    queryKey: ["email-labels"],
+    queryFn: () => listEmailLabels(),
+    staleTime: 60_000,
+  });
+  const labels: EmailLabel[] = labelsQuery.data ?? [];
+  const labelNameById = useMemo(
+    () => new Map(labels.map((l) => [l.id, l.name] as const)),
+    [labels],
+  );
 
   const dbEmails: Email[] = useMemo(() => {
     if (!dbQuery.data) return [];
     return dbQuery.data.items.map((r) => {
-      const m = r.message as {
-        id: string;
-        subject: string;
-        body: string;
-        sent_at: string | null;
-        created_at: string;
-        from_user_id: string;
-      };
-      const senderName = r.sender?.display_name ?? r.sender?.email ?? t("em.6");
-      const when = m.sent_at ?? m.created_at;
+      const when = r.sent_at ?? r.created_at;
       return {
-        id: m.id,
-        from: senderName,
-        fromEmail: r.sender?.email,
-        subject: m.subject,
-        preview: (m.body ?? "").replace(/\s+/g, " ").slice(0, 160),
-        body: m.body,
+        id: r.message_id,
+        from: r.sender_name ?? r.sender_email ?? t("em.6"),
+        fromEmail: r.sender_email ?? undefined,
+        subject: r.subject,
+        preview: (r.body ?? "").replace(/\s+/g, " ").slice(0, 160),
+        body: r.body,
         time: formatEmailTime(when),
         group: bucketEmailWhen(when),
         unread: !r.is_read,
         starred: r.is_starred,
+        hasAttachment: r.attachment_count > 0,
+        labels: r.label_ids.map((id) => labelNameById.get(id)).filter(Boolean) as string[],
         mailbox: r.folder as Email["mailbox"],
       } satisfies Email;
     });
-  }, [dbQuery.data]);
+  }, [dbQuery.data, labelNameById]);
 
   function prioritySortValue(e: Email): number {
     if (e.unread && e.starred) return 3;
@@ -300,20 +308,11 @@ function EmailHubPage() {
 
   {t("em.7")}
   const pagedEmails = useMemo(() => {
-    const a = advanced;
-    const list = dbEmails.filter((e) => {
-      const matchUnread = !filterUnread || !!e.unread;
-      const matchAdvKeyword =
-        !a.keyword ||
-        e.subject.toLowerCase().includes(a.keyword.toLowerCase()) ||
-        (e.preview ?? "").toLowerCase().includes(a.keyword.toLowerCase());
-      const matchAdvFrom = !a.from || e.from.toLowerCase().includes(a.from.toLowerCase());
-      return matchUnread && matchAdvKeyword && matchAdvFrom;
-    });
+    const list = dbEmails.filter((e) => !filterUnread || !!e.unread);
     return list
       .slice()
       .sort((x, y) => (sortBy === "priority" ? prioritySortValue(y) - prioritySortValue(x) : 0));
-  }, [dbEmails, filterUnread, advanced, sortBy]);
+  }, [dbEmails, filterUnread, sortBy]);
 
   const selectedEmail = dbEmails.find((e) => e.id === selected) ?? dbEmails[0] ?? null;
 
@@ -639,16 +638,26 @@ function EmailHubPage() {
                   <li className="px-3 py-1.5 text-xs text-muted-foreground">Chưa có nhãn</li>
                 )}
                 {labels.map((l) => {
-                  const active = filterLabel === l.name;
+                  const active = advanced.labels.includes(l.id);
                   return (
-                    <li key={l.name}>
+                    <li key={l.id}>
                       <button
-                        onClick={() => setFilterLabel(active ? null : l.name)}
+                        onClick={() =>
+                          setAdvanced({
+                            ...advanced,
+                            labels: active
+                              ? advanced.labels.filter((x) => x !== l.id)
+                              : [...advanced.labels, l.id],
+                          })
+                        }
                         className={`flex w-full items-center gap-3 rounded-lg px-3 py-1.5 text-sm ${active ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"}`}
                       >
-                        <span className={`h-2.5 w-2.5 rounded-sm ${l.color}`} />
+                        <span
+                          className="h-2.5 w-2.5 rounded-sm"
+                          style={{ backgroundColor: l.color }}
+                          aria-hidden
+                        />
                         <span className="flex-1 text-left">{l.name}</span>
-                        <span className="text-[11px] tabular-nums">{l.count}</span>
                       </button>
                     </li>
                   );
@@ -1333,25 +1342,14 @@ function EmailHubPage() {
         onOpenChange={setAdvancedOpen}
         value={advanced}
         onChange={setAdvanced}
-        availableLabels={labels.map((l) => l.name)}
+        availableLabels={labels}
       />
       <AiAssistantDialog
         open={aiOpen}
         onOpenChange={setAiOpen}
         emailSubject={selectedEmail?.subject ?? ""}
       />
-      <LabelsRulesDialog
-        open={labelsOpen}
-        onOpenChange={setLabelsOpen}
-        labels={labels.map((l) => ({ name: l.name, color: l.color }))}
-        onChangeLabels={(v) =>
-          setLabels(
-            v.map((x) => ({ ...x, count: labels.find((l) => l.name === x.name)?.count ?? 0 })),
-          )
-        }
-        rules={rules}
-        onChangeRules={setRules}
-      />
+      <LabelsRulesDialog open={labelsOpen} onOpenChange={setLabelsOpen} />
     </div>
   );
 }

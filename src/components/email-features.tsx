@@ -1,9 +1,23 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { sendEmail } from "@/lib/api/emails.functions";
+import { sendEmail, saveEmailDraft } from "@/lib/api/emails.functions";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  listEmailLabels,
+  listEmailRules,
+  upsertEmailLabel,
+  deleteEmailLabel,
+  upsertEmailRule,
+  deleteEmailRule,
+  registerEmailAttachment,
+  deleteEmailAttachment,
+  getEmailSignature,
+  type EmailRule,
+  type EmailLabel,
+} from "@/lib/api/email-hub.functions";
 import {
   Dialog,
   DialogContent,
@@ -62,16 +76,115 @@ export function ComposeEmailDialog({
   const [bcc, setBcc] = useState("");
   const [subject, setSubject] = useState(initialSubject);
   const [body, setBody] = useState(initialBody);
-  const [attachments, setAttachments] = useState<{ name: string; size: string }[]>([]);
+  const [attachments, setAttachments] = useState<
+    { id: string; name: string; size: string }[]
+  >([]);
   const [aiBusy, setAiBusy] = useState(false);
+  const [draftId, setDraftId] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const signatureApplied = useRef(false);
 
   const qc = useQueryClient();
   const doSend = useServerFn(sendEmail);
+  const doSaveDraft = useServerFn(saveEmailDraft);
+  const doRegister = useServerFn(registerEmailAttachment);
+  const doDeleteAttachment = useServerFn(deleteEmailAttachment);
+
+  const signatureQuery = useQuery({
+    queryKey: ["email-signature"],
+    queryFn: () => getEmailSignature(),
+    enabled: open,
+    staleTime: 60_000,
+  });
+
+  // Tự chèn chữ ký cá nhân một lần khi mở hộp soạn thư.
+  useEffect(() => {
+    if (!open) {
+      signatureApplied.current = false;
+      return;
+    }
+    const sig = signatureQuery.data;
+    if (!sig || !sig.is_enabled || !sig.body.trim() || signatureApplied.current) return;
+    signatureApplied.current = true;
+    setBody((b) => (b.includes(sig.body.trim()) ? b : `${b}\n\n--\n${sig.body.trim()}`));
+  }, [open, signatureQuery.data]);
+
   const parseList = (v: string) =>
     v
       .split(/[,;\s]+/)
       .map((s) => s.trim())
       .filter(Boolean);
+
+  async function ensureDraft(): Promise<string> {
+    if (draftId) return draftId;
+    const res = await doSaveDraft({
+      data: {
+        to: parseList(to),
+        cc: parseList(cc),
+        subject: subject.trim() || "(Không tiêu đề)",
+        body,
+        ...(threadId ? { thread_id: threadId } : {}),
+      },
+    });
+    setDraftId(res.draft_id);
+    return res.draft_id;
+  }
+
+  function formatSize(bytes: number) {
+    return bytes >= 1024 * 1024
+      ? `${(bytes / 1024 / 1024).toFixed(1)} MB`
+      : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  }
+
+  async function handleFiles(files: FileList | null) {
+    if (!files?.length) return;
+    setUploading(true);
+    try {
+      const msgId = await ensureDraft();
+      for (const file of Array.from(files)) {
+        if (file.size > 25 * 1024 * 1024) {
+          toast.error(`${file.name} vượt quá 25MB`);
+          continue;
+        }
+        const key = `${msgId}/${crypto.randomUUID()}-${file.name.replace(/[^\w.\-]+/g, "_")}`;
+        const { error } = await supabase.storage.from("email-attachments").upload(key, file, {
+          contentType: file.type || "application/octet-stream",
+          upsert: false,
+        });
+        if (error) throw new Error(error.message);
+        const reg = await doRegister({
+          data: {
+            message_id: msgId,
+            object_key: key,
+            file_name: file.name,
+            mime_type: file.type || null,
+            size_bytes: file.size,
+          },
+        });
+        setAttachments((prev) => [
+          ...prev,
+          { id: reg.id, name: file.name, size: formatSize(file.size) },
+        ]);
+      }
+      toast.success("Đã đính kèm tệp");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Không đính kèm được tệp");
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
+
+  async function removeAttachment(id: string) {
+    try {
+      await doDeleteAttachment({ data: { id } });
+      setAttachments((prev) => prev.filter((a) => a.id !== id));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Không xoá được tệp");
+    }
+  }
+
   const sendMut = useMutation({
     mutationFn: () =>
       doSend({
@@ -81,10 +194,13 @@ export function ComposeEmailDialog({
           subject: subject.trim(),
           body,
           ...(threadId ? { thread_id: threadId } : {}),
+          ...(draftId ? { draft_id: draftId } : {}),
         },
       }),
     onSuccess: () => {
       toast.success("Đã gửi email");
+      setDraftId(null);
+      setAttachments([]);
       qc.invalidateQueries({ queryKey: ["emails"] });
       onOpenChange(false);
     },
@@ -179,17 +295,20 @@ export function ComposeEmailDialog({
 
           {attachments.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {attachments.map((a, i) => (
+              {attachments.map((a) => (
                 <span
-                  key={i}
+                  key={a.id}
                   className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2 py-1 text-xs"
                 >
                   <Paperclip className="h-3 w-3" /> {a.name}{" "}
                   <span className="text-muted-foreground">{a.size}</span>
-                  <X
-                    className="h-3 w-3 cursor-pointer text-muted-foreground hover:text-foreground"
-                    onClick={() => setAttachments(attachments.filter((_, j) => j !== i))}
-                  />
+                  <button
+                    onClick={() => removeAttachment(a.id)}
+                    className="p-1 text-muted-foreground hover:text-foreground"
+                    aria-label={`Xoá ${a.name}`}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
                 </span>
               ))}
             </div>
@@ -229,17 +348,20 @@ export function ComposeEmailDialog({
 
         <DialogFooter className="flex-row !justify-between gap-2">
           <div className="flex items-center gap-1">
+            <input
+              ref={fileRef}
+              type="file"
+              multiple
+              className="hidden"
+              onChange={(e) => handleFiles(e.target.files)}
+            />
             <Button
               variant="ghost"
               size="sm"
-              onClick={() =>
-                setAttachments([
-                  ...attachments,
-                  { name: `File_${attachments.length + 1}.pdf`, size: "240 KB" },
-                ])
-              }
+              disabled={uploading}
+              onClick={() => fileRef.current?.click()}
             >
-              <Paperclip className="h-4 w-4" /> Đính kèm
+              <Paperclip className="h-4 w-4" /> {uploading ? "Đang tải lên…" : "Đính kèm"}
             </Button>
           </div>
           <div className="flex items-center gap-2">
@@ -305,14 +427,14 @@ export function AdvancedFilterDialog({
   onOpenChange: (v: boolean) => void;
   value: AdvancedFilters;
   onChange: (v: AdvancedFilters) => void;
-  availableLabels: string[];
+  availableLabels: EmailLabel[];
 }) {
   const [draft, setDraft] = useState<AdvancedFilters>(value);
 
-  function toggleLabel(name: string) {
+  function toggleLabel(id: string) {
     setDraft((d) => ({
       ...d,
-      labels: d.labels.includes(name) ? d.labels.filter((l) => l !== name) : [...d.labels, name],
+      labels: d.labels.includes(id) ? d.labels.filter((l) => l !== id) : [...d.labels, id],
     }));
   }
 
@@ -374,15 +496,23 @@ export function AdvancedFilterDialog({
           <div>
             <div className="mb-1.5 text-xs text-muted-foreground">Nhãn</div>
             <div className="flex flex-wrap gap-1.5">
+              {availableLabels.length === 0 && (
+                <span className="text-xs text-muted-foreground">Chưa có nhãn</span>
+              )}
               {availableLabels.map((l) => {
-                const active = draft.labels.includes(l);
+                const active = draft.labels.includes(l.id);
                 return (
                   <button
-                    key={l}
-                    onClick={() => toggleLabel(l)}
+                    key={l.id}
+                    onClick={() => toggleLabel(l.id)}
                     className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs ${active ? "border-primary bg-primary/15" : "border-border bg-surface hover:bg-surface-2"}`}
                   >
-                    <Tag className="h-3 w-3" /> {l}
+                    <span
+                      className="h-2.5 w-2.5 rounded-sm"
+                      style={{ backgroundColor: l.color }}
+                      aria-hidden
+                    />
+                    {l.name}
                   </button>
                 );
               })}
@@ -602,79 +732,147 @@ function ModeBtn({
   );
 }
 
-/* ===================== Labels & Rules Dialog ===================== */
+/* ===================== Labels & Rules Dialog (backend-backed) ===================== */
 
 export type LabelDef = { name: string; color: string };
-export type RuleDef = {
-  id: string;
-  name: string;
-  whenField: "from" | "subject" | "to";
-  whenContains: string;
-  thenAction: "label" | "archive" | "star" | "forward";
-  thenValue: string;
-  active: boolean;
-};
 
-const COLOR_OPTIONS = [
-  { name: "Emerald", value: "bg-emerald-500" },
-  { name: "Amber", value: "bg-amber-500" },
-  { name: "Violet", value: "bg-violet-500" },
-  { name: "Sky", value: "bg-sky-500" },
-  { name: "Rose", value: "bg-rose-500" },
-  { name: "Slate", value: "bg-slate-500" },
-];
+const COLOR_OPTIONS = ["#10b981", "#f59e0b", "#8b5cf6", "#0ea5e9", "#f43f5e", "#64748b"];
 
 export function LabelsRulesDialog({
   open,
   onOpenChange,
-  labels,
-  onChangeLabels,
-  rules,
-  onChangeRules,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  labels: LabelDef[];
-  onChangeLabels: (v: LabelDef[]) => void;
-  rules: RuleDef[];
-  onChangeRules: (v: RuleDef[]) => void;
 }) {
+  const qc = useQueryClient();
   const [tab, setTab] = useState<"labels" | "rules">("labels");
   const [newLabel, setNewLabel] = useState("");
-  const [newColor, setNewColor] = useState(COLOR_OPTIONS[0].value);
+  const [newColor, setNewColor] = useState(COLOR_OPTIONS[0]);
 
   const [rName, setRName] = useState("");
-  const [rField, setRField] = useState<RuleDef["whenField"]>("from");
-  const [rContains, setRContains] = useState("");
-  const [rAction, setRAction] = useState<RuleDef["thenAction"]>("label");
-  const [rValue, setRValue] = useState("");
+  const [rFrom, setRFrom] = useState("");
+  const [rSubject, setRSubject] = useState("");
+  const [rHasAtt, setRHasAtt] = useState(false);
+  const [rLabelId, setRLabelId] = useState("");
+  const [rFolder, setRFolder] = useState("");
+  const [rMarkRead, setRMarkRead] = useState(false);
 
-  function addLabel() {
-    const n = newLabel.trim();
-    if (!n) return;
-    onChangeLabels([...labels, { name: n, color: newColor }]);
-    setNewLabel("");
+  const labelsQuery = useQuery({
+    queryKey: ["email-labels"],
+    queryFn: () => listEmailLabels(),
+    enabled: open,
+  });
+  const rulesQuery = useQuery({
+    queryKey: ["email-rules"],
+    queryFn: () => listEmailRules(),
+    enabled: open,
+  });
+  const labels = labelsQuery.data ?? [];
+  const rules = rulesQuery.data ?? [];
+
+  const saveLabel = useServerFn(upsertEmailLabel);
+  const removeLabel = useServerFn(deleteEmailLabel);
+  const saveRule = useServerFn(upsertEmailRule);
+  const removeRule = useServerFn(deleteEmailRule);
+
+  const refreshLabels = () => {
+    qc.invalidateQueries({ queryKey: ["email-labels"] });
+    qc.invalidateQueries({ queryKey: ["emails"] });
+  };
+  const refreshRules = () => qc.invalidateQueries({ queryKey: ["email-rules"] });
+
+  const addLabelMut = useMutation({
+    mutationFn: () => saveLabel({ data: { name: newLabel.trim(), color: newColor } }),
+    onSuccess: () => {
+      setNewLabel("");
+      refreshLabels();
+      toast.success("Đã lưu nhãn");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const delLabelMut = useMutation({
+    mutationFn: (id: string) => removeLabel({ data: { id } }),
+    onSuccess: () => {
+      refreshLabels();
+      refreshRules();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const addRuleMut = useMutation({
+    mutationFn: () =>
+      saveRule({
+        data: {
+          name: rName.trim(),
+          is_enabled: true,
+          cond_from: rFrom,
+          cond_subject_contains: rSubject,
+          cond_has_attachment: rHasAtt,
+          act_label_id: rLabelId || null,
+          act_folder: (rFolder || null) as "inbox" | "archive" | "trash" | null,
+          act_mark_read: rMarkRead,
+        },
+      }),
+    onSuccess: () => {
+      setRName("");
+      setRFrom("");
+      setRSubject("");
+      setRValueReset();
+      refreshRules();
+      toast.success("Đã lưu quy tắc");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  function setRValueReset() {
+    setRHasAtt(false);
+    setRLabelId("");
+    setRFolder("");
+    setRMarkRead(false);
   }
-  function removeLabel(name: string) {
-    onChangeLabels(labels.filter((l) => l.name !== name));
-  }
-  function addRule() {
-    if (!rName.trim() || !rContains.trim()) return;
-    onChangeRules([
-      ...rules,
-      {
-        id: Math.random().toString(36).slice(2, 9),
-        name: rName,
-        whenField: rField,
-        whenContains: rContains,
-        thenAction: rAction,
-        thenValue: rValue,
-        active: true,
-      },
-    ]);
-    setRName("");
-    setRContains("");
-    setRValue("");
+  const toggleRuleMut = useMutation({
+    mutationFn: (r: { id: string; enabled: boolean }) => {
+      const full = rules.find((x) => x.id === r.id)!;
+      return saveRule({
+        data: {
+          id: full.id,
+          name: full.name,
+          is_enabled: r.enabled,
+          cond_from: full.cond_from ?? "",
+          cond_subject_contains: full.cond_subject_contains ?? "",
+          cond_has_attachment: full.cond_has_attachment,
+          act_label_id: full.act_label_id,
+          act_folder: full.act_folder as "inbox" | "archive" | "trash" | null,
+          act_mark_read: full.act_mark_read,
+        },
+      });
+    },
+    onSuccess: refreshRules,
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const delRuleMut = useMutation({
+    mutationFn: (id: string) => removeRule({ data: { id } }),
+    onSuccess: refreshRules,
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  function describeRule(r: EmailRule) {
+    const when: string[] = [];
+    if (r.cond_from) when.push(`người gửi chứa "${r.cond_from}"`);
+    if (r.cond_subject_contains) when.push(`tiêu đề chứa "${r.cond_subject_contains}"`);
+    if (r.cond_has_attachment) when.push("có tệp đính kèm");
+    const then: string[] = [];
+    if (r.act_label_id)
+      then.push(`gắn nhãn "${labels.find((l) => l.id === r.act_label_id)?.name ?? "?"}"`);
+    if (r.act_folder)
+      then.push(
+        r.act_folder === "archive"
+          ? "chuyển vào Lưu trữ"
+          : r.act_folder === "trash"
+            ? "chuyển vào Thùng rác"
+            : "giữ ở Hộp thư đến",
+      );
+    if (r.act_mark_read) then.push("đánh dấu đã đọc");
+    return `Khi ${when.join(" và ") || "mọi thư"} → ${then.join(", ") || "không làm gì"}`;
   }
 
   return (
@@ -690,13 +888,13 @@ export function LabelsRulesDialog({
         <div className="flex gap-1 rounded-lg bg-surface-2 p-1 text-sm">
           <button
             onClick={() => setTab("labels")}
-            className={`flex-1 rounded-md px-3 py-1.5 ${tab === "labels" ? "bg-background shadow" : "text-muted-foreground"}`}
+            className={`min-h-11 flex-1 rounded-md px-3 py-1.5 ${tab === "labels" ? "bg-background shadow" : "text-muted-foreground"}`}
           >
             <Tag className="mr-1.5 inline h-3.5 w-3.5" /> Nhãn ({labels.length})
           </button>
           <button
             onClick={() => setTab("rules")}
-            className={`flex-1 rounded-md px-3 py-1.5 ${tab === "rules" ? "bg-background shadow" : "text-muted-foreground"}`}
+            className={`min-h-11 flex-1 rounded-md px-3 py-1.5 ${tab === "rules" ? "bg-background shadow" : "text-muted-foreground"}`}
           >
             <Filter className="mr-1.5 inline h-3.5 w-3.5" /> Quy tắc ({rules.length})
           </button>
@@ -705,7 +903,7 @@ export function LabelsRulesDialog({
         {tab === "labels" ? (
           <div className="space-y-3">
             <div className="flex flex-wrap items-end gap-2 rounded-lg border border-border bg-surface p-3">
-              <div className="flex-1 min-w-[160px]">
+              <div className="min-w-[160px] flex-1">
                 <div className="mb-1 text-xs text-muted-foreground">Tên nhãn</div>
                 <Input
                   value={newLabel}
@@ -718,30 +916,36 @@ export function LabelsRulesDialog({
                 <div className="flex gap-1">
                   {COLOR_OPTIONS.map((c) => (
                     <button
-                      key={c.value}
-                      onClick={() => setNewColor(c.value)}
-                      className={`h-7 w-7 rounded-md ${c.value} ${newColor === c.value ? "ring-2 ring-foreground" : ""}`}
-                      title={c.name}
+                      key={c}
+                      onClick={() => setNewColor(c)}
+                      style={{ backgroundColor: c }}
+                      className={`h-8 w-8 rounded-md ${newColor === c ? "ring-2 ring-foreground" : ""}`}
+                      aria-label={`Màu ${c}`}
                     />
                   ))}
                 </div>
               </div>
-              <Button onClick={addLabel}>
+              <Button
+                onClick={() => newLabel.trim() && addLabelMut.mutate()}
+                disabled={addLabelMut.isPending}
+              >
                 <Plus className="h-4 w-4" /> Thêm
               </Button>
             </div>
 
             <ul className="divide-y divide-border rounded-lg border border-border bg-surface">
               {labels.map((l) => (
-                <li key={l.name} className="flex items-center gap-3 px-3 py-2">
-                  <span className={`h-3 w-3 rounded-sm ${l.color}`} />
+                <li key={l.id} className="flex items-center gap-3 px-3 py-2">
+                  <span
+                    className="h-3 w-3 rounded-sm"
+                    style={{ backgroundColor: l.color }}
+                    aria-hidden
+                  />
                   <span className="flex-1 text-sm">{l.name}</span>
-                  <Badge variant="secondary" className="text-[10px]">
-                    đang dùng
-                  </Badge>
                   <button
-                    onClick={() => removeLabel(l.name)}
-                    className="rounded p-1 text-muted-foreground hover:bg-surface-2 hover:text-rose-400"
+                    onClick={() => delLabelMut.mutate(l.id)}
+                    className="rounded p-2 text-muted-foreground hover:bg-surface-2 hover:text-rose-400"
+                    aria-label={`Xoá nhãn ${l.name}`}
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -762,45 +966,52 @@ export function LabelsRulesDialog({
                 onChange={(e) => setRName(e.target.value)}
                 placeholder="Tên quy tắc (VD: Email từ khách VIP)"
               />
-              <div className="flex flex-wrap items-center gap-1.5 text-sm">
-                <span className="text-muted-foreground">Khi</span>
-                <select
-                  value={rField}
-                  onChange={(e) => setRField(e.target.value as RuleDef["whenField"])}
-                  className="rounded-md border border-border bg-background px-2 py-1 text-xs"
-                >
-                  <option value="from">Người gửi</option>
-                  <option value="to">Người nhận</option>
-                  <option value="subject">Tiêu đề</option>
-                </select>
-                <span className="text-muted-foreground">chứa</span>
+              <div className="grid gap-2 sm:grid-cols-2">
                 <Input
-                  value={rContains}
-                  onChange={(e) => setRContains(e.target.value)}
-                  placeholder="@stos.vn"
-                  className="h-8 flex-1 min-w-[120px]"
+                  value={rFrom}
+                  onChange={(e) => setRFrom(e.target.value)}
+                  placeholder="Người gửi chứa…"
                 />
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">thì</span>
+                <Input
+                  value={rSubject}
+                  onChange={(e) => setRSubject(e.target.value)}
+                  placeholder="Tiêu đề chứa…"
+                />
+              </div>
+              <div className="flex flex-wrap items-center gap-2 text-sm">
+                <label className="flex items-center gap-2">
+                  <Switch checked={rHasAtt} onCheckedChange={setRHasAtt} /> Có đính kèm
+                </label>
                 <select
-                  value={rAction}
-                  onChange={(e) => setRAction(e.target.value as RuleDef["thenAction"])}
-                  className="rounded-md border border-border bg-background px-2 py-1 text-xs"
+                  value={rLabelId}
+                  onChange={(e) => setRLabelId(e.target.value)}
+                  className="min-h-9 rounded-md border border-border bg-background px-2 py-1 text-xs"
                 >
-                  <option value="label">Gắn nhãn</option>
-                  <option value="archive">Lưu trữ</option>
-                  <option value="star">Đánh dấu sao</option>
-                  <option value="forward">Chuyển tiếp</option>
+                  <option value="">Không gắn nhãn</option>
+                  {labels.map((l) => (
+                    <option key={l.id} value={l.id}>
+                      Gắn nhãn: {l.name}
+                    </option>
+                  ))}
                 </select>
-                {(rAction === "label" || rAction === "forward") && (
-                  <Input
-                    value={rValue}
-                    onChange={(e) => setRValue(e.target.value)}
-                    placeholder={rAction === "label" ? "Tên nhãn" : "email@..."}
-                    className="h-8 w-[140px]"
-                  />
-                )}
-                <Button size="sm" onClick={addRule}>
+                <select
+                  value={rFolder}
+                  onChange={(e) => setRFolder(e.target.value)}
+                  className="min-h-9 rounded-md border border-border bg-background px-2 py-1 text-xs"
+                >
+                  <option value="">Giữ nguyên thư mục</option>
+                  <option value="inbox">Hộp thư đến</option>
+                  <option value="archive">Lưu trữ</option>
+                  <option value="trash">Thùng rác</option>
+                </select>
+                <label className="flex items-center gap-2">
+                  <Switch checked={rMarkRead} onCheckedChange={setRMarkRead} /> Đánh dấu đã đọc
+                </label>
+                <Button
+                  size="sm"
+                  onClick={() => rName.trim() && addRuleMut.mutate()}
+                  disabled={addRuleMut.isPending}
+                >
                   <Plus className="h-3.5 w-3.5" /> Thêm
                 </Button>
               </div>
@@ -812,21 +1023,16 @@ export function LabelsRulesDialog({
                   <Inbox className="h-4 w-4 text-muted-foreground" />
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-medium">{r.name}</div>
-                    <div className="truncate text-xs text-muted-foreground">
-                      Khi {labelField(r.whenField)} chứa "{r.whenContains}" →{" "}
-                      {labelAction(r.thenAction)}
-                      {r.thenValue ? ` "${r.thenValue}"` : ""}
-                    </div>
+                    <div className="truncate text-xs text-muted-foreground">{describeRule(r)}</div>
                   </div>
                   <Switch
-                    checked={r.active}
-                    onCheckedChange={(v) =>
-                      onChangeRules(rules.map((x) => (x.id === r.id ? { ...x, active: v } : x)))
-                    }
+                    checked={r.is_enabled}
+                    onCheckedChange={(v) => toggleRuleMut.mutate({ id: r.id, enabled: v })}
                   />
                   <button
-                    onClick={() => onChangeRules(rules.filter((x) => x.id !== r.id))}
-                    className="rounded p-1 text-muted-foreground hover:bg-surface-2 hover:text-rose-400"
+                    onClick={() => delRuleMut.mutate(r.id)}
+                    className="rounded p-2 text-muted-foreground hover:bg-surface-2 hover:text-rose-400"
+                    aria-label={`Xoá quy tắc ${r.name}`}
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -843,17 +1049,4 @@ export function LabelsRulesDialog({
       </DialogContent>
     </Dialog>
   );
-}
-
-function labelField(f: RuleDef["whenField"]) {
-  return f === "from" ? "Người gửi" : f === "to" ? "Người nhận" : "Tiêu đề";
-}
-function labelAction(a: RuleDef["thenAction"]) {
-  return a === "label"
-    ? "gắn nhãn"
-    : a === "archive"
-      ? "lưu trữ"
-      : a === "star"
-        ? "đánh dấu sao"
-        : "chuyển tiếp đến";
 }

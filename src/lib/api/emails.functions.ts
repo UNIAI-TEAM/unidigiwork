@@ -416,6 +416,19 @@ export const sendEmail = createServerFn({ method: "POST" })
       if (rErr) throw new Error(rErr.message);
     }
 
+    // Quy tắc tự động của từng người nhận (nhãn / thư mục / đánh dấu đã đọc).
+    // Best-effort: lỗi quy tắc không được làm hỏng việc gửi thư.
+    for (const uid of recipients) {
+      const { error: ruleErr } = await (ctx.supabase.rpc as (
+        fn: string,
+        args: Record<string, unknown>,
+      ) => Promise<{ error: { message: string } | null }>)("run_email_rules_for_message", {
+        _message_id: messageId,
+        _user_id: uid,
+      });
+      if (ruleErr) console.error("run_email_rules_for_message", ruleErr.message);
+    }
+
     // Đồng bộ thread: tiêu đề + thời điểm tin cuối.
     await ctx.supabase
       .from("email_threads")
