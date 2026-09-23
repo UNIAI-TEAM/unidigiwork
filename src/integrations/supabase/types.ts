@@ -12269,6 +12269,10 @@ export type Database = {
         }
         Returns: Json
       }
+      soft_delete_chat_channel: {
+        Args: { _channel_id: string }
+        Returns: undefined
+      }
       split_ai_model_identity: {
         Args: { _raw: string }
         Returns: {

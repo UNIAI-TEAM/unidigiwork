@@ -544,10 +544,9 @@ export const deleteChatChannel = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ channelId: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     const ctx = context as unknown as Ctx;
-    const { error } = await ctx.supabase
-      .from("chat_channels")
-      .update({ deleted_at: new Date().toISOString(), updated_by: ctx.userId })
-      .eq("id", data.channelId);
+    const { error } = await ctx.supabase.rpc("soft_delete_chat_channel", {
+      _channel_id: data.channelId,
+    });
     if (error) mapPgError(error, "PERMISSION_DENIED");
     return { ok: true };
   });
@@ -558,23 +557,21 @@ export const listChatChannelMembers = createServerFn({ method: "GET" })
   .inputValidator((i) => z.object({ channelId: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }): Promise<ChatMemberDTO[]> => {
     const ctx = context as unknown as Ctx;
+    const scope = await resolveScope(ctx);
     const { data: rows, error } = await ctx.supabase
       .from("chat_members")
       .select("user_id, role")
       .eq("channel_id", data.channelId);
     if (error) mapPgError(error);
     const list = (rows ?? []) as Array<{ user_id: string; role: "owner" | "member" }>;
-    const { data: users } = await ctx.supabase
-      .from("users")
-      .select("id, display_name, primary_email")
-      .in(
-        "id",
-        list.map((r) => r.user_id).length
-          ? list.map((r) => r.user_id)
-          : ["00000000-0000-0000-0000-000000000000"],
-      );
     const byId = new Map<string, any>();
-    for (const u of users ?? []) byId.set(u.id, u);
+    if (scope) {
+      const { data: profiles } = await ctx.supabase.rpc("list_tenant_member_profiles", {
+        _tenant_id: scope.tenantId,
+      });
+      for (const u of (profiles ?? []) as any[]) byId.set(u.id, u);
+    }
+
     return list
       .map((r) => ({
         userId: r.user_id,
@@ -597,19 +594,17 @@ export const listChatPeople = createServerFn({ method: "GET" })
     const ctx = context as unknown as Ctx;
     const scope = await resolveScope(ctx);
     if (!scope) return [];
-    const { data: members, error } = await ctx.supabase
-      .from("tenant_members")
-      .select("user_id")
-      .eq("tenant_id", scope.tenantId)
-      .eq("status", "active")
-      .limit(500);
+    const { data: profiles, error } = await ctx.supabase.rpc("list_tenant_member_profiles", {
+      _tenant_id: scope.tenantId,
+    });
     if (error) mapPgError(error);
-    const ids = ((members ?? []) as Array<{ user_id: string }>).map((m) => m.user_id);
-    if (ids.length === 0) return [];
-    const { data: users } = await ctx.supabase
-      .from("users")
-      .select("id, display_name, primary_email")
-      .in("id", ids);
+    const users = (profiles ?? []) as Array<{
+      id: string;
+      display_name: string | null;
+      primary_email: string | null;
+    }>;
+    if (users.length === 0) return [];
+
     let inChannel = new Set<string>();
     if (data.channelId) {
       const { data: cm } = await ctx.supabase
