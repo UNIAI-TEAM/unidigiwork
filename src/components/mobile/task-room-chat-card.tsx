@@ -36,7 +36,7 @@ export function TaskRoomChatCard({ taskId }: { taskId: string }) {
     onSuccess: (res) => {
       void queryClient.invalidateQueries({ queryKey: ["task-room-chat", taskId] });
       void queryClient.invalidateQueries({ queryKey: ["mobile-chat-channels"] });
-      void navigate({ to: "/m/chat/$id", params: { id: res.channelId } });
+      void navigate({ to: "/chat/$channelId", params: { channelId: res.channelId } });
     },
     onError: () => toast.error(t("m.tasks.room.error")),
   });
