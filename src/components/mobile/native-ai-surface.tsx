@@ -32,10 +32,8 @@ import {
 } from "@/components/ai-elements/message";
 import {
   PromptInput,
-  PromptInputFooter,
   PromptInputSubmit,
   PromptInputTextarea,
-  PromptInputTools,
 } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import {
@@ -294,54 +292,51 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
             </div>
           )}
           <PromptInput
-            className="rounded-[2rem] border-border-strong bg-surface shadow-card"
+            className="[&>[data-slot=input-group]]:h-16 [&>[data-slot=input-group]]:flex-row [&>[data-slot=input-group]]:rounded-full [&>[data-slot=input-group]]:border-border-strong [&>[data-slot=input-group]]:bg-surface [&>[data-slot=input-group]]:px-2 [&>[data-slot=input-group]]:shadow-card"
             onSubmit={({ text }) => submit(text)}
           >
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-12 w-12 shrink-0 rounded-full"
+              aria-label={t("m.ai.addContext")}
+              onClick={() => setContextOpen(true)}
+            >
+              <Plus className="!h-7 !w-7" />
+            </Button>
             <PromptInputTextarea
               ref={composerRef}
               value={input}
               aria-label={t("m.ai.composer")}
               placeholder={t("m.ai.composer")}
               onChange={(event) => setInput(event.currentTarget.value)}
-              className="max-h-40 min-h-20 px-5 pt-4 text-base leading-6"
+              rows={1}
+              className="h-12 min-h-0 min-w-0 flex-1 self-center px-2 py-3 text-base leading-6"
             />
-            <PromptInputFooter className="px-3 pb-3">
-              <PromptInputTools className="gap-3">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-12 w-12 shrink-0 rounded-full"
-                  aria-label={t("m.ai.addContext")}
-                  onClick={() => setContextOpen(true)}
-                >
-                  <Plus className="!h-7 !w-7" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className={`h-12 w-12 shrink-0 rounded-full ${listening ? "bg-primary text-primary-foreground hover:bg-primary/90" : ""}`}
-                  aria-label={listening ? t("m.ai.listening") : t("m.ai.voice")}
-                  aria-pressed={listening}
-                  onClick={toggleVoice}
-                >
-                  <Mic className={`!h-6 !w-6 ${listening ? "animate-pulse" : ""}`} />
-                </Button>
-              </PromptInputTools>
-              <PromptInputSubmit
-                className="h-12 w-12 shrink-0 rounded-full"
-                aria-label={t("m.ai.send")}
-                disabled={!input.trim() || send.isPending}
-                status={send.isPending ? "submitted" : "ready"}
-              >
-                {send.isPending ? (
-                  <Loader2 className="!h-6 !w-6 animate-spin" />
-                ) : (
-                  <ArrowUp className="!h-6 !w-6" />
-                )}
-              </PromptInputSubmit>
-            </PromptInputFooter>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className={`h-12 w-12 shrink-0 rounded-full ${listening ? "bg-primary text-primary-foreground hover:bg-primary/90" : ""}`}
+              aria-label={listening ? t("m.ai.listening") : t("m.ai.voice")}
+              aria-pressed={listening}
+              onClick={toggleVoice}
+            >
+              <Mic className={`!h-7 !w-7 ${listening ? "animate-pulse" : ""}`} />
+            </Button>
+            <PromptInputSubmit
+              className="h-12 w-12 shrink-0 rounded-full bg-action text-action-foreground hover:bg-action/90 disabled:bg-muted disabled:text-muted-foreground"
+              aria-label={t("m.ai.send")}
+              disabled={!input.trim() || send.isPending}
+              status={send.isPending ? "submitted" : "ready"}
+            >
+              {send.isPending ? (
+                <Loader2 className="!h-6 !w-6 animate-spin" />
+              ) : (
+                <ArrowUp className="!h-7 !w-7" />
+              )}
+            </PromptInputSubmit>
           </PromptInput>
           <p className="mt-2 text-center text-xs text-muted-foreground">{t("m.ai.disclaimer")}</p>
         </div>
