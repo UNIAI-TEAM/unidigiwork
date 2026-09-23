@@ -43,6 +43,7 @@ import {
   sendTaskMessage,
   setTaskDueAt,
 } from "@/lib/api/tasks.functions";
+import { postTaskRoomMessage } from "@/lib/api/chat.functions";
 
 export const Route = createFileRoute("/_authenticated/work-graph")({
   validateSearch: z.object({ task: z.string().uuid().optional() }),
