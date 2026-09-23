@@ -828,6 +828,57 @@ export const ensureTaskChatChannel = createServerFn({ method: "POST" })
     return { channelId: channelId as string };
   });
 
+/**
+ * Đăng thông báo đổi trạng thái/tiến độ công việc vào đúng phòng của công việc.
+ * Ghi qua RLS của người dùng; phòng được tạo idempotent bởi RPC.
+ */
+export const announceTaskStatusInRoom = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        taskId: z.string().uuid(),
+        status: z.enum(["todo", "in_progress", "blocked", "done", "canceled"]),
+        note: z.string().trim().max(500).optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }): Promise<{ channelId: string }> => {
+    const ctx = context as unknown as Ctx;
+    const { data: channelId, error } = await ctx.supabase.rpc("ensure_task_chat_channel", {
+      _task_id: data.taskId,
+    });
+    if (error) mapPgError(error, "PERMISSION_DENIED");
+    if (!channelId)
+      throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "Không tạo được phòng công việc" });
+
+    const labels: Record<string, string> = {
+      todo: "Cần làm",
+      in_progress: "Đang thực hiện",
+      blocked: "Bị chặn",
+      done: "Hoàn thành",
+      canceled: "Đã huỷ",
+    };
+    const { data: ch } = await ctx.supabase
+      .from("chat_channels")
+      .select("tenant_id")
+      .eq("id", channelId as string)
+      .maybeSingle();
+    if (!ch) throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "Không tìm thấy kênh chat" });
+
+    const body = `Cập nhật tiến độ: trạng thái → ${labels[data.status] ?? data.status}${
+      data.note ? `\n${data.note}` : ""
+    }`;
+    const { error: insErr } = await ctx.supabase.from("chat_messages").insert({
+      channel_id: channelId as string,
+      tenant_id: ch.tenant_id,
+      author_id: ctx.userId,
+      body,
+    });
+    if (insErr) mapPgError(insErr, "PERMISSION_DENIED");
+    return { channelId: channelId as string };
+  });
+
 export type TaskChatMessage = {
   id: string;
   body: string;
