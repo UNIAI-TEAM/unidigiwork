@@ -407,6 +407,27 @@
       "when": 1790147660850,
       "tag": "0057_work_graph_task_schedule",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1790155656965,
+      "tag": "0058_list_task_following_page",
+      "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1790155947690,
+      "tag": "0059_list_task_following_page_v2",
+      "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1790156856906,
+      "tag": "0060_fix_task_following_assignee_order",
+      "breakpoints": true
     }
   ]
 }

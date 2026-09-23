@@ -14,7 +14,7 @@ export function TaskFollowButton({ taskId, className }: { taskId: string; classN
   const toggleFn = useServerFn(toggleTaskFollow);
 
   const state = useQuery({
-    queryKey: ["task-follow-state", taskId],
+    queryKey: ["task-follow", taskId],
     queryFn: () => stateFn({ data: { taskId } }),
     staleTime: 30_000,
   });
@@ -23,8 +23,8 @@ export function TaskFollowButton({ taskId, className }: { taskId: string; classN
     mutationFn: (follow: boolean) => toggleFn({ data: { taskId, follow } }),
     onSuccess: (result) => {
       toast.success(t(result.following ? "m.chat.follow.on" : "m.chat.follow.off"));
-      void queryClient.invalidateQueries({ queryKey: ["task-follow-state", taskId] });
-      void queryClient.invalidateQueries({ queryKey: ["m-task-follow", taskId] });
+      void queryClient.invalidateQueries({ queryKey: ["task-follow", taskId] });
+      void queryClient.invalidateQueries({ queryKey: ["task-following"] });
     },
     onError: () => toast.error(t("m.chat.follow.error")),
   });

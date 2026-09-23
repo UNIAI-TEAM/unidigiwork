@@ -10,6 +10,7 @@ export function toMobileHref(href: string): string {
     [/^\/work-graph/, "/m/work-graph"],
     [/^\/settings/, "/m/settings"],
     [/^\/documents/, "/m/documents"],
+    [/^\/task-following/, "/m/task-following"],
     [/^\/tasks/, "/m/tasks"],
     [/^\/work-products/, "/m/work-products"],
     [/^\/projects\/([^/?#]+)/, "/m/projects/$1"],

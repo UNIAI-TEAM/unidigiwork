@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ChevronRight,
   CircleAlert,
+  Bell,
   FileText,
   Folder,
   FolderKanban,
@@ -40,6 +41,7 @@ import { toMobileHref } from "@/lib/mobile-routes";
 const WORK_LINKS = [
   { label: "m.nav.projects" as Key, icon: FolderKanban, to: "/m/projects" },
   { label: "nav.taskList" as Key, icon: ListChecks, to: "/m/tasks" },
+  { label: "m.nav.taskFollowing" as Key, icon: Bell, to: "/m/task-following" },
 ];
 
 const TOOL_LINKS = [

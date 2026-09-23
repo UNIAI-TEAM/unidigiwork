@@ -98,6 +98,7 @@ import { Route as AuthenticatedMWorkflowAgentsRouteImport } from './routes/_auth
 import { Route as AuthenticatedMWorkGraphRouteImport } from './routes/_authenticated/m/work-graph'
 import { Route as AuthenticatedMWorkApprovalsRouteImport } from './routes/_authenticated/m/work-approvals'
 import { Route as AuthenticatedMTasksRouteImport } from './routes/_authenticated/m/tasks'
+import { Route as AuthenticatedMTaskFollowingRouteImport } from './routes/_authenticated/m.task-following'
 import { Route as AuthenticatedMSettingsRouteImport } from './routes/_authenticated/m/settings'
 import { Route as AuthenticatedMSearchRouteImport } from './routes/_authenticated/m/search'
 import { Route as AuthenticatedMReportsRouteImport } from './routes/_authenticated/m/reports'
@@ -667,6 +668,12 @@ const AuthenticatedMTasksRoute = AuthenticatedMTasksRouteImport.update({
   path: '/tasks',
   getParentRoute: () => AuthenticatedMRoute,
 } as any)
+const AuthenticatedMTaskFollowingRoute =
+  AuthenticatedMTaskFollowingRouteImport.update({
+    id: '/task-following',
+    path: '/task-following',
+    getParentRoute: () => AuthenticatedMRoute,
+  } as any)
 const AuthenticatedMSettingsRoute = AuthenticatedMSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -1345,6 +1352,7 @@ export interface FileRoutesByFullPath {
   '/m/reports': typeof AuthenticatedMReportsRoute
   '/m/search': typeof AuthenticatedMSearchRoute
   '/m/settings': typeof AuthenticatedMSettingsRoute
+  '/m/task-following': typeof AuthenticatedMTaskFollowingRoute
   '/m/tasks': typeof AuthenticatedMTasksRoute
   '/m/work-approvals': typeof AuthenticatedMWorkApprovalsRoute
   '/m/work-graph': typeof AuthenticatedMWorkGraphRoute
@@ -1533,6 +1541,7 @@ export interface FileRoutesByTo {
   '/m/reports': typeof AuthenticatedMReportsRoute
   '/m/search': typeof AuthenticatedMSearchRoute
   '/m/settings': typeof AuthenticatedMSettingsRoute
+  '/m/task-following': typeof AuthenticatedMTaskFollowingRoute
   '/m/tasks': typeof AuthenticatedMTasksRoute
   '/m/work-approvals': typeof AuthenticatedMWorkApprovalsRoute
   '/m/work-graph': typeof AuthenticatedMWorkGraphRoute
@@ -1725,6 +1734,7 @@ export interface FileRoutesById {
   '/_authenticated/m/reports': typeof AuthenticatedMReportsRoute
   '/_authenticated/m/search': typeof AuthenticatedMSearchRoute
   '/_authenticated/m/settings': typeof AuthenticatedMSettingsRoute
+  '/_authenticated/m/task-following': typeof AuthenticatedMTaskFollowingRoute
   '/_authenticated/m/tasks': typeof AuthenticatedMTasksRoute
   '/_authenticated/m/work-approvals': typeof AuthenticatedMWorkApprovalsRoute
   '/_authenticated/m/work-graph': typeof AuthenticatedMWorkGraphRoute
@@ -1918,6 +1928,7 @@ export interface FileRouteTypes {
     | '/m/reports'
     | '/m/search'
     | '/m/settings'
+    | '/m/task-following'
     | '/m/tasks'
     | '/m/work-approvals'
     | '/m/work-graph'
@@ -2106,6 +2117,7 @@ export interface FileRouteTypes {
     | '/m/reports'
     | '/m/search'
     | '/m/settings'
+    | '/m/task-following'
     | '/m/tasks'
     | '/m/work-approvals'
     | '/m/work-graph'
@@ -2297,6 +2309,7 @@ export interface FileRouteTypes {
     | '/_authenticated/m/reports'
     | '/_authenticated/m/search'
     | '/_authenticated/m/settings'
+    | '/_authenticated/m/task-following'
     | '/_authenticated/m/tasks'
     | '/_authenticated/m/work-approvals'
     | '/_authenticated/m/work-graph'
@@ -3050,6 +3063,13 @@ declare module '@tanstack/react-router' {
       path: '/tasks'
       fullPath: '/m/tasks'
       preLoaderRoute: typeof AuthenticatedMTasksRouteImport
+      parentRoute: typeof AuthenticatedMRoute
+    }
+    '/_authenticated/m/task-following': {
+      id: '/_authenticated/m/task-following'
+      path: '/task-following'
+      fullPath: '/m/task-following'
+      preLoaderRoute: typeof AuthenticatedMTaskFollowingRouteImport
       parentRoute: typeof AuthenticatedMRoute
     }
     '/_authenticated/m/settings': {
@@ -3921,6 +3941,7 @@ interface AuthenticatedMRouteChildren {
   AuthenticatedMReportsRoute: typeof AuthenticatedMReportsRoute
   AuthenticatedMSearchRoute: typeof AuthenticatedMSearchRoute
   AuthenticatedMSettingsRoute: typeof AuthenticatedMSettingsRoute
+  AuthenticatedMTaskFollowingRoute: typeof AuthenticatedMTaskFollowingRoute
   AuthenticatedMTasksRoute: typeof AuthenticatedMTasksRoute
   AuthenticatedMWorkApprovalsRoute: typeof AuthenticatedMWorkApprovalsRoute
   AuthenticatedMWorkGraphRoute: typeof AuthenticatedMWorkGraphRoute
@@ -3980,6 +4001,7 @@ const AuthenticatedMRouteChildren: AuthenticatedMRouteChildren = {
   AuthenticatedMReportsRoute: AuthenticatedMReportsRoute,
   AuthenticatedMSearchRoute: AuthenticatedMSearchRoute,
   AuthenticatedMSettingsRoute: AuthenticatedMSettingsRoute,
+  AuthenticatedMTaskFollowingRoute: AuthenticatedMTaskFollowingRoute,
   AuthenticatedMTasksRoute: AuthenticatedMTasksRoute,
   AuthenticatedMWorkApprovalsRoute: AuthenticatedMWorkApprovalsRoute,
   AuthenticatedMWorkGraphRoute: AuthenticatedMWorkGraphRoute,
