@@ -26,10 +26,10 @@ export const Route = createFileRoute("/api/public/hooks/messaging/$provider")({
         const secret = process.env[`MESSAGING_WEBHOOK_SECRET_${provider.toUpperCase()}`];
         if (!secret) {
           // Không có secret => kênh chưa được cấu hình thật.
-          return new Response(
-            JSON.stringify({ error: "connector_not_configured", provider }),
-            { status: 501, headers: { "Content-Type": "application/json" } },
-          );
+          return new Response(JSON.stringify({ error: "connector_not_configured", provider }), {
+            status: 501,
+            headers: { "Content-Type": "application/json" },
+          });
         }
 
         const rawBody = await request.text();
