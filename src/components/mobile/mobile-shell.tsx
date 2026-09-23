@@ -11,6 +11,7 @@ import {
   Folder,
   Menu,
   MessageSquare,
+  Plus,
   Search,
   Settings,
   SquarePen,
