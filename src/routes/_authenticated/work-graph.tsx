@@ -82,10 +82,12 @@ function WorkGraphTaskMessageForm({ taskId }: { taskId: string }) {
     queryKey: ["task-messaging-permissions", taskId],
     queryFn: () => getTaskMessagingPermissions({ data: { taskId } }),
   });
+  const canTeam = permissions.data?.canMessageTeam === true;
+  const canSuperior = permissions.data?.canMessageSuperior === true;
   const recipients = useQuery({
     queryKey: ["task-message-recipients", taskId],
     queryFn: () => listTaskMessageRecipients({ data: { taskId } }),
-    enabled: permissions.data?.canMessageTeam === true,
+    enabled: canTeam || canSuperior,
   });
   const send = useMutation({
     mutationFn: async () => {
@@ -95,7 +97,7 @@ function WorkGraphTaskMessageForm({ taskId }: { taskId: string }) {
           taskId,
           recipientId,
           body: text,
-          source: "TASK_CHAT",
+          source: canTeam ? "TASK_CHAT" : "PRIVATE_SUPERIOR",
           idempotencyKey: crypto.randomUUID(),
         },
       });
