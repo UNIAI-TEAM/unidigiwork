@@ -211,9 +211,6 @@ function EmailHubPage() {
   const [filterLabel, setFilterLabel] = useState<string | null>(null);
   const [filterUnread, setFilterUnread] = useState(false);
   const [sortBy, setSortBy] = useState<"time" | "priority">("time");
-  const [labels, setLabels] = useState<LabelWithCount[]>(INITIAL_LABELS);
-  // Rule tự động chưa có backend lưu trữ — bắt đầu rỗng thay vì rule mẫu.
-  const [rules, setRules] = useState<RuleDef[]>([]);
   const [composeOpen, setComposeOpen] = useState(false);
   const [composePrefill, setComposePrefill] = useState({ to: "", subject: "", body: "", cc: "" });
   const [advancedOpen, setAdvancedOpen] = useState(false);
