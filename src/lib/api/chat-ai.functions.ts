@@ -30,7 +30,7 @@ async function loadWorkSnapshot(
     _unassigned: false,
     _due_filter: "all",
     _task_id: taskId ?? undefined,
-    _limit: taskId ? 5 : 25,
+    _limit: taskId ? 30 : 150,
     _offset: 0,
   });
   if (error) return "(không đọc được dữ liệu công việc)";
