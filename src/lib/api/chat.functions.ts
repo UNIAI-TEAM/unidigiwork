@@ -1069,3 +1069,101 @@ export const listTaskDirectConversations = createServerFn({ method: "GET" })
     people.sort((a, b) => (b.lastMessageAt ?? "").localeCompare(a.lastMessageAt ?? ""));
     return { people };
   });
+
+/**
+ * Chia sẻ tin nhắn riêng vào phòng công việc: tin được đăng lại (có ghi nguồn)
+ * nên hiện trong dòng thời gian công việc và Work Graph cho người trong việc.
+ * Chỉ người trong cuộc trò chuyện riêng mới chia sẻ được tin của cuộc đó.
+ */
+export const shareDirectMessageToTask = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({ taskId: z.string().uuid(), messageId: z.string().uuid() }).parse(i),
+  )
+  .handler(async ({ data, context }): Promise<{ channelId: string }> => {
+    const ctx = context as unknown as Ctx;
+
+    // RLS: chỉ đọc được tin của phòng mình tham gia.
+    const { data: msg, error: msgErr } = await ctx.supabase
+      .from("chat_messages")
+      .select("id, body, author_id, created_at, channel_id")
+      .eq("id", data.messageId)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (msgErr) mapPgError(msgErr, "PERMISSION_DENIED");
+    if (!msg)
+      throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "Không tìm thấy tin nhắn" });
+
+    const { data: ch } = await ctx.supabase
+      .from("chat_channels")
+      .select("kind")
+      .eq("id", (msg as { channel_id: string }).channel_id)
+      .maybeSingle();
+    if ((ch as { kind?: string } | null)?.kind !== "dm")
+      throw new ApiError({ code: "VALIDATION_FAILED", message: "Tin này không phải tin riêng" });
+
+    const names = await displayNames(ctx, [(msg as { author_id: string }).author_id]);
+    const author = names.get((msg as { author_id: string }).author_id) ?? "Thành viên";
+    const body = `Tin nhắn riêng từ ${author}:\n${(msg as { body: string | null }).body ?? ""}`;
+
+    const { data: channelId, error } = await ctx.supabase.rpc("ensure_task_chat_channel", {
+      _task_id: data.taskId,
+    });
+    if (error) mapPgError(error, "PERMISSION_DENIED");
+    if (!channelId)
+      throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "Không tạo được phòng công việc" });
+
+    const { data: target } = await ctx.supabase
+      .from("chat_channels")
+      .select("tenant_id")
+      .eq("id", channelId as string)
+      .maybeSingle();
+    if (!target)
+      throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "Không tìm thấy kênh chat" });
+
+    const { error: insErr } = await ctx.supabase.from("chat_messages").insert({
+      channel_id: channelId as string,
+      tenant_id: (target as { tenant_id: string }).tenant_id,
+      author_id: ctx.userId,
+      body,
+    });
+    if (insErr) mapPgError(insErr, "PERMISSION_DENIED");
+    return { channelId: channelId as string };
+  });
+
+/** Tin nhắn riêng gần đây giữa tôi và một người — để chọn chia sẻ vào công việc. */
+export const listDirectMessagesWith = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ channelId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }): Promise<{ messages: TaskChatMessage[] }> => {
+    const ctx = context as unknown as Ctx;
+    const { data: rows, error } = await ctx.supabase
+      .from("chat_messages")
+      .select("id, body, author_id, created_at, is_ai")
+      .eq("channel_id", data.channelId)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(10);
+    if (error) mapPgError(error, "PERMISSION_DENIED");
+    const list = (rows ?? []) as Array<{
+      id: string;
+      body: string | null;
+      author_id: string;
+      created_at: string;
+      is_ai: boolean | null;
+    }>;
+    const names = await displayNames(
+      ctx,
+      list.map((r) => r.author_id),
+    );
+    return {
+      messages: list.reverse().map((r) => ({
+        id: r.id,
+        body: r.body ?? "",
+        authorId: r.author_id,
+        authorName: names.get(r.author_id) ?? "Thành viên",
+        createdAt: r.created_at,
+        isAi: !!r.is_ai,
+      })),
+    };
+  });
