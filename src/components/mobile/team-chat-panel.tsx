@@ -98,6 +98,7 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => 
   const sendFn = useServerFn(sendChatMessage);
   const joinFn = useServerFn(joinChatChannel);
   const markReadFn = useServerFn(markChatChannelRead);
+  const askAiFn = useServerFn(askChatAi);
   const [body, setBody] = useState("");
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
@@ -135,10 +136,28 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => 
     onError: () => toast.error(t("m.ai.chat.sendFailed")),
   });
 
+  const askAi = useMutation({
+    mutationFn: async (question: string) => askAiFn({ data: { channelId, question } }),
+    onSuccess: () => {
+      setBody("");
+      void queryClient.invalidateQueries({ queryKey: ["mobile-plus-chat-messages", channelId] });
+      void queryClient.invalidateQueries({ queryKey: ["mobile-plus-chat-channels"] });
+    },
+    onError: () => toast.error(t("m.ai.chat.aiFailed")),
+  });
+
+  const busy = send.isPending || askAi.isPending;
+
   const submit = () => {
     const text = body.trim();
-    if (!text || send.isPending) return;
+    if (!text || busy) return;
     send.mutate(text);
+  };
+
+  const submitAi = () => {
+    const text = body.trim();
+    if (!text || busy) return;
+    askAi.mutate(text);
   };
 
   return (
