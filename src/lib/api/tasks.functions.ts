@@ -82,6 +82,14 @@ export const createTask = createServerFn({ method: "POST" })
         title: data.title,
         actorId: context.userId,
       });
+      const { announceTaskCreatedInRooms } = await import("./task-chat-announce.server");
+      await announceTaskCreatedInRooms({
+        supabase: context.supabase as never,
+        userId: context.userId,
+        taskId: row.id,
+        title: data.title,
+        dueAt: data.dueAt ?? null,
+      });
     }
     return created;
   });
