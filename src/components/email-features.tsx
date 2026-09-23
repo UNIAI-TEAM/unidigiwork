@@ -15,6 +15,7 @@ import {
   registerEmailAttachment,
   deleteEmailAttachment,
   getEmailSignature,
+  saveEmailSignature,
   type EmailRule,
   type EmailLabel,
 } from "@/lib/api/email-hub.functions";
