@@ -184,6 +184,12 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => 
     setPending((current) => current.filter((p) => !serverBodies.has(p.body)));
   }, [serverMessages, pending.length]);
 
+  // Mở phòng / đổi phòng: luôn bắt đầu ở tin mới nhất.
+  useEffect(() => {
+    stickToBottom.current = true;
+    bottomRef.current?.scrollIntoView({ block: "end" });
+  }, [channelId]);
+
   useEffect(() => {
     if (!stickToBottom.current) return;
     bottomRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
