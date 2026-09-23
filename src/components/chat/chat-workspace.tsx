@@ -775,6 +775,11 @@ export function ChatWorkspace({
     const m = /@([\p{L}\p{N}_.-]*)$/u.exec(value);
     setMentionQuery(m ? m[1] : null);
   };
+  const voice = useVoiceDictation({
+    onTranscript: (text) => setInput(text),
+    onUnsupported: () => toast.error("Thiết bị không hỗ trợ nhập bằng giọng nói"),
+  });
+
   const applyMention = (userId: string, name: string) => {
     const token = name.replace(/\s+/g, "");
     setInput((v) => v.replace(/@([\p{L}\p{N}_.-]*)$/u, `@${token} `));
