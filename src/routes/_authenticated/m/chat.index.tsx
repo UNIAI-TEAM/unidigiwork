@@ -73,14 +73,15 @@ function MobileChatList() {
   });
 
   // Tự tạo phòng chung của tổ chức ngay lần đầu (idempotent, tenant-scoped).
-  const ensuredRef = useRef(false);
+  const ensuredRef = useRef<string | null>(null);
   useEffect(() => {
-    if (isLoading || isError || hasGeneral || ensuredRef.current) return;
-    ensuredRef.current = true;
+    if (!tenantId) return;
+    if (isLoading || isError || hasGeneral || ensuredRef.current === tenantId) return;
+    ensuredRef.current = tenantId;
     void ensureGeneralFn()
       .then(() => queryClient.invalidateQueries({ queryKey: ["mobile-chat-channels"] }))
       .catch(() => undefined);
-  }, [isLoading, isError, hasGeneral, ensureGeneralFn, queryClient]);
+  }, [tenantId, isLoading, isError, hasGeneral, ensureGeneralFn, queryClient]);
 
   return (
     <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col gap-3 overflow-x-hidden p-4 pb-24">
