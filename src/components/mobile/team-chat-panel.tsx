@@ -109,19 +109,52 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => 
   const markReadFn = useServerFn(markChatChannelRead);
   const askAiFn = useServerFn(askChatAi);
   const [body, setBody] = useState("");
+  const [pending, setPending] = useState<{ id: string; body: string; createdAt: string }[]>([]);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const stickToBottom = useRef(true);
 
   const history = useQuery({
     queryKey: ["mobile-plus-chat-messages", channelId],
     queryFn: () => messagesFn({ data: { channelId, limit: 50 } }),
     refetchInterval: 10_000,
+    placeholderData: (previous) => previous,
   });
 
-  const messages = useMemo(() => history.data?.messages ?? [], [history.data]);
+  const serverMessages = useMemo(() => history.data?.messages ?? [], [history.data]);
+  // Tin đang gửi hiển thị ngay, gỡ khi server đã trả về cùng nội dung.
+  const messages = useMemo(() => {
+    const serverBodies = new Set(serverMessages.filter((m) => m.isMine).map((m) => m.body));
+    const optimistic = pending
+      .filter((p) => !serverBodies.has(p.body))
+      .map((p) => ({
+        id: p.id,
+        body: p.body,
+        createdAt: p.createdAt,
+        isMine: true,
+        isAi: false,
+        authorName: "",
+        optimistic: true as const,
+      }));
+    return [...serverMessages.map((m) => ({ ...m, optimistic: false as const })), ...optimistic];
+  }, [serverMessages, pending]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ block: "end" });
+    if (pending.length === 0) return;
+    const serverBodies = new Set(serverMessages.filter((m) => m.isMine).map((m) => m.body));
+    setPending((current) => current.filter((p) => !serverBodies.has(p.body)));
+  }, [serverMessages, pending.length]);
+
+  useEffect(() => {
+    if (!stickToBottom.current) return;
+    bottomRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
   }, [messages.length]);
+
+  const onScroll = () => {
+    const el = listRef.current;
+    if (!el) return;
+    stickToBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+  };
 
   useEffect(() => {
     void markReadFn({ data: { channelId } }).catch(() => undefined);
