@@ -675,6 +675,8 @@ const dict = {
     "m.tasks.room.create": "Tạo phòng",
     "m.tasks.room.empty": "Chưa có tin nhắn trong phòng công việc này.",
     "m.tasks.room.error": "Không mở được phòng công việc",
+    "m.tasks.room.progress": "Cập nhật tiến độ",
+    "m.tasks.room.progressDone": "Đã cập nhật trạng thái và báo vào phòng chat",
     "m.chat.openGeneral": "Mở phòng chung của tổ chức",
     "m.chat.generalError": "Không mở được phòng chung",
     "m.chat.newDm": "Nhắn riêng",
