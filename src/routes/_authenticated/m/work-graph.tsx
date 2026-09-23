@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { listWorkGraphBoard, type WorkGraphBoardItem } from "@/lib/api/work-graph.functions";
 import { toMobileHref } from "@/lib/mobile-routes";
+import { DirectMessageButton } from "@/components/chat/direct-message-button";
 
 const searchSchema = z.object({ task: z.string().uuid().optional() });
 
