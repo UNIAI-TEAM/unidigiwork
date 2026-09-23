@@ -130,6 +130,6 @@
 
 ## PWA — Đăng ký theo dõi công việc
 
-- [ ] Thêm trang mobile-native riêng để xem việc đang theo dõi và khám phá công việc.
-- [ ] Thêm tìm kiếm, lọc trạng thái, phân trang và đăng ký/bỏ theo dõi trực tiếp.
-- [ ] Thêm lối mở trong menu PWA và kiểm tra dữ liệu thật ở 390/440/820px.
+- [x] Thêm trang mobile-native riêng để xem việc đang theo dõi và khám phá công việc.
+- [x] Thêm tìm kiếm, lọc trạng thái, phân trang và đăng ký/bỏ theo dõi trực tiếp.
+- [x] Thêm lối mở trong menu PWA và kiểm tra dữ liệu thật ở 390/440/820px.
