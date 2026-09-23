@@ -745,7 +745,21 @@ export function LabelsRulesDialog({
   onOpenChange: (v: boolean) => void;
 }) {
   const qc = useQueryClient();
-  const [tab, setTab] = useState<"labels" | "rules">("labels");
+  const [tab, setTab] = useState<"labels" | "rules" | "signature">("labels");
+  const [sigText, setSigText] = useState<string | null>(null);
+  const sigQuery = useQuery({
+    queryKey: ["email-signature"],
+    queryFn: () => getEmailSignature(),
+    enabled: open,
+  });
+  const saveSigMut = useMutation({
+    mutationFn: () => saveEmailSignature({ data: { body: sigText ?? "" } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["email-signature"] });
+      toast.success("Đã lưu chữ ký");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
   const [newLabel, setNewLabel] = useState("");
   const [newColor, setNewColor] = useState(COLOR_OPTIONS[0]);
 
