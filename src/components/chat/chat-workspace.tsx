@@ -21,6 +21,7 @@ import {
   Pencil,
   Reply,
   Paperclip,
+  Mic,
   Download,
   ChevronUp,
   UserPlus,
@@ -37,6 +38,7 @@ import {
 import { toast } from "sonner";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import { supabase } from "@/integrations/supabase/client";
+import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   listChatChannels,
@@ -1485,6 +1487,18 @@ export function ChatWorkspace({
                               placeholder={`Nhắn tin tới #${active.name} — gõ @ để nhắc tên`}
                               className="max-h-32 min-h-[36px] flex-1 resize-none bg-transparent py-1.5 text-sm placeholder:text-muted-foreground focus:outline-none"
                             />
+                            <button
+                              onClick={voice.toggle}
+                              className={`rounded-lg p-2 ${
+                                voice.listening
+                                  ? "bg-primary text-primary-foreground"
+                                  : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+                              }`}
+                              aria-label={voice.listening ? "Đang nghe" : "Nói để nhập"}
+                              aria-pressed={voice.listening}
+                            >
+                              <Mic className={`h-4 w-4 ${voice.listening ? "animate-pulse" : ""}`} />
+                            </button>
                             <button
                               disabled={!input.trim() || askAiM.isPending || sendM.isPending}
                               onClick={() => askAiM.mutate()}
