@@ -1021,7 +1021,12 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
                                 <img src={avatar(m.authorId)} alt="" className="h-9 w-9 shrink-0 rounded-lg" />
                                 <div className="min-w-0 flex-1">
                                   <div className="flex items-center gap-2">
-                                    <span className="text-sm font-semibold">{m.authorName}</span>
+                                    <span className="text-sm font-semibold">{m.isAi ? "UNI AI" : m.authorName}</span>
+                                    {m.isAi && (
+                                      <span className="flex items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                                        <Sparkles className="h-3 w-3" /> Trợ lý AI
+                                      </span>
+                                    )}
                                     <span className="text-[11px] text-muted-foreground">{timeLabel(m.createdAt)}</span>
                                     {m.editedAt && <span className="text-[11px] text-muted-foreground">(đã sửa)</span>}
                                     {m.pinnedAt && (
