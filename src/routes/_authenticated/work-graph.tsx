@@ -402,6 +402,13 @@ function WorkGraphPage() {
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted">
                       <Icon className="h-4 w-4 text-muted-foreground" />
                     </span>
+                    {i.ownerId ? (
+                      <DirectMessageButton
+                        userId={i.ownerId}
+                        personName={i.ownerName}
+                        className="order-last h-9 w-9"
+                      />
+                    ) : null}
                     {i.type === "TASK" ? (
                       <OpenChatRoomButton
                         kind="task"
