@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { listWorkGraphBoard, type WorkGraphBoardItem } from "@/lib/api/work-graph.functions";
 import { toMobileHref } from "@/lib/mobile-routes";
+import { DirectMessageButton } from "@/components/chat/direct-message-button";
 
 const searchSchema = z.object({ task: z.string().uuid().optional() });
 
@@ -177,6 +178,13 @@ function WorkGraphRow({ item }: { item: WorkGraphBoardItem }) {
             <Badge variant="secondary" className="max-w-24 shrink-0 truncate text-[10px]">
               {item.status}
             </Badge>
+          ) : null}
+          {item.ownerId ? (
+            <DirectMessageButton
+              userId={item.ownerId}
+              personName={item.ownerName}
+              className="h-10 w-10"
+            />
           ) : null}
         </div>
         <div className="mt-3 flex items-center gap-2">
