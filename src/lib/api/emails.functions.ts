@@ -53,7 +53,11 @@ export const listEmailMessages = createServerFn({ method: "GET" })
         referencedTable: "email_messages",
       });
     }
-    const { data: rows, error, count } = await q
+    const {
+      data: rows,
+      error,
+      count,
+    } = await q
       .order("created_at", { referencedTable: "email_messages", ascending: false })
       .range(data.offset, data.offset + data.limit - 1);
     if (error) throw new Error(error.message);
@@ -85,8 +89,7 @@ export const listEmailMessages = createServerFn({ method: "GET" })
     return {
       items: items.map((r) => ({
         ...r,
-        sender:
-          senderMap.get((r.message as { from_user_id: string }).from_user_id) ?? null,
+        sender: senderMap.get((r.message as { from_user_id: string }).from_user_id) ?? null,
       })),
       total: count ?? 0,
     };
@@ -127,7 +130,7 @@ export const getEmailFolderCounts = createServerFn({ method: "GET" })
       if (r.is_read) read += 1;
       else unread += 1;
       const subject =
-        ((r as unknown as { email_messages?: { subject?: string } }).email_messages?.subject ?? "");
+        (r as unknown as { email_messages?: { subject?: string } }).email_messages?.subject ?? "";
       if (/^\s*(fwd|fw)\s*:/i.test(subject)) forwarded += 1;
     }
     return {
@@ -154,10 +157,12 @@ export const getEmailThread = createServerFn({ method: "GET" })
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!thread) return null;
-    const messages = (thread.email_messages ?? []).slice().sort(
-      (a: { created_at: string }, b: { created_at: string }) =>
-        new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
-    );
+    const messages = (thread.email_messages ?? [])
+      .slice()
+      .sort(
+        (a: { created_at: string }, b: { created_at: string }) =>
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+      );
     const senderIds = Array.from(
       new Set(messages.map((m: { from_user_id: string }) => m.from_user_id)),
     );
@@ -183,7 +188,6 @@ export const getEmailThread = createServerFn({ method: "GET" })
     };
   });
 
-
 const draftSchema = z.object({
   draft_id: z.string().uuid().optional(),
   thread_id: z.string().uuid().optional(),
@@ -199,7 +203,8 @@ export const saveEmailDraft = createServerFn({ method: "POST" })
   .inputValidator((input) => draftSchema.parse(input))
   .handler(async ({ data, context }) => {
     const ctx = context as unknown as EmailCtx;
-    const { resolveEmailWorkspace, resolveEmailRecipients, ensureEmailThread } = await import("./email-draft.server");
+    const { resolveEmailWorkspace, resolveEmailRecipients, ensureEmailThread } =
+      await import("./email-draft.server");
     const scope = await resolveEmailWorkspace(ctx);
     const { toUserIds, ccUserIds } = await resolveEmailRecipients(ctx, data.to, data.cc);
 
@@ -230,7 +235,11 @@ export const saveEmailDraft = createServerFn({ method: "POST" })
           .update({ subject: data.subject, updated_by: ctx.userId })
           .eq("id", existing.thread_id);
       }
-      return { ok: true, draft_id: data.draft_id as string, thread_id: existing.thread_id as string };
+      return {
+        ok: true,
+        draft_id: data.draft_id as string,
+        thread_id: existing.thread_id as string,
+      };
     }
 
     const threadId = await ensureEmailThread(ctx, scope, data.thread_id, data.subject);
@@ -281,15 +290,21 @@ export const getEmailDraft = createServerFn({ method: "GET" })
     let idToEmail = new Map<string, string>();
     if (ids.length) {
       const { data: profs } = await ctx.supabase.from("profiles").select("id, email").in("id", ids);
-      idToEmail = new Map((profs ?? []).map((p: { id: string; email: string }) => [p.id, p.email] as const));
+      idToEmail = new Map(
+        (profs ?? []).map((p: { id: string; email: string }) => [p.id, p.email] as const),
+      );
     }
     return {
       id: msg.id as string,
       thread_id: msg.thread_id as string,
       subject: (msg.subject as string) ?? "",
       body: (msg.body as string) ?? "",
-      to: ((msg.to_user_ids ?? []) as string[]).map((i) => idToEmail.get(i)).filter(Boolean) as string[],
-      cc: ((msg.cc_user_ids ?? []) as string[]).map((i) => idToEmail.get(i)).filter(Boolean) as string[],
+      to: ((msg.to_user_ids ?? []) as string[])
+        .map((i) => idToEmail.get(i))
+        .filter(Boolean) as string[],
+      cc: ((msg.cc_user_ids ?? []) as string[])
+        .map((i) => idToEmail.get(i))
+        .filter(Boolean) as string[],
     };
   });
 
@@ -299,7 +314,11 @@ export const deleteEmailDraft = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const ctx = context as unknown as EmailCtx;
-    await ctx.supabase.from("email_states").delete().eq("message_id", data.id).eq("user_id", ctx.userId);
+    await ctx.supabase
+      .from("email_states")
+      .delete()
+      .eq("message_id", data.id)
+      .eq("user_id", ctx.userId);
     const { error } = await ctx.supabase
       .from("email_messages")
       .delete()
@@ -325,9 +344,14 @@ export const sendEmail = createServerFn({ method: "POST" })
   .inputValidator((input) => sendSchema.parse(input))
   .handler(async ({ data, context }) => {
     const ctx = context as unknown as EmailCtx;
-    const { resolveEmailWorkspace, resolveEmailRecipients, ensureEmailThread } = await import("./email-draft.server");
+    const { resolveEmailWorkspace, resolveEmailRecipients, ensureEmailThread } =
+      await import("./email-draft.server");
     const scope = await resolveEmailWorkspace(ctx);
-    const { toUserIds, ccUserIds, unknown } = await resolveEmailRecipients(ctx, data.to, data.cc ?? []);
+    const { toUserIds, ccUserIds, unknown } = await resolveEmailRecipients(
+      ctx,
+      data.to,
+      data.cc ?? [],
+    );
     if (toUserIds.length === 0) {
       throw new Error(
         unknown.length
@@ -405,7 +429,9 @@ export const sendEmail = createServerFn({ method: "POST" })
     }
 
     // Inbox state cho người nhận (idempotent qua upsert theo message + user).
-    const recipients = [...new Set([...toUserIds, ...ccUserIds])].filter((uid) => uid !== ctx.userId);
+    const recipients = [...new Set([...toUserIds, ...ccUserIds])].filter(
+      (uid) => uid !== ctx.userId,
+    );
     if (recipients.length) {
       // RLS chỉ cho phép mỗi user ghi state của chính mình, nên fan-out hộp đến
       // phải qua RPC SECURITY DEFINER (đã kiểm tra caller là người gửi).
@@ -414,6 +440,21 @@ export const sendEmail = createServerFn({ method: "POST" })
         p_user_ids: recipients,
       });
       if (rErr) throw new Error(rErr.message);
+    }
+
+    // Quy tắc tự động của từng người nhận (nhãn / thư mục / đánh dấu đã đọc).
+    // Best-effort: lỗi quy tắc không được làm hỏng việc gửi thư.
+    for (const uid of recipients) {
+      const { error: ruleErr } = await (
+        ctx.supabase.rpc as (
+          fn: string,
+          args: Record<string, unknown>,
+        ) => Promise<{ error: { message: string } | null }>
+      )("run_email_rules_for_message", {
+        _message_id: messageId,
+        _user_id: uid,
+      });
+      if (ruleErr) console.error("run_email_rules_for_message", ruleErr.message);
     }
 
     // Đồng bộ thread: tiêu đề + thời điểm tin cuối.
@@ -442,7 +483,12 @@ export const sendEmail = createServerFn({ method: "POST" })
       await ctx.supabase.from("notifications").insert(notifRows);
     }
 
-    return { ok: true, thread_id: threadId as string, message_id: messageId, unknown_recipients: unknown };
+    return {
+      ok: true,
+      thread_id: threadId as string,
+      message_id: messageId,
+      unknown_recipients: unknown,
+    };
   });
 
 /** Move messages to a folder for current user. */

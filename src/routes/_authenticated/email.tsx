@@ -66,9 +66,8 @@ import {
   LabelsRulesDialog,
   EMPTY_FILTERS,
   type AdvancedFilters,
-  type LabelDef,
-  type RuleDef,
 } from "@/components/email-features";
+import { listEmailLabels, searchEmails, type EmailLabel } from "@/lib/api/email-hub.functions";
 import { buildForwardBody, buildReplyBody, stripPrefix } from "@/lib/email-quote";
 import { notifyComingSoon } from "@/lib/coming-soon";
 import { useActiveWorkspace } from "@/lib/active-workspace";
@@ -102,10 +101,7 @@ const MAILBOXES: { key: string; label: string; icon: LucideIcon }[] = [
   { key: "trash", label: "em.mb.trash", icon: Trash2 },
 ];
 
-type LabelWithCount = LabelDef & { count: number };
-// Nhãn và tài khoản email ngoài chưa có backend: khởi tạo rỗng, hiển thị
-// trạng thái "chưa cấu hình" thay vì số liệu bịa.
-const INITIAL_LABELS: LabelWithCount[] = [];
+// Tài khoản email ngoài chưa kết nối: hiển thị trạng thái "chưa cấu hình".
 
 const ACCOUNTS: Array<{
   provider: string;
@@ -211,9 +207,6 @@ function EmailHubPage() {
   const [filterLabel, setFilterLabel] = useState<string | null>(null);
   const [filterUnread, setFilterUnread] = useState(false);
   const [sortBy, setSortBy] = useState<"time" | "priority">("time");
-  const [labels, setLabels] = useState<LabelWithCount[]>(INITIAL_LABELS);
-  // Rule tự động chưa có backend lưu trữ — bắt đầu rỗng thay vì rule mẫu.
-  const [rules, setRules] = useState<RuleDef[]>([]);
   const [composeOpen, setComposeOpen] = useState(false);
   const [composePrefill, setComposePrefill] = useState({ to: "", subject: "", body: "", cc: "" });
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -237,18 +230,25 @@ function EmailHubPage() {
     setPage(1);
   }, [debouncedSearch, activeMailbox]);
 
-  {t("em.5")}
+  {
+    t("em.5");
+  }
   const starredMode = activeMailbox === "starred";
   const folder: DbFolder = starredMode ? "inbox" : (activeMailbox as DbFolder);
   const dbQuery = useQuery({
-    queryKey: ["emails", workspaceId, activeMailbox, debouncedSearch, page],
+    queryKey: ["emails", workspaceId, activeMailbox, debouncedSearch, advanced, page],
     queryFn: () =>
-      listEmailMessages({
+      searchEmails({
         data: {
           folder,
-          search: debouncedSearch,
-          workspace_id: workspaceId ?? null,
           starred_only: starredMode,
+          keyword: debouncedSearch || advanced.keyword,
+          from: advanced.from,
+          to: advanced.to,
+          date_from: advanced.dateFrom || null,
+          date_to: advanced.dateTo || null,
+          has_attachment: advanced.hasAttachment,
+          label_ids: advanced.labels,
           limit: PAGE_SIZE,
           offset: (page - 1) * PAGE_SIZE,
         },
@@ -261,35 +261,38 @@ function EmailHubPage() {
     queryFn: () => getEmailFolderCounts({ data: { workspace_id: workspaceId ?? null } }),
     staleTime: 30_000,
   });
+  const labelsQuery = useQuery({
+    queryKey: ["email-labels"],
+    queryFn: () => listEmailLabels(),
+    staleTime: 60_000,
+  });
+  const labels: EmailLabel[] = labelsQuery.data ?? [];
+  const labelNameById = useMemo(
+    () => new Map(labels.map((l) => [l.id, l.name] as const)),
+    [labels],
+  );
 
   const dbEmails: Email[] = useMemo(() => {
     if (!dbQuery.data) return [];
     return dbQuery.data.items.map((r) => {
-      const m = r.message as {
-        id: string;
-        subject: string;
-        body: string;
-        sent_at: string | null;
-        created_at: string;
-        from_user_id: string;
-      };
-      const senderName = r.sender?.display_name ?? r.sender?.email ?? t("em.6");
-      const when = m.sent_at ?? m.created_at;
+      const when = r.sent_at ?? r.created_at;
       return {
-        id: m.id,
-        from: senderName,
-        fromEmail: r.sender?.email,
-        subject: m.subject,
-        preview: (m.body ?? "").replace(/\s+/g, " ").slice(0, 160),
-        body: m.body,
+        id: r.message_id,
+        from: r.sender_name ?? r.sender_email ?? t("em.6"),
+        fromEmail: r.sender_email ?? undefined,
+        subject: r.subject,
+        preview: (r.body ?? "").replace(/\s+/g, " ").slice(0, 160),
+        body: r.body,
         time: formatEmailTime(when),
         group: bucketEmailWhen(when),
         unread: !r.is_read,
         starred: r.is_starred,
+        hasAttachment: r.attachment_count > 0,
+        labels: r.label_ids.map((id) => labelNameById.get(id)).filter(Boolean) as string[],
         mailbox: r.folder as Email["mailbox"],
       } satisfies Email;
     });
-  }, [dbQuery.data]);
+  }, [dbQuery.data, labelNameById]);
 
   function prioritySortValue(e: Email): number {
     if (e.unread && e.starred) return 3;
@@ -298,22 +301,15 @@ function EmailHubPage() {
     return 0;
   }
 
-  {t("em.7")}
+  {
+    t("em.7");
+  }
   const pagedEmails = useMemo(() => {
-    const a = advanced;
-    const list = dbEmails.filter((e) => {
-      const matchUnread = !filterUnread || !!e.unread;
-      const matchAdvKeyword =
-        !a.keyword ||
-        e.subject.toLowerCase().includes(a.keyword.toLowerCase()) ||
-        (e.preview ?? "").toLowerCase().includes(a.keyword.toLowerCase());
-      const matchAdvFrom = !a.from || e.from.toLowerCase().includes(a.from.toLowerCase());
-      return matchUnread && matchAdvKeyword && matchAdvFrom;
-    });
+    const list = dbEmails.filter((e) => !filterUnread || !!e.unread);
     return list
       .slice()
       .sort((x, y) => (sortBy === "priority" ? prioritySortValue(y) - prioritySortValue(x) : 0));
-  }, [dbEmails, filterUnread, advanced, sortBy]);
+  }, [dbEmails, filterUnread, sortBy]);
 
   const selectedEmail = dbEmails.find((e) => e.id === selected) ?? dbEmails[0] ?? null;
 
@@ -405,11 +401,7 @@ function EmailHubPage() {
       doMove({ data: { message_ids: v.ids, folder: v.folder } }),
     onSuccess: (_r, v) => {
       toast.success(
-        v.folder === "archive"
-          ? t("em.16")
-          : v.folder === "trash"
-            ? t("em.17")
-            : t("em.18"),
+        v.folder === "archive" ? t("em.16") : v.folder === "trash" ? t("em.17") : t("em.18"),
       );
       qc.invalidateQueries({ queryKey: ["emails"] });
       clearChecked();
@@ -428,7 +420,9 @@ function EmailHubPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  {t("em.21")}
+  {
+    t("em.21");
+  }
   const autoReadRef = useRef<string | null>(null);
   useEffect(() => {
     const e = selectedEmail;
@@ -476,7 +470,9 @@ function EmailHubPage() {
     bulkMoveMut.mutate({ ids, folder });
   }
 
-  {t("em.24")}
+  {
+    t("em.24");
+  }
   function openEmail(id: string) {
     setSelected(id);
     setDetailOpen(true);
@@ -558,9 +554,7 @@ function EmailHubPage() {
                 </span>
                 <div>
                   <div className="text-base font-semibold">Email Hub</div>
-                  <div className="text-[11px] text-muted-foreground">
-                    {t("em.26")}
-                  </div>
+                  <div className="text-[11px] text-muted-foreground">{t("em.26")}</div>
                 </div>
               </div>
             </div>
@@ -630,7 +624,10 @@ function EmailHubPage() {
 
               <div className="flex items-center justify-between px-2 pb-1.5 pt-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 <span>Labels</span>
-                <button onClick={() => notifyComingSoon()} className="rounded p-0.5 hover:bg-surface-2">
+                <button
+                  onClick={() => notifyComingSoon()}
+                  className="rounded p-0.5 hover:bg-surface-2"
+                >
                   <ChevronDown className="h-3 w-3" />
                 </button>
               </div>
@@ -639,22 +636,35 @@ function EmailHubPage() {
                   <li className="px-3 py-1.5 text-xs text-muted-foreground">Chưa có nhãn</li>
                 )}
                 {labels.map((l) => {
-                  const active = filterLabel === l.name;
+                  const active = advanced.labels.includes(l.id);
                   return (
-                    <li key={l.name}>
+                    <li key={l.id}>
                       <button
-                        onClick={() => setFilterLabel(active ? null : l.name)}
+                        onClick={() =>
+                          setAdvanced({
+                            ...advanced,
+                            labels: active
+                              ? advanced.labels.filter((x) => x !== l.id)
+                              : [...advanced.labels, l.id],
+                          })
+                        }
                         className={`flex w-full items-center gap-3 rounded-lg px-3 py-1.5 text-sm ${active ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"}`}
                       >
-                        <span className={`h-2.5 w-2.5 rounded-sm ${l.color}`} />
+                        <span
+                          className="h-2.5 w-2.5 rounded-sm"
+                          style={{ backgroundColor: l.color }}
+                          aria-hidden
+                        />
                         <span className="flex-1 text-left">{l.name}</span>
-                        <span className="text-[11px] tabular-nums">{l.count}</span>
                       </button>
                     </li>
                   );
                 })}
                 <li>
-                  <button onClick={() => notifyComingSoon()} className="flex w-full items-center gap-3 rounded-lg px-3 py-1.5 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground">
+                  <button
+                    onClick={() => notifyComingSoon()}
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-1.5 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+                  >
                     <Plus className="h-3.5 w-3.5" />
                     <span
                       onClick={(e) => {
@@ -670,7 +680,10 @@ function EmailHubPage() {
 
               <div className="flex items-center justify-between px-2 pb-1.5 pt-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 <span>Accounts</span>
-                <button onClick={() => notifyComingSoon()} className="rounded p-0.5 hover:bg-surface-2">
+                <button
+                  onClick={() => notifyComingSoon()}
+                  className="rounded p-0.5 hover:bg-surface-2"
+                >
                   <Plus className="h-3 w-3" />
                 </button>
               </div>
@@ -682,7 +695,10 @@ function EmailHubPage() {
                 )}
                 {ACCOUNTS.map((a, i) => (
                   <li key={i}>
-                    <button onClick={() => notifyComingSoon()} className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground">
+                    <button
+                      onClick={() => notifyComingSoon()}
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+                    >
                       <span
                         className={`flex h-5 w-5 items-center justify-center rounded text-[10px] font-semibold text-white ${a.color}`}
                       >
@@ -837,7 +853,9 @@ function EmailHubPage() {
                   className="ml-1 rounded p-1 text-muted-foreground hover:bg-surface-2"
                   title={t("em.47")}
                 >
-                  <RefreshCw className={`h-3.5 w-3.5 ${dbQuery.isFetching ? "animate-spin" : ""}`} />
+                  <RefreshCw
+                    className={`h-3.5 w-3.5 ${dbQuery.isFetching ? "animate-spin" : ""}`}
+                  />
                 </button>
               )}
               <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
@@ -880,14 +898,8 @@ function EmailHubPage() {
               ) : effectiveTotal === 0 ? (
                 <div className="flex h-full flex-col items-center justify-center gap-2 px-6 py-16 text-center text-sm text-muted-foreground">
                   <Inbox className="h-8 w-8 opacity-50" />
-                  <span className="font-medium">
-                    {debouncedSearch ? t("em.50") : t("em.51")}
-                  </span>
-                  <span className="text-xs">
-                    {debouncedSearch
-                      ? t("em.52")
-                      : t("em.53")}
-                  </span>
+                  <span className="font-medium">{debouncedSearch ? t("em.50") : t("em.51")}</span>
+                  <span className="text-xs">{debouncedSearch ? t("em.52") : t("em.53")}</span>
                 </div>
               ) : null}
               {Object.entries(groups).map(([group, items]) => (
@@ -1004,203 +1016,218 @@ function EmailHubPage() {
               <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 text-center">
                 <Mail className="h-10 w-10 text-muted-foreground/50" />
                 <div className="text-sm font-medium">{t("em.54")}</div>
-                <p className="text-xs text-muted-foreground">
-                  {t("em.55")}
-                </p>
+                <p className="text-xs text-muted-foreground">{t("em.55")}</p>
               </div>
             ) : (
               <>
-            <div className="flex shrink-0 flex-wrap items-center gap-1 border-b border-border px-4 py-2">
-              <button
-                onClick={() => setDetailOpen(false)}
-                className="rounded-lg p-2 text-muted-foreground hover:bg-surface-2 lg:hidden"
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </button>
-              <ToolBtn icon={Reply} label={t("em.56")} onClick={() => replySelected(false)} />
-              <ToolBtn icon={ReplyAll} label={t("em.57")} onClick={() => replySelected(true)} />
-              <ToolBtn icon={Forward} label={t("em.12")} onClick={forwardSelected} />
-              <ToolBtn icon={Archive} label={t("em.41")} onClick={() => messageAction("archive")} />
-              <ToolBtn icon={Trash2} label={t("em.42")} onClick={() => messageAction("trash")} />
-              <ToolBtn icon={Sparkles} label={t("em.58")} onClick={() => setAiOpen(true)} />
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+                <div className="flex shrink-0 flex-wrap items-center gap-1 border-b border-border px-4 py-2">
                   <button
-                    aria-label={t("em.59")}
-                    className="ml-auto rounded-lg p-2 text-muted-foreground hover:bg-surface-2"
+                    onClick={() => setDetailOpen(false)}
+                    className="rounded-lg p-2 text-muted-foreground hover:bg-surface-2 lg:hidden"
                   >
-                    <MoreHorizontal className="h-4 w-4" />
+                    <ArrowLeft className="h-4 w-4" />
                   </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onClick={() => {
-                      const ids = realIds(selectedEmail ? [selectedEmail.id] : []);
-                      if (!ids.length) return toast.info(t("em.23"));
-                      bulkReadMut.mutate({ ids, is_read: false });
-                    }}
-                  >
-                    {t("em.44")}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => messageAction("archive")}>{t("em.41")}</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => messageAction("trash")}>{t("em.60")}</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setLabelsOpen(true)}>{t("em.61")}</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+                  <ToolBtn icon={Reply} label={t("em.56")} onClick={() => replySelected(false)} />
+                  <ToolBtn icon={ReplyAll} label={t("em.57")} onClick={() => replySelected(true)} />
+                  <ToolBtn icon={Forward} label={t("em.12")} onClick={forwardSelected} />
+                  <ToolBtn
+                    icon={Archive}
+                    label={t("em.41")}
+                    onClick={() => messageAction("archive")}
+                  />
+                  <ToolBtn
+                    icon={Trash2}
+                    label={t("em.42")}
+                    onClick={() => messageAction("trash")}
+                  />
+                  <ToolBtn icon={Sparkles} label={t("em.58")} onClick={() => setAiOpen(true)} />
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        aria-label={t("em.59")}
+                        className="ml-auto rounded-lg p-2 text-muted-foreground hover:bg-surface-2"
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => {
+                          const ids = realIds(selectedEmail ? [selectedEmail.id] : []);
+                          if (!ids.length) return toast.info(t("em.23"));
+                          bulkReadMut.mutate({ ids, is_read: false });
+                        }}
+                      >
+                        {t("em.44")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => messageAction("archive")}>
+                        {t("em.41")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => messageAction("trash")}>
+                        {t("em.60")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setLabelsOpen(true)}>
+                        {t("em.61")}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <h1 className="text-xl font-semibold tracking-tight">
-                  {selectedEmail.subject}
-                  {selectedEmail.labels && selectedEmail.labels.length > 0 && (
-                    <span className="ml-2 align-middle rounded bg-primary/15 px-2 py-0.5 text-[11px] font-medium text-primary">
-                      {selectedEmail.labels[0]}
-                    </span>
+                <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <h1 className="text-xl font-semibold tracking-tight">
+                      {selectedEmail.subject}
+                      {selectedEmail.labels && selectedEmail.labels.length > 0 && (
+                        <span className="ml-2 align-middle rounded bg-primary/15 px-2 py-0.5 text-[11px] font-medium text-primary">
+                          {selectedEmail.labels[0]}
+                        </span>
+                      )}
+                    </h1>
+                  </div>
+
+                  <div className="mt-4 flex items-start gap-3">
+                    <img
+                      src={avatar(selectedEmail.from)}
+                      alt=""
+                      className="h-10 w-10 rounded-full object-cover"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2 text-sm">
+                        <span className="font-medium">{selectedEmail.from}</span>
+                        <span className="text-muted-foreground">
+                          &lt;
+                          {selectedEmail.fromEmail ||
+                            `${selectedEmail.from.toLowerCase().replace(/\s+/g, ".")}@company.vn`}
+                          &gt;
+                        </span>
+                        <span className="ml-auto text-xs text-muted-foreground">
+                          {selectedEmail.time}
+                        </span>
+                        <button
+                          onClick={() => notifyComingSoon()}
+                          title={t("em.62")}
+                          className="rounded p-1 text-muted-foreground hover:bg-surface-2"
+                        >
+                          <Star
+                            className={`h-4 w-4 ${selectedEmail.starred ? "fill-amber-400 text-amber-400" : ""}`}
+                          />
+                        </button>
+                        <button
+                          onClick={() => replySelected(false)}
+                          title={t("em.56")}
+                          className="rounded p-1 text-muted-foreground hover:bg-surface-2"
+                        >
+                          <Reply className="h-4 w-4" />
+                        </button>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        đến {selectedEmail.to || t("em.63")}
+                        {selectedEmail.cc && <span> · Cc: {selectedEmail.cc}</span>}
+                        <ChevronDown className="inline h-3 w-3" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 space-y-3 text-sm leading-relaxed">
+                    {selectedEmail.body ? (
+                      selectedEmail.body.split("\n\n").map((para, i) => <p key={i}>{para}</p>)
+                    ) : (
+                      <p className="text-muted-foreground">{t("em.64")}</p>
+                    )}
+                  </div>
+
+                  {selectedEmail.attachments && selectedEmail.attachments.length > 0 && (
+                    <div className="mt-6">
+                      <div className="text-sm font-medium">
+                        {selectedEmail.attachments.length} tệp đính kèm
+                      </div>
+                      <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                        {selectedEmail.attachments.map((att, i) => (
+                          <AttachmentCard
+                            key={i}
+                            icon={
+                              att.type === "excel"
+                                ? FileSpreadsheet
+                                : att.type === "image"
+                                  ? Image
+                                  : FileText
+                            }
+                            color={
+                              att.type === "pdf"
+                                ? "bg-rose-500/15 text-rose-300"
+                                : att.type === "excel"
+                                  ? "bg-emerald-500/15 text-emerald-300"
+                                  : att.type === "image"
+                                    ? "bg-sky-500/15 text-sky-300"
+                                    : "bg-violet-500/15 text-violet-300"
+                            }
+                            name={att.name}
+                            size={att.size}
+                          />
+                        ))}
+                      </div>
+                    </div>
                   )}
-                </h1>
-              </div>
 
-              <div className="mt-4 flex items-start gap-3">
-                <img
-                  src={avatar(selectedEmail.from)}
-                  alt=""
-                  className="h-10 w-10 rounded-full object-cover"
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2 text-sm">
-                    <span className="font-medium">{selectedEmail.from}</span>
-                    <span className="text-muted-foreground">
-                      &lt;
-                      {selectedEmail.fromEmail ||
-                        `${selectedEmail.from.toLowerCase().replace(/\s+/g, ".")}@company.vn`}
-                      &gt;
-                    </span>
-                    <span className="ml-auto text-xs text-muted-foreground">
-                      {selectedEmail.time}
-                    </span>
-                    <button
-                      onClick={() => notifyComingSoon()}
-                      title={t("em.62")}
-                      className="rounded p-1 text-muted-foreground hover:bg-surface-2"
-                    >
-                      <Star
-                        className={`h-4 w-4 ${selectedEmail.starred ? "fill-amber-400 text-amber-400" : ""}`}
+                  <div className="mt-6 flex flex-wrap gap-2">
+                    <ActionBtn icon={Reply} onClick={() => replySelected(false)}>
+                      {t("em.56")}
+                    </ActionBtn>
+                    <ActionBtn icon={ReplyAll} onClick={() => replySelected(true)}>
+                      {t("em.57")}
+                    </ActionBtn>
+                    <ActionBtn icon={Forward} onClick={forwardSelected}>
+                      {t("em.12")}
+                    </ActionBtn>
+                  </div>
+
+                  {/* AI Assistant inline */}
+                  <div className="mt-6 rounded-2xl border border-primary/30 bg-primary/5 p-5">
+                    <div className="flex items-center gap-2 text-sm font-semibold">
+                      <Sparkles className="h-4 w-4 text-primary" /> AI Email Assistant
+                      <button
+                        onClick={() => setAiOpen(true)}
+                        className="ml-auto inline-flex items-center gap-1 rounded-lg border border-primary/40 bg-primary/15 px-2 py-1 text-[11px] font-medium text-primary hover:bg-primary/25"
+                      >
+                        <Sparkles className="h-3 w-3" /> {t("em.65")}
+                      </button>
+                    </div>
+                    <div className="mt-3 text-sm font-medium">{t("em.66")}</div>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {selectedEmail.body
+                        ? selectedEmail.body.substring(0, 180).replace(/\n/g, " ") +
+                          (selectedEmail.body.length > 180 ? "..." : "")
+                        : t("em.67")}
+                    </p>
+                    <div className="mt-4 text-sm font-medium">{t("em.68")}</div>
+                    <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                      <SuggestBtn
+                        icon={FileText}
+                        title={t("em.69")}
+                        desc={selectedEmail.subject.substring(0, 30)}
                       />
-                    </button>
-                    <button
-                      onClick={() => replySelected(false)}
-                      title={t("em.56")}
-                      className="rounded p-1 text-muted-foreground hover:bg-surface-2"
-                    >
-                      <Reply className="h-4 w-4" />
-                    </button>
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    đến {selectedEmail.to || t("em.63")}
-                    {selectedEmail.cc && <span> · Cc: {selectedEmail.cc}</span>}
-                    <ChevronDown className="inline h-3 w-3" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-5 space-y-3 text-sm leading-relaxed">
-                {selectedEmail.body ? (
-                  selectedEmail.body.split("\n\n").map((para, i) => <p key={i}>{para}</p>)
-                ) : (
-                  <p className="text-muted-foreground">{t("em.64")}</p>
-                )}
-              </div>
-
-              {selectedEmail.attachments && selectedEmail.attachments.length > 0 && (
-                <div className="mt-6">
-                  <div className="text-sm font-medium">
-                    {selectedEmail.attachments.length} tệp đính kèm
-                  </div>
-                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                    {selectedEmail.attachments.map((att, i) => (
-                      <AttachmentCard
-                        key={i}
-                        icon={
-                          att.type === "excel"
-                            ? FileSpreadsheet
-                            : att.type === "image"
-                              ? Image
-                              : FileText
-                        }
-                        color={
-                          att.type === "pdf"
-                            ? "bg-rose-500/15 text-rose-300"
-                            : att.type === "excel"
-                              ? "bg-emerald-500/15 text-emerald-300"
-                              : att.type === "image"
-                                ? "bg-sky-500/15 text-sky-300"
-                                : "bg-violet-500/15 text-violet-300"
-                        }
-                        name={att.name}
-                        size={att.size}
+                      <SuggestBtn icon={Bot} title={t("em.70")} desc={t("em.71")} />
+                      <SuggestBtn
+                        icon={Tag}
+                        title={t("em.72")}
+                        desc={selectedEmail.labels?.[0] || t("em.73")}
                       />
-                    ))}
+                      <SuggestBtn icon={Reply} title={t("em.74")} desc={t("em.75")} />
+                    </div>
+                  </div>
+
+                  <div className="mt-6">
+                    <div className="text-sm font-medium">{t("em.76")}</div>
+                    <div className="mt-3 flex items-center justify-center">
+                      <button
+                        onClick={() => notifyComingSoon()}
+                        className="text-sm text-primary hover:underline"
+                      >
+                        {t("em.77")}
+                      </button>
+                    </div>
                   </div>
                 </div>
-              )}
-
-              <div className="mt-6 flex flex-wrap gap-2">
-                <ActionBtn icon={Reply} onClick={() => replySelected(false)}>
-                  {t("em.56")}
-                </ActionBtn>
-                <ActionBtn icon={ReplyAll} onClick={() => replySelected(true)}>
-                  {t("em.57")}
-                </ActionBtn>
-                <ActionBtn icon={Forward} onClick={forwardSelected}>
-                  {t("em.12")}
-                </ActionBtn>
-              </div>
-
-              {/* AI Assistant inline */}
-              <div className="mt-6 rounded-2xl border border-primary/30 bg-primary/5 p-5">
-                <div className="flex items-center gap-2 text-sm font-semibold">
-                  <Sparkles className="h-4 w-4 text-primary" /> AI Email Assistant
-                  <button
-                    onClick={() => setAiOpen(true)}
-                    className="ml-auto inline-flex items-center gap-1 rounded-lg border border-primary/40 bg-primary/15 px-2 py-1 text-[11px] font-medium text-primary hover:bg-primary/25"
-                  >
-                    <Sparkles className="h-3 w-3" /> {t("em.65")}
-                  </button>
-                </div>
-                <div className="mt-3 text-sm font-medium">{t("em.66")}</div>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {selectedEmail.body
-                    ? selectedEmail.body.substring(0, 180).replace(/\n/g, " ") +
-                      (selectedEmail.body.length > 180 ? "..." : "")
-                    : t("em.67")}
-                </p>
-                <div className="mt-4 text-sm font-medium">{t("em.68")}</div>
-                <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                  <SuggestBtn
-                    icon={FileText}
-                    title={t("em.69")}
-                    desc={selectedEmail.subject.substring(0, 30)}
-                  />
-                  <SuggestBtn icon={Bot} title={t("em.70")} desc={t("em.71")} />
-                  <SuggestBtn
-                    icon={Tag}
-                    title={t("em.72")}
-                    desc={selectedEmail.labels?.[0] || t("em.73")}
-                  />
-                  <SuggestBtn icon={Reply} title={t("em.74")} desc={t("em.75")} />
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <div className="text-sm font-medium">{t("em.76")}</div>
-                <div className="mt-3 flex items-center justify-center">
-                  <button onClick={() => notifyComingSoon()} className="text-sm text-primary hover:underline">
-                    {t("em.77")}
-                  </button>
-                </div>
-              </div>
-            </div>
               </>
             )}
           </section>
@@ -1256,7 +1283,10 @@ function EmailHubPage() {
                   </li>
                 ))}
               </ul>
-              <button onClick={() => notifyComingSoon()} className="mt-3 w-full text-center text-xs text-primary hover:underline">
+              <button
+                onClick={() => notifyComingSoon()}
+                className="mt-3 w-full text-center text-xs text-primary hover:underline"
+              >
                 {t("em.82")}
               </button>
             </div>
@@ -1264,7 +1294,10 @@ function EmailHubPage() {
             <div className="rounded-2xl border border-border bg-surface p-4">
               <div className="flex items-center justify-between">
                 <div className="text-sm font-semibold">{t("em.83")}</div>
-                <button onClick={() => notifyComingSoon()} className="inline-flex items-center gap-1 rounded border border-border bg-surface-2 px-2 py-0.5 text-[11px] text-muted-foreground hover:bg-surface">
+                <button
+                  onClick={() => notifyComingSoon()}
+                  className="inline-flex items-center gap-1 rounded border border-border bg-surface-2 px-2 py-0.5 text-[11px] text-muted-foreground hover:bg-surface"
+                >
                   Tuần này <ChevronDown className="h-3 w-3" />
                 </button>
               </div>
@@ -1311,7 +1344,10 @@ function EmailHubPage() {
                   </li>
                 ))}
               </ul>
-              <button onClick={() => notifyComingSoon()} className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border bg-surface-2/40 px-3 py-2 text-xs text-primary hover:bg-surface-2">
+              <button
+                onClick={() => notifyComingSoon()}
+                className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border bg-surface-2/40 px-3 py-2 text-xs text-primary hover:bg-surface-2"
+              >
                 <Plus className="h-3.5 w-3.5" /> {t("em.86")}
               </button>
             </div>
@@ -1333,25 +1369,14 @@ function EmailHubPage() {
         onOpenChange={setAdvancedOpen}
         value={advanced}
         onChange={setAdvanced}
-        availableLabels={labels.map((l) => l.name)}
+        availableLabels={labels}
       />
       <AiAssistantDialog
         open={aiOpen}
         onOpenChange={setAiOpen}
         emailSubject={selectedEmail?.subject ?? ""}
       />
-      <LabelsRulesDialog
-        open={labelsOpen}
-        onOpenChange={setLabelsOpen}
-        labels={labels.map((l) => ({ name: l.name, color: l.color }))}
-        onChangeLabels={(v) =>
-          setLabels(
-            v.map((x) => ({ ...x, count: labels.find((l) => l.name === x.name)?.count ?? 0 })),
-          )
-        }
-        rules={rules}
-        onChangeRules={setRules}
-      />
+      <LabelsRulesDialog open={labelsOpen} onOpenChange={setLabelsOpen} />
     </div>
   );
 }
@@ -1398,9 +1423,20 @@ function BulkBtn({
   );
 }
 
-function ActionBtn({ icon: Icon, children, onClick }: { icon: LucideIcon; children: React.ReactNode; onClick?: () => void }) {
+function ActionBtn({
+  icon: Icon,
+  children,
+  onClick,
+}: {
+  icon: LucideIcon;
+  children: React.ReactNode;
+  onClick?: () => void;
+}) {
   return (
-    <button onClick={onClick ?? (() => notifyComingSoon())} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:bg-surface-2">
+    <button
+      onClick={onClick ?? (() => notifyComingSoon())}
+      className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-sm hover:bg-surface-2"
+    >
       <Icon className="h-4 w-4" /> {children}
     </button>
   );
@@ -1426,7 +1462,10 @@ function AttachmentCard({
         <div className="truncate text-sm font-medium">{name}</div>
         <div className="text-[11px] text-muted-foreground">{size}</div>
       </div>
-      <button onClick={() => notifyComingSoon()} className="rounded p-1.5 text-muted-foreground hover:bg-surface-2">
+      <button
+        onClick={() => notifyComingSoon()}
+        className="rounded p-1.5 text-muted-foreground hover:bg-surface-2"
+      >
         <Download className="h-4 w-4" />
       </button>
     </div>
@@ -1443,7 +1482,10 @@ function SuggestBtn({
   desc: string;
 }) {
   return (
-    <button onClick={() => notifyComingSoon()} className="flex items-center gap-2 rounded-xl border border-border bg-surface p-3 text-left hover:border-primary/40">
+    <button
+      onClick={() => notifyComingSoon()}
+      className="flex items-center gap-2 rounded-xl border border-border bg-surface p-3 text-left hover:border-primary/40"
+    >
       <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary">
         <Icon className="h-4 w-4" />
       </span>
