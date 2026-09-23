@@ -10,6 +10,8 @@ import {
   MessageCircle, Pencil, Reply, Paperclip, Download, ChevronUp, UserPlus, Check, Shield, Eye, Pin, PinOff,
   ListTodo,
   Zap,
+  Sparkles,
+  Video,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
@@ -23,6 +25,7 @@ import {
   listChatChannelReaders, listPinnedChatMessages, setChatMessagePin,
   type ChatChannelDTO, type ChatMessageDTO, type ChatAttachment, type ChatReaderDTO,
 } from "@/lib/api/chat.functions";
+import { askChatAi } from "@/lib/api/chat-ai.functions";
 import { createTask } from "@/lib/api/tasks.functions";
 import { listWorkspaceMembers, getWorkspaceSettings } from "@/lib/api/workspaces.functions";
 import { buildChatSourceTag } from "@/lib/chat-task-link";
