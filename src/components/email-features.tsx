@@ -145,7 +145,7 @@ export function ComposeEmailDialog({
           toast.error(`${file.name} vượt quá 25MB`);
           continue;
         }
-        const key = `${msgId}/${crypto.randomUUID()}-${file.name.replace(/[^\w.\-]+/g, "_")}`;
+        const key = `${msgId}/${crypto.randomUUID()}-${file.name.replace(/[^\w.-]+/g, "_")}`;
         const { error } = await supabase.storage.from("email-attachments").upload(key, file, {
           contentType: file.type || "application/octet-stream",
           upsert: false,

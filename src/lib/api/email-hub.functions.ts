@@ -5,6 +5,12 @@ import type { EmailCtx } from "./email-draft.server";
 
 const ATTACHMENT_BUCKET = "email-attachments";
 
+// Supabase generated types coi tham số nullable là bắt buộc; dùng chữ ký RPC tối giản.
+type RpcFn = (
+  fn: string,
+  args: Record<string, unknown>,
+) => Promise<{ data: unknown; error: { message: string } | null }>;
+
 export type EmailLabel = { id: string; name: string; color: string };
 export type EmailRule = {
   id: string;
@@ -75,7 +81,7 @@ export const upsertEmailLabel = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const tenantId = await tenantOf(context as unknown as EmailCtx);
-    const { data: id, error } = await (context.supabase.rpc as any)("upsert_email_label", {
+    const { data: id, error } = await (context.supabase.rpc as unknown as RpcFn)("upsert_email_label", {
       _tenant_id: tenantId,
       _id: data.id ?? null,
       _name: data.name,
@@ -153,7 +159,7 @@ export const upsertEmailRule = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const tenantId = await tenantOf(context as unknown as EmailCtx);
-    const { data: id, error } = await (context.supabase.rpc as any)("upsert_email_rule", {
+    const { data: id, error } = await (context.supabase.rpc as unknown as RpcFn)("upsert_email_rule", {
       _tenant_id: tenantId,
       _id: data.id ?? null,
       _name: data.name,
@@ -200,7 +206,7 @@ export const searchEmails = createServerFn({ method: "GET" })
       .parse(input ?? {}),
   )
   .handler(async ({ data, context }): Promise<{ items: EmailSearchItem[]; total: number }> => {
-    const { data: rows, error } = await (context.supabase.rpc as any)("search_email_messages", {
+    const { data: rows, error } = await (context.supabase.rpc as unknown as RpcFn)("search_email_messages", {
       _folder: data.folder ?? null,
       _starred_only: data.starred_only,
       _keyword: data.keyword,
@@ -255,7 +261,7 @@ export const registerEmailAttachment = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { data: id, error } = await (context.supabase.rpc as any)("register_email_attachment", {
+    const { data: id, error } = await (context.supabase.rpc as unknown as RpcFn)("register_email_attachment", {
       _message_id: data.message_id,
       _object_key: data.object_key,
       _file_name: data.file_name,
