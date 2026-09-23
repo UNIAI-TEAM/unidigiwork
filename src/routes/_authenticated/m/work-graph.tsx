@@ -178,6 +178,13 @@ function WorkGraphRow({ item }: { item: WorkGraphBoardItem }) {
               {item.status}
             </Badge>
           ) : null}
+          {item.ownerId ? (
+            <DirectMessageButton
+              userId={item.ownerId}
+              personName={item.ownerName}
+              className="h-10 w-10"
+            />
+          ) : null}
         </div>
         <div className="mt-3 flex items-center gap-2">
           <span className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-surface-2">
