@@ -303,7 +303,7 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
               aria-label={t("m.ai.addContext")}
               onClick={() => setContextOpen(true)}
             >
-              <Plus className="!h-7 !w-7" />
+              <Plus className="!h-6 !w-6" />
             </Button>
             <PromptInputTextarea
               ref={composerRef}
