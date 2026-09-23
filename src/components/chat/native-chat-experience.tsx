@@ -13,6 +13,7 @@ import { ChatRoomView } from "@/components/mobile/team-chat-panel";
 import { NewDirectMessageButton } from "@/components/chat/new-direct-message";
 import { ChatRoomManagerButton } from "@/components/chat/chat-room-manager";
 import { ensureTenantGeneralChannel, listChatChannels } from "@/lib/api/chat.functions";
+import { useActiveTenant } from "@/features/tenants/hooks";
 import { localeTag, useI18n } from "@/lib/i18n";
 
 export function NativeChatExperience({
@@ -29,10 +30,15 @@ export function NativeChatExperience({
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<string | null>(initialChannelId ?? null);
 
+  // Tổ chức đang chọn: danh sách phòng phải tách theo tenant để đổi tổ chức không thấy phòng cũ.
+  const activeTenant = useActiveTenant();
+  const tenantId = activeTenant.data?.tenantId ?? null;
+
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["native-chat-channels"],
+    queryKey: ["native-chat-channels", tenantId],
     queryFn: () => listFn(),
     staleTime: 15_000,
+    enabled: !activeTenant.isLoading,
   });
 
   const channels = useMemo(() => {
@@ -54,14 +60,22 @@ export function NativeChatExperience({
   });
 
   // Tự tạo phòng chung của tổ chức ngay lần đầu vào chat (idempotent, tenant-scoped).
-  const ensuredRef = useRef(false);
+  // Đổi tổ chức → chạy lại cho tenant mới, và bỏ chọn phòng thuộc tổ chức cũ.
+  const ensuredRef = useRef<string | null>(null);
   useEffect(() => {
-    if (isLoading || isError || hasGeneral || ensuredRef.current) return;
-    ensuredRef.current = true;
+    if (!tenantId) return;
+    if (isLoading || isError || hasGeneral || ensuredRef.current === tenantId) return;
+    ensuredRef.current = tenantId;
     void ensureGeneralFn()
       .then(() => queryClient.invalidateQueries({ queryKey: ["native-chat-channels"] }))
       .catch(() => undefined);
-  }, [isLoading, isError, hasGeneral, ensureGeneralFn, queryClient]);
+  }, [tenantId, isLoading, isError, hasGeneral, ensureGeneralFn, queryClient]);
+
+  useEffect(() => {
+    if (!tenantId || isLoading || isError || !selected) return;
+    const stillVisible = (data?.channels ?? []).some((c) => c.id === selected);
+    if (!stillVisible) setSelected(null);
+  }, [tenantId, data, isLoading, isError, selected]);
 
   const select = (id: string) => {
     setSelected(id);

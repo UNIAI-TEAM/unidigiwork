@@ -13,6 +13,7 @@ import { MobileListItem } from "@/components/mobile/mobile-list-item";
 import { NewDirectMessageButton } from "@/components/chat/new-direct-message";
 import { ChatRoomManagerButton } from "@/components/chat/chat-room-manager";
 import { ensureTenantGeneralChannel, listChatChannels } from "@/lib/api/chat.functions";
+import { useActiveTenant } from "@/features/tenants/hooks";
 import { fmt } from "@/lib/i18n-interpolate";
 import { localeTag, useI18n } from "@/lib/i18n";
 
@@ -41,10 +42,15 @@ function MobileChatList() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
 
+  // Danh sách phòng tách theo tổ chức đang chọn.
+  const activeTenant = useActiveTenant();
+  const tenantId = activeTenant.data?.tenantId ?? null;
+
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["mobile-chat-channels"],
+    queryKey: ["mobile-chat-channels", tenantId],
     queryFn: () => listFn(),
     staleTime: 15_000,
+    enabled: !activeTenant.isLoading,
   });
 
   const channels = useMemo(() => {
@@ -67,14 +73,15 @@ function MobileChatList() {
   });
 
   // Tự tạo phòng chung của tổ chức ngay lần đầu (idempotent, tenant-scoped).
-  const ensuredRef = useRef(false);
+  const ensuredRef = useRef<string | null>(null);
   useEffect(() => {
-    if (isLoading || isError || hasGeneral || ensuredRef.current) return;
-    ensuredRef.current = true;
+    if (!tenantId) return;
+    if (isLoading || isError || hasGeneral || ensuredRef.current === tenantId) return;
+    ensuredRef.current = tenantId;
     void ensureGeneralFn()
       .then(() => queryClient.invalidateQueries({ queryKey: ["mobile-chat-channels"] }))
       .catch(() => undefined);
-  }, [isLoading, isError, hasGeneral, ensureGeneralFn, queryClient]);
+  }, [tenantId, isLoading, isError, hasGeneral, ensureGeneralFn, queryClient]);
 
   return (
     <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col gap-3 overflow-x-hidden p-4 pb-24">
