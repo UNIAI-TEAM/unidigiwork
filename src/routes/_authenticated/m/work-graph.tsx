@@ -1,6 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, FileText, ListChecks, Search } from "lucide-react";
+import {
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  ListChecks,
+  Search,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
@@ -10,6 +17,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { listWorkGraphBoard, type WorkGraphBoardItem } from "@/lib/api/work-graph.functions";
 import { toMobileHref } from "@/lib/mobile-routes";
 import { DirectMessageButton } from "@/components/chat/direct-message-button";
+import { TaskSchedulePanel } from "@/components/work-graph/task-schedule-panel";
+import { useI18n } from "@/lib/i18n";
 
 const searchSchema = z.object({ task: z.string().uuid().optional() });
 
@@ -151,6 +160,8 @@ function MobileWorkGraphPage() {
 
 function WorkGraphRow({ item }: { item: WorkGraphBoardItem }) {
   const Icon = item.type === "WORK_PRODUCT" ? FileText : ListChecks;
+  const { t } = useI18n();
+  const [showSchedule, setShowSchedule] = useState(false);
   return (
     <li>
       <Link
@@ -206,6 +217,21 @@ function WorkGraphRow({ item }: { item: WorkGraphBoardItem }) {
           </p>
         ) : null}
       </Link>
+      {item.type === "TASK" ? (
+        <div className="mt-1">
+          <Button
+            type="button"
+            variant="ghost"
+            className="min-h-11 w-full justify-start px-2 text-xs text-muted-foreground"
+            aria-expanded={showSchedule}
+            onClick={() => setShowSchedule((value) => !value)}
+          >
+            <CalendarDays className="h-4 w-4" />
+            {t(showSchedule ? "wg.schedule.hide" : "wg.schedule.show")}
+          </Button>
+          {showSchedule ? <TaskSchedulePanel taskId={item.id} /> : null}
+        </div>
+      ) : null}
     </li>
   );
 }
