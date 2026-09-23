@@ -113,6 +113,7 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => 
   const markReadFn = useServerFn(markChatChannelRead);
   const askAiFn = useServerFn(askChatAi);
   const [body, setBody] = useState("");
+  const [autoAi, setAutoAi] = useState(true);
   const [pending, setPending] = useState<{ id: string; body: string; createdAt: string }[]>([]);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
