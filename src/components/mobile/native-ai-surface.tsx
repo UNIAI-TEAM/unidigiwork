@@ -231,7 +231,7 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
   return (
     <div className="mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col overflow-hidden">
       <Conversation className="min-h-0 flex-1">
-        <ConversationContent className="min-h-full gap-6 px-4 pb-6 pt-3 sm:px-6">
+        <ConversationContent className="min-h-full gap-6 px-4 pb-3 pt-1 sm:px-6 sm:pt-2">
           {messages.isLoading ? (
             <div className="flex min-h-72 items-center justify-center text-muted-foreground">
               <Loader2 className="h-5 w-5 animate-spin" />
@@ -262,7 +262,7 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
         <ConversationScrollButton aria-label={t("m.ai.scrollLatest")} />
       </Conversation>
 
-      <div className="shrink-0 bg-background px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 sm:px-6">
+      <div className="shrink-0 bg-background px-3 pb-[max(0.25rem,env(safe-area-inset-bottom))] pt-1 sm:px-6">
         <div className="mx-auto w-full max-w-2xl">
           {contexts.length > 0 && (
             <div className="mb-2 flex gap-2 overflow-x-auto pb-1">
@@ -337,7 +337,9 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
               )}
             </PromptInputSubmit>
           </PromptInput>
-          <p className="mt-2 text-center text-xs text-muted-foreground">{t("m.ai.disclaimer")}</p>
+          <p className="mt-1 text-center text-[11px] leading-4 text-muted-foreground">
+            {t("m.ai.disclaimer")}
+          </p>
         </div>
       </div>
 
