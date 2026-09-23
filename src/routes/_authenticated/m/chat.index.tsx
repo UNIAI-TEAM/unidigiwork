@@ -2,7 +2,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Hash, Lock, MessageSquare, Search, User, Users, Video, X } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MobileListItem } from "@/components/mobile/mobile-list-item";
+import { NewDirectMessageButton } from "@/components/chat/new-direct-message";
 import { ensureTenantGeneralChannel, listChatChannels } from "@/lib/api/chat.functions";
 import { fmt } from "@/lib/i18n-interpolate";
 import { localeTag, useI18n } from "@/lib/i18n";
@@ -64,6 +65,16 @@ function MobileChatList() {
     onError: () => toast.error(t("m.chat.generalError")),
   });
 
+  // Tự tạo phòng chung của tổ chức ngay lần đầu (idempotent, tenant-scoped).
+  const ensuredRef = useRef(false);
+  useEffect(() => {
+    if (isLoading || isError || hasGeneral || ensuredRef.current) return;
+    ensuredRef.current = true;
+    void ensureGeneralFn()
+      .then(() => queryClient.invalidateQueries({ queryKey: ["mobile-chat-channels"] }))
+      .catch(() => undefined);
+  }, [isLoading, isError, hasGeneral, ensureGeneralFn, queryClient]);
+
   return (
     <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col gap-3 overflow-x-hidden p-4 pb-24">
       <h1 className="text-xl font-semibold">{t("m.chat.title")}</h1>
@@ -78,6 +89,9 @@ function MobileChatList() {
           {t("m.chat.openGeneral")}
         </Button>
       ) : null}
+      <NewDirectMessageButton
+        onOpened={(id) => void navigate({ to: "/m/chat/$id", params: { id } })}
+      />
       <div className="relative">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input

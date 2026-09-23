@@ -1,5 +1,5 @@
 // Chat native dùng chung cho desktop và mobile (một trải nghiệm duy nhất, API thật, RLS).
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChatRoomView } from "@/components/mobile/team-chat-panel";
+import { NewDirectMessageButton } from "@/components/chat/new-direct-message";
 import { ensureTenantGeneralChannel, listChatChannels } from "@/lib/api/chat.functions";
 import { localeTag, useI18n } from "@/lib/i18n";
 
@@ -51,6 +52,16 @@ export function NativeChatExperience({
     onError: () => toast.error(t("m.chat.generalError")),
   });
 
+  // Tự tạo phòng chung của tổ chức ngay lần đầu vào chat (idempotent, tenant-scoped).
+  const ensuredRef = useRef(false);
+  useEffect(() => {
+    if (isLoading || isError || hasGeneral || ensuredRef.current) return;
+    ensuredRef.current = true;
+    void ensureGeneralFn()
+      .then(() => queryClient.invalidateQueries({ queryKey: ["native-chat-channels"] }))
+      .catch(() => undefined);
+  }, [isLoading, isError, hasGeneral, ensureGeneralFn, queryClient]);
+
   const select = (id: string) => {
     setSelected(id);
     void navigate({ to: "/chat/$channelId", params: { channelId: id } });
@@ -84,6 +95,7 @@ export function NativeChatExperience({
             {t("m.chat.openGeneral")}
           </Button>
         )}
+        <NewDirectMessageButton onOpened={(id) => select(id)} />
         <div className="min-h-0 flex-1 space-y-1 overflow-y-auto pr-1">
           {isLoading &&
             [0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-14 w-full rounded-2xl" />)}
