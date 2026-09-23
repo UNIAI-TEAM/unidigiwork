@@ -7,10 +7,19 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  announceTaskStatusInRoom,
   ensureTaskChatChannel,
   listTaskChatMessages,
   sendChatMessage,
 } from "@/lib/api/chat.functions";
+import { transitionTask } from "@/lib/api/tasks.functions";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 
@@ -39,6 +48,25 @@ export function TaskRoomChatCard({ taskId }: { taskId: string }) {
       void navigate({ to: "/chat/$channelId", params: { channelId: res.channelId } });
     },
     onError: () => toast.error(t("m.tasks.room.error")),
+  });
+
+  // Đổi trạng thái công việc và tự đăng thông báo vào phòng chat.
+  const announceFn = useServerFn(announceTaskStatusInRoom);
+  const progress = useMutation({
+    mutationFn: async (status: "todo" | "in_progress" | "blocked" | "done" | "canceled") => {
+      await transitionTask({
+        data: { taskId, toStatus: status, idempotencyKey: crypto.randomUUID() },
+      });
+      await announceFn({ data: { taskId, status } });
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["task-room-chat", taskId] });
+      void queryClient.invalidateQueries({ queryKey: ["task-detail", taskId] });
+      void queryClient.invalidateQueries({ queryKey: ["task", taskId] });
+      toast.success(t("m.tasks.room.progressDone"));
+    },
+    onError: (error: unknown) =>
+      toast.error(error instanceof Error ? error.message : t("m.tasks.room.error")),
   });
 
   const [draft, setDraft] = useState("");
@@ -100,6 +128,26 @@ export function TaskRoomChatCard({ taskId }: { taskId: string }) {
         >
           {room.data?.channelId ? t("m.tasks.room.open") : t("m.tasks.room.create")}
         </Button>
+      </div>
+
+      <div className="mt-3">
+        <Select
+          disabled={progress.isPending}
+          onValueChange={(value) =>
+            progress.mutate(value as "todo" | "in_progress" | "blocked" | "done" | "canceled")
+          }
+        >
+          <SelectTrigger className="min-h-11" aria-label={t("m.tasks.room.progress")}>
+            <SelectValue placeholder={t("m.tasks.room.progress")} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todo">{t("m.tasks.status.todo")}</SelectItem>
+            <SelectItem value="in_progress">{t("m.tasks.status.in_progress")}</SelectItem>
+            <SelectItem value="blocked">{t("m.tasks.status.blocked")}</SelectItem>
+            <SelectItem value="done">{t("m.tasks.status.done")}</SelectItem>
+            <SelectItem value="canceled">{t("m.tasks.status.canceled")}</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="mt-3 space-y-2">
