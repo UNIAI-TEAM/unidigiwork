@@ -29,10 +29,15 @@ export function NativeChatExperience({
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<string | null>(initialChannelId ?? null);
 
+  // Tổ chức đang chọn: danh sách phòng phải tách theo tenant để đổi tổ chức không thấy phòng cũ.
+  const activeTenant = useActiveTenant();
+  const tenantId = activeTenant.data?.tenantId ?? null;
+
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["native-chat-channels"],
+    queryKey: ["native-chat-channels", tenantId],
     queryFn: () => listFn(),
     staleTime: 15_000,
+    enabled: !activeTenant.isLoading,
   });
 
   const channels = useMemo(() => {
