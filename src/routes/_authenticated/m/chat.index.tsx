@@ -36,6 +36,7 @@ function MobileChatList() {
   const { t, lang } = useI18n();
   const locale = localeTag(lang);
   const listFn = useServerFn(listChatChannels);
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
 
   const { data, isLoading, isError } = useQuery({
