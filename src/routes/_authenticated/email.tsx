@@ -105,10 +105,8 @@ const MAILBOXES: { key: string; label: string; icon: LucideIcon }[] = [
   { key: "trash", label: "em.mb.trash", icon: Trash2 },
 ];
 
-type LabelWithCount = LabelDef & { count: number };
-// Nhãn và tài khoản email ngoài chưa có backend: khởi tạo rỗng, hiển thị
-// trạng thái "chưa cấu hình" thay vì số liệu bịa.
-const INITIAL_LABELS: LabelWithCount[] = [];
+// Tài khoản email ngoài chưa kết nối: hiển thị trạng thái "chưa cấu hình".
+
 
 const ACCOUNTS: Array<{
   provider: string;
