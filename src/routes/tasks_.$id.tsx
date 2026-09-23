@@ -45,6 +45,7 @@ import {
   formatBytes,
 } from "@/lib/tasks-storage";
 import { parseChatSource, stripChatSource } from "@/lib/chat-task-link";
+import { TaskRoomChatCard } from "@/components/mobile/task-room-chat-card";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
