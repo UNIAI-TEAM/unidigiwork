@@ -241,6 +241,7 @@ export function MobileTaskList() {
                     <Badge variant="destructive">{t("m.tasks.due.overdue")}</Badge>
                   ) : undefined
                 }
+                right={<OpenChatRoomButton kind="task" entityId={task.id} />}
                 onClick={() => navigate({ to: "/m/tasks/$id", params: { id: task.id } })}
               />
             );
