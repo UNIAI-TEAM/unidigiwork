@@ -224,8 +224,12 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => 
         </Button>
       ) : null}
 
-      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pb-2">
-        {history.isLoading ? (
+      <div
+        ref={listRef}
+        onScroll={onScroll}
+        className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain pb-2"
+      >
+        {history.isLoading && messages.length === 0 ? (
           <PanelHint>{t("m.ai.chat.loading")}</PanelHint>
         ) : messages.length === 0 ? (
           <PanelHint>{t("m.ai.chat.noMessages")}</PanelHint>
