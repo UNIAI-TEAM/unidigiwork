@@ -38,6 +38,7 @@ export function OpenChatRoomButton({
     <span
       role="button"
       tabIndex={0}
+      data-row-action=""
       aria-label={t("m.tasks.room.open")}
       title={t("m.tasks.room.open")}
       aria-disabled={open.isPending}
