@@ -117,19 +117,19 @@ export function EmailRibbon(p: EmailRibbonProps) {
       <RibbonGroup title={t("emx.respond")}>
         <RibbonButton
           icon={Reply}
-          label={t("em.51")}
+          label={t("em.56")}
           onClick={p.onReply}
           disabled={!p.hasSelection}
         />
         <RibbonButton
           icon={ReplyAll}
-          label={t("em.52")}
+          label={t("em.57")}
           onClick={p.onReplyAll}
           disabled={!p.hasSelection}
         />
         <RibbonButton
           icon={Forward}
-          label={t("em.53")}
+          label={t("em.12")}
           onClick={p.onForward}
           disabled={!p.hasSelection}
         />
