@@ -271,6 +271,8 @@
 /* Compact native composer: one stable row matching the mobile chat control. */
 .mobile-ai-composer [data-slot="input-group"] {
   height: 64px !important;
+  min-height: 64px !important;
+  max-height: 64px !important;
   flex-direction: row !important;
   border-color: var(--border-strong);
   border-radius: 9999px;
@@ -281,6 +283,7 @@
 .mobile-ai-composer textarea[data-slot="input-group-control"] {
   height: 48px !important;
   min-height: 0 !important;
+  max-height: 48px !important;
   overflow-x: auto;
   overflow-y: hidden;
   white-space: nowrap;
