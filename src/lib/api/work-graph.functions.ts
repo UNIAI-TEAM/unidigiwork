@@ -589,3 +589,112 @@ export const listWorkGraphBoard = createServerFn({ method: "GET" })
       counts,
     };
   });
+
+/* ---------------- Lịch cụ thể của công việc (ngày bắt đầu / kết thúc / mốc) ---------------- */
+
+export type WorkGraphTaskMilestone = {
+  id: string;
+  kind: "SUBTASK" | "STEP";
+  title: string | null;
+  status: string | null;
+  at: string | null;
+  done: boolean;
+};
+
+export type WorkGraphTaskSchedule = {
+  taskId: string;
+  title: string;
+  status: string | null;
+  progress: number;
+  createdAt: string | null;
+  startAt: string | null;
+  startExplicit: boolean;
+  endAt: string | null;
+  endExplicit: boolean;
+  dueAt: string | null;
+  completedAt: string | null;
+  updatedAt: string | null;
+  milestones: WorkGraphTaskMilestone[];
+};
+
+/** Đọc lịch của một công việc: RLS quyết định người gọi có thấy hay không. */
+export const getWorkGraphTaskSchedule = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ taskId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }): Promise<WorkGraphTaskSchedule | null> => {
+    const tenantId = await currentTenantId(context.supabase, context.userId);
+    const { data: payload, error } = await context.supabase.rpc("get_work_graph_task_schedule", {
+      _tenant_id: tenantId,
+      _task_id: data.taskId,
+    });
+    if (error) mapPgError(error);
+    if (!payload) return null;
+    const row = payload as {
+      task_id: string;
+      title: string;
+      status: string | null;
+      progress: number;
+      created_at: string | null;
+      start_at: string | null;
+      start_explicit: boolean;
+      end_at: string | null;
+      end_explicit: boolean;
+      due_at: string | null;
+      completed_at: string | null;
+      updated_at: string | null;
+      milestones: Array<{
+        id: string;
+        kind: "SUBTASK" | "STEP";
+        title: string | null;
+        status: string | null;
+        at: string | null;
+        done: boolean;
+      }>;
+    };
+    return {
+      taskId: row.task_id,
+      title: row.title,
+      status: row.status,
+      progress: Number(row.progress ?? 0),
+      createdAt: row.created_at,
+      startAt: row.start_at,
+      startExplicit: Boolean(row.start_explicit),
+      endAt: row.end_at,
+      endExplicit: Boolean(row.end_explicit),
+      dueAt: row.due_at,
+      completedAt: row.completed_at,
+      updatedAt: row.updated_at,
+      milestones: (row.milestones ?? []).map((m) => ({
+        id: m.id,
+        kind: m.kind,
+        title: m.title,
+        status: m.status,
+        at: m.at,
+        done: Boolean(m.done),
+      })),
+    };
+  });
+
+/** Đặt ngày bắt đầu / kết thúc — một writer duy nhất qua RPC, chiếu lại Work Graph. */
+export const setWorkGraphTaskSchedule = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        taskId: z.string().uuid(),
+        startAt: z.string().datetime().nullable().default(null),
+        endAt: z.string().datetime().nullable().default(null),
+        idempotencyKey: z.string().min(8).max(128),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.rpc("set_task_schedule", {
+      _task_id: data.taskId,
+      _start_at: data.startAt ?? undefined,
+      _end_at: data.endAt ?? undefined,
+      _idempotency_key: data.idempotencyKey,
+    });
+    if (error) mapPgError(error);
+    return { ok: true } as const;
+  });
