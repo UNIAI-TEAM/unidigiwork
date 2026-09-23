@@ -219,13 +219,18 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => 
   });
 
   const askAi = useMutation({
-    mutationFn: async (question: string) => askAiFn({ data: { channelId, question } }),
+    mutationFn: async (input: { id: string; text: string }) =>
+      askAiFn({ data: { channelId, question: input.text } }),
     onSuccess: () => {
       setBody("");
       void queryClient.invalidateQueries({ queryKey: ["mobile-plus-chat-messages", channelId] });
       void queryClient.invalidateQueries({ queryKey: ["mobile-plus-chat-channels"] });
     },
-    onError: () => toast.error(t("m.ai.chat.aiFailed")),
+    onError: (_error, input) => {
+      setPending((current) => current.filter((p) => p.id !== input.id));
+      setBody((current) => current || input.text);
+      toast.error(t("m.ai.chat.aiFailed"));
+    },
   });
 
   const busy = askAi.isPending;
@@ -237,15 +242,22 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => 
     setBody("");
     stickToBottom.current = true;
     setPending((current) => [...current, { id, body: text, createdAt: new Date().toISOString() }]);
+    // Tự động gọi UNI AI trả lời ngay trong phòng: câu hỏi và câu trả lời đều lưu thật vào DB.
+    if (autoAi) {
+      askAi.mutate({ id, text });
+      return;
+    }
     send.mutate({ id, text });
   };
 
   const submitAi = () => {
     const text = body.trim();
     if (!text || busy) return;
+    const id = `pending-${Date.now()}-${Math.random().toString(16).slice(2)}`;
     setBody("");
     stickToBottom.current = true;
-    askAi.mutate(text);
+    setPending((current) => [...current, { id, body: text, createdAt: new Date().toISOString() }]);
+    askAi.mutate({ id, text });
   };
 
   return (
