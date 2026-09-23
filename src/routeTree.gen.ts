@@ -197,6 +197,7 @@ import { Route as AuthenticatedMAdminDepartmentsRouteImport } from './routes/_au
 import { Route as AuthenticatedMAdminAccountsRouteImport } from './routes/_authenticated/m/admin.accounts'
 import { Route as AuthenticatedAdminSellWorkPilotsRouteImport } from './routes/_authenticated/admin.sell-work.pilots'
 import { Route as AuthenticatedMAdminAccountsIndexRouteImport } from './routes/_authenticated/m/admin.accounts.index'
+import { Route as ApiPublicHooksMessagingProviderRouteImport } from './routes/api/public/hooks/messaging/$provider'
 import { Route as ApiInternalOfficeV1RenderRouteImport } from './routes/api/internal/office/v1/render'
 import { Route as AuthenticatedMMeetIdRoomRouteImport } from './routes/_authenticated/m/meet.$id_.room'
 import { Route as AuthenticatedMAdminOrganizationIdRouteImport } from './routes/_authenticated/m/admin.organization.$id'
@@ -1225,6 +1226,12 @@ const AuthenticatedMAdminAccountsIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedMAdminAccountsRoute,
   } as any)
+const ApiPublicHooksMessagingProviderRoute =
+  ApiPublicHooksMessagingProviderRouteImport.update({
+    id: '/api/public/hooks/messaging/$provider',
+    path: '/api/public/hooks/messaging/$provider',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiInternalOfficeV1RenderRoute =
   ApiInternalOfficeV1RenderRouteImport.update({
     id: '/api/internal/office/v1/render',
@@ -1448,6 +1455,7 @@ export interface FileRoutesByFullPath {
   '/m/admin/organization/$id': typeof AuthenticatedMAdminOrganizationIdRoute
   '/m/meet/$id/room': typeof AuthenticatedMMeetIdRoomRoute
   '/api/internal/office/v1/render': typeof ApiInternalOfficeV1RenderRoute
+  '/api/public/hooks/messaging/$provider': typeof ApiPublicHooksMessagingProviderRoute
   '/m/admin/accounts/': typeof AuthenticatedMAdminAccountsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -1638,6 +1646,7 @@ export interface FileRoutesByTo {
   '/m/admin/organization/$id': typeof AuthenticatedMAdminOrganizationIdRoute
   '/m/meet/$id/room': typeof AuthenticatedMMeetIdRoomRoute
   '/api/internal/office/v1/render': typeof ApiInternalOfficeV1RenderRoute
+  '/api/public/hooks/messaging/$provider': typeof ApiPublicHooksMessagingProviderRoute
   '/m/admin/accounts': typeof AuthenticatedMAdminAccountsIndexRoute
 }
 export interface FileRoutesById {
@@ -1834,6 +1843,7 @@ export interface FileRoutesById {
   '/_authenticated/m/admin/organization/$id': typeof AuthenticatedMAdminOrganizationIdRoute
   '/_authenticated/m/meet/$id_/room': typeof AuthenticatedMMeetIdRoomRoute
   '/api/internal/office/v1/render': typeof ApiInternalOfficeV1RenderRoute
+  '/api/public/hooks/messaging/$provider': typeof ApiPublicHooksMessagingProviderRoute
   '/_authenticated/m/admin/accounts/': typeof AuthenticatedMAdminAccountsIndexRoute
 }
 export interface FileRouteTypes {
@@ -2030,6 +2040,7 @@ export interface FileRouteTypes {
     | '/m/admin/organization/$id'
     | '/m/meet/$id/room'
     | '/api/internal/office/v1/render'
+    | '/api/public/hooks/messaging/$provider'
     | '/m/admin/accounts/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -2220,6 +2231,7 @@ export interface FileRouteTypes {
     | '/m/admin/organization/$id'
     | '/m/meet/$id/room'
     | '/api/internal/office/v1/render'
+    | '/api/public/hooks/messaging/$provider'
     | '/m/admin/accounts'
   id:
     | '__root__'
@@ -2415,6 +2427,7 @@ export interface FileRouteTypes {
     | '/_authenticated/m/admin/organization/$id'
     | '/_authenticated/m/meet/$id_/room'
     | '/api/internal/office/v1/render'
+    | '/api/public/hooks/messaging/$provider'
     | '/_authenticated/m/admin/accounts/'
   fileRoutesById: FileRoutesById
 }
@@ -2464,6 +2477,7 @@ export interface RootRouteChildren {
   ApiPublicHooksProcessQuotaExportsRoute: typeof ApiPublicHooksProcessQuotaExportsRoute
   ApiPublicWorkGraphTokenRoute: typeof ApiPublicWorkGraphTokenRoute
   ApiInternalOfficeV1RenderRoute: typeof ApiInternalOfficeV1RenderRoute
+  ApiPublicHooksMessagingProviderRoute: typeof ApiPublicHooksMessagingProviderRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -3784,6 +3798,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMAdminAccountsIndexRouteImport
       parentRoute: typeof AuthenticatedMAdminAccountsRoute
     }
+    '/api/public/hooks/messaging/$provider': {
+      id: '/api/public/hooks/messaging/$provider'
+      path: '/api/public/hooks/messaging/$provider'
+      fullPath: '/api/public/hooks/messaging/$provider'
+      preLoaderRoute: typeof ApiPublicHooksMessagingProviderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/internal/office/v1/render': {
       id: '/api/internal/office/v1/render'
       path: '/api/internal/office/v1/render'
@@ -4342,6 +4363,7 @@ const rootRouteChildren: RootRouteChildren = {
     ApiPublicHooksProcessQuotaExportsRoute,
   ApiPublicWorkGraphTokenRoute: ApiPublicWorkGraphTokenRoute,
   ApiInternalOfficeV1RenderRoute: ApiInternalOfficeV1RenderRoute,
+  ApiPublicHooksMessagingProviderRoute: ApiPublicHooksMessagingProviderRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
