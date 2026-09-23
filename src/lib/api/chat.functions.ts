@@ -548,7 +548,10 @@ export const deleteChatChannel = createServerFn({ method: "POST" })
       .from("chat_channels")
       .update({ deleted_at: new Date().toISOString(), updated_by: ctx.userId })
       .eq("id", data.channelId);
-    if (error) mapPgError(error, "PERMISSION_DENIED");
+    if (error) {
+      console.error("DELETE_CHANNEL_ERR", JSON.stringify(error));
+      mapPgError(error, "PERMISSION_DENIED");
+    }
     return { ok: true };
   });
 
