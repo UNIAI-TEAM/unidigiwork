@@ -28,6 +28,7 @@ import { askChatAi } from "@/lib/api/chat-ai.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { Link } from "@tanstack/react-router";
+import { TaskFollowButton } from "@/components/chat/task-follow-button";
 
 export function TeamChatPanel({
   channelId,
