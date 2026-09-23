@@ -7,10 +7,19 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  announceTaskStatusInRoom,
   ensureTaskChatChannel,
   listTaskChatMessages,
   sendChatMessage,
 } from "@/lib/api/chat.functions";
+import { transitionTask } from "@/lib/api/tasks.functions";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 
