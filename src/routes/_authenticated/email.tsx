@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useI18n, type Key } from "@/lib/i18n";
 import type { LucideIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -205,6 +205,7 @@ function DonutChart({ stats, centerValue }: { stats: StatSlice[]; centerValue?: 
 
 function EmailHubPage() {
   const { t } = useI18n();
+  const navigate = useNavigate();
   const { workspaceId } = useActiveWorkspace();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeMailbox, setActiveMailbox] = useState("inbox");
