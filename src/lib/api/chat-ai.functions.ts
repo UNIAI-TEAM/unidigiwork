@@ -30,7 +30,7 @@ async function loadWorkSnapshot(
     _unassigned: false,
     _due_filter: "all",
     _task_id: taskId ?? undefined,
-    _limit: taskId ? 5 : 25,
+    _limit: taskId ? 30 : 150,
     _offset: 0,
   });
   if (error) return "(không đọc được dữ liệu công việc)";
@@ -53,13 +53,14 @@ async function loadWorkSnapshot(
     if (id && name) names.set(id, name);
   }
   const stats = payload?.stats ? `TỔNG QUAN: ${JSON.stringify(payload.stats)}` : "";
-  const lines = items.slice(0, 25).map((item) => {
+  const lines = items.slice(0, 150).map((item) => {
     const due = typeof item["due_at"] === "string" ? item["due_at"].slice(0, 10) : "không hạn";
     return [
       `- ${String(item["title"] ?? "Công việc")}`,
       `trạng thái ${String(item["status"] ?? "?")}`,
       `tiến độ ${String(item["progress"] ?? 0)}%`,
       `hạn ${due}`,
+      `cập nhật ${typeof item["updated_at"] === "string" ? (item["updated_at"] as string).slice(0, 10) : "-"}`,
       `phụ trách ${
         (typeof item["owner_name"] === "string" && item["owner_name"]) ||
         (typeof item["owner_id"] === "string" && names.get(item["owner_id"] as string)) ||
@@ -109,13 +110,9 @@ export const askChatAi = createServerFn({ method: "POST" })
       .map((m) => `${m.is_ai ? "UNI AI" : "Thành viên"}: ${String(m.body).slice(0, 600)}`)
       .join("\n");
 
-    // Mỗi phòng có timeline riêng: chỉ phòng gắn công việc hoặc phòng chung toàn tổ chức
-    // mới được nạp dữ liệu công việc; phòng khác chỉ dùng lịch sử của chính phòng đó.
-    const board = ch.task_id
-      ? await loadWorkSnapshot(ctx, ch.tenant_id, ch.task_id as string)
-      : ch.is_general
-        ? await loadWorkSnapshot(ctx, ch.tenant_id, null)
-        : "(phòng này không gắn công việc cụ thể — chỉ dùng nội dung trao đổi trong phòng)";
+    // Timeline hội thoại vẫn riêng từng phòng; dữ liệu công việc thì nạp rộng hơn để đủ trả lời:
+    // phòng gắn công việc → ưu tiên việc đó và việc liên quan; phòng khác → toàn bộ việc trong quyền.
+    const board = await loadWorkSnapshot(ctx, ch.tenant_id, (ch.task_id as string | null) ?? null);
 
     // 1) Lưu câu hỏi của người dùng.
     const { data: qRow, error: qErr } = await ctx.supabase
