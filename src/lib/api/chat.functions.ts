@@ -38,6 +38,7 @@ export type ChatMessageDTO = {
   attachments: ChatAttachment[];
   pinnedAt: string | null;
   pinnedByName: string | null;
+  isAi: boolean;
 };
 
 export type ChatAttachment = {
@@ -222,7 +223,7 @@ export const listChatMessages = createServerFn({ method: "GET" })
     let query = ctx.supabase
       .from("chat_messages")
       .select(
-        "id, channel_id, body, author_id, created_at, edited_at, parent_message_id, attachments, pinned_at, pinned_by",
+        "id, channel_id, body, author_id, created_at, edited_at, parent_message_id, attachments, pinned_at, pinned_by, is_ai",
       )
       .eq("channel_id", data.channelId)
       .is("deleted_at", null)
@@ -274,6 +275,7 @@ export const listChatMessages = createServerFn({ method: "GET" })
         attachments: Array.isArray(r.attachments) ? (r.attachments as ChatAttachment[]) : [],
         pinnedAt: r.pinned_at ?? null,
         pinnedByName: r.pinned_by ? (names.get(r.pinned_by) ?? "Thành viên") : null,
+        isAi: r.is_ai === true,
       };
     });
     return { messages, hasMore };
@@ -330,6 +332,7 @@ export const listPinnedChatMessages = createServerFn({ method: "GET" })
       attachments: Array.isArray(r.attachments) ? (r.attachments as ChatAttachment[]) : [],
       pinnedAt: r.pinned_at ?? null,
       pinnedByName: r.pinned_by ? (names.get(r.pinned_by) ?? "Thành viên") : null,
+      isAi: r.is_ai === true,
     }));
   });
 
