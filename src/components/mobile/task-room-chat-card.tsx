@@ -1,10 +1,17 @@
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useNavigate } from "@tanstack/react-router";
-import { MessageSquare, Sparkles } from "lucide-react";
+import { MessageSquare, Send, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { ensureTaskChatChannel, listTaskChatMessages } from "@/lib/api/chat.functions";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  ensureTaskChatChannel,
+  listTaskChatMessages,
+  sendChatMessage,
+} from "@/lib/api/chat.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 
 /**
