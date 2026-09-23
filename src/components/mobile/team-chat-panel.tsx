@@ -243,7 +243,7 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => 
                   ? "mr-auto max-w-[92%] rounded-2xl rounded-bl-md border border-primary/30 bg-primary/5 px-3 py-2"
                   : message.isMine
                     ? "ml-auto max-w-[86%] rounded-2xl rounded-br-md bg-secondary px-3 py-2 text-secondary-foreground"
-                    : "mr-auto max-w-[86%] rounded-2xl rounded-bl-md border border-border bg-surface px-3 py-2"
+                    : "mr-auto max-w-[86%] rounded-2xl rounded-bl-md border border-border bg-surface px-3 py-2")
               }
             >
               {message.isAi ? (
