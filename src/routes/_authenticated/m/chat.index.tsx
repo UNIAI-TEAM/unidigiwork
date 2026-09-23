@@ -13,6 +13,7 @@ import { MobileListItem } from "@/components/mobile/mobile-list-item";
 import { NewDirectMessageButton } from "@/components/chat/new-direct-message";
 import { ChatRoomManagerButton } from "@/components/chat/chat-room-manager";
 import { ensureTenantGeneralChannel, listChatChannels } from "@/lib/api/chat.functions";
+import { useActiveTenant } from "@/features/tenants/hooks";
 import { fmt } from "@/lib/i18n-interpolate";
 import { localeTag, useI18n } from "@/lib/i18n";
 
