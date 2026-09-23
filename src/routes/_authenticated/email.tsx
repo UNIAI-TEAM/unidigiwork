@@ -66,9 +66,12 @@ import {
   LabelsRulesDialog,
   EMPTY_FILTERS,
   type AdvancedFilters,
-  type LabelDef,
-  type RuleDef,
 } from "@/components/email-features";
+import {
+  listEmailLabels,
+  searchEmails,
+  type EmailLabel,
+} from "@/lib/api/email-hub.functions";
 import { buildForwardBody, buildReplyBody, stripPrefix } from "@/lib/email-quote";
 import { notifyComingSoon } from "@/lib/coming-soon";
 import { useActiveWorkspace } from "@/lib/active-workspace";
