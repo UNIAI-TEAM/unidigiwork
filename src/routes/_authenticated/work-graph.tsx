@@ -120,7 +120,7 @@ function WorkGraphTaskMessageForm({ taskId }: { taskId: string }) {
   if (permissions.isLoading) {
     return <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />;
   }
-  if (!permissions.data?.canMessageTeam) return null;
+  if (!canTeam && !canSuperior) return null;
 
   return (
     <div className="mt-2 grid gap-2 rounded-lg border bg-muted/30 p-2 sm:grid-cols-[minmax(12rem,0.8fr)_minmax(16rem,1.6fr)_auto] sm:items-center">
