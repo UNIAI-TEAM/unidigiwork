@@ -358,7 +358,7 @@ function ShareDirectMessageDialog({
           <DialogTitle>{t("m.tasks.room.dmShare")}</DialogTitle>
         </DialogHeader>
         <p className="text-xs text-muted-foreground">
-          {t("m.tasks.room.dmShareHint", { name: personName })}
+          {`${t("m.tasks.room.dmShareHint")} ${personName}`}
         </p>
         <div className="max-h-72 space-y-1 overflow-y-auto">
           {rows.map((m) => (
