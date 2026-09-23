@@ -811,7 +811,6 @@ export function ChatWorkspace({
         active="chat"
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
-        onOpen={() => setSidebarOpen(true)}
       />
       <div className="flex min-w-0 flex-1 flex-col">
         <AppTopbar variant="documents" onOpenSidebar={() => setSidebarOpen(true)} />
