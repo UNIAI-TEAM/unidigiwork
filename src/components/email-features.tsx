@@ -911,9 +911,30 @@ export function LabelsRulesDialog({
           >
             <Filter className="mr-1.5 inline h-3.5 w-3.5" /> Quy tắc ({rules.length})
           </button>
+          <button
+            onClick={() => setTab("signature")}
+            className={`min-h-11 flex-1 rounded-md px-3 py-1.5 ${tab === "signature" ? "bg-background shadow" : "text-muted-foreground"}`}
+          >
+            Chữ ký
+          </button>
         </div>
 
-        {tab === "labels" ? (
+        {tab === "signature" ? (
+          <div className="space-y-3">
+            <textarea
+              value={sigText ?? sigQuery.data?.body ?? ""}
+              onChange={(e) => setSigText(e.target.value)}
+              placeholder={"Trân trọng,\nNguyễn Văn A — UNIWORK"}
+              className="min-h-[160px] w-full rounded-lg border border-border bg-surface p-3 text-sm"
+            />
+            <p className="text-xs text-muted-foreground">
+              Chữ ký được tự động chèn vào cuối mỗi thư mới bạn soạn.
+            </p>
+            <Button onClick={() => saveSigMut.mutate()} disabled={saveSigMut.isPending}>
+              Lưu chữ ký
+            </Button>
+          </div>
+        ) : tab === "labels" ? (
           <div className="space-y-3">
             <div className="flex flex-wrap items-end gap-2 rounded-lg border border-border bg-surface p-3">
               <div className="min-w-[160px] flex-1">
