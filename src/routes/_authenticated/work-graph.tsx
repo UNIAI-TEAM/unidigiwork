@@ -30,6 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { OpenChatRoomButton } from "@/components/chat/open-chat-room-button";
+import { DirectMessageButton } from "@/components/chat/direct-message-button";
 import { useI18n } from "@/lib/i18n";
 import {
   getWorkGraphOverview,
