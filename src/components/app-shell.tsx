@@ -352,14 +352,48 @@ export function AppSidebar({
   active,
   open,
   onClose,
+  onOpen,
 }: {
   active?: NavKey;
   open: boolean;
   onClose: () => void;
+  onOpen?: () => void;
 }) {
   const { t } = useI18n();
   const { collapsed, toggleCollapsed } = useSidebarCollapsed();
   const desktopWidth = collapsed ? "lg:w-14 xl:w-14" : "lg:w-56 xl:w-64";
+
+  // Vuốt ngang để mở/đóng menu (giống ChatGPT) — chỉ khi menu ở dạng overlay.
+  useEffect(() => {
+    let startX = 0;
+    let startY = 0;
+    let tracking = false;
+    const overlay = () => window.innerWidth < 1024;
+    const onStart = (event: TouchEvent) => {
+      const touch = event.touches[0];
+      if (!touch || !overlay()) return;
+      startX = touch.clientX;
+      startY = touch.clientY;
+      tracking = open || startX <= 28;
+    };
+    const onEnd = (event: TouchEvent) => {
+      if (!tracking) return;
+      tracking = false;
+      const touch = event.changedTouches[0];
+      if (!touch) return;
+      const dx = touch.clientX - startX;
+      const dy = touch.clientY - startY;
+      if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx)) return;
+      if (!open && dx > 0) onOpen?.();
+      if (open && dx < 0) onClose();
+    };
+    window.addEventListener("touchstart", onStart, { passive: true });
+    window.addEventListener("touchend", onEnd, { passive: true });
+    return () => {
+      window.removeEventListener("touchstart", onStart);
+      window.removeEventListener("touchend", onEnd);
+    };
+  }, [open, onClose, onOpen]);
 
   return (
     <TooltipProvider>

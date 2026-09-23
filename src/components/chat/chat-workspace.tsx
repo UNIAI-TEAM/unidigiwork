@@ -807,7 +807,12 @@ export function ChatWorkspace({
 
   return (
     <div className="flex h-screen bg-background text-foreground">
-      <AppSidebar active="chat" open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <AppSidebar
+        active="chat"
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        onOpen={() => setSidebarOpen(true)}
+      />
       <div className="flex min-w-0 flex-1 flex-col">
         <AppTopbar variant="documents" onOpenSidebar={() => setSidebarOpen(true)} />
         <div className="flex min-h-0 flex-1">
@@ -1502,7 +1507,9 @@ export function ChatWorkspace({
                               aria-label={voice.listening ? "Đang nghe" : "Nói để nhập"}
                               aria-pressed={voice.listening}
                             >
-                              <Mic className={`h-4 w-4 ${voice.listening ? "animate-pulse" : ""}`} />
+                              <Mic
+                                className={`h-4 w-4 ${voice.listening ? "animate-pulse" : ""}`}
+                              />
                             </button>
                             <button
                               disabled={!input.trim() || askAiM.isPending || sendM.isPending}
