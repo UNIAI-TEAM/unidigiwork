@@ -478,17 +478,15 @@ export const joinChatChannel = createServerFn({ method: "POST" })
     if (chErr) mapPgError(chErr);
     if (!ch)
       throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "Không tìm thấy kênh chat" });
-    const { error } = await ctx.supabase
-      .from("chat_members")
-      .upsert(
-        {
-          channel_id: data.channelId,
-          user_id: ctx.userId,
-          tenant_id: ch.tenant_id,
-          role: "member",
-        },
-        { onConflict: "channel_id,user_id" },
-      );
+    const { error } = await ctx.supabase.from("chat_members").upsert(
+      {
+        channel_id: data.channelId,
+        user_id: ctx.userId,
+        tenant_id: ch.tenant_id,
+        role: "member",
+      },
+      { onConflict: "channel_id,user_id" },
+    );
     if (error) mapPgError(error, "PERMISSION_DENIED");
     return { ok: true };
   });
@@ -639,17 +637,15 @@ export const addChatChannelMember = createServerFn({ method: "POST" })
     if (chErr) mapPgError(chErr);
     if (!ch)
       throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "Không tìm thấy kênh chat" });
-    const { error } = await ctx.supabase
-      .from("chat_members")
-      .upsert(
-        {
-          channel_id: data.channelId,
-          user_id: data.userId,
-          tenant_id: ch.tenant_id,
-          role: "member",
-        },
-        { onConflict: "channel_id,user_id" },
-      );
+    const { error } = await ctx.supabase.from("chat_members").upsert(
+      {
+        channel_id: data.channelId,
+        user_id: data.userId,
+        tenant_id: ch.tenant_id,
+        role: "member",
+      },
+      { onConflict: "channel_id,user_id" },
+    );
     if (error) mapPgError(error, "PERMISSION_DENIED");
     return { ok: true };
   });

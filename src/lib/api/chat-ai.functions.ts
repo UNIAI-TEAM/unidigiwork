@@ -34,7 +34,8 @@ export const askChatAi = createServerFn({ method: "POST" })
       .eq("id", data.channelId)
       .maybeSingle();
     if (chErr) mapPgError(chErr, "PERMISSION_DENIED");
-    if (!ch) throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "Không tìm thấy kênh chat" });
+    if (!ch)
+      throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "Không tìm thấy kênh chat" });
 
     // Lịch sử gần đây — RLS đảm bảo chỉ thành viên kênh đọc được.
     const { data: recent, error: recentErr } = await ctx.supabase
