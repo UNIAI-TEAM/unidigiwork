@@ -191,17 +191,23 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => 
     onError: () => toast.error(t("m.ai.chat.aiFailed")),
   });
 
-  const busy = send.isPending || askAi.isPending;
+  const busy = askAi.isPending;
 
   const submit = () => {
     const text = body.trim();
-    if (!text || busy) return;
-    send.mutate(text);
+    if (!text) return;
+    const id = `pending-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    setBody("");
+    stickToBottom.current = true;
+    setPending((current) => [...current, { id, body: text, createdAt: new Date().toISOString() }]);
+    send.mutate({ id, text });
   };
 
   const submitAi = () => {
     const text = body.trim();
     if (!text || busy) return;
+    setBody("");
+    stickToBottom.current = true;
     askAi.mutate(text);
   };
 
