@@ -524,7 +524,7 @@ function AddContextDrawer({
       <DrawerContent
         className={
           mode === "menu"
-            ? "mx-3 mb-[max(1rem,env(safe-area-inset-bottom))] max-h-[70dvh] rounded-3xl border border-border-strong bg-surface p-2 pb-3 shadow-card after:hidden"
+            ? "mx-auto mb-[max(1rem,env(safe-area-inset-bottom))] w-[calc(100%-2.75rem)] max-w-[340px] max-h-[70dvh] rounded-[1.75rem] border border-border-strong bg-surface p-2.5 pb-2.5 shadow-card after:hidden"
             : mode === "chat"
               ? "flex h-[86dvh] flex-col rounded-t-3xl"
               : "max-h-[78dvh] rounded-t-3xl"
