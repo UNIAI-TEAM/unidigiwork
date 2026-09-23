@@ -304,7 +304,7 @@ export const listPinnedChatMessages = createServerFn({ method: "GET" })
     const { data: rows, error } = await ctx.supabase
       .from("chat_messages")
       .select(
-        "id, channel_id, body, author_id, created_at, edited_at, parent_message_id, attachments, pinned_at, pinned_by",
+        "id, channel_id, body, author_id, created_at, edited_at, parent_message_id, attachments, pinned_at, pinned_by, is_ai",
       )
       .eq("channel_id", data.channelId)
       .is("deleted_at", null)
