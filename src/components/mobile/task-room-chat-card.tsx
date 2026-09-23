@@ -1,10 +1,17 @@
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useNavigate } from "@tanstack/react-router";
-import { MessageSquare, Sparkles } from "lucide-react";
+import { MessageSquare, Send, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { ensureTaskChatChannel, listTaskChatMessages } from "@/lib/api/chat.functions";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  ensureTaskChatChannel,
+  listTaskChatMessages,
+  sendChatMessage,
+} from "@/lib/api/chat.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 
 /**
@@ -29,10 +36,50 @@ export function TaskRoomChatCard({ taskId }: { taskId: string }) {
     onSuccess: (res) => {
       void queryClient.invalidateQueries({ queryKey: ["task-room-chat", taskId] });
       void queryClient.invalidateQueries({ queryKey: ["mobile-chat-channels"] });
-      void navigate({ to: "/m/chat/$id", params: { id: res.channelId } });
+      void navigate({ to: "/chat/$channelId", params: { channelId: res.channelId } });
     },
     onError: () => toast.error(t("m.tasks.room.error")),
   });
+
+  const [draft, setDraft] = useState("");
+  const sendFn = useServerFn(sendChatMessage);
+  const channelId = room.data?.channelId ?? null;
+
+  const send = useMutation({
+    mutationFn: async (body: string) => {
+      const id = channelId ?? (await ensureFn({ data: { taskId } })).channelId;
+      await sendFn({ data: { channelId: id, body } });
+    },
+    onSuccess: () => {
+      setDraft("");
+      void queryClient.invalidateQueries({ queryKey: ["task-room-chat", taskId] });
+      void queryClient.invalidateQueries({ queryKey: ["mobile-chat-channels"] });
+    },
+    onError: () => toast.error(t("m.tasks.room.error")),
+  });
+
+  // Đồng bộ tức thì giữa web và điện thoại trong cùng phòng công việc.
+  useEffect(() => {
+    if (!channelId) return;
+    const channel = supabase
+      .channel(`task-room-${channelId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "chat_messages",
+          filter: `channel_id=eq.${channelId}`,
+        },
+        () => {
+          void queryClient.invalidateQueries({ queryKey: ["task-room-chat", taskId] });
+        },
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [channelId, queryClient, taskId]);
 
   const messages = room.data?.messages ?? [];
   const localeTag = lang === "vi" ? "vi-VN" : "en-US";
@@ -80,6 +127,32 @@ export function TaskRoomChatCard({ taskId }: { taskId: string }) {
             </div>
           ))
         )}
+      </div>
+
+      <div className="mt-3 flex items-end gap-2">
+        <Textarea
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+              event.preventDefault();
+              if (draft.trim() && !send.isPending) send.mutate(draft.trim());
+            }
+          }}
+          rows={2}
+          placeholder={t("m.chat.placeholder")}
+          aria-label={t("m.chat.placeholder")}
+          className="min-h-11 resize-none rounded-xl"
+        />
+        <Button
+          size="icon"
+          className="h-11 w-11 shrink-0 rounded-xl"
+          aria-label={t("m.chat.send")}
+          disabled={send.isPending || !draft.trim()}
+          onClick={() => send.mutate(draft.trim())}
+        >
+          <Send className="h-4 w-4" />
+        </Button>
       </div>
     </section>
   );
