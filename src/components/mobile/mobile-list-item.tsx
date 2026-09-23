@@ -34,7 +34,11 @@ export function MobileListItem({
 }: MobileListItemProps) {
   return (
     <button
-      onClick={onClick}
+      onClick={(event) => {
+        // Hành động phụ (ví dụ nút mở phòng chat) không kích hoạt mở chi tiết.
+        if ((event.target as HTMLElement).closest("[data-row-action]")) return;
+        onClick?.();
+      }}
       className={cn(
         "flex min-h-16 w-full min-w-0 max-w-full items-center gap-3 overflow-hidden rounded-xl border border-border bg-card p-3 text-left shadow-card transition-colors hover:border-border-strong hover:bg-surface",
         className,

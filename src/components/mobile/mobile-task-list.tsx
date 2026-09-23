@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { MobileFAB } from "@/components/mobile/mobile-fab";
 import { MobileListItem } from "@/components/mobile/mobile-list-item";
+import { OpenChatRoomButton } from "@/components/chat/open-chat-room-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -241,6 +242,7 @@ export function MobileTaskList() {
                     <Badge variant="destructive">{t("m.tasks.due.overdue")}</Badge>
                   ) : undefined
                 }
+                right={<OpenChatRoomButton kind="task" entityId={task.id} />}
                 onClick={() => navigate({ to: "/m/tasks/$id", params: { id: task.id } })}
               />
             );

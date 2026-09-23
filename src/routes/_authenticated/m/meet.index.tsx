@@ -8,6 +8,7 @@ import { listMeetings, scheduleMeeting } from "@/lib/api/meetings.functions";
 import { localeTag, useI18n } from "@/lib/i18n";
 import { fmt } from "@/lib/i18n-interpolate";
 import { MobileListItem } from "@/components/mobile/mobile-list-item";
+import { OpenChatRoomButton } from "@/components/chat/open-chat-room-button";
 import { MobileFAB } from "@/components/mobile/mobile-fab";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -232,6 +233,7 @@ function MobileMeetPage() {
                   </Badge>
                 ) : null
               }
+              right={<OpenChatRoomButton kind="meeting" entityId={m.id} />}
               onClick={() => void navigate({ to: "/m/meet/$id", params: { id: m.id } })}
             />
           ))}
