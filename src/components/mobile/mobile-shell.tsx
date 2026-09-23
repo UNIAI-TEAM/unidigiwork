@@ -233,23 +233,45 @@ function NativeDrawer({
         onPointerCancel={endSwipe}
         className="flex w-[86vw] max-w-[360px] touch-pan-y flex-col gap-0 overflow-hidden border-mobile-menu-border bg-mobile-menu p-0 text-mobile-menu-foreground shadow-panel"
       >
-        <SheetHeader className="px-5 pb-4 pt-[max(1rem,env(safe-area-inset-top))] text-left">
-          <SheetTitle className="flex min-h-11 items-center text-xl text-mobile-menu-foreground">
-            UniWork
-          </SheetTitle>
-          <SheetDescription className="sr-only">{t("m.nav.tagline")}</SheetDescription>
+        <SheetHeader className="grid grid-cols-[minmax(0,1fr)_2.75rem] items-center gap-2 px-5 pb-3 pt-[max(1rem,env(safe-area-inset-top))] text-left">
+          <span className="min-w-0">
+            <SheetTitle className="text-xl text-mobile-menu-foreground">UniWork</SheetTitle>
+            <SheetDescription className="mt-0.5 truncate text-xs text-mobile-menu-muted">
+              {t("m.nav.tagline")}
+            </SheetDescription>
+          </span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-11 w-11 rounded-full bg-mobile-menu-accent"
+            onClick={() => go("/m/search")}
+            aria-label={t("cmd.group.search")}
+          >
+            <Search className="h-5 w-5" />
+          </Button>
         </SheetHeader>
 
         <nav className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-3">
-          <DrawerLink icon={Plus} label={t("m.nav.newWork")} onClick={() => go("/m")} />
-          {QUICK_LINKS.map((item) => (
+          <DrawerSection label={t("m.nav.inbox")}>
             <DrawerLink
-              key={item.to}
-              icon={item.icon}
-              label={t(item.label)}
-              onClick={() => go(item.to)}
+              icon={CircleAlert}
+              label={t("m.nav.attention")}
+              count={counts.all}
+              onClick={() => go("/m/work-graph")}
             />
-          ))}
+            <DrawerLink
+              icon={RefreshCw}
+              label={t("m.nav.working")}
+              count={counts.running}
+              onClick={() => go("/m/work-graph?tab=running")}
+            />
+            <DrawerLink
+              icon={CheckCircle2}
+              label={t("m.nav.review")}
+              count={counts.done}
+              onClick={() => go("/m/work-graph?tab=done")}
+            />
+          </DrawerSection>
 
           <DrawerSection label={t("m.nav.workspaces")}>
             <button
@@ -284,6 +306,28 @@ function NativeDrawer({
             )}
           </DrawerSection>
 
+          <DrawerSection label={t("m.nav.work")}>
+            {WORK_LINKS.map((item) => (
+              <DrawerLink
+                key={item.to}
+                icon={item.icon}
+                label={t(item.label)}
+                onClick={() => go(item.to)}
+              />
+            ))}
+          </DrawerSection>
+
+          <DrawerSection label={t("m.nav.tools")}>
+            {TOOL_LINKS.map((item) => (
+              <DrawerLink
+                key={item.to}
+                icon={item.icon}
+                label={t(item.label)}
+                onClick={() => go(item.to)}
+              />
+            ))}
+          </DrawerSection>
+
           <DrawerSection label={t("m.nav.library")}>
             {LIBRARY_LINKS.map((item) => (
               <DrawerLink
@@ -310,6 +354,16 @@ function NativeDrawer({
             ))}
           </DrawerSection>
         </nav>
+
+        <div className="px-4 pb-2">
+          <Button
+            className="h-12 w-full rounded-full text-base font-semibold"
+            onClick={() => go("/m")}
+          >
+            <SquarePen className="h-5 w-5" />
+            {t("m.nav.newWork")}
+          </Button>
+        </div>
 
         <button
           onClick={() => go("/m/settings")}
