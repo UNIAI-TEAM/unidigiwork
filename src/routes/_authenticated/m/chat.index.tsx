@@ -67,6 +67,17 @@ function MobileChatList() {
   return (
     <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col gap-3 overflow-x-hidden p-4 pb-24">
       <h1 className="text-xl font-semibold">{t("m.chat.title")}</h1>
+      {!hasGeneral ? (
+        <Button
+          variant="outline"
+          className="min-h-11 justify-start gap-2"
+          disabled={openGeneral.isPending}
+          onClick={() => openGeneral.mutate()}
+        >
+          <Users className="h-4 w-4" />
+          {t("m.chat.openGeneral")}
+        </Button>
+      ) : null}
       <div className="relative">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
