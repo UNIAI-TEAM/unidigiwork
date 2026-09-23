@@ -250,7 +250,7 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => 
         <Button
           size="icon"
           className="h-11 w-11 shrink-0 rounded-full"
-          disabled={!body.trim() || send.isPending}
+          disabled={!body.trim() || busy}
           onClick={submit}
           aria-label={t("m.ai.chat.send")}
         >
