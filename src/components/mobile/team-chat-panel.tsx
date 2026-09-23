@@ -185,15 +185,25 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => 
   }, [serverMessages, pending.length]);
 
   // Mở phòng / đổi phòng: luôn bắt đầu ở tin mới nhất.
+  const firstLoadedChannel = useRef<string | null>(null);
   useEffect(() => {
     stickToBottom.current = true;
+    firstLoadedChannel.current = null;
     bottomRef.current?.scrollIntoView({ block: "end" });
   }, [channelId]);
 
   useEffect(() => {
+    if (messages.length === 0) return;
+    // Lần đầu dữ liệu của phòng vừa tải xong → nhảy thẳng xuống cuối, không cuộn mượt.
+    if (firstLoadedChannel.current !== channelId) {
+      firstLoadedChannel.current = channelId;
+      stickToBottom.current = true;
+      bottomRef.current?.scrollIntoView({ block: "end" });
+      return;
+    }
     if (!stickToBottom.current) return;
     bottomRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
-  }, [messages.length]);
+  }, [messages.length, channelId]);
 
   const onScroll = () => {
     const el = listRef.current;
