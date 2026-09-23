@@ -544,14 +544,10 @@ export const deleteChatChannel = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ channelId: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     const ctx = context as unknown as Ctx;
-    const { error } = await ctx.supabase
-      .from("chat_channels")
-      .update({ deleted_at: new Date().toISOString(), updated_by: ctx.userId })
-      .eq("id", data.channelId);
-    if (error) {
-      console.error("DELETE_CHANNEL_ERR", JSON.stringify(error));
-      mapPgError(error, "PERMISSION_DENIED");
-    }
+    const { error } = await ctx.supabase.rpc("soft_delete_chat_channel", {
+      _channel_id: data.channelId,
+    });
+    if (error) mapPgError(error, "PERMISSION_DENIED");
     return { ok: true };
   });
 
@@ -561,23 +557,21 @@ export const listChatChannelMembers = createServerFn({ method: "GET" })
   .inputValidator((i) => z.object({ channelId: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }): Promise<ChatMemberDTO[]> => {
     const ctx = context as unknown as Ctx;
+    const scope = await resolveScope(ctx);
     const { data: rows, error } = await ctx.supabase
       .from("chat_members")
       .select("user_id, role")
       .eq("channel_id", data.channelId);
     if (error) mapPgError(error);
     const list = (rows ?? []) as Array<{ user_id: string; role: "owner" | "member" }>;
-    const { data: users } = await ctx.supabase
-      .from("users")
-      .select("id, display_name, primary_email")
-      .in(
-        "id",
-        list.map((r) => r.user_id).length
-          ? list.map((r) => r.user_id)
-          : ["00000000-0000-0000-0000-000000000000"],
-      );
     const byId = new Map<string, any>();
-    for (const u of users ?? []) byId.set(u.id, u);
+    if (scope) {
+      const { data: profiles } = await ctx.supabase.rpc("list_tenant_member_profiles", {
+        _tenant_id: scope.tenantId,
+      });
+      for (const u of (profiles ?? []) as any[]) byId.set(u.id, u);
+    }
+
     return list
       .map((r) => ({
         userId: r.user_id,
