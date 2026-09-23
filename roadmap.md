@@ -133,3 +133,6 @@
 - [x] Thêm trang mobile-native riêng để xem việc đang theo dõi và khám phá công việc.
 - [x] Thêm tìm kiếm, lọc trạng thái, phân trang và đăng ký/bỏ theo dõi trực tiếp.
 - [x] Thêm lối mở trong menu PWA và kiểm tra dữ liệu thật ở 390/440/820px.
+
+- [ ] Trang quản lý người dùng theo vai trò: đồng nghiệp đăng ký vào tổ chức, xem công việc mình theo dõi
+- [ ] Kết nối hộp thư ngoài Outlook/Gmail vào Email Hub (đang làm)
