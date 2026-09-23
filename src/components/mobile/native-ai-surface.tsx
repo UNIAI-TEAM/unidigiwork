@@ -333,9 +333,9 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
               status={send.isPending ? "submitted" : "ready"}
             >
               {send.isPending ? (
-                <Loader2 className="!h-6 !w-6 animate-spin" />
+                <Loader2 className="!h-5 !w-5 animate-spin" />
               ) : (
-                <ArrowUp className="!h-7 !w-7" />
+                <ArrowUp className="!h-6 !w-6" />
               )}
             </PromptInputSubmit>
           </PromptInput>
