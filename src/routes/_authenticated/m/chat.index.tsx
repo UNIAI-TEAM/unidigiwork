@@ -41,10 +41,15 @@ function MobileChatList() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
 
+  // Danh sách phòng tách theo tổ chức đang chọn.
+  const activeTenant = useActiveTenant();
+  const tenantId = activeTenant.data?.tenantId ?? null;
+
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["mobile-chat-channels"],
+    queryKey: ["mobile-chat-channels", tenantId],
     queryFn: () => listFn(),
     staleTime: 15_000,
+    enabled: !activeTenant.isLoading,
   });
 
   const channels = useMemo(() => {
