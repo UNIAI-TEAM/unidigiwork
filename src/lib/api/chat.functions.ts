@@ -864,7 +864,8 @@ export const announceTaskStatusInRoom = createServerFn({ method: "POST" })
       .select("tenant_id")
       .eq("id", channelId as string)
       .maybeSingle();
-    if (!ch) throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "Không tìm thấy kênh chat" });
+    if (!ch)
+      throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "Không tìm thấy kênh chat" });
 
     const body = `Cập nhật tiến độ: trạng thái → ${labels[data.status] ?? data.status}${
       data.note ? `\n${data.note}` : ""
