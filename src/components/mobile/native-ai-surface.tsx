@@ -313,7 +313,7 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
               onChange={(event) => setInput(event.currentTarget.value)}
               rows={1}
               wrap="off"
-              className="h-12 min-h-0 min-w-0 flex-1 self-center overflow-x-auto overflow-y-hidden whitespace-nowrap px-2 py-3 text-base leading-6"
+              className="!h-12 !min-h-0 min-w-0 flex-1 self-center overflow-x-auto overflow-y-hidden whitespace-nowrap px-2 py-3 text-base leading-6"
             />
             <Button
               type="button"
