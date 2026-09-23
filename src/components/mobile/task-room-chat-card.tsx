@@ -41,6 +41,46 @@ export function TaskRoomChatCard({ taskId }: { taskId: string }) {
     onError: () => toast.error(t("m.tasks.room.error")),
   });
 
+  const [draft, setDraft] = useState("");
+  const sendFn = useServerFn(sendChatMessage);
+  const channelId = room.data?.channelId ?? null;
+
+  const send = useMutation({
+    mutationFn: async (body: string) => {
+      const id = channelId ?? (await ensureFn({ data: { taskId } })).channelId;
+      await sendFn({ data: { channelId: id, body } });
+    },
+    onSuccess: () => {
+      setDraft("");
+      void queryClient.invalidateQueries({ queryKey: ["task-room-chat", taskId] });
+      void queryClient.invalidateQueries({ queryKey: ["mobile-chat-channels"] });
+    },
+    onError: () => toast.error(t("m.tasks.room.error")),
+  });
+
+  // Đồng bộ tức thì giữa web và điện thoại trong cùng phòng công việc.
+  useEffect(() => {
+    if (!channelId) return;
+    const channel = supabase
+      .channel(`task-room-${channelId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "chat_messages",
+          filter: `channel_id=eq.${channelId}`,
+        },
+        () => {
+          void queryClient.invalidateQueries({ queryKey: ["task-room-chat", taskId] });
+        },
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [channelId, queryClient, taskId]);
+
   const messages = room.data?.messages ?? [];
   const localeTag = lang === "vi" ? "vi-VN" : "en-US";
 
