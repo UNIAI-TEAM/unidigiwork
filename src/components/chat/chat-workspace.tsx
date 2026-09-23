@@ -510,6 +510,16 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
     },
     onError: (e: any) => toast.error(e?.message ?? "Không gửi được tin nhắn"),
   });
+  const askAiM = useMutation({
+    mutationFn: () => doAskAi({ data: { channelId: activeId!, question: input.trim() } }),
+    onSuccess: () => {
+      setInput("");
+      setReplyTo(null);
+      setMentioned({});
+      refreshAll();
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Trợ lý AI chưa trả lời được"),
+  });
   const editM = useMutation({
     mutationFn: () => doUpdateMessage({ data: { messageId: editing!.id, body: editing!.body.trim() } }),
     onSuccess: () => { setEditing(null); setOlder([]); refreshAll(); toast.success("Đã cập nhật tin nhắn"); },
