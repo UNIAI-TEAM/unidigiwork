@@ -3182,6 +3182,8 @@ const dict = {
     "m.tasks.room.create": "Create room",
     "m.tasks.room.empty": "No messages in this task room yet.",
     "m.tasks.room.error": "Could not open the task room",
+    "m.tasks.room.progress": "Update progress",
+    "m.tasks.room.progressDone": "Status updated and posted to the chat room",
     "m.chat.openGeneral": "Open organization room",
     "m.chat.generalError": "Could not open the organization room",
     "m.chat.newDm": "Direct message",
