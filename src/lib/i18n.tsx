@@ -687,6 +687,8 @@ const dict = {
     "m.chat.badgeGeneral": "Toàn tổ chức",
     "m.chat.noMessages": "Chưa có tin nhắn",
     "m.chat.pickRoom": "Chọn một phòng để bắt đầu trò chuyện.",
+    "m.chat.placeholder": "Nhắn tin trong phòng công việc…",
+    "m.chat.send": "Gửi",
     "m.ai.expand": "Xem thêm",
     "m.ai.collapse": "Thu gọn",
     "m.taskChat.tab.chat": "Hội thoại",
