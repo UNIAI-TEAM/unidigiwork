@@ -28,8 +28,7 @@ export function DirectMessageButton({
   const open = useMutation({
     mutationFn: async () => (await openDm({ data: { userId } })).id,
     onSuccess: (channelId) => void navigate({ to: "/chat/$channelId", params: { channelId } }),
-    onError: (err) =>
-      toast.error(err instanceof Error ? err.message : t("m.chat.dmError")),
+    onError: (err) => toast.error(err instanceof Error ? err.message : t("m.chat.dmError")),
   });
 
   const label = personName ? `${t("m.chat.newDm")} · ${personName}` : t("m.chat.newDm");
