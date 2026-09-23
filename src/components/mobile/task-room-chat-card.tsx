@@ -157,7 +157,17 @@ export function TaskRoomChatCard({ taskId }: { taskId: string }) {
           <p className="text-sm text-muted-foreground">{t("m.tasks.room.empty")}</p>
         ) : (
           messages.map((message) => (
-            <div key={message.id} className="rounded-xl bg-surface-2 px-3 py-2">
+            <div
+              key={message.id}
+              role="button"
+              tabIndex={0}
+              title={t("m.tasks.room.open")}
+              onClick={() => open.mutate()}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") open.mutate();
+              }}
+              className="cursor-pointer rounded-xl bg-surface-2 px-3 py-2 transition-colors hover:bg-surface"
+            >
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 {message.isAi ? <Sparkles className="h-3 w-3" /> : null}
                 <span className="font-medium text-foreground">{message.authorName}</span>
