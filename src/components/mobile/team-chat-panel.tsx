@@ -333,7 +333,23 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => 
         <div ref={bottomRef} />
       </div>
 
-      <div className="flex items-end gap-2 border-t border-border pt-2">
+      <div className="border-t border-border pt-2">
+        <button
+          type="button"
+          onClick={() => setAutoAi((current) => !current)}
+          aria-pressed={autoAi}
+          className={
+            "mb-2 inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 text-xs " +
+            (autoAi
+              ? "border-primary/40 bg-primary/10 text-primary"
+              : "border-border text-muted-foreground")
+          }
+        >
+          <Sparkles className="h-3.5 w-3.5" />
+          {t("m.ai.chat.autoAi")}
+        </button>
+      </div>
+      <div className="flex items-end gap-2">
         <Button
           variant="outline"
           size="icon"
