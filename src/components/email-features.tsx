@@ -76,9 +76,7 @@ export function ComposeEmailDialog({
   const [bcc, setBcc] = useState("");
   const [subject, setSubject] = useState(initialSubject);
   const [body, setBody] = useState(initialBody);
-  const [attachments, setAttachments] = useState<
-    { id: string; name: string; size: string }[]
-  >([]);
+  const [attachments, setAttachments] = useState<{ id: string; name: string; size: string }[]>([]);
   const [aiBusy, setAiBusy] = useState(false);
   const [draftId, setDraftId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
