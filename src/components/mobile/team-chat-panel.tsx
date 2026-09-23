@@ -113,6 +113,7 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => 
   const markReadFn = useServerFn(markChatChannelRead);
   const askAiFn = useServerFn(askChatAi);
   const [body, setBody] = useState("");
+  const [autoAi, setAutoAi] = useState(true);
   const [pending, setPending] = useState<{ id: string; body: string; createdAt: string }[]>([]);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
@@ -219,13 +220,18 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => 
   });
 
   const askAi = useMutation({
-    mutationFn: async (question: string) => askAiFn({ data: { channelId, question } }),
+    mutationFn: async (input: { id: string; text: string }) =>
+      askAiFn({ data: { channelId, question: input.text } }),
     onSuccess: () => {
       setBody("");
       void queryClient.invalidateQueries({ queryKey: ["mobile-plus-chat-messages", channelId] });
       void queryClient.invalidateQueries({ queryKey: ["mobile-plus-chat-channels"] });
     },
-    onError: () => toast.error(t("m.ai.chat.aiFailed")),
+    onError: (_error, input) => {
+      setPending((current) => current.filter((p) => p.id !== input.id));
+      setBody((current) => current || input.text);
+      toast.error(t("m.ai.chat.aiFailed"));
+    },
   });
 
   const busy = askAi.isPending;
@@ -237,15 +243,22 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => 
     setBody("");
     stickToBottom.current = true;
     setPending((current) => [...current, { id, body: text, createdAt: new Date().toISOString() }]);
+    // Tự động gọi UNI AI trả lời ngay trong phòng: câu hỏi và câu trả lời đều lưu thật vào DB.
+    if (autoAi) {
+      askAi.mutate({ id, text });
+      return;
+    }
     send.mutate({ id, text });
   };
 
   const submitAi = () => {
     const text = body.trim();
     if (!text || busy) return;
+    const id = `pending-${Date.now()}-${Math.random().toString(16).slice(2)}`;
     setBody("");
     stickToBottom.current = true;
-    askAi.mutate(text);
+    setPending((current) => [...current, { id, body: text, createdAt: new Date().toISOString() }]);
+    askAi.mutate({ id, text });
   };
 
   return (
@@ -320,7 +333,23 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => 
         <div ref={bottomRef} />
       </div>
 
-      <div className="flex items-end gap-2 border-t border-border pt-2">
+      <div className="border-t border-border pt-2">
+        <button
+          type="button"
+          onClick={() => setAutoAi((current) => !current)}
+          aria-pressed={autoAi}
+          className={
+            "mb-2 inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 text-xs " +
+            (autoAi
+              ? "border-primary/40 bg-primary/10 text-primary"
+              : "border-border text-muted-foreground")
+          }
+        >
+          <Sparkles className="h-3.5 w-3.5" />
+          {t("m.ai.chat.autoAi")}
+        </button>
+      </div>
+      <div className="flex items-end gap-2">
         <Button
           variant="outline"
           size="icon"
