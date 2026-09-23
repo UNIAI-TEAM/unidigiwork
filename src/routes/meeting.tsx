@@ -7,7 +7,9 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { ensureMeetingChatChannel } from "@/lib/api/chat.functions";
 import {
   ArrowUpDown,
   ArrowUpRight,
@@ -27,6 +29,7 @@ import {
   MoreHorizontal,
   Pencil,
   Plus,
+  MessageSquare,
   Search,
   Send,
   TriangleAlert,
@@ -1439,6 +1442,14 @@ function MeetingRow({
   onCancel: () => void;
 }) {
   const { t, lang } = useI18n();
+  const rowNavigate = useNavigate();
+  const ensureChat = useServerFn(ensureMeetingChatChannel);
+  const openChat = useMutation({
+    mutationFn: () => ensureChat({ data: { meetingId: m.id } }),
+    onSuccess: (res: { channelId: string }) =>
+      void rowNavigate({ to: "/chat/$channelId", params: { channelId: res.channelId } }),
+    onError: () => toast.error(t("m.chat.meetingError")),
+  });
   const state = resolveRoomState(m.status, m.start_at, m.end_at);
   const isLive = state === "live";
   const finished = state === "ended" || state === "canceled" || state === "overdue";
@@ -1494,6 +1505,16 @@ function MeetingRow({
         </div>
       </div>
       <div className="flex items-center gap-2 sm:shrink-0">
+        <Button
+          size="sm"
+          variant="outline"
+          className="flex-1 sm:flex-none"
+          disabled={openChat.isPending}
+          onClick={() => openChat.mutate()}
+        >
+          <MessageSquare />
+          {t("m.chat.meetingOpen")}
+        </Button>
         <Button
           asChild
           size="sm"

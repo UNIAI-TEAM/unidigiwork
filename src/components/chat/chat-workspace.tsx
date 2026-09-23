@@ -4,25 +4,67 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AskUniPanel } from "@/components/ai/ask-uni-panel";
 import {
-  Hash, Lock, Plus, Search as SearchIcon, Send, Star, Users, X, Trash2, LogOut, Loader2,
+  Hash,
+  Lock,
+  Plus,
+  Search as SearchIcon,
+  Send,
+  Star,
+  Users,
+  X,
+  Trash2,
+  LogOut,
+  Loader2,
   Calendar as CalendarIcon,
   CheckCheck,
-  MessageCircle, Pencil, Reply, Paperclip, Download, ChevronUp, UserPlus, Check, Shield, Eye, Pin, PinOff,
+  MessageCircle,
+  Pencil,
+  Reply,
+  Paperclip,
+  Download,
+  ChevronUp,
+  UserPlus,
+  Check,
+  Shield,
+  Eye,
+  Pin,
+  PinOff,
   ListTodo,
   Zap,
+  Sparkles,
+  Video,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
-  listChatChannels, listChatMessages, sendChatMessage, createChatChannel, joinChatChannel,
-  leaveChatChannel, setChatFavorite, markChatChannelRead, deleteChatChannel, deleteChatMessage,
-  updateChatMessage, listChatChannelMembers, listChatPeople, addChatChannelMember,
-  removeChatChannelMember, setChatMemberRole, openDirectMessage,
-  listChatChannelReaders, listPinnedChatMessages, setChatMessagePin,
-  type ChatChannelDTO, type ChatMessageDTO, type ChatAttachment, type ChatReaderDTO,
+  listChatChannels,
+  listChatMessages,
+  sendChatMessage,
+  createChatChannel,
+  joinChatChannel,
+  leaveChatChannel,
+  setChatFavorite,
+  markChatChannelRead,
+  deleteChatChannel,
+  deleteChatMessage,
+  updateChatMessage,
+  listChatChannelMembers,
+  listChatPeople,
+  addChatChannelMember,
+  removeChatChannelMember,
+  setChatMemberRole,
+  openDirectMessage,
+  listChatChannelReaders,
+  listPinnedChatMessages,
+  setChatMessagePin,
+  type ChatChannelDTO,
+  type ChatMessageDTO,
+  type ChatAttachment,
+  type ChatReaderDTO,
 } from "@/lib/api/chat.functions";
+import { askChatAi } from "@/lib/api/chat-ai.functions";
 import { createTask } from "@/lib/api/tasks.functions";
 import { listWorkspaceMembers, getWorkspaceSettings } from "@/lib/api/workspaces.functions";
 import { buildChatSourceTag } from "@/lib/chat-task-link";
@@ -31,10 +73,21 @@ import { useMyWorkspaces, useActiveWorkspace } from "@/lib/active-workspace";
 const BUCKET = "chat-attachments";
 
 /** Danh sách người đã xem một tin nhắn (dựa trên mốc đã đọc của từng thành viên). */
-function ReadReceipts({ readers, message, isDm }: { readers: ChatReaderDTO[]; message: ChatMessageDTO; isDm?: boolean }) {
+function ReadReceipts({
+  readers,
+  message,
+  isDm,
+}: {
+  readers: ChatReaderDTO[];
+  message: ChatMessageDTO;
+  isDm?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const seen = readers.filter(
-    (r) => r.userId !== message.authorId && r.lastReadAt && new Date(r.lastReadAt) >= new Date(message.createdAt),
+    (r) =>
+      r.userId !== message.authorId &&
+      r.lastReadAt &&
+      new Date(r.lastReadAt) >= new Date(message.createdAt),
   );
   const notSeen = readers.filter(
     (r) => r.userId !== message.authorId && !seen.some((s) => s.userId === r.userId),
@@ -54,7 +107,8 @@ function ReadReceipts({ readers, message, isDm }: { readers: ChatReaderDTO[]; me
           <>
             <CheckCheck className="h-3.5 w-3.5 text-primary" />
             <span className="text-[11px] text-muted-foreground">
-              {other.isMe ? "Bạn đã xem" : `${other.name} đã xem`} lúc {timeLabel(other.lastReadAt!)}
+              {other.isMe ? "Bạn đã xem" : `${other.name} đã xem`} lúc{" "}
+              {timeLabel(other.lastReadAt!)}
             </span>
           </>
         ) : (
@@ -62,7 +116,12 @@ function ReadReceipts({ readers, message, isDm }: { readers: ChatReaderDTO[]; me
             <Eye className="h-3 w-3 text-muted-foreground" />
             <div className="flex -space-x-1.5">
               {seen.slice(0, 4).map((r) => (
-                <img key={r.userId} src={avatar(r.userId)} alt={r.name} className="h-4 w-4 rounded-full ring-1 ring-background" />
+                <img
+                  key={r.userId}
+                  src={avatar(r.userId)}
+                  alt={r.name}
+                  className="h-4 w-4 rounded-full ring-1 ring-background"
+                />
               ))}
             </div>
             <span className="text-[11px] text-muted-foreground">
@@ -83,10 +142,15 @@ function ReadReceipts({ readers, message, isDm }: { readers: ChatReaderDTO[]; me
           <div className="max-h-[60vh] space-y-4 overflow-y-auto">
             <div className="space-y-1">
               {seen.map((r) => (
-                <div key={r.userId} className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-muted/50">
+                <div
+                  key={r.userId}
+                  className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-muted/50"
+                >
                   <img src={avatar(r.userId)} alt={r.name} className="h-9 w-9 rounded-full" />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{r.isMe ? `${r.name} (Bạn)` : r.name}</p>
+                    <p className="truncate text-sm font-medium">
+                      {r.isMe ? `${r.name} (Bạn)` : r.name}
+                    </p>
                     <p className="text-xs text-muted-foreground">
                       Đã xem lúc {timeLabel(r.lastReadAt!)} · {dayLabel(r.lastReadAt!)}
                     </p>
@@ -102,10 +166,19 @@ function ReadReceipts({ readers, message, isDm }: { readers: ChatReaderDTO[]; me
                   Chưa xem · {notSeen.length}
                 </p>
                 {notSeen.map((r) => (
-                  <div key={r.userId} className="flex items-center gap-3 rounded-lg px-2 py-2 opacity-70 hover:bg-muted/50">
-                    <img src={avatar(r.userId)} alt={r.name} className="h-9 w-9 rounded-full grayscale" />
+                  <div
+                    key={r.userId}
+                    className="flex items-center gap-3 rounded-lg px-2 py-2 opacity-70 hover:bg-muted/50"
+                  >
+                    <img
+                      src={avatar(r.userId)}
+                      alt={r.name}
+                      className="h-9 w-9 rounded-full grayscale"
+                    />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{r.isMe ? `${r.name} (Bạn)` : r.name}</p>
+                      <p className="truncate text-sm font-medium">
+                        {r.isMe ? `${r.name} (Bạn)` : r.name}
+                      </p>
                       <p className="text-xs text-muted-foreground">Chưa xem tin nhắn này</p>
                     </div>
                   </div>
@@ -123,7 +196,11 @@ function timeLabel(iso: string) {
   return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 function dayLabel(iso: string) {
-  return new Date(iso).toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit" });
+  return new Date(iso).toLocaleDateString("vi-VN", {
+    weekday: "long",
+    day: "2-digit",
+    month: "2-digit",
+  });
 }
 function sizeLabel(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
@@ -138,7 +215,9 @@ function MessageBody({ body }: { body: string }) {
     <p className="whitespace-pre-wrap break-words text-sm text-foreground/90">
       {parts.map((p, i) =>
         p.startsWith("@") ? (
-          <span key={i} className="rounded bg-primary/15 px-1 font-medium text-primary">{p}</span>
+          <span key={i} className="rounded bg-primary/15 px-1 font-medium text-primary">
+            {p}
+          </span>
         ) : (
           <span key={i}>{p}</span>
         ),
@@ -164,14 +243,24 @@ function AttachmentChip({ file }: { file: ChatAttachment }) {
       onClick={open}
       className="flex max-w-xs items-center gap-2 rounded-lg border border-border bg-surface-2 px-2.5 py-1.5 text-left text-xs hover:bg-surface"
     >
-      {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5 text-muted-foreground" />}
+      {busy ? (
+        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+      ) : (
+        <Download className="h-3.5 w-3.5 text-muted-foreground" />
+      )}
       <span className="min-w-0 flex-1 truncate">{file.name}</span>
       <span className="shrink-0 text-muted-foreground">{sizeLabel(file.size)}</span>
     </button>
   );
 }
 
-export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initialChannelId?: string; highlightMessageId?: string }) {
+export function ChatWorkspace({
+  initialChannelId,
+  highlightMessageId,
+}: {
+  initialChannelId?: string;
+  highlightMessageId?: string;
+}) {
   const [sidebarOpen, setSidebarOpen] = useSidebarState();
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -179,6 +268,7 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
   const fetchChannels = useServerFn(listChatChannels);
   const fetchMessages = useServerFn(listChatMessages);
   const doSend = useServerFn(sendChatMessage);
+  const doAskAi = useServerFn(askChatAi);
   const doCreate = useServerFn(createChatChannel);
   const doJoin = useServerFn(joinChatChannel);
   const doLeave = useServerFn(leaveChatChannel);
@@ -217,9 +307,16 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
   const { data: myWorkspaces } = useMyWorkspaces();
   const { workspaceId: activeWorkspaceId } = useActiveWorkspace();
   const doCreateTask = useServerFn(createTask);
-  const [taskDraft, setTaskDraft] = useState<
-    { messageId: string; title: string; description: string; workspaceId: string; priority: "low" | "normal" | "high" | "urgent"; dueAt: string; assigneeId: string; tags: string[] } | null
-  >(null);
+  const [taskDraft, setTaskDraft] = useState<{
+    messageId: string;
+    title: string;
+    description: string;
+    workspaceId: string;
+    priority: "low" | "normal" | "high" | "urgent";
+    dueAt: string;
+    assigneeId: string;
+    tags: string[];
+  } | null>(null);
   const [tagInput, setTagInput] = useState("");
   // Thành viên của workspace đang chọn — dùng cho ô "Người phụ trách"
   const taskMembersQ = useQuery({
@@ -317,7 +414,10 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
     if (!activeId && channels.length > 0) setActiveId(channels[0].id);
   }, [activeId, channels]);
 
-  const active = useMemo(() => channels.find((c) => c.id === activeId) ?? null, [channels, activeId]);
+  const active = useMemo(
+    () => channels.find((c) => c.id === activeId) ?? null,
+    [channels, activeId],
+  );
 
   const fromISO = dateFrom ? new Date(`${dateFrom}T00:00:00`).toISOString() : undefined;
   const toISO = dateTo ? new Date(`${dateTo}T23:59:59.999`).toISOString() : undefined;
@@ -325,7 +425,10 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
 
   const messagesQ = useQuery({
     queryKey: ["chat", "messages", activeId, query, dateFrom, dateTo],
-    queryFn: () => fetchMessages({ data: { channelId: activeId!, q: query || undefined, from: fromISO, to: toISO } }),
+    queryFn: () =>
+      fetchMessages({
+        data: { channelId: activeId!, q: query || undefined, from: fromISO, to: toISO },
+      }),
     enabled: !!activeId && !!active?.isMember,
   });
   const recent = messagesQ.data?.messages ?? [];
@@ -386,7 +489,9 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
   useEffect(() => {
     if (!highlightMessageId) return;
     const t = setTimeout(() => {
-      document.getElementById(`msg-${highlightMessageId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      document
+        .getElementById(`msg-${highlightMessageId}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 400);
     return () => clearTimeout(t);
   }, [highlightMessageId, activeId]);
@@ -396,11 +501,22 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
     if (!activeId) return;
     const ch = supabase
       .channel(`chat-${activeId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "chat_messages", filter: `channel_id=eq.${activeId}` }, () => {
-        qc.invalidateQueries({ queryKey: ["chat", "messages", activeId] });
-      })
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "chat_messages",
+          filter: `channel_id=eq.${activeId}`,
+        },
+        () => {
+          qc.invalidateQueries({ queryKey: ["chat", "messages", activeId] });
+        },
+      )
       .subscribe();
-    return () => { void supabase.removeChannel(ch); };
+    return () => {
+      void supabase.removeChannel(ch);
+    };
   }, [activeId, qc]);
 
   // PERF-001: thay "chat-global" (nghe toàn bảng chat_messages/chat_channels)
@@ -473,14 +589,24 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
     return () => clearTimeout(t);
   }, [activeId, active?.isMember, lastMessageId, doRead, qc]);
 
-  const refreshAll = () => { qc.invalidateQueries({ queryKey: ["chat"] }); };
+  const refreshAll = () => {
+    qc.invalidateQueries({ queryKey: ["chat"] });
+  };
 
   const loadOlder = useCallback(async () => {
     const first = messages[0];
     if (!first || !activeId) return;
     setLoadingOlder(true);
     try {
-      const res = await fetchMessages({ data: { channelId: activeId, before: first.createdAt, q: query || undefined, from: fromISO, to: toISO } });
+      const res = await fetchMessages({
+        data: {
+          channelId: activeId,
+          before: first.createdAt,
+          q: query || undefined,
+          from: fromISO,
+          to: toISO,
+        },
+      });
       setOlder((prev) => [...res.messages, ...prev]);
       if (!res.hasMore) toast.info("Đã tải hết lịch sử tin nhắn");
     } finally {
@@ -502,65 +628,117 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
         },
       }),
     onSuccess: () => {
-      setInput(""); setReplyTo(null); setPending([]); setMentioned({}); refreshAll();
+      setInput("");
+      setReplyTo(null);
+      setPending([]);
+      setMentioned({});
+      refreshAll();
     },
     onError: (e: any) => toast.error(e?.message ?? "Không gửi được tin nhắn"),
   });
+  const askAiM = useMutation({
+    mutationFn: () => doAskAi({ data: { channelId: activeId!, question: input.trim() } }),
+    onSuccess: () => {
+      setInput("");
+      setReplyTo(null);
+      setMentioned({});
+      refreshAll();
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Trợ lý AI chưa trả lời được"),
+  });
   const editM = useMutation({
-    mutationFn: () => doUpdateMessage({ data: { messageId: editing!.id, body: editing!.body.trim() } }),
-    onSuccess: () => { setEditing(null); setOlder([]); refreshAll(); toast.success("Đã cập nhật tin nhắn"); },
+    mutationFn: () =>
+      doUpdateMessage({ data: { messageId: editing!.id, body: editing!.body.trim() } }),
+    onSuccess: () => {
+      setEditing(null);
+      setOlder([]);
+      refreshAll();
+      toast.success("Đã cập nhật tin nhắn");
+    },
     onError: (e: any) => toast.error(e?.message ?? "Không sửa được tin nhắn"),
   });
   const createM = useMutation({
     mutationFn: () => doCreate({ data: { name: newName.trim(), isPrivate: newPrivate } }),
     onSuccess: (r: { id: string }) => {
-      setCreating(false); setNewName(""); setNewPrivate(false); setActiveId(r.id);
-      toast.success("Đã tạo kênh"); refreshAll();
+      setCreating(false);
+      setNewName("");
+      setNewPrivate(false);
+      setActiveId(r.id);
+      toast.success("Đã tạo kênh");
+      refreshAll();
     },
     onError: (e: any) => toast.error(e?.message ?? "Không tạo được kênh"),
   });
   const dmM = useMutation({
     mutationFn: (userId: string) => doOpenDm({ data: { userId } }),
-    onSuccess: (r: { id: string }) => { setShowPeople(false); setActiveId(r.id); refreshAll(); },
+    onSuccess: (r: { id: string }) => {
+      setShowPeople(false);
+      setActiveId(r.id);
+      refreshAll();
+    },
     onError: (e: any) => toast.error(e?.message ?? "Không mở được tin nhắn riêng"),
   });
   const addMemberM = useMutation({
     mutationFn: (userId: string) => doAddMember({ data: { channelId: activeId!, userId } }),
-    onSuccess: () => { toast.success("Đã thêm thành viên"); refreshAll(); },
+    onSuccess: () => {
+      toast.success("Đã thêm thành viên");
+      refreshAll();
+    },
     onError: (e: any) => toast.error(e?.message ?? "Không thêm được thành viên"),
   });
   const removeMemberM = useMutation({
     mutationFn: (userId: string) => doRemoveMember({ data: { channelId: activeId!, userId } }),
-    onSuccess: () => { toast.success("Đã gỡ thành viên"); refreshAll(); },
+    onSuccess: () => {
+      toast.success("Đã gỡ thành viên");
+      refreshAll();
+    },
     onError: (e: any) => toast.error(e?.message ?? "Không gỡ được thành viên"),
   });
   const roleM = useMutation({
     mutationFn: (v: { userId: string; role: "owner" | "member" }) =>
       doSetRole({ data: { channelId: activeId!, userId: v.userId, role: v.role } }),
-    onSuccess: () => { toast.success("Đã cập nhật vai trò"); refreshAll(); },
+    onSuccess: () => {
+      toast.success("Đã cập nhật vai trò");
+      refreshAll();
+    },
     onError: (e: any) => toast.error(e?.message ?? "Không đổi được vai trò"),
   });
   const joinM = useMutation({
     mutationFn: (id: string) => doJoin({ data: { channelId: id } }),
-    onSuccess: () => { toast.success("Đã tham gia kênh"); refreshAll(); },
+    onSuccess: () => {
+      toast.success("Đã tham gia kênh");
+      refreshAll();
+    },
     onError: (e: any) => toast.error(e?.message ?? "Không tham gia được"),
   });
   const leaveM = useMutation({
     mutationFn: (id: string) => doLeave({ data: { channelId: id } }),
-    onSuccess: () => { toast.success("Đã rời kênh"); refreshAll(); },
+    onSuccess: () => {
+      toast.success("Đã rời kênh");
+      refreshAll();
+    },
   });
   const favM = useMutation({
-    mutationFn: (v: { id: string; value: boolean }) => doFav({ data: { channelId: v.id, value: v.value } }),
+    mutationFn: (v: { id: string; value: boolean }) =>
+      doFav({ data: { channelId: v.id, value: v.value } }),
     onSuccess: refreshAll,
   });
   const delChM = useMutation({
     mutationFn: (id: string) => doDeleteChannel({ data: { channelId: id } }),
-    onSuccess: () => { setActiveId(null); toast.success("Đã xoá kênh"); refreshAll(); },
+    onSuccess: () => {
+      setActiveId(null);
+      toast.success("Đã xoá kênh");
+      refreshAll();
+    },
     onError: (e: any) => toast.error(e?.message ?? "Không xoá được kênh"),
   });
   const delMsgM = useMutation({
     mutationFn: (id: string) => doDeleteMessage({ data: { messageId: id } }),
-    onSuccess: () => { setOlder([]); toast.success("Đã xoá tin nhắn"); refreshAll(); },
+    onSuccess: () => {
+      setOlder([]);
+      toast.success("Đã xoá tin nhắn");
+      refreshAll();
+    },
     onError: (e: any) => toast.error(e?.message ?? "Không xoá được tin nhắn"),
   });
 
@@ -575,8 +753,14 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
         }
         const path = `${activeId}/${crypto.randomUUID()}-${file.name.replace(/[^\w.\-]/g, "_")}`;
         const { error } = await supabase.storage.from(BUCKET).upload(path, file, { upsert: false });
-        if (error) { toast.error(`Tải lên thất bại: ${file.name}`); continue; }
-        setPending((p) => [...p, { path, name: file.name, size: file.size, mime: file.type || "application/octet-stream" }]);
+        if (error) {
+          toast.error(`Tải lên thất bại: ${file.name}`);
+          continue;
+        }
+        setPending((p) => [
+          ...p,
+          { path, name: file.name, size: file.size, mime: file.type || "application/octet-stream" },
+        ]);
       }
     } finally {
       setUploading(false);
@@ -609,9 +793,10 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
     if (initialChannelId) void navigate({ to: "/chat" });
   };
 
-  const mentionMatches = mentionQuery === null
-    ? []
-    : people.filter((p) => p.name.toLowerCase().includes(mentionQuery.toLowerCase())).slice(0, 6);
+  const mentionMatches =
+    mentionQuery === null
+      ? []
+      : people.filter((p) => p.name.toLowerCase().includes(mentionQuery.toLowerCase())).slice(0, 6);
 
   return (
     <div className="flex h-screen bg-background text-foreground">
@@ -625,14 +810,20 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
               <h2 className="text-sm font-semibold">Kênh trò chuyện</h2>
               <div className="flex items-center gap-1">
                 <button
-                  onClick={() => { setShowPeople((v) => !v); setCreating(false); }}
+                  onClick={() => {
+                    setShowPeople((v) => !v);
+                    setCreating(false);
+                  }}
                   className="rounded p-1 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
                   aria-label="Nhắn tin riêng"
                 >
                   <MessageCircle className="h-4 w-4" />
                 </button>
                 <button
-                  onClick={() => { setCreating((v) => !v); setShowPeople(false); }}
+                  onClick={() => {
+                    setCreating((v) => !v);
+                    setShowPeople(false);
+                  }}
                   className="rounded p-1 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
                   aria-label="Tạo kênh mới"
                 >
@@ -663,7 +854,9 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
                 <p className="px-1 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   Nhắn tin riêng
                 </p>
-                {peopleQ.isLoading && <p className="px-1 py-2 text-xs text-muted-foreground">Đang tải…</p>}
+                {peopleQ.isLoading && (
+                  <p className="px-1 py-2 text-xs text-muted-foreground">Đang tải…</p>
+                )}
                 {people.map((p) => (
                   <button
                     key={p.userId}
@@ -675,7 +868,9 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
                   </button>
                 ))}
                 {!peopleQ.isLoading && people.length === 0 && (
-                  <p className="px-1 py-2 text-xs text-muted-foreground">Chưa có người nào khác trong tổ chức.</p>
+                  <p className="px-1 py-2 text-xs text-muted-foreground">
+                    Chưa có người nào khác trong tổ chức.
+                  </p>
                 )}
               </div>
             )}
@@ -690,7 +885,11 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
                   className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm focus:outline-none"
                 />
                 <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <input type="checkbox" checked={newPrivate} onChange={(e) => setNewPrivate(e.target.checked)} />
+                  <input
+                    type="checkbox"
+                    checked={newPrivate}
+                    onChange={(e) => setNewPrivate(e.target.checked)}
+                  />
                   Kênh riêng tư
                 </label>
                 <div className="flex gap-2">
@@ -701,7 +900,10 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
                   >
                     {createM.isPending ? "Đang tạo…" : "Tạo kênh"}
                   </button>
-                  <button onClick={() => setCreating(false)} className="rounded-md border border-border px-2 py-1.5 text-xs">
+                  <button
+                    onClick={() => setCreating(false)}
+                    className="rounded-md border border-border px-2 py-1.5 text-xs"
+                  >
                     Huỷ
                   </button>
                 </div>
@@ -734,7 +936,13 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
                             : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"
                         }`}
                       >
-                        {c.isPrivate ? <Lock className="h-4 w-4 shrink-0" /> : <Hash className="h-4 w-4 shrink-0" />}
+                        {c.meetingId ? (
+                          <Video className="h-4 w-4 shrink-0 text-primary" />
+                        ) : c.isPrivate ? (
+                          <Lock className="h-4 w-4 shrink-0" />
+                        ) : (
+                          <Hash className="h-4 w-4 shrink-0" />
+                        )}
                         <span className="min-w-0 flex-1 truncate text-left">{c.name}</span>
                         {c.unread > 0 && (
                           <span className="rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground">
@@ -766,14 +974,20 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
                 <header className="flex items-center justify-between border-b border-border px-5 py-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      {active.isPrivate ? <Lock className="h-5 w-5 text-muted-foreground" /> : <Hash className="h-5 w-5 text-muted-foreground" />}
+                      {active.isPrivate ? (
+                        <Lock className="h-5 w-5 text-muted-foreground" />
+                      ) : (
+                        <Hash className="h-5 w-5 text-muted-foreground" />
+                      )}
                       <h1 className="truncate text-lg font-semibold">{active.name}</h1>
                       {active.isMember && (
                         <button
                           onClick={() => favM.mutate({ id: active.id, value: !active.isFavorite })}
                           aria-label="Yêu thích"
                         >
-                          <Star className={`h-4 w-4 ${active.isFavorite ? "fill-amber-400 text-amber-400" : "text-muted-foreground"}`} />
+                          <Star
+                            className={`h-4 w-4 ${active.isFavorite ? "fill-amber-400 text-amber-400" : "text-muted-foreground"}`}
+                          />
                         </button>
                       )}
                     </div>
@@ -807,19 +1021,19 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
                     >
                       <CalendarIcon className="h-4 w-4" />
                     </button>
-                     {active.isMember && (
-                       <AskUniPanel
-                         rootEntity={{ type: "CHAT_CHANNEL", id: active.id }}
-                         workspaceId={activeWorkspaceId ?? null}
-                         label="Hỏi UNI"
-                         suggestions={[
-                           "Tóm tắt trao đổi gần đây",
-                           "Có việc nào cần làm từ kênh này?",
-                           "Ai đang phụ trách?",
-                         ]}
-                       />
-                     )}
-                     {active.isMember && (
+                    {active.isMember && (
+                      <AskUniPanel
+                        rootEntity={{ type: "CHAT_CHANNEL", id: active.id }}
+                        workspaceId={activeWorkspaceId ?? null}
+                        label="Hỏi UNI"
+                        suggestions={[
+                          "Tóm tắt trao đổi gần đây",
+                          "Có việc nào cần làm từ kênh này?",
+                          "Ai đang phụ trách?",
+                        ]}
+                      />
+                    )}
+                    {active.isMember && (
                       <button
                         onClick={() => setShowMembers((v) => !v)}
                         className={`rounded-lg p-2 hover:bg-surface-2 ${showMembers ? "bg-surface-2 text-foreground" : "text-muted-foreground"}`}
@@ -839,7 +1053,9 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
                     )}
                     {active.isOwner && (
                       <button
-                        onClick={() => { if (confirm(`Xoá kênh #${active.name}?`)) delChM.mutate(active.id); }}
+                        onClick={() => {
+                          if (confirm(`Xoá kênh #${active.name}?`)) delChM.mutate(active.id);
+                        }}
                         className="rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                         aria-label="Xoá kênh"
                       >
@@ -902,14 +1118,20 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
                     </div>
                     {searchActive && (
                       <button
-                        onClick={() => { setQuery(""); setDateFrom(""); setDateTo(""); }}
+                        onClick={() => {
+                          setQuery("");
+                          setDateFrom("");
+                          setDateTo("");
+                        }}
                         className="rounded-lg px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/10"
                       >
                         Xoá bộ lọc
                       </button>
                     )}
                     <span className="ml-auto text-xs text-muted-foreground">
-                      {searchActive ? `${messages.length} kết quả${hasMore ? "+" : ""}` : "Toàn bộ tin nhắn"}
+                      {searchActive
+                        ? `${messages.length} kết quả${hasMore ? "+" : ""}`
+                        : "Toàn bộ tin nhắn"}
                     </span>
                   </div>
                 )}
@@ -935,18 +1157,24 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
                           >
                             <Pin className="h-3.5 w-3.5 text-primary" />
                             {pinned.length} tin nhắn đã ghim
-                            <ChevronUp className={`ml-auto h-3.5 w-3.5 text-muted-foreground transition-transform ${showPinned ? "" : "rotate-180"}`} />
+                            <ChevronUp
+                              className={`ml-auto h-3.5 w-3.5 text-muted-foreground transition-transform ${showPinned ? "" : "rotate-180"}`}
+                            />
                           </button>
                           {showPinned && (
                             <ul className="mt-2 space-y-1.5">
                               {pinned.map((p) => (
-                                <li key={p.id} className="flex items-start gap-2 rounded-md bg-background px-2.5 py-1.5">
+                                <li
+                                  key={p.id}
+                                  className="flex items-start gap-2 rounded-md bg-background px-2.5 py-1.5"
+                                >
                                   <div className="min-w-0 flex-1">
                                     <p className="truncate text-xs">
                                       <span className="font-medium">{p.authorName}</span>: {p.body}
                                     </p>
                                     <p className="text-[10px] text-muted-foreground">
-                                      Ghim bởi {p.pinnedByName ?? "Thành viên"} · {timeLabel(p.createdAt)}
+                                      Ghim bởi {p.pinnedByName ?? "Thành viên"} ·{" "}
+                                      {timeLabel(p.createdAt)}
                                     </p>
                                   </div>
                                   <button
@@ -962,7 +1190,10 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
                           )}
                         </div>
                       )}
-                      <div ref={scrollRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4">
+                      <div
+                        ref={scrollRef}
+                        className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4"
+                      >
                         {messagesQ.isLoading && (
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Loader2 className="h-4 w-4 animate-spin" /> Đang tải tin nhắn…
@@ -975,45 +1206,91 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
                               disabled={loadingOlder}
                               className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground hover:bg-surface-2 disabled:opacity-50"
                             >
-                              {loadingOlder ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ChevronUp className="h-3.5 w-3.5" />}
+                              {loadingOlder ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <ChevronUp className="h-3.5 w-3.5" />
+                              )}
                               Tải tin nhắn cũ hơn
                             </button>
                           </div>
                         )}
                         {!messagesQ.isLoading && messages.length === 0 && (
                           <p className="py-10 text-center text-sm text-muted-foreground">
-                            {query ? "Không tìm thấy tin nhắn nào" : "Chưa có tin nhắn. Hãy bắt đầu cuộc trò chuyện."}
+                            {query
+                              ? "Không tìm thấy tin nhắn nào"
+                              : "Chưa có tin nhắn. Hãy bắt đầu cuộc trò chuyện."}
                           </p>
                         )}
                         {messages.map((m, i) => {
                           const prev = messages[i - 1];
-                          const newDay = !prev || new Date(prev.createdAt).toDateString() !== new Date(m.createdAt).toDateString();
+                          const newDay =
+                            !prev ||
+                            new Date(prev.createdAt).toDateString() !==
+                              new Date(m.createdAt).toDateString();
                           return (
-                            <div key={m.id} id={`msg-${m.id}`} className={m.id === highlightMessageId ? "-mx-2 rounded-lg bg-primary/5 px-2 py-1 ring-1 ring-primary/40" : undefined}>
+                            <div
+                              key={m.id}
+                              id={`msg-${m.id}`}
+                              className={
+                                m.id === highlightMessageId
+                                  ? "-mx-2 rounded-lg bg-primary/5 px-2 py-1 ring-1 ring-primary/40"
+                                  : undefined
+                              }
+                            >
                               {newDay && (
                                 <div className="my-4 flex items-center gap-3">
                                   <div className="h-px flex-1 bg-border" />
-                                  <span className="text-[11px] uppercase tracking-wide text-muted-foreground">{dayLabel(m.createdAt)}</span>
+                                  <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                                    {dayLabel(m.createdAt)}
+                                  </span>
                                   <div className="h-px flex-1 bg-border" />
                                 </div>
                               )}
                               <div className="group flex gap-3">
-                                <img src={avatar(m.authorId)} alt="" className="h-9 w-9 shrink-0 rounded-lg" />
+                                <img
+                                  src={avatar(m.authorId)}
+                                  alt=""
+                                  className="h-9 w-9 shrink-0 rounded-lg"
+                                />
                                 <div className="min-w-0 flex-1">
                                   <div className="flex items-center gap-2">
-                                    <span className="text-sm font-semibold">{m.authorName}</span>
-                                    <span className="text-[11px] text-muted-foreground">{timeLabel(m.createdAt)}</span>
-                                    {m.editedAt && <span className="text-[11px] text-muted-foreground">(đã sửa)</span>}
+                                    <span className="text-sm font-semibold">
+                                      {m.isAi ? "UNI AI" : m.authorName}
+                                    </span>
+                                    {m.isAi && (
+                                      <span className="flex items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                                        <Sparkles className="h-3 w-3" /> Trợ lý AI
+                                      </span>
+                                    )}
+                                    <span className="text-[11px] text-muted-foreground">
+                                      {timeLabel(m.createdAt)}
+                                    </span>
+                                    {m.editedAt && (
+                                      <span className="text-[11px] text-muted-foreground">
+                                        (đã sửa)
+                                      </span>
+                                    )}
                                     {m.pinnedAt && (
                                       <span className="flex items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
                                         <Pin className="h-3 w-3" /> Đã ghim
                                       </span>
                                     )}
                                     <div className="flex items-center gap-1.5 opacity-0 transition-opacity group-hover:opacity-100">
-                                      <button onClick={() => { setReplyTo(m); setEditing(null); }} aria-label="Trả lời">
+                                      <button
+                                        onClick={() => {
+                                          setReplyTo(m);
+                                          setEditing(null);
+                                        }}
+                                        aria-label="Trả lời"
+                                      >
                                         <Reply className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
                                       </button>
-                                      <button onClick={() => openTaskDraft(m)} aria-label="Tạo công việc từ tin nhắn" title="Tạo công việc">
+                                      <button
+                                        onClick={() => openTaskDraft(m)}
+                                        aria-label="Tạo công việc từ tin nhắn"
+                                        title="Tạo công việc"
+                                      >
                                         <ListTodo className="h-3.5 w-3.5 text-muted-foreground hover:text-primary" />
                                       </button>
                                       <button
@@ -1022,24 +1299,41 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
                                         aria-label="Tạo nhanh công việc theo mặc định workspace"
                                         title="Tạo nhanh (theo mặc định workspace)"
                                       >
-                                        {quickBusyId === m.id
-                                          ? <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
-                                          : <Zap className="h-3.5 w-3.5 text-muted-foreground hover:text-primary" />}
+                                        {quickBusyId === m.id ? (
+                                          <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                                        ) : (
+                                          <Zap className="h-3.5 w-3.5 text-muted-foreground hover:text-primary" />
+                                        )}
                                       </button>
                                       <button
-                                        onClick={() => pinM.mutate({ messageId: m.id, pinned: !m.pinnedAt })}
-                                        aria-label={m.pinnedAt ? "Bỏ ghim tin nhắn" : "Ghim tin nhắn"}
+                                        onClick={() =>
+                                          pinM.mutate({ messageId: m.id, pinned: !m.pinnedAt })
+                                        }
+                                        aria-label={
+                                          m.pinnedAt ? "Bỏ ghim tin nhắn" : "Ghim tin nhắn"
+                                        }
                                       >
-                                        {m.pinnedAt
-                                          ? <PinOff className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
-                                          : <Pin className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />}
+                                        {m.pinnedAt ? (
+                                          <PinOff className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
+                                        ) : (
+                                          <Pin className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
+                                        )}
                                       </button>
                                       {m.isMine && (
                                         <>
-                                          <button onClick={() => { setEditing({ id: m.id, body: m.body }); setReplyTo(null); }} aria-label="Sửa tin nhắn">
+                                          <button
+                                            onClick={() => {
+                                              setEditing({ id: m.id, body: m.body });
+                                              setReplyTo(null);
+                                            }}
+                                            aria-label="Sửa tin nhắn"
+                                          >
                                             <Pencil className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
                                           </button>
-                                          <button onClick={() => delMsgM.mutate(m.id)} aria-label="Xoá tin nhắn">
+                                          <button
+                                            onClick={() => delMsgM.mutate(m.id)}
+                                            aria-label="Xoá tin nhắn"
+                                          >
                                             <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
                                           </button>
                                         </>
@@ -1049,7 +1343,8 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
 
                                   {m.parentId && (
                                     <div className="mb-1 border-l-2 border-border pl-2 text-xs text-muted-foreground">
-                                      <span className="font-medium">{m.parentAuthorName}</span>: {m.parentExcerpt}
+                                      <span className="font-medium">{m.parentAuthorName}</span>:{" "}
+                                      {m.parentExcerpt}
                                     </div>
                                   )}
 
@@ -1059,7 +1354,9 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
                                         autoFocus
                                         rows={2}
                                         value={editing.body}
-                                        onChange={(e) => setEditing({ id: m.id, body: e.target.value })}
+                                        onChange={(e) =>
+                                          setEditing({ id: m.id, body: e.target.value })
+                                        }
                                         className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm focus:outline-none"
                                       />
                                       <div className="flex gap-2">
@@ -1070,7 +1367,10 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
                                         >
                                           Lưu
                                         </button>
-                                        <button onClick={() => setEditing(null)} className="rounded-md border border-border px-2.5 py-1 text-xs">
+                                        <button
+                                          onClick={() => setEditing(null)}
+                                          className="rounded-md border border-border px-2.5 py-1 text-xs"
+                                        >
                                           Huỷ
                                         </button>
                                       </div>
@@ -1081,11 +1381,17 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
 
                                   {m.attachments.length > 0 && (
                                     <div className="mt-2 flex flex-wrap gap-2">
-                                      {m.attachments.map((f) => <AttachmentChip key={f.path} file={f} />)}
+                                      {m.attachments.map((f) => (
+                                        <AttachmentChip key={f.path} file={f} />
+                                      ))}
                                     </div>
                                   )}
 
-                                  <ReadReceipts readers={readers} message={m} isDm={active.kind === "dm"} />
+                                  <ReadReceipts
+                                    readers={readers}
+                                    message={m}
+                                    isDm={active.kind === "dm"}
+                                  />
                                 </div>
                               </div>
                             </div>
@@ -1098,7 +1404,8 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
                           <div className="mb-2 flex items-center gap-2 rounded-lg bg-surface-2 px-3 py-1.5 text-xs">
                             <Reply className="h-3.5 w-3.5 text-muted-foreground" />
                             <span className="min-w-0 flex-1 truncate">
-                              Trả lời <span className="font-medium">{replyTo.authorName}</span>: {replyTo.body.slice(0, 80)}
+                              Trả lời <span className="font-medium">{replyTo.authorName}</span>:{" "}
+                              {replyTo.body.slice(0, 80)}
                             </span>
                             <button onClick={() => setReplyTo(null)} aria-label="Huỷ trả lời">
                               <X className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
@@ -1108,10 +1415,18 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
                         {pending.length > 0 && (
                           <div className="mb-2 flex flex-wrap gap-2">
                             {pending.map((f) => (
-                              <span key={f.path} className="flex items-center gap-1.5 rounded-lg border border-border bg-surface-2 px-2 py-1 text-xs">
+                              <span
+                                key={f.path}
+                                className="flex items-center gap-1.5 rounded-lg border border-border bg-surface-2 px-2 py-1 text-xs"
+                              >
                                 <Paperclip className="h-3 w-3 text-muted-foreground" />
                                 <span className="max-w-[160px] truncate">{f.name}</span>
-                                <button onClick={() => setPending((p) => p.filter((x) => x.path !== f.path))} aria-label="Bỏ tệp">
+                                <button
+                                  onClick={() =>
+                                    setPending((p) => p.filter((x) => x.path !== f.path))
+                                  }
+                                  aria-label="Bỏ tệp"
+                                >
                                   <X className="h-3 w-3 text-muted-foreground hover:text-destructive" />
                                 </button>
                               </span>
@@ -1127,21 +1442,35 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
                                   onClick={() => applyMention(p.userId, p.name)}
                                   className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-surface-2"
                                 >
-                                  <img src={avatar(p.userId)} alt="" className="h-6 w-6 rounded-md" />
+                                  <img
+                                    src={avatar(p.userId)}
+                                    alt=""
+                                    className="h-6 w-6 rounded-md"
+                                  />
                                   <span className="min-w-0 flex-1 truncate">{p.name}</span>
                                 </button>
                               ))}
                             </div>
                           )}
                           <div className="flex items-end gap-2 rounded-xl border border-border bg-surface px-3 py-2">
-                            <input ref={fileRef} type="file" multiple hidden onChange={(e) => void onPickFiles(e.target.files)} />
+                            <input
+                              ref={fileRef}
+                              type="file"
+                              multiple
+                              hidden
+                              onChange={(e) => void onPickFiles(e.target.files)}
+                            />
                             <button
                               onClick={() => fileRef.current?.click()}
                               disabled={uploading}
                               className="rounded-lg p-2 text-muted-foreground hover:bg-surface-2 hover:text-foreground disabled:opacity-50"
                               aria-label="Đính kèm tệp"
                             >
-                              {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
+                              {uploading ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Paperclip className="h-4 w-4" />
+                              )}
                             </button>
                             <textarea
                               rows={1}
@@ -1157,12 +1486,29 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
                               className="max-h-32 min-h-[36px] flex-1 resize-none bg-transparent py-1.5 text-sm placeholder:text-muted-foreground focus:outline-none"
                             />
                             <button
-                              disabled={!input.trim() || sendM.isPending}
+                              disabled={!input.trim() || askAiM.isPending || sendM.isPending}
+                              onClick={() => askAiM.mutate()}
+                              className="rounded-lg border border-border p-2 text-primary hover:bg-surface-2 disabled:opacity-40"
+                              aria-label="Hỏi UNI AI"
+                              title="Hỏi UNI AI"
+                            >
+                              {askAiM.isPending ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Sparkles className="h-4 w-4" />
+                              )}
+                            </button>
+                            <button
+                              disabled={!input.trim() || sendM.isPending || askAiM.isPending}
                               onClick={() => sendM.mutate()}
                               className="rounded-lg bg-primary p-2 text-primary-foreground disabled:opacity-40"
                               aria-label="Gửi"
                             >
-                              {sendM.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                              {sendM.isPending ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Send className="h-4 w-4" />
+                              )}
                             </button>
                           </div>
                         </div>
@@ -1179,12 +1525,20 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
                           </button>
                         </div>
                         <div className="flex-1 space-y-1 overflow-y-auto px-2 pb-3">
-                          {membersQ.isLoading && <p className="px-2 py-2 text-xs text-muted-foreground">Đang tải…</p>}
+                          {membersQ.isLoading && (
+                            <p className="px-2 py-2 text-xs text-muted-foreground">Đang tải…</p>
+                          )}
                           {(membersQ.data ?? []).map((mem) => (
-                            <div key={mem.userId} className="group flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-surface-2">
+                            <div
+                              key={mem.userId}
+                              className="group flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-surface-2"
+                            >
                               <img src={avatar(mem.userId)} alt="" className="h-7 w-7 rounded-md" />
                               <div className="min-w-0 flex-1">
-                                <p className="truncate text-sm">{mem.name}{mem.isMe && " (bạn)"}</p>
+                                <p className="truncate text-sm">
+                                  {mem.name}
+                                  {mem.isMe && " (bạn)"}
+                                </p>
                                 <p className="truncate text-[11px] text-muted-foreground">
                                   {mem.role === "owner" ? "Quản trị kênh" : "Thành viên"}
                                 </p>
@@ -1192,12 +1546,22 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
                               {active.isOwner && !mem.isMe && (
                                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100">
                                   <button
-                                    onClick={() => roleM.mutate({ userId: mem.userId, role: mem.role === "owner" ? "member" : "owner" })}
+                                    onClick={() =>
+                                      roleM.mutate({
+                                        userId: mem.userId,
+                                        role: mem.role === "owner" ? "member" : "owner",
+                                      })
+                                    }
                                     aria-label="Đổi vai trò"
                                   >
-                                    <Shield className={`h-3.5 w-3.5 ${mem.role === "owner" ? "text-primary" : "text-muted-foreground hover:text-foreground"}`} />
+                                    <Shield
+                                      className={`h-3.5 w-3.5 ${mem.role === "owner" ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                                    />
                                   </button>
-                                  <button onClick={() => removeMemberM.mutate(mem.userId)} aria-label="Gỡ thành viên">
+                                  <button
+                                    onClick={() => removeMemberM.mutate(mem.userId)}
+                                    aria-label="Gỡ thành viên"
+                                  >
                                     <X className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
                                   </button>
                                 </div>
@@ -1210,16 +1574,18 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
                               <p className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                                 Thêm vào kênh
                               </p>
-                              {people.filter((p) => !p.isMember).map((p) => (
-                                <button
-                                  key={p.userId}
-                                  onClick={() => addMemberM.mutate(p.userId)}
-                                  className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-surface-2"
-                                >
-                                  <UserPlus className="h-3.5 w-3.5 text-muted-foreground" />
-                                  <span className="min-w-0 flex-1 truncate">{p.name}</span>
-                                </button>
-                              ))}
+                              {people
+                                .filter((p) => !p.isMember)
+                                .map((p) => (
+                                  <button
+                                    key={p.userId}
+                                    onClick={() => addMemberM.mutate(p.userId)}
+                                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-surface-2"
+                                  >
+                                    <UserPlus className="h-3.5 w-3.5 text-muted-foreground" />
+                                    <span className="min-w-0 flex-1 truncate">{p.name}</span>
+                                  </button>
+                                ))}
                               {people.filter((p) => !p.isMember).length === 0 && (
                                 <p className="flex items-center gap-1.5 px-2 py-2 text-xs text-muted-foreground">
                                   <Check className="h-3.5 w-3.5" /> Tất cả đã ở trong kênh
@@ -1248,7 +1614,9 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
           {taskDraft && (
             <div className="space-y-3">
               <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">Tiêu đề</label>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                  Tiêu đề
+                </label>
                 <input
                   autoFocus
                   value={taskDraft.title}
@@ -1257,7 +1625,9 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">Mô tả</label>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                  Mô tả
+                </label>
                 <textarea
                   rows={4}
                   value={taskDraft.description}
@@ -1267,23 +1637,36 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-muted-foreground">Không gian làm việc</label>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                    Không gian làm việc
+                  </label>
                   <select
                     value={taskDraft.workspaceId}
-                    onChange={(e) => setTaskDraft({ ...taskDraft, workspaceId: e.target.value, assigneeId: "" })}
+                    onChange={(e) =>
+                      setTaskDraft({ ...taskDraft, workspaceId: e.target.value, assigneeId: "" })
+                    }
                     className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
                   >
                     <option value="">— Chọn —</option>
                     {(myWorkspaces ?? []).map((w) => (
-                      <option key={w.id} value={w.id}>{w.name}</option>
+                      <option key={w.id} value={w.id}>
+                        {w.name}
+                      </option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-muted-foreground">Độ ưu tiên</label>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                    Độ ưu tiên
+                  </label>
                   <select
                     value={taskDraft.priority}
-                    onChange={(e) => setTaskDraft({ ...taskDraft, priority: e.target.value as typeof taskDraft.priority })}
+                    onChange={(e) =>
+                      setTaskDraft({
+                        ...taskDraft,
+                        priority: e.target.value as typeof taskDraft.priority,
+                      })
+                    }
                     className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
                   >
                     <option value="low">Thấp</option>
@@ -1308,7 +1691,10 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
                         type="button"
                         aria-label={`Xóa nhãn ${t}`}
                         onClick={() =>
-                          setTaskDraft({ ...taskDraft, tags: taskDraft.tags.filter((x) => x !== t) })
+                          setTaskDraft({
+                            ...taskDraft,
+                            tags: taskDraft.tags.filter((x) => x !== t),
+                          })
                         }
                         className="hover:text-foreground"
                       >
@@ -1348,7 +1734,9 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
                 </div>
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">Hạn hoàn thành (tuỳ chọn)</label>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                  Hạn hoàn thành (tuỳ chọn)
+                </label>
                 <input
                   type="datetime-local"
                   value={taskDraft.dueAt}
@@ -1357,7 +1745,9 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">Người phụ trách (tuỳ chọn)</label>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                  Người phụ trách (tuỳ chọn)
+                </label>
                 <select
                   value={taskDraft.assigneeId}
                   onChange={(e) => setTaskDraft({ ...taskDraft, assigneeId: e.target.value })}
@@ -1367,11 +1757,15 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
                   <option value="">
                     {!taskDraft.workspaceId
                       ? "— Chọn không gian làm việc trước —"
-                      : taskMembersQ.isLoading ? "Đang tải thành viên…" : "— Chưa giao —"}
+                      : taskMembersQ.isLoading
+                        ? "Đang tải thành viên…"
+                        : "— Chưa giao —"}
                   </option>
                   {(taskMembersQ.data ?? []).map((m) => (
                     <option key={m.userId} value={m.userId}>
-                      {m.name}{m.isMe ? " (Tôi)" : ""}{m.role === "owner" ? " · Chủ sở hữu" : ""}
+                      {m.name}
+                      {m.isMe ? " (Tôi)" : ""}
+                      {m.role === "owner" ? " · Chủ sở hữu" : ""}
                     </option>
                   ))}
                 </select>
@@ -1384,7 +1778,9 @@ export function ChatWorkspace({ initialChannelId, highlightMessageId }: { initia
                   Huỷ
                 </button>
                 <button
-                  disabled={!taskDraft.title.trim() || !taskDraft.workspaceId || createTaskM.isPending}
+                  disabled={
+                    !taskDraft.title.trim() || !taskDraft.workspaceId || createTaskM.isPending
+                  }
                   onClick={() => createTaskM.mutate(taskDraft)}
                   className="flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
                 >
