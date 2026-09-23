@@ -980,3 +980,92 @@ export const listTaskChatMessages = createServerFn({ method: "GET" })
       };
     },
   );
+
+export type TaskDirectConversation = {
+  userId: string;
+  name: string;
+  channelId: string | null;
+  lastMessageAt: string | null;
+  preview: string | null;
+};
+
+/**
+ * Các cuộc trò chuyện 1-1 liên quan tới một công việc: người phụ trách + người tạo.
+ * Chỉ trả phòng DM mà chính người gọi là thành viên (RLS), không lộ tin riêng của người khác.
+ */
+export const listTaskDirectConversations = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ taskId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }): Promise<{ people: TaskDirectConversation[] }> => {
+    const ctx = context as unknown as Ctx;
+
+    const [assigneesRes, taskRes] = await Promise.all([
+      ctx.supabase.from("task_assignees").select("user_id").eq("task_id", data.taskId),
+      ctx.supabase.from("tasks").select("created_by").eq("id", data.taskId).maybeSingle(),
+    ]);
+    const ids = new Set<string>();
+    for (const r of (assigneesRes.data ?? []) as Array<{ user_id: string }>) ids.add(r.user_id);
+    const creator = (taskRes.data as { created_by?: string } | null)?.created_by;
+    if (creator) ids.add(creator);
+    ids.delete(ctx.userId);
+    const targets = Array.from(ids);
+    if (targets.length === 0) return { people: [] };
+
+    // Các phòng tôi tham gia → tìm DM chung với từng người.
+    const { data: mineRows } = await ctx.supabase
+      .from("chat_members")
+      .select("channel_id")
+      .eq("user_id", ctx.userId);
+    const mineIds = ((mineRows ?? []) as Array<{ channel_id: string }>).map((r) => r.channel_id);
+
+    const dmByUser = new Map<string, string>();
+    if (mineIds.length > 0) {
+      const { data: dmRows } = await ctx.supabase
+        .from("chat_channels")
+        .select("id, kind, deleted_at")
+        .in("id", mineIds)
+        .eq("kind", "dm")
+        .is("deleted_at", null);
+      const dmIds = ((dmRows ?? []) as Array<{ id: string }>).map((r) => r.id);
+      if (dmIds.length > 0) {
+        const { data: others } = await ctx.supabase
+          .from("chat_members")
+          .select("channel_id, user_id")
+          .in("channel_id", dmIds)
+          .in("user_id", targets);
+        for (const row of (others ?? []) as Array<{ channel_id: string; user_id: string }>) {
+          if (!dmByUser.has(row.user_id)) dmByUser.set(row.user_id, row.channel_id);
+        }
+      }
+    }
+
+    const names = await displayNames(ctx, targets);
+    const previews = new Map<string, { at: string | null; body: string | null }>();
+    await Promise.all(
+      Array.from(dmByUser.values()).map(async (cid) => {
+        const { data: last } = await ctx.supabase
+          .from("chat_messages")
+          .select("body, created_at")
+          .eq("channel_id", cid)
+          .is("deleted_at", null)
+          .order("created_at", { ascending: false })
+          .limit(1);
+        const row = ((last ?? []) as Array<{ body: string | null; created_at: string }>)[0];
+        previews.set(cid, { at: row?.created_at ?? null, body: row?.body ?? null });
+      }),
+    );
+
+    const people = targets.map((userId) => {
+      const channelId = dmByUser.get(userId) ?? null;
+      const preview = channelId ? previews.get(channelId) : undefined;
+      return {
+        userId,
+        name: names.get(userId) ?? "Thành viên",
+        channelId,
+        lastMessageAt: preview?.at ?? null,
+        preview: preview?.body ?? null,
+      };
+    });
+    people.sort((a, b) => (b.lastMessageAt ?? "").localeCompare(a.lastMessageAt ?? ""));
+    return { people };
+  });
