@@ -208,10 +208,31 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => 
             </div>
           ))
         )}
+        {askAi.isPending ? (
+          <p className="mr-auto flex items-center gap-2 rounded-2xl border border-primary/30 bg-primary/5 px-3 py-2 text-xs text-primary">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            {t("m.ai.chat.aiThinking")}
+          </p>
+        ) : null}
         <div ref={bottomRef} />
       </div>
 
       <div className="flex items-end gap-2 border-t border-border pt-2">
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-11 w-11 shrink-0 rounded-full"
+          disabled={!body.trim() || busy}
+          onClick={submitAi}
+          aria-label={t("m.ai.chat.askAi")}
+          title={t("m.ai.chat.askAi")}
+        >
+          {askAi.isPending ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <Sparkles className="h-5 w-5" />
+          )}
+        </Button>
         <textarea
           value={body}
           onChange={(event) => setBody(event.target.value)}
