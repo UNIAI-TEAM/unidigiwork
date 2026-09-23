@@ -3,8 +3,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
+  Activity,
   ArrowUp,
+  CalendarClock,
   Camera,
+  ChevronRight,
   FileText,
   Image,
   Loader2,
@@ -14,6 +17,7 @@ import {
   Plus,
   Search,
   Users,
+  UsersRound,
   X,
   Zap,
   ExternalLink,
