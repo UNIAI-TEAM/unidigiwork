@@ -1724,6 +1724,7 @@ export type Database = {
           meeting_id: string | null
           name: string
           row_version: number
+          task_id: string | null
           tenant_id: string
           updated_at: string
           updated_by: string | null
@@ -1742,6 +1743,7 @@ export type Database = {
           meeting_id?: string | null
           name: string
           row_version?: number
+          task_id?: string | null
           tenant_id: string
           updated_at?: string
           updated_by?: string | null
@@ -1760,6 +1762,7 @@ export type Database = {
           meeting_id?: string | null
           name?: string
           row_version?: number
+          task_id?: string | null
           tenant_id?: string
           updated_at?: string
           updated_by?: string | null
@@ -1771,6 +1774,13 @@ export type Database = {
             columns: ["meeting_id"]
             isOneToOne: false
             referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_channels_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
             referencedColumns: ["id"]
           },
           {
@@ -10599,6 +10609,7 @@ export type Database = {
         Args: { _meeting_id: string }
         Returns: string
       }
+      ensure_task_chat_channel: { Args: { _task_id: string }; Returns: string }
       ensure_tenant_general_channel: {
         Args: { _tenant_id: string }
         Returns: string

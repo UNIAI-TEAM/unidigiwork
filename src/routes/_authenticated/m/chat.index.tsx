@@ -145,6 +145,8 @@ function MobileChatList() {
                   <Badge>{channel.unread}</Badge>
                 ) : channel.isGeneral ? (
                   <Badge variant="outline">{t("m.chat.generalRoom")}</Badge>
+                ) : channel.taskId ? (
+                  <Badge variant="outline">{t("m.chat.taskRoom")}</Badge>
                 ) : channel.meetingId ? (
                   <Badge variant="outline">{t("m.chat.meetingRoom")}</Badge>
                 ) : null

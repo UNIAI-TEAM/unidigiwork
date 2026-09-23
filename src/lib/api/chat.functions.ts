@@ -21,6 +21,7 @@ export type ChatChannelDTO = {
   unread: number;
   lastMessageAt: string | null;
   meetingId: string | null;
+  taskId?: string | null;
   isGeneral?: boolean;
 };
 
@@ -130,7 +131,7 @@ export const listChatChannels = createServerFn({ method: "GET" })
     const { data: chans, error } = await ctx.supabase
       .from("chat_channels")
       .select(
-        "id, name, description, kind, is_private, last_message_at, created_by, meeting_id, is_general",
+        "id, name, description, kind, is_private, last_message_at, created_by, meeting_id, task_id, is_general",
       )
       .eq("tenant_id", scope.tenantId)
       .is("deleted_at", null)
@@ -195,6 +196,7 @@ export const listChatChannels = createServerFn({ method: "GET" })
         unread: unread.get(r.id) ?? 0,
         lastMessageAt: r.last_message_at,
         meetingId: r.meeting_id ?? null,
+        taskId: r.task_id ?? null,
         isGeneral: !!r.is_general,
       };
     });
@@ -810,3 +812,83 @@ export const ensureTenantGeneralChannel = createServerFn({ method: "POST" })
       throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "Không tạo được phòng chung" });
     return { channelId: channelId as string };
   });
+
+/** Phòng trò chuyện gắn với một công việc (tự tạo lần đầu, thêm người phụ trách). */
+export const ensureTaskChatChannel = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ taskId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }): Promise<{ channelId: string }> => {
+    const ctx = context as unknown as Ctx;
+    const { data: channelId, error } = await ctx.supabase.rpc("ensure_task_chat_channel", {
+      _task_id: data.taskId,
+    });
+    if (error) mapPgError(error, "PERMISSION_DENIED");
+    if (!channelId)
+      throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "Không tạo được phòng công việc" });
+    return { channelId: channelId as string };
+  });
+
+export type TaskChatMessage = {
+  id: string;
+  body: string;
+  authorId: string;
+  authorName: string;
+  createdAt: string;
+  isAi: boolean;
+};
+
+/** Tin nhắn gần nhất của phòng gắn công việc — dùng cho dòng thời gian công việc. */
+export const listTaskChatMessages = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({ taskId: z.string().uuid(), limit: z.number().int().min(1).max(50).optional() })
+      .parse(i),
+  )
+  .handler(
+    async ({
+      data,
+      context,
+    }): Promise<{ channelId: string | null; messages: TaskChatMessage[] }> => {
+      const ctx = context as unknown as Ctx;
+      const { data: ch, error } = await ctx.supabase
+        .from("chat_channels")
+        .select("id")
+        .eq("task_id", data.taskId)
+        .is("deleted_at", null)
+        .maybeSingle();
+      if (error) mapPgError(error);
+      if (!ch?.id) return { channelId: null, messages: [] };
+      const channelId = ch.id as string;
+      const { data: rows, error: msgErr } = await ctx.supabase
+        .from("chat_messages")
+        .select("id, body, author_id, created_at, is_ai")
+        .eq("channel_id", channelId)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .limit(data.limit ?? 20);
+      if (msgErr) mapPgError(msgErr);
+      const list = (rows ?? []) as Array<{
+        id: string;
+        body: string | null;
+        author_id: string;
+        created_at: string;
+        is_ai: boolean | null;
+      }>;
+      const names = await displayNames(
+        ctx,
+        list.map((r) => r.author_id),
+      );
+      return {
+        channelId,
+        messages: list.reverse().map((r) => ({
+          id: r.id,
+          body: r.body ?? "",
+          authorId: r.author_id,
+          authorName: names.get(r.author_id) ?? "Thành viên",
+          createdAt: r.created_at,
+          isAi: !!r.is_ai,
+        })),
+      };
+    },
+  );
