@@ -3,8 +3,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
+  Activity,
   ArrowUp,
+  CalendarClock,
   Camera,
+  ChevronRight,
   FileText,
   Image,
   Loader2,
@@ -14,6 +17,7 @@ import {
   Plus,
   Search,
   Users,
+  UsersRound,
   X,
   Zap,
   ExternalLink,
@@ -238,7 +242,7 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
               <span className="ml-2 text-sm">{t("m.ai.loading")}</span>
             </div>
           ) : isEmpty ? (
-            <EmptyState firstName={firstName} />
+            <EmptyState firstName={firstName} onPick={submit} />
           ) : (
             <div className="mx-auto w-full max-w-2xl space-y-7 pb-4">
               {displayMessages.map((message, index) => (
@@ -373,15 +377,51 @@ export function NativeAiSurface({ conversationId }: { conversationId?: string })
   );
 }
 
-function EmptyState({ firstName }: { firstName: string }) {
+const STARTER_CARDS = [
+  { key: "plan", icon: CalendarClock, tone: "text-primary" },
+  { key: "catchup", icon: Activity, tone: "text-primary" },
+  { key: "prepare", icon: UsersRound, tone: "text-success" },
+  { key: "create", icon: FileText, tone: "text-warning" },
+] as const;
+
+function EmptyState({
+  firstName,
+  onPick,
+}: {
+  firstName: string;
+  onPick: (prompt: string) => void;
+}) {
   const { t } = useI18n();
   return (
-    <section className="flex min-h-full flex-col justify-end pb-6 sm:justify-center sm:pb-0">
+    <section className="flex min-h-full flex-col justify-end pb-4 sm:justify-center sm:pb-0">
       <div className="mx-auto w-full max-w-xl text-center">
         <h1 className="text-2xl font-semibold leading-tight">
           {t("m.ai.greeting").replace("{name}", firstName)}
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">{t("m.ai.question")}</p>
+        <div className="mt-6 grid grid-cols-2 gap-2.5 text-left">
+          {STARTER_CARDS.map(({ key, icon: Icon, tone }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => onPick(t(`m.ai.starter.${key}.prompt` as never))}
+              className="group flex min-h-44 flex-col gap-2 rounded-2xl border border-border bg-surface p-3.5 text-left transition-colors hover:bg-muted/40 focus-visible:ring-1 focus-visible:ring-ring sm:min-h-40"
+            >
+              <span className="flex items-start justify-between">
+                <span className="grid h-10 w-10 place-items-center rounded-xl bg-muted">
+                  <Icon className={`h-5 w-5 ${tone}`} />
+                </span>
+                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+              </span>
+              <span className="text-sm font-semibold leading-snug">
+                {t(`m.ai.starter.${key}` as never)}
+              </span>
+              <span className="text-xs leading-5 text-muted-foreground">
+                {t(`m.ai.starter.${key}.desc` as never)}
+              </span>
+            </button>
+          ))}
+        </div>
       </div>
     </section>
   );
