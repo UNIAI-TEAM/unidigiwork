@@ -161,21 +161,24 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => 
   }, [channelId, markReadFn]);
 
   const send = useMutation({
-    mutationFn: async (text: string) => {
+    mutationFn: async (input: { id: string; text: string }) => {
       try {
-        return await sendFn({ data: { channelId, body: text } });
+        return await sendFn({ data: { channelId, body: input.text } });
       } catch (error) {
         // Chưa là thành viên kênh công khai → tham gia rồi gửi lại.
         await joinFn({ data: { channelId } });
-        return await sendFn({ data: { channelId, body: text } });
+        return await sendFn({ data: { channelId, body: input.text } });
       }
     },
     onSuccess: () => {
-      setBody("");
       void queryClient.invalidateQueries({ queryKey: ["mobile-plus-chat-messages", channelId] });
       void queryClient.invalidateQueries({ queryKey: ["mobile-plus-chat-channels"] });
     },
-    onError: () => toast.error(t("m.ai.chat.sendFailed")),
+    onError: (_error, input) => {
+      setPending((current) => current.filter((p) => p.id !== input.id));
+      setBody((current) => current || input.text);
+      toast.error(t("m.ai.chat.sendFailed"));
+    },
   });
 
   const askAi = useMutation({
