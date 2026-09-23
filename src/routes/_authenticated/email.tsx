@@ -552,6 +552,37 @@ function EmailHubPage() {
       <main className="flex min-w-0 flex-1 flex-col">
         <AppTopbar variant="documents" onOpenSidebar={() => setSidebarOpen(true)} />
 
+        <EmailRibbon
+          view={view}
+          onView={setView}
+          hasSelection={!!selectedEmail || checkedIds.size > 0}
+          onCompose={() => setComposeOpen(true)}
+          onNewMeeting={() => void navigate({ to: "/meetings-manage" })}
+          onArchive={() => (checkedIds.size ? bulkMove("archive") : messageAction("archive"))}
+          onDelete={() => (checkedIds.size ? bulkMove("trash") : messageAction("trash"))}
+          onReply={() => replySelected(false)}
+          onReplyAll={() => replySelected(true)}
+          onForward={forwardSelected}
+          onMarkRead={() =>
+            checkedIds.size
+              ? bulkRead(true)
+              : selectedEmail && bulkReadMut.mutate({ ids: [selectedEmail.id], is_read: true })
+          }
+          onMarkUnread={() =>
+            checkedIds.size
+              ? bulkRead(false)
+              : selectedEmail && bulkReadMut.mutate({ ids: [selectedEmail.id], is_read: false })
+          }
+          onLabels={() => setLabelsOpen(true)}
+          onAdvanced={() => setAdvancedOpen(true)}
+          onSync={() => {
+            void dbQuery.refetch();
+            void countsQuery.refetch();
+          }}
+          onExternal={() => setExternalOpen(true)}
+        />
+
+
         <div className="flex min-w-0 flex-1 overflow-hidden">
           {/* Mailboxes column */}
           <aside className="hidden w-[260px] shrink-0 flex-col border-r border-border bg-surface md:flex">
