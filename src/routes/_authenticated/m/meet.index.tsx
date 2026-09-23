@@ -233,6 +233,7 @@ function MobileMeetPage() {
                   </Badge>
                 ) : null
               }
+              right={<OpenChatRoomButton kind="meeting" entityId={m.id} />}
               onClick={() => void navigate({ to: "/m/meet/$id", params: { id: m.id } })}
             />
           ))}
