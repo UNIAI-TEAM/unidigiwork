@@ -306,15 +306,12 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => 
         <Button
           size="icon"
           className="h-11 w-11 shrink-0 rounded-full"
-          disabled={!body.trim() || busy}
+          disabled={!body.trim()}
           onClick={submit}
           aria-label={t("m.ai.chat.send")}
         >
-          {send.isPending ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
-          ) : (
-            <ArrowUp className="h-5 w-5" />
-          )}
+          <ArrowUp className="h-5 w-5" />
+          {pending.length > 0 ? <span className="sr-only">{t("m.ai.chat.loading")}</span> : null}
         </Button>
       </div>
     </div>
