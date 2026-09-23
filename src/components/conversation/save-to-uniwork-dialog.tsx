@@ -132,7 +132,10 @@ export function SaveToUniworkDialog({
             </div>
             <div className="grid gap-2">
               <Label>{t("cw.visibility")}</Label>
-              <Select value={visibility} onValueChange={(v) => setVisibility(v as typeof visibility)}>
+              <Select
+                value={visibility}
+                onValueChange={(v) => setVisibility(v as typeof visibility)}
+              >
                 <SelectTrigger className="h-11">
                   <SelectValue />
                 </SelectTrigger>

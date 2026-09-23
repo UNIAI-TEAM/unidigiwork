@@ -240,7 +240,6 @@ export function NativeChatExperience({
       <SaveToUniworkDialog
         open={saveOpen}
         onOpenChange={setSaveOpen}
-        channelId={selected}
         onSaved={() => navigate({ to: "/conversations" })}
       />
     </div>

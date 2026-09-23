@@ -186,7 +186,11 @@ function ProposalCard({
           disabled={approve.isPending || (needsWork && !workspaceId)}
           onClick={() => approve.mutate()}
         >
-          {approve.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+          {approve.isPending ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Check className="h-4 w-4" />
+          )}
           <span className="ml-2">{t("cw.approve")}</span>
         </Button>
         <Button
@@ -212,9 +216,10 @@ export function ConversationIntelligencePanel({
 }) {
   const { t } = useI18n();
   const qc = useQueryClient();
-  const [answer, setAnswer] = useState<{ answer: string; citations: Array<{ excerpt: string }> } | null>(
-    null,
-  );
+  const [answer, setAnswer] = useState<{
+    answer: string;
+    citations: Array<{ excerpt: string }>;
+  } | null>(null);
 
   const proposalsQuery = useQuery({
     queryKey: ["extraction-proposals", sourceType, sourceId],
@@ -265,9 +270,7 @@ export function ConversationIntelligencePanel({
             </Button>
           ))}
         </div>
-        {ask.isPending && (
-          <p className="text-xs text-muted-foreground">{t("cw.asking")}</p>
-        )}
+        {ask.isPending && <p className="text-xs text-muted-foreground">{t("cw.asking")}</p>}
         {answer && (
           <div className="grid gap-2 rounded-xl border border-border bg-muted/30 p-3">
             <p className="whitespace-pre-wrap text-sm">{answer.answer}</p>
