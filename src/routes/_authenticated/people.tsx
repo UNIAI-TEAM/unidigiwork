@@ -71,6 +71,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { notifyComingSoon } from "@/lib/coming-soon";
+import { ColleagueManagerButton } from "@/components/people/colleague-manager";
 import { FilterPageHeader } from "@/components/filter-page-header";
 
 export const Route = createFileRoute("/_authenticated/people")({
@@ -449,6 +450,7 @@ function PeoplePage() {
                 >
                   <Download className="h-4 w-4" /> {t("people.export")}
                 </button>
+                <ColleagueManagerButton />
                 <Link
                   to="/workspace/invite"
                   className="flex min-h-11 items-center gap-1.5 rounded-lg bg-action px-3 py-2 text-sm font-semibold text-action-foreground hover:opacity-90"

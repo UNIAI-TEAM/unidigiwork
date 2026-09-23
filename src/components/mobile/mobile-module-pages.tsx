@@ -32,6 +32,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { MobileListItem } from "@/components/mobile/mobile-list-item";
+import { ColleagueManagerButton } from "@/components/people/colleague-manager";
 import { useActiveWorkspace } from "@/lib/active-workspace";
 import { useActiveTenant } from "@/features/tenants/hooks";
 import { listCalendarEvents } from "@/lib/api/calendar.functions";
@@ -349,6 +350,7 @@ export function MobilePeoplePage() {
       title={text("ops.people.title")}
       subtitle={text("ops.people.subtitle", { count: rows.length })}
     >
+      <ColleagueManagerButton className="w-full" />
       <SearchBox value={q} onChange={setQ} placeholder={c.search} />
       <State loading={query.isLoading} empty={!rows.length} text={c} />
       <ul className="grid gap-2">
