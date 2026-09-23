@@ -94,6 +94,7 @@ export function NativeChatExperience({
             {t("m.chat.openGeneral")}
           </Button>
         )}
+        <NewDirectMessageButton onOpened={(id) => select(id)} />
         <div className="min-h-0 flex-1 space-y-1 overflow-y-auto pr-1">
           {isLoading &&
             [0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-14 w-full rounded-2xl" />)}
