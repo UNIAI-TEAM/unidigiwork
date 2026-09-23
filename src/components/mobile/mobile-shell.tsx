@@ -176,11 +176,19 @@ function NativeDrawer({
   const swipeStartX = useRef<number | null>(null);
   const swipeDistance = useRef(0);
   const drawerRef = useRef<HTMLDivElement>(null);
+  const boardFn = useServerFn(listWorkGraphBoard);
   const conversations = useQuery({
     queryKey: ["mobile-ai-conversations"],
     queryFn: () => listFn({ data: { limit: 6, sort: "recent" } }),
     enabled: open,
   });
+  const board = useQuery({
+    queryKey: ["mobile-menu-board"],
+    queryFn: () => boardFn({ data: { tab: "all", page: 1, pageSize: 10 } }),
+    enabled: open,
+    staleTime: 30_000,
+  });
+  const counts = board.data?.counts ?? { all: 0, running: 0, done: 0, products: 0 };
 
   const go = (to: string) => {
     onOpenChange(false);
