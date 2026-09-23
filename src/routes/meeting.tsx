@@ -7,7 +7,9 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { ensureMeetingChatChannel } from "@/lib/api/chat.functions";
 import {
   ArrowUpDown,
   ArrowUpRight,
@@ -27,6 +29,7 @@ import {
   MoreHorizontal,
   Pencil,
   Plus,
+  MessageSquare,
   Search,
   Send,
   TriangleAlert,
