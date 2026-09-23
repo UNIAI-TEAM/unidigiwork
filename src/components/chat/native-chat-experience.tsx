@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChatRoomView } from "@/components/mobile/team-chat-panel";
+import { NewDirectMessageButton } from "@/components/chat/new-direct-message";
 import { ensureTenantGeneralChannel, listChatChannels } from "@/lib/api/chat.functions";
 import { localeTag, useI18n } from "@/lib/i18n";
 
