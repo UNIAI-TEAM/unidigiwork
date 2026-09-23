@@ -272,7 +272,14 @@ function MembersTab({
             const isOwnerRow = m.role === "tenant_owner";
             return (
               <tr key={m.id} className="border-t border-border">
-                <td className="px-4 py-3 font-mono text-xs">{m.user_id.slice(0, 8)}…</td>
+                <td className="px-4 py-3">
+                  <div className="font-medium">
+                    {m.display_name || m.email || `${m.user_id.slice(0, 8)}…`}
+                  </div>
+                  {m.email && m.display_name ? (
+                    <div className="text-xs text-muted-foreground">{m.email}</div>
+                  ) : null}
+                </td>
                 <td className="px-4 py-3">
                   {isOwnerRow ? (
                     <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
