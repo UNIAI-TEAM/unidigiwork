@@ -64,6 +64,16 @@ function MobileChatList() {
     onError: () => toast.error(t("m.chat.generalError")),
   });
 
+  // Tự tạo phòng chung của tổ chức ngay lần đầu (idempotent, tenant-scoped).
+  const ensuredRef = useRef(false);
+  useEffect(() => {
+    if (isLoading || isError || hasGeneral || ensuredRef.current) return;
+    ensuredRef.current = true;
+    void ensureGeneralFn()
+      .then(() => queryClient.invalidateQueries({ queryKey: ["mobile-chat-channels"] }))
+      .catch(() => undefined);
+  }, [isLoading, isError, hasGeneral, ensureGeneralFn, queryClient]);
+
   return (
     <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col gap-3 overflow-x-hidden p-4 pb-24">
       <h1 className="text-xl font-semibold">{t("m.chat.title")}</h1>
