@@ -38,6 +38,7 @@ export type ChatMessageDTO = {
   attachments: ChatAttachment[];
   pinnedAt: string | null;
   pinnedByName: string | null;
+  isAi: boolean;
 };
 
 export type ChatAttachment = {
@@ -222,7 +223,7 @@ export const listChatMessages = createServerFn({ method: "GET" })
     let query = ctx.supabase
       .from("chat_messages")
       .select(
-        "id, channel_id, body, author_id, created_at, edited_at, parent_message_id, attachments, pinned_at, pinned_by",
+        "id, channel_id, body, author_id, created_at, edited_at, parent_message_id, attachments, pinned_at, pinned_by, is_ai",
       )
       .eq("channel_id", data.channelId)
       .is("deleted_at", null)
@@ -274,6 +275,7 @@ export const listChatMessages = createServerFn({ method: "GET" })
         attachments: Array.isArray(r.attachments) ? (r.attachments as ChatAttachment[]) : [],
         pinnedAt: r.pinned_at ?? null,
         pinnedByName: r.pinned_by ? (names.get(r.pinned_by) ?? "Thành viên") : null,
+        isAi: r.is_ai === true,
       };
     });
     return { messages, hasMore };
@@ -302,7 +304,7 @@ export const listPinnedChatMessages = createServerFn({ method: "GET" })
     const { data: rows, error } = await ctx.supabase
       .from("chat_messages")
       .select(
-        "id, channel_id, body, author_id, created_at, edited_at, parent_message_id, attachments, pinned_at, pinned_by",
+        "id, channel_id, body, author_id, created_at, edited_at, parent_message_id, attachments, pinned_at, pinned_by, is_ai",
       )
       .eq("channel_id", data.channelId)
       .is("deleted_at", null)
@@ -330,6 +332,7 @@ export const listPinnedChatMessages = createServerFn({ method: "GET" })
       attachments: Array.isArray(r.attachments) ? (r.attachments as ChatAttachment[]) : [],
       pinnedAt: r.pinned_at ?? null,
       pinnedByName: r.pinned_by ? (names.get(r.pinned_by) ?? "Thành viên") : null,
+      isAi: r.is_ai === true,
     }));
   });
 
@@ -475,17 +478,15 @@ export const joinChatChannel = createServerFn({ method: "POST" })
     if (chErr) mapPgError(chErr);
     if (!ch)
       throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "Không tìm thấy kênh chat" });
-    const { error } = await ctx.supabase
-      .from("chat_members")
-      .upsert(
-        {
-          channel_id: data.channelId,
-          user_id: ctx.userId,
-          tenant_id: ch.tenant_id,
-          role: "member",
-        },
-        { onConflict: "channel_id,user_id" },
-      );
+    const { error } = await ctx.supabase.from("chat_members").upsert(
+      {
+        channel_id: data.channelId,
+        user_id: ctx.userId,
+        tenant_id: ch.tenant_id,
+        role: "member",
+      },
+      { onConflict: "channel_id,user_id" },
+    );
     if (error) mapPgError(error, "PERMISSION_DENIED");
     return { ok: true };
   });
@@ -636,17 +637,15 @@ export const addChatChannelMember = createServerFn({ method: "POST" })
     if (chErr) mapPgError(chErr);
     if (!ch)
       throw new ApiError({ code: "RESOURCE_NOT_FOUND", message: "Không tìm thấy kênh chat" });
-    const { error } = await ctx.supabase
-      .from("chat_members")
-      .upsert(
-        {
-          channel_id: data.channelId,
-          user_id: data.userId,
-          tenant_id: ch.tenant_id,
-          role: "member",
-        },
-        { onConflict: "channel_id,user_id" },
-      );
+    const { error } = await ctx.supabase.from("chat_members").upsert(
+      {
+        channel_id: data.channelId,
+        user_id: data.userId,
+        tenant_id: ch.tenant_id,
+        role: "member",
+      },
+      { onConflict: "channel_id,user_id" },
+    );
     if (error) mapPgError(error, "PERMISSION_DENIED");
     return { ok: true };
   });

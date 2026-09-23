@@ -2,7 +2,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowUp, ChevronLeft, Hash, Loader2, Lock, MessageSquare, User } from "lucide-react";
+import {
+  ArrowUp,
+  ChevronLeft,
+  Hash,
+  Loader2,
+  Lock,
+  MessageSquare,
+  Sparkles,
+  User,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +22,7 @@ import {
   markChatChannelRead,
   type ChatChannelDTO,
 } from "@/lib/api/chat.functions";
+import { askChatAi } from "@/lib/api/chat-ai.functions";
 import { useI18n } from "@/lib/i18n";
 
 export function TeamChatPanel({
@@ -97,6 +107,7 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => 
   const sendFn = useServerFn(sendChatMessage);
   const joinFn = useServerFn(joinChatChannel);
   const markReadFn = useServerFn(markChatChannelRead);
+  const askAiFn = useServerFn(askChatAi);
   const [body, setBody] = useState("");
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
@@ -134,10 +145,28 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => 
     onError: () => toast.error(t("m.ai.chat.sendFailed")),
   });
 
+  const askAi = useMutation({
+    mutationFn: async (question: string) => askAiFn({ data: { channelId, question } }),
+    onSuccess: () => {
+      setBody("");
+      void queryClient.invalidateQueries({ queryKey: ["mobile-plus-chat-messages", channelId] });
+      void queryClient.invalidateQueries({ queryKey: ["mobile-plus-chat-channels"] });
+    },
+    onError: () => toast.error(t("m.ai.chat.aiFailed")),
+  });
+
+  const busy = send.isPending || askAi.isPending;
+
   const submit = () => {
     const text = body.trim();
-    if (!text || send.isPending) return;
+    if (!text || busy) return;
     send.mutate(text);
+  };
+
+  const submitAi = () => {
+    const text = body.trim();
+    if (!text || busy) return;
+    askAi.mutate(text);
   };
 
   return (
@@ -163,12 +192,19 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => 
             <div
               key={message.id}
               className={
-                message.isMine
-                  ? "ml-auto max-w-[86%] rounded-2xl rounded-br-md bg-secondary px-3 py-2 text-secondary-foreground"
-                  : "mr-auto max-w-[86%] rounded-2xl rounded-bl-md border border-border bg-surface px-3 py-2"
+                message.isAi
+                  ? "mr-auto max-w-[92%] rounded-2xl rounded-bl-md border border-primary/30 bg-primary/5 px-3 py-2"
+                  : message.isMine
+                    ? "ml-auto max-w-[86%] rounded-2xl rounded-br-md bg-secondary px-3 py-2 text-secondary-foreground"
+                    : "mr-auto max-w-[86%] rounded-2xl rounded-bl-md border border-border bg-surface px-3 py-2"
               }
             >
-              {!message.isMine ? (
+              {message.isAi ? (
+                <p className="flex items-center gap-1.5 text-xs font-medium text-primary">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  {t("m.ai.chat.aiLabel")}
+                </p>
+              ) : !message.isMine ? (
                 <p className="text-xs font-medium text-muted-foreground">{message.authorName}</p>
               ) : null}
               <p className="whitespace-pre-wrap break-words text-sm leading-6">{message.body}</p>
@@ -181,10 +217,31 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => 
             </div>
           ))
         )}
+        {askAi.isPending ? (
+          <p className="mr-auto flex items-center gap-2 rounded-2xl border border-primary/30 bg-primary/5 px-3 py-2 text-xs text-primary">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            {t("m.ai.chat.aiThinking")}
+          </p>
+        ) : null}
         <div ref={bottomRef} />
       </div>
 
       <div className="flex items-end gap-2 border-t border-border pt-2">
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-11 w-11 shrink-0 rounded-full"
+          disabled={!body.trim() || busy}
+          onClick={submitAi}
+          aria-label={t("m.ai.chat.askAi")}
+          title={t("m.ai.chat.askAi")}
+        >
+          {askAi.isPending ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <Sparkles className="h-5 w-5" />
+          )}
+        </Button>
         <textarea
           value={body}
           onChange={(event) => setBody(event.target.value)}
@@ -202,7 +259,7 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => 
         <Button
           size="icon"
           className="h-11 w-11 shrink-0 rounded-full"
-          disabled={!body.trim() || send.isPending}
+          disabled={!body.trim() || busy}
           onClick={submit}
           aria-label={t("m.ai.chat.send")}
         >

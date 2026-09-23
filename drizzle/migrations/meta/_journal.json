@@ -372,6 +372,13 @@
       "when": 1790097646013,
       "tag": "0052_meeting_chat_channel",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1790124971166,
+      "tag": "0053_chat_ai_message_flag",
+      "breakpoints": true
     }
   ]
 }
