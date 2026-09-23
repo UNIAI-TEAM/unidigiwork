@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MobileListItem } from "@/components/mobile/mobile-list-item";
 import { NewDirectMessageButton } from "@/components/chat/new-direct-message";
+import { ChatRoomManagerButton } from "@/components/chat/chat-room-manager";
 import { ensureTenantGeneralChannel, listChatChannels } from "@/lib/api/chat.functions";
 import { fmt } from "@/lib/i18n-interpolate";
 import { localeTag, useI18n } from "@/lib/i18n";
@@ -91,6 +92,9 @@ function MobileChatList() {
       ) : null}
       <NewDirectMessageButton
         onOpened={(id) => void navigate({ to: "/m/chat/$id", params: { id } })}
+      />
+      <ChatRoomManagerButton
+        onCreated={(id) => void navigate({ to: "/m/chat/$id", params: { id } })}
       />
       <div className="relative">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
