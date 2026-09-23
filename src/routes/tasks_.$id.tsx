@@ -536,6 +536,8 @@ function TaskDetailPage() {
                     </div>
                   </Section>
 
+                  <TaskRoomChatCard taskId={id} />
+
                   <Section title={`Bình luận (${comments.length})`}>
                     <div className="space-y-4">
                       {comments.map((c) => (
