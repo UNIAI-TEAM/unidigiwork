@@ -183,12 +183,19 @@ function ChannelRoom({ channelId, onBack }: { channelId: string; onBack?: () => 
             <div
               key={message.id}
               className={
-                message.isMine
-                  ? "ml-auto max-w-[86%] rounded-2xl rounded-br-md bg-secondary px-3 py-2 text-secondary-foreground"
-                  : "mr-auto max-w-[86%] rounded-2xl rounded-bl-md border border-border bg-surface px-3 py-2"
+                message.isAi
+                  ? "mr-auto max-w-[92%] rounded-2xl rounded-bl-md border border-primary/30 bg-primary/5 px-3 py-2"
+                  : message.isMine
+                    ? "ml-auto max-w-[86%] rounded-2xl rounded-br-md bg-secondary px-3 py-2 text-secondary-foreground"
+                    : "mr-auto max-w-[86%] rounded-2xl rounded-bl-md border border-border bg-surface px-3 py-2"
               }
             >
-              {!message.isMine ? (
+              {message.isAi ? (
+                <p className="flex items-center gap-1.5 text-xs font-medium text-primary">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  {t("m.ai.chat.aiLabel")}
+                </p>
+              ) : !message.isMine ? (
                 <p className="text-xs font-medium text-muted-foreground">{message.authorName}</p>
               ) : null}
               <p className="whitespace-pre-wrap break-words text-sm leading-6">{message.body}</p>
