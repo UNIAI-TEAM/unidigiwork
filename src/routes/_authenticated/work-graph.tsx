@@ -88,21 +88,26 @@ function WorkGraphTaskMessageForm({ taskId }: { taskId: string }) {
     enabled: permissions.data?.canMessageTeam === true,
   });
   const send = useMutation({
-    mutationFn: () =>
-      sendTaskMessage({
+    mutationFn: async () => {
+      const text = body.trim();
+      const comment = await sendTaskMessage({
         data: {
           taskId,
           recipientId,
-          body: body.trim(),
+          body: text,
           source: "TASK_CHAT",
           idempotencyKey: crypto.randomUUID(),
         },
-      }),
+      });
+      await postTaskRoomMessage({ data: { taskId, body: text } });
+      return comment;
+    },
     onSuccess: async () => {
       setBody("");
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["work-graph-board"] }),
         queryClient.invalidateQueries({ queryKey: ["task-chat-detail", taskId] }),
+        queryClient.invalidateQueries({ queryKey: ["task-room-chat"] }),
         queryClient.invalidateQueries({ queryKey: ["notifications"] }),
       ]);
       toast.success(t("wg.messageSent"));
