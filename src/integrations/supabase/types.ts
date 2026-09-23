@@ -11043,6 +11043,53 @@ export type Database = {
           conversation_id: string
         }[]
       }
+      list_task_following_page: {
+        Args: {
+          _following?: boolean
+          _limit?: number
+          _offset?: number
+          _search?: string
+          _statuses?: string[]
+          _tenant_id: string
+        }
+        Returns: {
+          due_at: string
+          follower_count: number
+          following: boolean
+          id: string
+          priority: string
+          status: string
+          title: string
+          total_count: number
+          updated_at: string
+          workspace_id: string
+          workspace_name: string
+        }[]
+      }
+      list_task_following_page_v2: {
+        Args: {
+          _following?: boolean
+          _limit?: number
+          _offset?: number
+          _search?: string
+          _statuses?: string[]
+          _tenant_id: string
+        }
+        Returns: {
+          assignee_id: string
+          due_at: string
+          follower_count: number
+          following: boolean
+          id: string
+          priority: string
+          status: string
+          title: string
+          total_count: number
+          updated_at: string
+          workspace_id: string
+          workspace_name: string
+        }[]
+      }
       list_task_message_recipients: {
         Args: { _task_id: string }
         Returns: {

@@ -104,6 +104,7 @@ export function MobileTaskDetail({ id }: { id: string }) {
     mutationFn: (value: boolean) => toggleTaskFollow({ data: { taskId: id, follow: value } }),
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["task-follow", id] });
+      await qc.invalidateQueries({ queryKey: ["task-following"] });
     },
     onError: notifyError,
   });

@@ -127,3 +127,9 @@
 - [x] Tối giản danh sách Gần đây, bỏ dòng mô tả phụ dưới tiêu đề.
 - [x] Làm mới Tìm kiếm thành màn tìm hội thoại theo kiểu ChatGPT.
 - [x] Kiểm tra menu và tìm kiếm ở 390/440/820px.
+
+## PWA — Đăng ký theo dõi công việc
+
+- [ ] Thêm trang mobile-native riêng để xem việc đang theo dõi và khám phá công việc.
+- [ ] Thêm tìm kiếm, lọc trạng thái, phân trang và đăng ký/bỏ theo dõi trực tiếp.
+- [ ] Thêm lối mở trong menu PWA và kiểm tra dữ liệu thật ở 390/440/820px.

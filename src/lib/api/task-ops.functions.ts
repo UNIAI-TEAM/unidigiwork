@@ -40,6 +40,28 @@ export type TaskOpsBoard = {
   pageSize: number;
 };
 
+export type TaskFollowingItem = {
+  id: string;
+  title: string;
+  status: string;
+  priority: string;
+  workspaceId: string;
+  workspaceName: string;
+  dueAt: string | null;
+  updatedAt: string | null;
+  following: boolean;
+  followerCount: number;
+  assigneeName: string | null;
+};
+
+export type TaskFollowingPage = {
+  tenantId: string | null;
+  tasks: TaskFollowingItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+};
+
 export const TASK_OPS_STATUSES = ["todo", "in_progress", "blocked", "done", "canceled"] as const;
 
 type Ctx = { supabase: any; userId: string };
@@ -56,6 +78,90 @@ async function resolveTenant(ctx: Ctx): Promise<string | null> {
   const hint = getCookie(ACTIVE_TENANT_COOKIE);
   return (hint && rows.find((r) => r.tenant_id === hint)?.tenant_id) || rows[0].tenant_id;
 }
+
+/** Danh sách công việc có thể theo dõi, đã lọc quyền và gom trạng thái theo dõi theo lô. */
+export const listTaskFollowingPage = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        following: z.boolean().nullable().default(null),
+        statuses: z.array(z.enum(TASK_OPS_STATUSES)).default([]),
+        search: z.string().max(200).default(""),
+        page: z.number().int().min(1).default(1),
+        pageSize: z.number().int().min(10).max(100).default(25),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }): Promise<TaskFollowingPage> => {
+    const ctx = context as unknown as Ctx;
+    const tenantId = await resolveTenant(ctx);
+    const empty = { tenantId, tasks: [], total: 0, page: data.page, pageSize: data.pageSize };
+    if (!tenantId) return empty;
+
+    const { data: rows, error } = await ctx.supabase.rpc("list_task_following_page_v2", {
+      _tenant_id: tenantId,
+      _following: data.following,
+      _statuses: data.statuses,
+      _search: data.search || null,
+      _limit: data.pageSize,
+      _offset: (data.page - 1) * data.pageSize,
+    });
+    if (error) mapPgError(error, "TENANT_ACCESS_DENIED");
+    const tasks = (rows ?? []) as Array<{
+      id: string;
+      title: string;
+      status: string;
+      priority: string;
+      workspace_id: string;
+      workspace_name: string;
+      due_at: string | null;
+      updated_at: string | null;
+      following: boolean;
+      follower_count: number;
+      assignee_id: string | null;
+      total_count: number;
+    }>;
+    if (tasks.length === 0) return empty;
+
+    const assigneeIds = new Set(tasks.map((task) => task.assignee_id).filter(Boolean) as string[]);
+    const names = new Map<string, string>();
+    if (assigneeIds.size > 0) {
+      const { data: profiles, error: profileError } = await ctx.supabase.rpc(
+        "list_tenant_member_profiles",
+        { _tenant_id: tenantId },
+      );
+      if (profileError) mapPgError(profileError);
+      for (const profile of (profiles ?? []) as Array<{
+        id: string;
+        display_name: string | null;
+        primary_email: string | null;
+      }>) {
+        if (assigneeIds.has(profile.id)) {
+          names.set(profile.id, profile.display_name || profile.primary_email || "—");
+        }
+      }
+    }
+    return {
+      tenantId,
+      total: Number(tasks[0]?.total_count ?? 0),
+      page: data.page,
+      pageSize: data.pageSize,
+      tasks: tasks.map((task) => ({
+        id: task.id,
+        title: task.title,
+        status: task.status,
+        priority: task.priority,
+        workspaceId: task.workspace_id,
+        workspaceName: task.workspace_name,
+        dueAt: task.due_at,
+        updatedAt: task.updated_at,
+        following: task.following,
+        followerCount: Number(task.follower_count),
+        assigneeName: task.assignee_id ? (names.get(task.assignee_id) ?? "—") : null,
+      })),
+    };
+  });
 
 /** Danh sách công việc đang chạy của tổ chức + người phụ trách + số liên kết Work Graph. */
 export const listTaskOpsBoard = createServerFn({ method: "GET" })
