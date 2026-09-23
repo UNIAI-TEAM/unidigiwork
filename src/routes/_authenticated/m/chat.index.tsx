@@ -1,14 +1,16 @@
 // Danh sách phòng trò chuyện của tổ chức đang hoạt động (mobile-native, API thật, RLS).
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
-import { Hash, Lock, MessageSquare, Search, User, Video, X } from "lucide-react";
+import { Hash, Lock, MessageSquare, Search, User, Users, Video, X } from "lucide-react";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MobileListItem } from "@/components/mobile/mobile-list-item";
-import { listChatChannels } from "@/lib/api/chat.functions";
+import { ensureTenantGeneralChannel, listChatChannels } from "@/lib/api/chat.functions";
 import { fmt } from "@/lib/i18n-interpolate";
 import { localeTag, useI18n } from "@/lib/i18n";
 
