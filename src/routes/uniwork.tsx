@@ -17,12 +17,12 @@ import { PublicShell } from "@/components/public-shell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ConsultationForm } from "@/components/marketing/consultation-form";
-import { listPublishedCms } from "@/lib/api/cms.functions";
+import { listPublishedCms, type CmsEntry } from "@/lib/api/cms.functions";
 import { useI18n } from "@/lib/i18n";
 import { mk } from "@/lib/i18n-locales/marketing";
 import kol from "@/assets/uniwork-kol.png.asset.json";
 
-const cmsQuery = (kind: "service" | "pricing" | "article") =>
+const cmsQuery = (kind: "service" | "pricing" | "article" | "plan") =>
   queryOptions({
     queryKey: ["cms-public", kind],
     queryFn: () => listPublishedCms({ data: { kind, limit: 12 } }),
@@ -52,6 +52,7 @@ export const Route = createFileRoute("/uniwork")({
       context.queryClient.ensureQueryData(cmsQuery("service")),
       context.queryClient.ensureQueryData(cmsQuery("pricing")),
       context.queryClient.ensureQueryData(cmsQuery("article")),
+      context.queryClient.ensureQueryData(cmsQuery("plan")),
     ]);
   },
   errorComponent: () => (
@@ -76,6 +77,7 @@ function UniworkHome() {
   const { data: services } = useSuspenseQuery(cmsQuery("service"));
   const { data: pricing } = useSuspenseQuery(cmsQuery("pricing"));
   const { data: articles } = useSuspenseQuery(cmsQuery("article"));
+  const { data: plans } = useSuspenseQuery(cmsQuery("plan"));
 
   return (
     <PublicShell>
@@ -208,47 +210,11 @@ function UniworkHome() {
           </ol>
         </section>
 
-        {/* Pricing from CMS */}
+        {plans.length > 0 && (
+          <PriceGrid title={c.plansTitle} items={plans} popular={c.popular} choose={c.choose} />
+        )}
         {pricing.length > 0 && (
-          <section className="bg-muted/30">
-            <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 md:py-16">
-              <h2 className="text-2xl font-semibold tracking-tight md:text-3xl">
-                {c.pricingTitle}
-              </h2>
-              <div className="mt-8 grid gap-4 md:grid-cols-3">
-                {pricing.map((p) => {
-                  const featured = !!p.data.featured;
-                  return (
-                    <div
-                      key={p.id}
-                      className={`flex flex-col rounded-2xl border bg-card p-6 shadow-sm ${featured ? "border-primary" : "border-border"}`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-lg font-semibold">{p.title}</h3>
-                        {featured && <Badge>{c.popular}</Badge>}
-                      </div>
-                      <p className="text-sm text-muted-foreground">{p.summary}</p>
-                      <p className="mt-4 text-2xl font-bold">{String(p.data.price ?? "")}</p>
-                      <ul className="mt-4 flex-1 space-y-2 text-sm">
-                        {((p.data.features as string[] | undefined) ?? []).map((f) => (
-                          <li key={f} className="flex gap-2">
-                            <Check className="h-4 w-4 shrink-0 text-primary" /> {f}
-                          </li>
-                        ))}
-                      </ul>
-                      <Button
-                        asChild
-                        variant={featured ? "default" : "outline"}
-                        className="mt-6 h-11"
-                      >
-                        <a href="#tu-van">{c.choose}</a>
-                      </Button>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </section>
+          <PriceGrid title={c.pricingTitle} items={pricing} popular={c.popular} choose={c.choose} />
         )}
 
         {/* Resources */}
@@ -300,5 +266,61 @@ function UniworkHome() {
         </section>
       </main>
     </PublicShell>
+  );
+}
+
+function PriceGrid({
+  title,
+  items,
+  popular,
+  choose,
+}: {
+  title: string;
+  items: CmsEntry[];
+  popular: string;
+  choose: string;
+}) {
+  return (
+    <section className="bg-muted/30">
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 md:py-16">
+        <h2 className="text-2xl font-semibold tracking-tight md:text-3xl">{title}</h2>
+        <div className="mt-8 grid gap-4 md:grid-cols-3">
+          {items.map((p) => {
+            const featured = !!p.data.featured;
+            return (
+              <div
+                key={p.id}
+                className={`flex flex-col rounded-2xl border bg-card p-6 shadow-sm ${featured ? "border-primary" : "border-border"}`}
+              >
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-semibold">{p.title}</h3>
+                  {featured && <Badge>{popular}</Badge>}
+                </div>
+                <p className="text-sm text-muted-foreground">{p.summary}</p>
+                <p className="mt-4 text-2xl font-bold">
+                  {String(p.data.price ?? "")}
+                  {p.data.period ? (
+                    <span className="text-sm font-normal text-muted-foreground">
+                      {" "}
+                      {String(p.data.period)}
+                    </span>
+                  ) : null}
+                </p>
+                <ul className="mt-4 flex-1 space-y-2 text-sm">
+                  {((p.data.features as string[] | undefined) ?? []).map((f) => (
+                    <li key={f} className="flex gap-2">
+                      <Check className="h-4 w-4 shrink-0 text-primary" /> {f}
+                    </li>
+                  ))}
+                </ul>
+                <Button asChild variant={featured ? "default" : "outline"} className="mt-6 h-11">
+                  <a href="#tu-van">{p.data.cta ? String(p.data.cta) : choose}</a>
+                </Button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
   );
 }

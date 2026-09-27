@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { PublicShell } from "@/components/public-shell";
 import { Button } from "@/components/ui/button";
+import { Markdown } from "@/components/marketing/markdown";
 import { ConsultationForm } from "@/components/marketing/consultation-form";
 import { listPublishedCms } from "@/lib/api/cms.functions";
 import { useI18n } from "@/lib/i18n";
@@ -40,10 +41,11 @@ export const Route = createFileRoute("/dich-vu/$slug")({
         ],
       };
     }
-    const description = loaderData.service.summary ?? loaderData.service.title;
+    const sv = loaderData.service;
+    const description = sv.seoDescription || sv.summary || sv.title;
     return {
       meta: [
-        { title: `${loaderData.service.title} — Dịch vụ UniWork` },
+        { title: sv.seoTitle || `${sv.title} — Dịch vụ UniWork` },
         { name: "description", content: description },
         { property: "og:title", content: `${loaderData.service.title} — UniWork` },
         { property: "og:description", content: description },
@@ -103,9 +105,10 @@ function ServiceDetailPage() {
                 <p className="text-xs font-semibold uppercase tracking-widest text-primary">
                   {c.servicePages.uniworkConnection}
                 </p>
-                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                  {service.body}
-                </p>
+                <Markdown
+                  source={service.body ?? ""}
+                  className="mt-3 text-sm text-muted-foreground"
+                />
               </div>
             </div>
           </div>
