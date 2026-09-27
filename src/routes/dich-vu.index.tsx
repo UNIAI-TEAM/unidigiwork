@@ -23,7 +23,7 @@ const servicesQuery = queryOptions({
   staleTime: 60_000,
 });
 
-export const Route = createFileRoute("/dich-vu")({
+export const Route = createFileRoute("/dich-vu/")({
   head: () => ({
     meta: [
       { title: "Dịch vụ doanh nghiệp — UniWork" },
