@@ -1930,6 +1930,132 @@ export type Database = {
           },
         ]
       }
+      commitment_events: {
+        Row: {
+          actor_id: string | null
+          commitment_id: string
+          created_at: string
+          event_type: string
+          from_status: string | null
+          id: string
+          note: string | null
+          tenant_id: string
+          to_status: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          commitment_id: string
+          created_at?: string
+          event_type: string
+          from_status?: string | null
+          id?: string
+          note?: string | null
+          tenant_id: string
+          to_status?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          commitment_id?: string
+          created_at?: string
+          event_type?: string
+          from_status?: string | null
+          id?: string
+          note?: string | null
+          tenant_id?: string
+          to_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commitment_events_commitment_id_fkey"
+            columns: ["commitment_id"]
+            isOneToOne: false
+            referencedRelation: "commitments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commitment_events_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commitments: {
+        Row: {
+          counterparty: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_at: string | null
+          id: string
+          owner_id: string | null
+          row_version: number
+          source_excerpt: string | null
+          source_id: string | null
+          source_type: string | null
+          status: string
+          tenant_id: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          counterparty?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_at?: string | null
+          id?: string
+          owner_id?: string | null
+          row_version?: number
+          source_excerpt?: string | null
+          source_id?: string | null
+          source_type?: string | null
+          status?: string
+          tenant_id: string
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          counterparty?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_at?: string | null
+          id?: string
+          owner_id?: string | null
+          row_version?: number
+          source_excerpt?: string | null
+          source_id?: string | null
+          source_type?: string | null
+          status?: string
+          tenant_id?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commitments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commitments_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversation_import_messages: {
         Row: {
           attachments: Json
@@ -10109,6 +10235,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      add_commitment_note: {
+        Args: { _commitment_id: string; _note: string }
+        Returns: string
+      }
       advance_workflow_step: {
         Args: {
           _correlation_id?: string
@@ -10884,6 +11014,21 @@ export type Database = {
       create_chat_mention_notifications: {
         Args: { _message_id: string; _user_ids: string[] }
         Returns: number
+      }
+      create_commitment: {
+        Args: {
+          _counterparty?: string
+          _description?: string
+          _due_at?: string
+          _idempotency_key?: string
+          _owner_id?: string
+          _source_excerpt?: string
+          _source_id?: string
+          _source_type?: string
+          _title: string
+          _workspace_id: string
+        }
+        Returns: string
       }
       create_conversation_import: {
         Args: {
@@ -11739,6 +11884,41 @@ export type Database = {
           _target_type: string
         }
         Returns: Json
+      }
+      list_commitment_events: {
+        Args: { _commitment_id: string }
+        Returns: {
+          actor_id: string
+          created_at: string
+          event_type: string
+          from_status: string
+          id: string
+          note: string
+          to_status: string
+        }[]
+      }
+      list_commitments: {
+        Args: {
+          _limit?: number
+          _offset?: number
+          _owner_id?: string
+          _status?: string
+        }
+        Returns: {
+          counterparty: string
+          created_at: string
+          description: string
+          due_at: string
+          id: string
+          owner_id: string
+          source_excerpt: string
+          source_id: string
+          source_type: string
+          status: string
+          title: string
+          updated_at: string
+          workspace_id: string
+        }[]
       }
       list_meeting_guests: { Args: { _meeting_id: string }; Returns: Json }
       list_task_classification_candidates: {
@@ -12866,6 +13046,10 @@ export type Database = {
       set_chat_message_pin: {
         Args: { _message_id: string; _pinned: boolean }
         Returns: boolean
+      }
+      set_commitment_status: {
+        Args: { _commitment_id: string; _note?: string; _status: string }
+        Returns: undefined
       }
       set_human_agent_role_policy: {
         Args: { _can_receive_tasks: boolean; _role: string; _tenant_id: string }
