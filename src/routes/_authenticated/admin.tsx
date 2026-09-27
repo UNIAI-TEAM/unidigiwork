@@ -2,6 +2,7 @@ import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-r
 import { useI18n, type Key } from "@/lib/i18n";
 import { useState } from "react";
 import {
+  Globe,
   LayoutGrid,
   ShieldCheck,
   Users,
@@ -44,6 +45,7 @@ const TABS = [
   { to: "/admin/plans" as const, label: "adm.tab.plans", icon: CreditCard },
   { to: "/admin/knowledge" as const, label: "Knowledge", icon: BookOpen },
   { to: "/admin/leads" as const, label: "adm.tab.leads", icon: Inbox },
+  { to: "/admin/cms" as const, label: "cms.tab", icon: Globe },
   { to: "/admin/quota" as const, label: "Quota", icon: Activity },
   { to: "/admin/ai-context" as const, label: "Context Budget", icon: Gauge },
   { to: "/admin/ai-actions" as const, label: "AI Action", icon: Bot },

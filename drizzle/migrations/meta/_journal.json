@@ -484,6 +484,20 @@
       "when": 1790482849378,
       "tag": "0068_conversation_import_viewers",
       "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1790483475135,
+      "tag": "0069_website_cms",
+      "breakpoints": true
+    },
+    {
+      "idx": 70,
+      "version": "7",
+      "when": 1790484015786,
+      "tag": "0070_cms_entries_anon_read_fix",
+      "breakpoints": true
     }
   ]
 }

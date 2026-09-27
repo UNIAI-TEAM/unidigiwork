@@ -11,6 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WorkflowsRouteImport } from './routes/workflows'
 import { Route as WelcomeRouteImport } from './routes/welcome'
+import { Route as UniworkRouteImport } from './routes/uniwork'
+import { Route as UniofficeRouteImport } from './routes/unioffice'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TasksRouteImport } from './routes/tasks'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
@@ -148,6 +150,7 @@ import { Route as AuthenticatedAdminKnowledgeRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminEconomicsRouteImport } from './routes/_authenticated/admin.economics'
 import { Route as AuthenticatedAdminDocumentAccessRouteImport } from './routes/_authenticated/admin.document-access'
 import { Route as AuthenticatedAdminCohortsRouteImport } from './routes/_authenticated/admin.cohorts'
+import { Route as AuthenticatedAdminCmsRouteImport } from './routes/_authenticated/admin.cms'
 import { Route as AuthenticatedAdminBackupRouteImport } from './routes/_authenticated/admin.backup'
 import { Route as AuthenticatedAdminAiContextRouteImport } from './routes/_authenticated/admin.ai-context'
 import { Route as AuthenticatedAdminAiActionsRouteImport } from './routes/_authenticated/admin.ai-actions'
@@ -215,6 +218,16 @@ const WorkflowsRoute = WorkflowsRouteImport.update({
 const WelcomeRoute = WelcomeRouteImport.update({
   id: '/welcome',
   path: '/welcome',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UniworkRoute = UniworkRouteImport.update({
+  id: '/uniwork',
+  path: '/uniwork',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UniofficeRoute = UniofficeRouteImport.update({
+  id: '/unioffice',
+  path: '/unioffice',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TermsRoute = TermsRouteImport.update({
@@ -947,6 +960,11 @@ const AuthenticatedAdminCohortsRoute =
     path: '/cohorts',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminCmsRoute = AuthenticatedAdminCmsRouteImport.update({
+  id: '/cms',
+  path: '/cms',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 const AuthenticatedAdminBackupRoute =
   AuthenticatedAdminBackupRouteImport.update({
     id: '/backup',
@@ -1300,6 +1318,8 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/tasks': typeof TasksRoute
   '/terms': typeof TermsRoute
+  '/unioffice': typeof UniofficeRoute
+  '/uniwork': typeof UniworkRoute
   '/welcome': typeof WelcomeRoute
   '/workflows': typeof WorkflowsRouteWithChildren
   '/admin': typeof AuthenticatedAdminRouteWithChildren
@@ -1351,6 +1371,7 @@ export interface FileRoutesByFullPath {
   '/admin/ai-actions': typeof AuthenticatedAdminAiActionsRoute
   '/admin/ai-context': typeof AuthenticatedAdminAiContextRoute
   '/admin/backup': typeof AuthenticatedAdminBackupRoute
+  '/admin/cms': typeof AuthenticatedAdminCmsRoute
   '/admin/cohorts': typeof AuthenticatedAdminCohortsRoute
   '/admin/document-access': typeof AuthenticatedAdminDocumentAccessRoute
   '/admin/economics': typeof AuthenticatedAdminEconomicsRoute
@@ -1497,6 +1518,8 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/tasks': typeof TasksRoute
   '/terms': typeof TermsRoute
+  '/unioffice': typeof UniofficeRoute
+  '/uniwork': typeof UniworkRoute
   '/welcome': typeof WelcomeRoute
   '/workflows': typeof WorkflowsRouteWithChildren
   '/ai-brain': typeof AuthenticatedAiBrainRoute
@@ -1545,6 +1568,7 @@ export interface FileRoutesByTo {
   '/admin/ai-actions': typeof AuthenticatedAdminAiActionsRoute
   '/admin/ai-context': typeof AuthenticatedAdminAiContextRoute
   '/admin/backup': typeof AuthenticatedAdminBackupRoute
+  '/admin/cms': typeof AuthenticatedAdminCmsRoute
   '/admin/cohorts': typeof AuthenticatedAdminCohortsRoute
   '/admin/document-access': typeof AuthenticatedAdminDocumentAccessRoute
   '/admin/economics': typeof AuthenticatedAdminEconomicsRoute
@@ -1693,6 +1717,8 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/tasks': typeof TasksRoute
   '/terms': typeof TermsRoute
+  '/unioffice': typeof UniofficeRoute
+  '/uniwork': typeof UniworkRoute
   '/welcome': typeof WelcomeRoute
   '/workflows': typeof WorkflowsRouteWithChildren
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
@@ -1744,6 +1770,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/ai-actions': typeof AuthenticatedAdminAiActionsRoute
   '/_authenticated/admin/ai-context': typeof AuthenticatedAdminAiContextRoute
   '/_authenticated/admin/backup': typeof AuthenticatedAdminBackupRoute
+  '/_authenticated/admin/cms': typeof AuthenticatedAdminCmsRoute
   '/_authenticated/admin/cohorts': typeof AuthenticatedAdminCohortsRoute
   '/_authenticated/admin/document-access': typeof AuthenticatedAdminDocumentAccessRoute
   '/_authenticated/admin/economics': typeof AuthenticatedAdminEconomicsRoute
@@ -1893,6 +1920,8 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/tasks'
     | '/terms'
+    | '/unioffice'
+    | '/uniwork'
     | '/welcome'
     | '/workflows'
     | '/admin'
@@ -1944,6 +1973,7 @@ export interface FileRouteTypes {
     | '/admin/ai-actions'
     | '/admin/ai-context'
     | '/admin/backup'
+    | '/admin/cms'
     | '/admin/cohorts'
     | '/admin/document-access'
     | '/admin/economics'
@@ -2090,6 +2120,8 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/tasks'
     | '/terms'
+    | '/unioffice'
+    | '/uniwork'
     | '/welcome'
     | '/workflows'
     | '/ai-brain'
@@ -2138,6 +2170,7 @@ export interface FileRouteTypes {
     | '/admin/ai-actions'
     | '/admin/ai-context'
     | '/admin/backup'
+    | '/admin/cms'
     | '/admin/cohorts'
     | '/admin/document-access'
     | '/admin/economics'
@@ -2285,6 +2318,8 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/tasks'
     | '/terms'
+    | '/unioffice'
+    | '/uniwork'
     | '/welcome'
     | '/workflows'
     | '/_authenticated/admin'
@@ -2336,6 +2371,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/ai-actions'
     | '/_authenticated/admin/ai-context'
     | '/_authenticated/admin/backup'
+    | '/_authenticated/admin/cms'
     | '/_authenticated/admin/cohorts'
     | '/_authenticated/admin/document-access'
     | '/_authenticated/admin/economics'
@@ -2485,6 +2521,8 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   TasksRoute: typeof TasksRoute
   TermsRoute: typeof TermsRoute
+  UniofficeRoute: typeof UniofficeRoute
+  UniworkRoute: typeof UniworkRoute
   WelcomeRoute: typeof WelcomeRoute
   WorkflowsRoute: typeof WorkflowsRouteWithChildren
   InviteTokenRoute: typeof InviteTokenRoute
@@ -2531,6 +2569,20 @@ declare module '@tanstack/react-router' {
       path: '/welcome'
       fullPath: '/welcome'
       preLoaderRoute: typeof WelcomeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/uniwork': {
+      id: '/uniwork'
+      path: '/uniwork'
+      fullPath: '/uniwork'
+      preLoaderRoute: typeof UniworkRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/unioffice': {
+      id: '/unioffice'
+      path: '/unioffice'
+      fullPath: '/unioffice'
+      preLoaderRoute: typeof UniofficeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/terms': {
@@ -3492,6 +3544,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminCohortsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/cms': {
+      id: '/_authenticated/admin/cms'
+      path: '/cms'
+      fullPath: '/admin/cms'
+      preLoaderRoute: typeof AuthenticatedAdminCmsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/backup': {
       id: '/_authenticated/admin/backup'
       path: '/backup'
@@ -3921,6 +3980,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminAiActionsRoute: typeof AuthenticatedAdminAiActionsRoute
   AuthenticatedAdminAiContextRoute: typeof AuthenticatedAdminAiContextRoute
   AuthenticatedAdminBackupRoute: typeof AuthenticatedAdminBackupRoute
+  AuthenticatedAdminCmsRoute: typeof AuthenticatedAdminCmsRoute
   AuthenticatedAdminCohortsRoute: typeof AuthenticatedAdminCohortsRoute
   AuthenticatedAdminDocumentAccessRoute: typeof AuthenticatedAdminDocumentAccessRoute
   AuthenticatedAdminEconomicsRoute: typeof AuthenticatedAdminEconomicsRoute
@@ -3944,6 +4004,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminAiActionsRoute: AuthenticatedAdminAiActionsRoute,
   AuthenticatedAdminAiContextRoute: AuthenticatedAdminAiContextRoute,
   AuthenticatedAdminBackupRoute: AuthenticatedAdminBackupRoute,
+  AuthenticatedAdminCmsRoute: AuthenticatedAdminCmsRoute,
   AuthenticatedAdminCohortsRoute: AuthenticatedAdminCohortsRoute,
   AuthenticatedAdminDocumentAccessRoute: AuthenticatedAdminDocumentAccessRoute,
   AuthenticatedAdminEconomicsRoute: AuthenticatedAdminEconomicsRoute,
@@ -4410,6 +4471,8 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   TasksRoute: TasksRoute,
   TermsRoute: TermsRoute,
+  UniofficeRoute: UniofficeRoute,
+  UniworkRoute: UniworkRoute,
   WelcomeRoute: WelcomeRoute,
   WorkflowsRoute: WorkflowsRouteWithChildren,
   InviteTokenRoute: InviteTokenRoute,

@@ -1930,6 +1930,78 @@ export type Database = {
           },
         ]
       }
+      cms_entries: {
+        Row: {
+          body: string | null
+          created_at: string
+          created_by: string | null
+          data: Json
+          id: string
+          kind: string
+          row_version: number
+          slug: string
+          sort_order: number
+          status: string
+          summary: string | null
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          created_by?: string | null
+          data?: Json
+          id?: string
+          kind: string
+          row_version?: number
+          slug: string
+          sort_order?: number
+          status?: string
+          summary?: string | null
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          created_by?: string | null
+          data?: Json
+          id?: string
+          kind?: string
+          row_version?: number
+          slug?: string
+          sort_order?: number
+          status?: string
+          summary?: string | null
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      cms_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       commitment_events: {
         Row: {
           actor_id: string | null
@@ -13621,6 +13693,17 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      submit_consultation_request: {
+        Args: {
+          _company: string
+          _email: string
+          _message: string
+          _name: string
+          _phone: string
+          _service: string
+        }
+        Returns: Json
       }
       swp2_assert_admin_read: { Args: never; Returns: undefined }
       swp2_assert_admin_write: { Args: never; Returns: undefined }
