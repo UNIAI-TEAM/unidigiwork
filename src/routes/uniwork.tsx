@@ -183,6 +183,11 @@ function UniworkHome() {
                         {s.body}
                       </p>
                     )}
+                    <Button asChild variant="outline" className="mt-5 h-11 justify-between">
+                      <Link to="/dich-vu/$slug" params={{ slug: s.slug }}>
+                        {c.servicePages.viewDetail} <ArrowRight className="h-4 w-4" />
+                      </Link>
+                    </Button>
                   </article>
                 );
               })}

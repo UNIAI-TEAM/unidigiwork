@@ -140,6 +140,6 @@
 
 ## Website dịch vụ doanh nghiệp
 
-- [ ] Tạo trang danh mục `/dich-vu` từ nội dung CMS đã xuất bản.
-- [ ] Tạo 5 trang chi tiết dịch vụ theo slug, có quy trình, phạm vi, tích hợp UniWork và biểu mẫu tư vấn.
-- [ ] Nối thẻ dịch vụ trên `/uniwork` tới trang chi tiết; bổ sung SEO và kiểm tra mobile/tablet/desktop.
+- [x] Tạo trang danh mục `/dich-vu` từ nội dung CMS đã xuất bản.
+- [x] Tạo 5 trang chi tiết dịch vụ theo slug, có quy trình, phạm vi, tích hợp UniWork và biểu mẫu tư vấn.
+- [x] Nối thẻ dịch vụ trên `/uniwork` tới trang chi tiết; bổ sung SEO và kiểm tra mobile/tablet/desktop.

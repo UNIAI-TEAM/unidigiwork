@@ -15,12 +15,20 @@ export function PublicShell({ children, active }: { children: ReactNode; active?
   );
 }
 
-export type PublicNav = "pricing" | "about" | "contact" | "blog" | "uniwork" | "unioffice";
+export type PublicNav =
+  | "pricing"
+  | "about"
+  | "contact"
+  | "blog"
+  | "uniwork"
+  | "unioffice"
+  | "services";
 
 function PublicHeader({ active }: { active?: PublicNav }) {
   const { t } = useI18n();
   const items: { key: PublicNav; label: string; to: string }[] = [
     { key: "uniwork", label: "UniWork", to: "/uniwork" },
+    { key: "services", label: "Dịch vụ", to: "/dich-vu" },
     { key: "unioffice", label: "uniOffice", to: "/unioffice" },
     { key: "pricing", label: "Bảng giá", to: "/pricing" },
     { key: "about", label: "Giới thiệu", to: "/about" },
@@ -90,6 +98,7 @@ function PublicFooter() {
         <FooterCol
           title="Sản phẩm"
           items={[
+            { label: "Dịch vụ doanh nghiệp", to: "/dich-vu" },
             { label: "Bảng giá", to: "/pricing" },
             { label: "Demo Meeting", to: "/meeting" },
             { label: "Tài liệu", to: "/documents" },

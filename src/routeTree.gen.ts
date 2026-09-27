@@ -22,6 +22,7 @@ import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as MeetingRouteImport } from './routes/meeting'
 import { Route as KnowledgeRouteImport } from './routes/knowledge'
+import { Route as DichVuRouteImport } from './routes/dich-vu'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as BlogRouteImport } from './routes/blog'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -30,6 +31,7 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ReportsIndexRouteImport } from './routes/reports.index'
+import { Route as DichVuIndexRouteImport } from './routes/dich-vu.index'
 import { Route as WorkflowsRunsRouteImport } from './routes/workflows_.runs'
 import { Route as WorkflowsPermissionsRouteImport } from './routes/workflows_.permissions'
 import { Route as WorkflowsCalendarRouteImport } from './routes/workflows_.calendar'
@@ -42,6 +44,7 @@ import { Route as MeetingHistoryRouteImport } from './routes/meeting_.history'
 import { Route as MeetingIdRouteImport } from './routes/meeting_.$id'
 import { Route as KnowledgeSlugRouteImport } from './routes/knowledge.$slug'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
+import { Route as DichVuSlugRouteImport } from './routes/dich-vu.$slug'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as AuthenticatedWorkProductsRouteImport } from './routes/_authenticated/work-products'
 import { Route as AuthenticatedWorkGraphRouteImport } from './routes/_authenticated/work-graph'
@@ -275,6 +278,11 @@ const KnowledgeRoute = KnowledgeRouteImport.update({
   path: '/knowledge',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DichVuRoute = DichVuRouteImport.update({
+  id: '/dich-vu',
+  path: '/dich-vu',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
@@ -313,6 +321,11 @@ const ReportsIndexRoute = ReportsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => ReportsRoute,
+} as any)
+const DichVuIndexRoute = DichVuIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DichVuRoute,
 } as any)
 const WorkflowsRunsRoute = WorkflowsRunsRouteImport.update({
   id: '/workflows_/runs',
@@ -373,6 +386,11 @@ const InviteTokenRoute = InviteTokenRouteImport.update({
   id: '/invite/$token',
   path: '/invite/$token',
   getParentRoute: () => rootRouteImport,
+} as any)
+const DichVuSlugRoute = DichVuSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => DichVuRoute,
 } as any)
 const BlogSlugRoute = BlogSlugRouteImport.update({
   id: '/$slug',
@@ -1309,6 +1327,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/blog': typeof BlogRouteWithChildren
   '/contact': typeof ContactRoute
+  '/dich-vu': typeof DichVuRouteWithChildren
   '/knowledge': typeof KnowledgeRouteWithChildren
   '/meeting': typeof MeetingRoute
   '/onboarding': typeof OnboardingRoute
@@ -1354,6 +1373,7 @@ export interface FileRoutesByFullPath {
   '/work-graph': typeof AuthenticatedWorkGraphRoute
   '/work-products': typeof AuthenticatedWorkProductsRoute
   '/blog/$slug': typeof BlogSlugRoute
+  '/dich-vu/$slug': typeof DichVuSlugRoute
   '/invite/$token': typeof InviteTokenRoute
   '/knowledge/$slug': typeof KnowledgeSlugRoute
   '/meeting/$id': typeof MeetingIdRoute
@@ -1366,6 +1386,7 @@ export interface FileRoutesByFullPath {
   '/workflows/calendar': typeof WorkflowsCalendarRoute
   '/workflows/permissions': typeof WorkflowsPermissionsRoute
   '/workflows/runs': typeof WorkflowsRunsRoute
+  '/dich-vu/': typeof DichVuIndexRoute
   '/reports/': typeof ReportsIndexRoute
   '/admin/accounts': typeof AuthenticatedAdminAccountsRoute
   '/admin/ai-actions': typeof AuthenticatedAdminAiActionsRoute
@@ -1551,6 +1572,7 @@ export interface FileRoutesByTo {
   '/work-graph': typeof AuthenticatedWorkGraphRoute
   '/work-products': typeof AuthenticatedWorkProductsRoute
   '/blog/$slug': typeof BlogSlugRoute
+  '/dich-vu/$slug': typeof DichVuSlugRoute
   '/invite/$token': typeof InviteTokenRoute
   '/knowledge/$slug': typeof KnowledgeSlugRoute
   '/meeting/$id': typeof MeetingIdRoute
@@ -1563,6 +1585,7 @@ export interface FileRoutesByTo {
   '/workflows/calendar': typeof WorkflowsCalendarRoute
   '/workflows/permissions': typeof WorkflowsPermissionsRoute
   '/workflows/runs': typeof WorkflowsRunsRoute
+  '/dich-vu': typeof DichVuIndexRoute
   '/reports': typeof ReportsIndexRoute
   '/admin/accounts': typeof AuthenticatedAdminAccountsRoute
   '/admin/ai-actions': typeof AuthenticatedAdminAiActionsRoute
@@ -1708,6 +1731,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/blog': typeof BlogRouteWithChildren
   '/contact': typeof ContactRoute
+  '/dich-vu': typeof DichVuRouteWithChildren
   '/knowledge': typeof KnowledgeRouteWithChildren
   '/meeting': typeof MeetingRoute
   '/onboarding': typeof OnboardingRoute
@@ -1753,6 +1777,7 @@ export interface FileRoutesById {
   '/_authenticated/work-graph': typeof AuthenticatedWorkGraphRoute
   '/_authenticated/work-products': typeof AuthenticatedWorkProductsRoute
   '/blog/$slug': typeof BlogSlugRoute
+  '/dich-vu/$slug': typeof DichVuSlugRoute
   '/invite/$token': typeof InviteTokenRoute
   '/knowledge/$slug': typeof KnowledgeSlugRoute
   '/meeting_/$id': typeof MeetingIdRoute
@@ -1765,6 +1790,7 @@ export interface FileRoutesById {
   '/workflows_/calendar': typeof WorkflowsCalendarRoute
   '/workflows_/permissions': typeof WorkflowsPermissionsRoute
   '/workflows_/runs': typeof WorkflowsRunsRoute
+  '/dich-vu/': typeof DichVuIndexRoute
   '/reports/': typeof ReportsIndexRoute
   '/_authenticated/admin/accounts': typeof AuthenticatedAdminAccountsRoute
   '/_authenticated/admin/ai-actions': typeof AuthenticatedAdminAiActionsRoute
@@ -1911,6 +1937,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/blog'
     | '/contact'
+    | '/dich-vu'
     | '/knowledge'
     | '/meeting'
     | '/onboarding'
@@ -1956,6 +1983,7 @@ export interface FileRouteTypes {
     | '/work-graph'
     | '/work-products'
     | '/blog/$slug'
+    | '/dich-vu/$slug'
     | '/invite/$token'
     | '/knowledge/$slug'
     | '/meeting/$id'
@@ -1968,6 +1996,7 @@ export interface FileRouteTypes {
     | '/workflows/calendar'
     | '/workflows/permissions'
     | '/workflows/runs'
+    | '/dich-vu/'
     | '/reports/'
     | '/admin/accounts'
     | '/admin/ai-actions'
@@ -2153,6 +2182,7 @@ export interface FileRouteTypes {
     | '/work-graph'
     | '/work-products'
     | '/blog/$slug'
+    | '/dich-vu/$slug'
     | '/invite/$token'
     | '/knowledge/$slug'
     | '/meeting/$id'
@@ -2165,6 +2195,7 @@ export interface FileRouteTypes {
     | '/workflows/calendar'
     | '/workflows/permissions'
     | '/workflows/runs'
+    | '/dich-vu'
     | '/reports'
     | '/admin/accounts'
     | '/admin/ai-actions'
@@ -2309,6 +2340,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/blog'
     | '/contact'
+    | '/dich-vu'
     | '/knowledge'
     | '/meeting'
     | '/onboarding'
@@ -2354,6 +2386,7 @@ export interface FileRouteTypes {
     | '/_authenticated/work-graph'
     | '/_authenticated/work-products'
     | '/blog/$slug'
+    | '/dich-vu/$slug'
     | '/invite/$token'
     | '/knowledge/$slug'
     | '/meeting_/$id'
@@ -2366,6 +2399,7 @@ export interface FileRouteTypes {
     | '/workflows_/calendar'
     | '/workflows_/permissions'
     | '/workflows_/runs'
+    | '/dich-vu/'
     | '/reports/'
     | '/_authenticated/admin/accounts'
     | '/_authenticated/admin/ai-actions'
@@ -2512,6 +2546,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   BlogRoute: typeof BlogRouteWithChildren
   ContactRoute: typeof ContactRoute
+  DichVuRoute: typeof DichVuRouteWithChildren
   KnowledgeRoute: typeof KnowledgeRouteWithChildren
   MeetingRoute: typeof MeetingRoute
   OnboardingRoute: typeof OnboardingRoute
@@ -2648,6 +2683,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof KnowledgeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dich-vu': {
+      id: '/dich-vu'
+      path: '/dich-vu'
+      fullPath: '/dich-vu'
+      preLoaderRoute: typeof DichVuRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/contact': {
       id: '/contact'
       path: '/contact'
@@ -2703,6 +2745,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/reports/'
       preLoaderRoute: typeof ReportsIndexRouteImport
       parentRoute: typeof ReportsRoute
+    }
+    '/dich-vu/': {
+      id: '/dich-vu/'
+      path: '/'
+      fullPath: '/dich-vu/'
+      preLoaderRoute: typeof DichVuIndexRouteImport
+      parentRoute: typeof DichVuRoute
     }
     '/workflows_/runs': {
       id: '/workflows_/runs'
@@ -2787,6 +2836,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/invite/$token'
       preLoaderRoute: typeof InviteTokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/dich-vu/$slug': {
+      id: '/dich-vu/$slug'
+      path: '/$slug'
+      fullPath: '/dich-vu/$slug'
+      preLoaderRoute: typeof DichVuSlugRouteImport
+      parentRoute: typeof DichVuRoute
     }
     '/blog/$slug': {
       id: '/blog/$slug'
@@ -4404,6 +4460,19 @@ const BlogRouteChildren: BlogRouteChildren = {
 
 const BlogRouteWithChildren = BlogRoute._addFileChildren(BlogRouteChildren)
 
+interface DichVuRouteChildren {
+  DichVuSlugRoute: typeof DichVuSlugRoute
+  DichVuIndexRoute: typeof DichVuIndexRoute
+}
+
+const DichVuRouteChildren: DichVuRouteChildren = {
+  DichVuSlugRoute: DichVuSlugRoute,
+  DichVuIndexRoute: DichVuIndexRoute,
+}
+
+const DichVuRouteWithChildren =
+  DichVuRoute._addFileChildren(DichVuRouteChildren)
+
 interface KnowledgeRouteChildren {
   KnowledgeSlugRoute: typeof KnowledgeSlugRoute
 }
@@ -4462,6 +4531,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   BlogRoute: BlogRouteWithChildren,
   ContactRoute: ContactRoute,
+  DichVuRoute: DichVuRouteWithChildren,
   KnowledgeRoute: KnowledgeRouteWithChildren,
   MeetingRoute: MeetingRoute,
   OnboardingRoute: OnboardingRoute,
