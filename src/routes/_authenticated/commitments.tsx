@@ -365,7 +365,7 @@ function CreateCommitmentDialog({
           <Textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder={t("cw.description")}
+            placeholder={t("cm.title")}
             rows={3}
           />
           <Input
