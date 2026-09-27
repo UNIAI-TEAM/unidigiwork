@@ -45,8 +45,7 @@ function ConversationWorkDetailPage() {
 
   const proposalsQuery = useQuery({
     queryKey: ["extraction-proposals", "IMPORT", importId],
-    queryFn: () =>
-      listExtractionProposals({ data: { sourceType: "IMPORT", sourceId: importId } }),
+    queryFn: () => listExtractionProposals({ data: { sourceType: "IMPORT", sourceId: importId } }),
   });
 
   const summaryMutation = useMutation({
