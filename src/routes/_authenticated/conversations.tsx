@@ -67,7 +67,7 @@ function ConversationWorkPage() {
             </Button>
           </header>
 
-          <div className="grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
+          <div className="grid gap-4">
             <aside className="grid content-start gap-2 rounded-2xl border border-border bg-surface p-3">
               <p className="text-sm font-medium">{t("cw.imports")}</p>
               {(importsQuery.data ?? []).length === 0 && (
