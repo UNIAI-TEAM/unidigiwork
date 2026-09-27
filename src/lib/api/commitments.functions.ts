@@ -160,9 +160,7 @@ export const setCommitmentStatus = createServerFn({ method: "POST" })
 export const addCommitmentNote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
-    z
-      .object({ commitmentId: z.string().uuid(), note: z.string().min(1).max(1000) })
-      .parse(i),
+    z.object({ commitmentId: z.string().uuid(), note: z.string().min(1).max(1000) }).parse(i),
   )
   .handler(async ({ data, context }) => {
     const ctx = context as unknown as Ctx;

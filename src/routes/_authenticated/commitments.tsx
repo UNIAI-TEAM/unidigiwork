@@ -8,12 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -32,13 +27,7 @@ import {
   type CommitmentStatus,
 } from "@/lib/api/commitments.functions";
 
-const STATUSES: CommitmentStatus[] = [
-  "OPEN",
-  "IN_PROGRESS",
-  "FULFILLED",
-  "BROKEN",
-  "CANCELED",
-];
+const STATUSES: CommitmentStatus[] = ["OPEN", "IN_PROGRESS", "FULFILLED", "BROKEN", "CANCELED"];
 
 export const Route = createFileRoute("/_authenticated/commitments")({
   head: () => ({
@@ -103,8 +92,7 @@ function CommitmentsPage() {
   });
 
   const selectedItem = (listQuery.data ?? []).find((c) => c.id === selected) ?? null;
-  const fmt = (iso: string) =>
-    new Date(iso).toLocaleString(lang === "en" ? "en-US" : "vi-VN");
+  const fmt = (iso: string) => new Date(iso).toLocaleString(lang === "en" ? "en-US" : "vi-VN");
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -188,9 +176,7 @@ function CommitmentsPage() {
                 <div>
                   <h2 className="text-base font-semibold">{selectedItem.title}</h2>
                   {selectedItem.description && (
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {selectedItem.description}
-                    </p>
+                    <p className="mt-1 text-sm text-muted-foreground">{selectedItem.description}</p>
                   )}
                   {selectedItem.sourceExcerpt && (
                     <blockquote className="mt-2 border-l-2 border-border pl-3 text-xs text-muted-foreground">
@@ -226,15 +212,11 @@ function CommitmentsPage() {
                 </div>
 
                 <div className="grid gap-2">
-                  <p className="text-xs font-medium text-muted-foreground">
-                    {t("cm.timeline")}
-                  </p>
+                  <p className="text-xs font-medium text-muted-foreground">{t("cm.timeline")}</p>
                   <ul className="grid gap-2 text-sm">
                     {(eventsQuery.data ?? []).map((e) => (
                       <li key={e.id} className="rounded-xl border border-border p-2.5">
-                        <span className="text-xs text-muted-foreground">
-                          {fmt(e.createdAt)}
-                        </span>
+                        <span className="text-xs text-muted-foreground">{fmt(e.createdAt)}</span>
                         <p className="mt-0.5">
                           {e.eventType === "CREATED" && t("cm.created")}
                           {e.eventType === "STATUS_CHANGED" &&
@@ -248,9 +230,7 @@ function CommitmentsPage() {
                     ))}
                   </ul>
                   <NoteForm
-                    onSubmit={(note) =>
-                      noteMut.mutate({ commitmentId: selectedItem.id, note })
-                    }
+                    onSubmit={(note) => noteMut.mutate({ commitmentId: selectedItem.id, note })}
                     disabled={noteMut.isPending}
                   />
                 </div>
@@ -272,13 +252,7 @@ function CommitmentsPage() {
   );
 }
 
-function NoteForm({
-  onSubmit,
-  disabled,
-}: {
-  onSubmit: (note: string) => void;
-  disabled: boolean;
-}) {
+function NoteForm({ onSubmit, disabled }: { onSubmit: (note: string) => void; disabled: boolean }) {
   const { t } = useI18n();
   const [note, setNote] = useState("");
   return (

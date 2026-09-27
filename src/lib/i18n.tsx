@@ -2623,7 +2623,8 @@ const dict = {
     "cwx.viewEntity": "M\u1edf b\u1ea3n ghi",
     "nav.commitments": "Cam k\u1ebft",
     "cm.title": "Cam k\u1ebft",
-    "cm.subtitle": "L\u1eddi h\u1ee9a v\u1edbi kh\u00e1ch h\u00e0ng v\u00e0 \u0111\u1ed1i t\u00e1c \u2014 c\u00f3 ng\u01b0\u1eddi theo d\u00f5i v\u00e0 ti\u1ebfn tr\u00ecnh r\u00f5 r\u00e0ng.",
+    "cm.subtitle":
+      "L\u1eddi h\u1ee9a v\u1edbi kh\u00e1ch h\u00e0ng v\u00e0 \u0111\u1ed1i t\u00e1c \u2014 c\u00f3 ng\u01b0\u1eddi theo d\u00f5i v\u00e0 ti\u1ebfn tr\u00ecnh r\u00f5 r\u00e0ng.",
     "cm.new": "Cam k\u1ebft m\u1edbi",
     "cm.counterparty": "Kh\u00e1ch h\u00e0ng / \u0111\u1ed1i t\u00e1c",
     "cm.owner": "Ng\u01b0\u1eddi theo d\u00f5i",
@@ -2641,7 +2642,8 @@ const dict = {
     "cm.created": "\u0110\u00e3 t\u1ea1o cam k\u1ebft",
     "cm.statusChanged": "\u0110\u1ed5i tr\u1ea1ng th\u00e1i",
     "cm.save": "L\u01b0u cam k\u1ebft",
-    "cm.titlePlaceholder": "V\u00ed d\u1ee5: B\u00e0n giao b\u1ea3n demo cho kh\u00e1ch ng\u00e0y 15",
+    "cm.titlePlaceholder":
+      "V\u00ed d\u1ee5: B\u00e0n giao b\u1ea3n demo cho kh\u00e1ch ng\u00e0y 15",
     "cm.counterpartyPlaceholder": "T\u00ean kh\u00e1ch h\u00e0ng ho\u1eb7c \u0111\u1ed1i t\u00e1c",
     "cm.source": "Ngu\u1ed3n",
     "cm.sourceManual": "Nh\u1eadp th\u1ee7 c\u00f4ng",
