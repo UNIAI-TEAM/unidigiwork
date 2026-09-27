@@ -73,6 +73,7 @@ import { Route as AuthenticatedAiBrainRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedWorkspaceIndexRouteImport } from './routes/_authenticated/workspace.index'
 import { Route as AuthenticatedMIndexRouteImport } from './routes/_authenticated/m/index'
+import { Route as AuthenticatedConversationsIndexRouteImport } from './routes/_authenticated/conversations.index'
 import { Route as AuthenticatedAiMarketIndexRouteImport } from './routes/_authenticated/ai-market.index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as ShareWorkGraphTokenRouteImport } from './routes/share.work-graph.$token'
@@ -534,6 +535,12 @@ const AuthenticatedMIndexRoute = AuthenticatedMIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedMRoute,
 } as any)
+const AuthenticatedConversationsIndexRoute =
+  AuthenticatedConversationsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedConversationsRoute,
+  } as any)
 const AuthenticatedAiMarketIndexRoute =
   AuthenticatedAiMarketIndexRouteImport.update({
     id: '/ai-market/',
@@ -1409,6 +1416,7 @@ export interface FileRoutesByFullPath {
   '/share/work-graph/$token': typeof ShareWorkGraphTokenRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/ai-market/': typeof AuthenticatedAiMarketIndexRoute
+  '/conversations/': typeof AuthenticatedConversationsIndexRoute
   '/m/': typeof AuthenticatedMIndexRoute
   '/workspace/': typeof AuthenticatedWorkspaceIndexRoute
   '/admin/sell-work/pilots': typeof AuthenticatedAdminSellWorkPilotsRouteWithChildren
@@ -1489,7 +1497,6 @@ export interface FileRoutesByTo {
   '/calendar': typeof AuthenticatedCalendarRoute
   '/ceo': typeof AuthenticatedCeoRoute
   '/chat': typeof AuthenticatedChatRoute
-  '/conversations': typeof AuthenticatedConversationsRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/decision-history': typeof AuthenticatedDecisionHistoryRoute
   '/decisions': typeof AuthenticatedDecisionsRoute
@@ -1602,6 +1609,7 @@ export interface FileRoutesByTo {
   '/share/work-graph/$token': typeof ShareWorkGraphTokenRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/ai-market': typeof AuthenticatedAiMarketIndexRoute
+  '/conversations': typeof AuthenticatedConversationsIndexRoute
   '/m': typeof AuthenticatedMIndexRoute
   '/workspace': typeof AuthenticatedWorkspaceIndexRoute
   '/admin/sell-work/pilots': typeof AuthenticatedAdminSellWorkPilotsRouteWithChildren
@@ -1799,6 +1807,7 @@ export interface FileRoutesById {
   '/share/work-graph/$token': typeof ShareWorkGraphTokenRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/ai-market/': typeof AuthenticatedAiMarketIndexRoute
+  '/_authenticated/conversations/': typeof AuthenticatedConversationsIndexRoute
   '/_authenticated/m/': typeof AuthenticatedMIndexRoute
   '/_authenticated/workspace/': typeof AuthenticatedWorkspaceIndexRoute
   '/_authenticated/admin/sell-work/pilots': typeof AuthenticatedAdminSellWorkPilotsRouteWithChildren
@@ -1997,6 +2006,7 @@ export interface FileRouteTypes {
     | '/share/work-graph/$token'
     | '/admin/'
     | '/ai-market/'
+    | '/conversations/'
     | '/m/'
     | '/workspace/'
     | '/admin/sell-work/pilots'
@@ -2077,7 +2087,6 @@ export interface FileRouteTypes {
     | '/calendar'
     | '/ceo'
     | '/chat'
-    | '/conversations'
     | '/dashboard'
     | '/decision-history'
     | '/decisions'
@@ -2190,6 +2199,7 @@ export interface FileRouteTypes {
     | '/share/work-graph/$token'
     | '/admin'
     | '/ai-market'
+    | '/conversations'
     | '/m'
     | '/workspace'
     | '/admin/sell-work/pilots'
@@ -2386,6 +2396,7 @@ export interface FileRouteTypes {
     | '/share/work-graph/$token'
     | '/_authenticated/admin/'
     | '/_authenticated/ai-market/'
+    | '/_authenticated/conversations/'
     | '/_authenticated/m/'
     | '/_authenticated/workspace/'
     | '/_authenticated/admin/sell-work/pilots'
@@ -2942,6 +2953,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/m/'
       preLoaderRoute: typeof AuthenticatedMIndexRouteImport
       parentRoute: typeof AuthenticatedMRoute
+    }
+    '/_authenticated/conversations/': {
+      id: '/_authenticated/conversations/'
+      path: '/'
+      fullPath: '/conversations/'
+      preLoaderRoute: typeof AuthenticatedConversationsIndexRouteImport
+      parentRoute: typeof AuthenticatedConversationsRoute
     }
     '/_authenticated/ai-market/': {
       id: '/_authenticated/ai-market/'
@@ -3930,12 +3948,14 @@ const AuthenticatedAdminRouteWithChildren =
 
 interface AuthenticatedConversationsRouteChildren {
   AuthenticatedConversationsImportIdRoute: typeof AuthenticatedConversationsImportIdRoute
+  AuthenticatedConversationsIndexRoute: typeof AuthenticatedConversationsIndexRoute
 }
 
 const AuthenticatedConversationsRouteChildren: AuthenticatedConversationsRouteChildren =
   {
     AuthenticatedConversationsImportIdRoute:
       AuthenticatedConversationsImportIdRoute,
+    AuthenticatedConversationsIndexRoute: AuthenticatedConversationsIndexRoute,
   }
 
 const AuthenticatedConversationsRouteWithChildren =
