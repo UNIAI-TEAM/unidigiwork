@@ -141,17 +141,17 @@ function WeeklyReportCard({ workspaceId }: { workspaceId: string | null }) {
       </span>
     );
   return (
-    <Card className="mb-4 overflow-hidden">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b px-4 py-3">
+    <Card className="mb-6 overflow-hidden rounded-lg border-border/80 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 px-4 py-4 sm:px-5">
         <div className="flex flex-wrap items-baseline gap-2">
-          <h2 className="text-sm font-semibold">{t("wp.weekly.title")}</h2>
+          <h2 className="font-heading text-base font-semibold">{t("wp.weekly.title")}</h2>
           <span className="text-xs text-muted-foreground">{t("wp.weekly.subtitle")}</span>
         </div>
-        <div className="flex flex-wrap items-center gap-1">
+        <div className="flex max-w-full flex-wrap items-center gap-1 rounded-md bg-muted/60 p-1">
           <Button
             variant={format === null ? "secondary" : "ghost"}
             size="sm"
-            className="h-7 px-2 text-xs"
+            className="h-8 px-2.5 text-xs"
             onClick={() => setFormat(null)}
           >
             {t("wp.weekly.allFormats")}
@@ -161,7 +161,7 @@ function WeeklyReportCard({ workspaceId }: { workspaceId: string | null }) {
               key={f}
               variant={format === f ? "secondary" : "ghost"}
               size="sm"
-              className="h-7 px-2 text-xs"
+              className="h-8 px-2.5 text-xs"
               onClick={() => setFormat(f)}
             >
               {f}
@@ -170,7 +170,7 @@ function WeeklyReportCard({ workspaceId }: { workspaceId: string | null }) {
           <Button
             variant="outline"
             size="sm"
-            className="ml-1 h-7 gap-1 px-2 text-xs"
+            className="ml-1 h-8 gap-1.5 px-2.5 text-xs"
             disabled={exporting}
             onClick={exportXlsx}
           >
@@ -189,49 +189,49 @@ function WeeklyReportCard({ workspaceId }: { workspaceId: string | null }) {
         </p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px] text-sm">
+          <table className="w-full min-w-[720px] text-sm">
             <thead>
-              <tr className="text-left text-xs uppercase tracking-wide text-muted-foreground">
-                <th className="px-4 py-2 font-medium">{t("wp.weekly.type")}</th>
-                <th className="px-4 py-2 text-right font-medium">{t("wp.weekly.created")}</th>
-                <th className="px-4 py-2 text-right font-medium">{t("wp.weekly.approved")}</th>
-                <th className="px-4 py-2 text-right font-medium">{t("wp.weekly.inReview")}</th>
-                <th className="px-4 py-2 text-right font-medium">{t("wp.weekly.approvedNow")}</th>
-                <th className="px-4 py-2 text-right font-medium">{t("wp.weekly.versions")}</th>
-                <th className="px-4 py-2 text-right font-medium">{t("wp.weekly.shared")}</th>
-                <th className="px-4 py-2 text-right font-medium">{t("wp.weekly.formats")}</th>
+              <tr className="bg-muted/40 text-left text-xs text-muted-foreground">
+                <th className="px-5 py-3 font-medium">{t("wp.weekly.type")}</th>
+                <th className="px-4 py-3 text-right font-medium">{t("wp.weekly.created")}</th>
+                <th className="px-4 py-3 text-right font-medium">{t("wp.weekly.approved")}</th>
+                <th className="px-4 py-3 text-right font-medium">{t("wp.weekly.inReview")}</th>
+                <th className="px-4 py-3 text-right font-medium">{t("wp.weekly.approvedNow")}</th>
+                <th className="px-4 py-3 text-right font-medium">{t("wp.weekly.versions")}</th>
+                <th className="px-4 py-3 text-right font-medium">{t("wp.weekly.shared")}</th>
+                <th className="px-5 py-3 text-right font-medium">{t("wp.weekly.formats")}</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.businessType} className="border-t">
-                  <td className="px-4 py-2">{t(`wp.type.${r.businessType}` as never)}</td>
-                  <td className="px-4 py-2 text-right tabular-nums">{r.created}</td>
-                  <td className="px-4 py-2 text-right tabular-nums">{r.approved}</td>
-                  <td className="px-4 py-2 text-right tabular-nums">{r.inReview}</td>
-                  <td className="px-4 py-2 text-right tabular-nums">{r.approvedNow}</td>
-                  <td className="px-4 py-2 text-right tabular-nums">{r.versions}</td>
-                  <td className="px-4 py-2 text-right tabular-nums">
+                <tr key={r.businessType} className="border-t border-border/60 transition-colors hover:bg-muted/25">
+                  <td className="px-5 py-3 font-medium">{t(`wp.type.${r.businessType}` as never)}</td>
+                  <td className="px-4 py-3 text-right tabular-nums">{r.created}</td>
+                  <td className="px-4 py-3 text-right tabular-nums">{r.approved}</td>
+                  <td className="px-4 py-3 text-right tabular-nums">{r.inReview}</td>
+                  <td className="px-4 py-3 text-right tabular-nums">{r.approvedNow}</td>
+                  <td className="px-4 py-3 text-right tabular-nums">{r.versions}</td>
+                  <td className="px-4 py-3 text-right tabular-nums">
                     {r.shared > 0 ? `${r.shared} (${r.shareTargets})` : "—"}
                   </td>
-                  <td className="px-4 py-2 text-right">{fmtCell(r.formats)}</td>
+                  <td className="px-5 py-3 text-right">{fmtCell(r.formats)}</td>
                 </tr>
               ))}
-              <tr className="border-t bg-muted/40 font-medium">
-                <td className="px-4 py-2">{t("wp.weekly.total")}</td>
-                <td className="px-4 py-2 text-right tabular-nums">{data?.totals.created ?? 0}</td>
-                <td className="px-4 py-2 text-right tabular-nums">{data?.totals.approved ?? 0}</td>
-                <td className="px-4 py-2 text-right tabular-nums">{data?.totals.inReview ?? 0}</td>
-                <td className="px-4 py-2 text-right tabular-nums">
+              <tr className="border-t border-border/70 bg-muted/40 font-semibold">
+                <td className="px-5 py-3">{t("wp.weekly.total")}</td>
+                <td className="px-4 py-3 text-right tabular-nums">{data?.totals.created ?? 0}</td>
+                <td className="px-4 py-3 text-right tabular-nums">{data?.totals.approved ?? 0}</td>
+                <td className="px-4 py-3 text-right tabular-nums">{data?.totals.inReview ?? 0}</td>
+                <td className="px-4 py-3 text-right tabular-nums">
                   {data?.totals.approvedNow ?? 0}
                 </td>
-                <td className="px-4 py-2 text-right tabular-nums">{data?.totals.versions ?? 0}</td>
-                <td className="px-4 py-2 text-right tabular-nums">
+                <td className="px-4 py-3 text-right tabular-nums">{data?.totals.versions ?? 0}</td>
+                <td className="px-4 py-3 text-right tabular-nums">
                   {(data?.totals.shared ?? 0) > 0
                     ? `${data?.totals.shared} (${data?.totals.shareTargets})`
                     : "—"}
                 </td>
-                <td className="px-4 py-2 text-right">{fmtCell(data?.totals.formats)}</td>
+                <td className="px-5 py-3 text-right">{fmtCell(data?.totals.formats)}</td>
               </tr>
             </tbody>
           </table>
@@ -411,7 +411,7 @@ function WorkProductsPage() {
   const [businessType, setBusinessType] = useState<string>("ALL");
   const [workspaceId, setWorkspaceId] = useState<string>("ALL");
   const [mine, setMine] = useState(false);
-  const [view, setView] = useState<"list" | "grid">("list");
+  const [view, setView] = useState<"list" | "grid">("grid");
   const [accessOpen, setAccessOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
 
@@ -474,16 +474,16 @@ function WorkProductsPage() {
       <main className="flex min-w-0 flex-1 flex-col">
         <AppTopbar variant="documents" onOpenSidebar={() => setOpen(true)} />
 
-        <div className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-6 sm:px-6">
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+        <div className="mx-auto w-full max-w-[1320px] flex-1 px-4 py-5 sm:px-6 sm:py-7">
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <FilterPageHeader
               crumbs={[{ label: t("nav.group.knowledge") }, { label: t("wp.title") }]}
               title={t("wp.title")}
               description={t("wp.subtitle")}
             />
-            <div className="flex flex-wrap items-center justify-end gap-2">
+            <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
               <ImportDocxButton />
-              <Button onClick={() => setCreateOpen(true)} className="gap-2">
+              <Button onClick={() => setCreateOpen(true)} className="h-11 gap-2 px-5">
                 <Plus className="h-4 w-4" />
                 {t("wp.new")}
               </Button>
@@ -491,19 +491,20 @@ function WorkProductsPage() {
           </div>
 
           {/* Bộ lọc */}
-          <div className="mb-5 grid gap-2 rounded-2xl border border-border bg-card p-3 shadow-card sm:grid-cols-2 xl:grid-cols-[minmax(200px,1fr)_150px_135px_135px_auto]">
-            <div className="relative min-w-0">
+          <div className="mb-6 rounded-lg border border-border/80 bg-card p-4 shadow-sm">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(240px,1fr)_180px_160px_160px_auto]">
+              <div className="relative min-w-0">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={t("wp.search")}
-                className="pl-9"
+                className="h-11 bg-muted/35 pl-9"
                 aria-label={t("wp.search")}
               />
-            </div>
+              </div>
             <Select value={workspaceId} onValueChange={setWorkspaceId}>
-              <SelectTrigger>
+              <SelectTrigger className="h-11 bg-muted/35">
                 <SelectValue placeholder={t("wp.allWorkspaces")} />
               </SelectTrigger>
               <SelectContent>
@@ -516,7 +517,7 @@ function WorkProductsPage() {
               </SelectContent>
             </Select>
             <Select value={businessType} onValueChange={setBusinessType}>
-              <SelectTrigger>
+              <SelectTrigger className="h-11 bg-muted/35">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -529,7 +530,7 @@ function WorkProductsPage() {
               </SelectContent>
             </Select>
             <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger>
+              <SelectTrigger className="h-11 bg-muted/35">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -543,13 +544,14 @@ function WorkProductsPage() {
             </Select>
             <Button
               variant={mine ? "default" : "outline"}
-              className="xl:px-3"
+              className="h-11 xl:px-4"
               onClick={() => setMine((v) => !v)}
             >
               {t("wp.mine")}
             </Button>
-            <div className="flex items-center justify-end gap-1 sm:col-span-2 xl:col-span-5">
-              <Button variant="outline" className="gap-2" onClick={() => setAccessOpen(true)}>
+            </div>
+            <div className="mt-3 flex items-center justify-end gap-1 border-t border-border/60 pt-3">
+              <Button variant="ghost" className="h-11 gap-2" onClick={() => setAccessOpen(true)}>
                 <ShieldCheck className="h-4 w-4" />
                 <span className="hidden sm:inline">{t("wp.access.button")}</span>
               </Button>
@@ -582,6 +584,35 @@ function WorkProductsPage() {
 
           <WeeklyReportCard workspaceId={workspaceId === "ALL" ? null : workspaceId} />
 
+          {!isLoading && !isError && (items ?? []).length > 0 && (
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <h2 className="font-heading text-lg font-semibold">{t("wp.title")}</h2>
+                <p className="text-xs text-muted-foreground">{items?.length ?? 0} {t("wp.weekly.total").toLowerCase()}</p>
+              </div>
+              <div className="flex items-center rounded-md border border-border bg-card p-1">
+                <Button
+                  variant={view === "grid" ? "secondary" : "ghost"}
+                  size="icon"
+                  className="h-9 w-9"
+                  onClick={() => setView("grid")}
+                  aria-label={t("wp.toggleView")}
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={view === "list" ? "secondary" : "ghost"}
+                  size="icon"
+                  className="h-9 w-9"
+                  onClick={() => setView("list")}
+                  aria-label={t("wp.toggleView")}
+                >
+                  <ListIcon className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
           {isLoading && (
             <div className="flex items-center gap-2 py-16 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" /> {t("wp.loading")}
@@ -610,43 +641,44 @@ function WorkProductsPage() {
                 key={it.id}
                 to="/work-products/$id"
                 params={{ id: it.id }}
-                className="rounded-2xl border border-border bg-card p-4 shadow-card transition-colors hover:border-primary/40 hover:bg-surface"
+                className={cn(
+                  "group rounded-lg border border-border/80 bg-card p-5 shadow-sm transition-[border-color,box-shadow,transform] hover:border-primary/35 hover:shadow-md motion-safe:hover:-translate-y-0.5",
+                  view === "grid" && "min-h-[184px]",
+                )}
               >
-                <div className="flex items-start gap-3">
-                  <span className="mt-0.5 rounded-xl bg-secondary p-2 text-primary">
+                <div className="flex h-full items-start gap-3">
+                  <span className="mt-0.5 rounded-lg bg-secondary p-2.5 text-primary transition-colors group-hover:bg-primary/15">
                     <FileText className="h-4 w-4" />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="truncate font-heading font-semibold">{it.title}</p>
-                      <Badge variant="outline">{t(`wp.type.${it.business_type}` as never)}</Badge>
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <Badge variant="outline" className="text-[10px] font-semibold uppercase">
+                        {t(`wp.type.${it.business_type}` as never)}
+                      </Badge>
                       <span
                         className={cn(
-                          "rounded-full px-2 py-0.5 text-xs",
+                          "inline-flex items-center rounded-md px-2 py-1 text-xs font-medium",
                           STATUS_TONE[it.status] ?? "",
                         )}
                       >
                         {t(`wp.status.${it.status}` as never)}
                       </span>
-                      {it.ai_generated && (
-                        <Badge variant="secondary" className="gap-1">
-                          <Sparkles className="h-3 w-3" /> AI
-                        </Badge>
-                      )}
                     </div>
-                    <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+                    <p className="mt-3 line-clamp-2 font-heading font-semibold leading-snug transition-colors group-hover:text-primary">
+                      {it.title}
+                    </p>
+                    <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
                       {it.description || "—"}
                     </p>
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      {[
-                        it.workspaceName,
-                        it.ownerName,
-                        `v${it.current_version}`,
-                        fmt.format(new Date(it.updated_at)),
-                      ]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </p>
+                    <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-3 text-xs text-muted-foreground">
+                      <span className="truncate">
+                        {[it.workspaceName, it.ownerName].filter(Boolean).join(" · ") || "—"}
+                      </span>
+                      <span className="flex shrink-0 items-center gap-2 tabular-nums">
+                        {it.ai_generated && <Sparkles className="h-3.5 w-3.5 text-primary" aria-label="AI" />}
+                        v{it.current_version} · {fmt.format(new Date(it.updated_at))}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </Link>
