@@ -595,7 +595,7 @@ export const getConversationImportAccess = createServerFn({ method: "POST" })
       .eq("id", data.importId)
       .maybeSingle();
     if (error) mapPgError(error, "PERMISSION_DENIED");
-    if (!ci) throw new ApiError("NOT_FOUND" as any, "Not found");
+    if (!ci) throw new ApiError("NOT_FOUND" as any);
     const { data: viewers } = await ctx.supabase
       .from("conversation_import_viewers")
       .select("user_id")
