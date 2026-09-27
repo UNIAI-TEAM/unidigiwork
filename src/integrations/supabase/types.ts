@@ -1933,12 +1933,16 @@ export type Database = {
       cms_entries: {
         Row: {
           body: string | null
+          cover_path: string | null
           created_at: string
           created_by: string | null
           data: Json
           id: string
           kind: string
+          publish_at: string | null
           row_version: number
+          seo_description: string | null
+          seo_title: string | null
           slug: string
           sort_order: number
           status: string
@@ -1949,12 +1953,16 @@ export type Database = {
         }
         Insert: {
           body?: string | null
+          cover_path?: string | null
           created_at?: string
           created_by?: string | null
           data?: Json
           id?: string
           kind: string
+          publish_at?: string | null
           row_version?: number
+          seo_description?: string | null
+          seo_title?: string | null
           slug: string
           sort_order?: number
           status?: string
@@ -1965,12 +1973,16 @@ export type Database = {
         }
         Update: {
           body?: string | null
+          cover_path?: string | null
           created_at?: string
           created_by?: string | null
           data?: Json
           id?: string
           kind?: string
+          publish_at?: string | null
           row_version?: number
+          seo_description?: string | null
+          seo_title?: string | null
           slug?: string
           sort_order?: number
           status?: string
