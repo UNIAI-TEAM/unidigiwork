@@ -2107,6 +2107,48 @@ export type Database = {
           },
         ]
       }
+      conversation_import_viewers: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          import_id: string
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          import_id: string
+          tenant_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          import_id?: string
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_import_viewers_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "conversation_imports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversation_import_viewers_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversation_imports: {
         Row: {
           created_at: string
@@ -10541,6 +10583,10 @@ export type Database = {
         Args: { _channel_id: string; _user_id: string }
         Returns: boolean
       }
+      can_view_conversation_import: {
+        Args: { _import_id: string }
+        Returns: boolean
+      }
       can_view_work_entity: {
         Args: { _entity_id: string; _entity_type: string }
         Returns: boolean
@@ -13052,6 +13098,10 @@ export type Database = {
       set_commitment_status: {
         Args: { _commitment_id: string; _note?: string; _status: string }
         Returns: undefined
+      }
+      set_conversation_import_visibility: {
+        Args: { _import_id: string; _viewer_ids: string[]; _visibility: string }
+        Returns: Json
       }
       set_human_agent_role_policy: {
         Args: { _can_receive_tasks: boolean; _role: string; _tenant_id: string }
