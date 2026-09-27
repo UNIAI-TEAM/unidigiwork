@@ -11,6 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WorkflowsRouteImport } from './routes/workflows'
 import { Route as WelcomeRouteImport } from './routes/welcome'
+import { Route as UniworkRouteImport } from './routes/uniwork'
+import { Route as UniofficeRouteImport } from './routes/unioffice'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TasksRouteImport } from './routes/tasks'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
@@ -215,6 +217,16 @@ const WorkflowsRoute = WorkflowsRouteImport.update({
 const WelcomeRoute = WelcomeRouteImport.update({
   id: '/welcome',
   path: '/welcome',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UniworkRoute = UniworkRouteImport.update({
+  id: '/uniwork',
+  path: '/uniwork',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UniofficeRoute = UniofficeRouteImport.update({
+  id: '/unioffice',
+  path: '/unioffice',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TermsRoute = TermsRouteImport.update({
@@ -1300,6 +1312,8 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/tasks': typeof TasksRoute
   '/terms': typeof TermsRoute
+  '/unioffice': typeof UniofficeRoute
+  '/uniwork': typeof UniworkRoute
   '/welcome': typeof WelcomeRoute
   '/workflows': typeof WorkflowsRouteWithChildren
   '/admin': typeof AuthenticatedAdminRouteWithChildren
@@ -1497,6 +1511,8 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/tasks': typeof TasksRoute
   '/terms': typeof TermsRoute
+  '/unioffice': typeof UniofficeRoute
+  '/uniwork': typeof UniworkRoute
   '/welcome': typeof WelcomeRoute
   '/workflows': typeof WorkflowsRouteWithChildren
   '/ai-brain': typeof AuthenticatedAiBrainRoute
@@ -1693,6 +1709,8 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/tasks': typeof TasksRoute
   '/terms': typeof TermsRoute
+  '/unioffice': typeof UniofficeRoute
+  '/uniwork': typeof UniworkRoute
   '/welcome': typeof WelcomeRoute
   '/workflows': typeof WorkflowsRouteWithChildren
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
@@ -1893,6 +1911,8 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/tasks'
     | '/terms'
+    | '/unioffice'
+    | '/uniwork'
     | '/welcome'
     | '/workflows'
     | '/admin'
@@ -2090,6 +2110,8 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/tasks'
     | '/terms'
+    | '/unioffice'
+    | '/uniwork'
     | '/welcome'
     | '/workflows'
     | '/ai-brain'
@@ -2285,6 +2307,8 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/tasks'
     | '/terms'
+    | '/unioffice'
+    | '/uniwork'
     | '/welcome'
     | '/workflows'
     | '/_authenticated/admin'
@@ -2485,6 +2509,8 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   TasksRoute: typeof TasksRoute
   TermsRoute: typeof TermsRoute
+  UniofficeRoute: typeof UniofficeRoute
+  UniworkRoute: typeof UniworkRoute
   WelcomeRoute: typeof WelcomeRoute
   WorkflowsRoute: typeof WorkflowsRouteWithChildren
   InviteTokenRoute: typeof InviteTokenRoute
@@ -2531,6 +2557,20 @@ declare module '@tanstack/react-router' {
       path: '/welcome'
       fullPath: '/welcome'
       preLoaderRoute: typeof WelcomeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/uniwork': {
+      id: '/uniwork'
+      path: '/uniwork'
+      fullPath: '/uniwork'
+      preLoaderRoute: typeof UniworkRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/unioffice': {
+      id: '/unioffice'
+      path: '/unioffice'
+      fullPath: '/unioffice'
+      preLoaderRoute: typeof UniofficeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/terms': {
@@ -4410,6 +4450,8 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   TasksRoute: TasksRoute,
   TermsRoute: TermsRoute,
+  UniofficeRoute: UniofficeRoute,
+  UniworkRoute: UniworkRoute,
   WelcomeRoute: WelcomeRoute,
   WorkflowsRoute: WorkflowsRouteWithChildren,
   InviteTokenRoute: InviteTokenRoute,
