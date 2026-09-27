@@ -43,6 +43,12 @@ export const Route = createFileRoute("/dich-vu/$slug")({
     }
     const sv = loaderData.service;
     const description = sv.seoDescription || sv.summary || sv.title;
+    const imageMeta = sv.coverUrl
+      ? [
+          { property: "og:image", content: sv.coverUrl },
+          { name: "twitter:image", content: sv.coverUrl },
+        ]
+      : [];
     return {
       meta: [
         { title: sv.seoTitle || `${sv.title} — Dịch vụ UniWork` },
@@ -51,6 +57,7 @@ export const Route = createFileRoute("/dich-vu/$slug")({
         { property: "og:description", content: description },
         { property: "og:type", content: "website" },
         { name: "twitter:card", content: "summary_large_image" },
+        ...imageMeta,
       ],
     };
   },
@@ -86,6 +93,13 @@ function ServiceDetailPage() {
             >
               <ArrowLeft className="h-4 w-4" /> {c.servicePages.allServices}
             </Link>
+             {service.coverUrl && (
+               <img
+                 src={service.coverUrl}
+                 alt={service.title}
+                 className="mt-6 aspect-[16/7] w-full rounded-xl object-cover"
+               />
+             )}
             <div className="mt-8 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
               <div>
                 <span className="grid h-12 w-12 place-items-center rounded-lg bg-primary text-primary-foreground">
