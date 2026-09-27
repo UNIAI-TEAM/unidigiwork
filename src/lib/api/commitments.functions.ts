@@ -2,7 +2,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { ApiError, mapPgError } from "@/lib/api/business.server";
+import { ApiError } from "@/contracts/errors";
+import { mapPgError } from "@/lib/api/business.server";
 
 type Ctx = { supabase: any; userId: string };
 

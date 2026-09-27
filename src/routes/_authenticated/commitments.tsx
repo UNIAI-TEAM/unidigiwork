@@ -27,6 +27,9 @@ import {
   type CommitmentStatus,
 } from "@/lib/api/commitments.functions";
 
+type I18nKey = Parameters<ReturnType<typeof useI18n>["t"]>[0];
+const statusKey = (s: string) => `cm.status.${s}` as I18nKey;
+
 const STATUSES: CommitmentStatus[] = ["OPEN", "IN_PROGRESS", "FULFILLED", "BROKEN", "CANCELED"];
 
 export const Route = createFileRoute("/_authenticated/commitments")({
@@ -128,7 +131,7 @@ function CommitmentsPage() {
                 className="min-h-11"
                 onClick={() => setStatusFilter(s)}
               >
-                {t(`cm.status.${s}`)}
+                {t(statusKey(s))}
               </Button>
             ))}
           </div>
@@ -155,7 +158,7 @@ function CommitmentsPage() {
                     <Handshake className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">{c.title}</span>
                     <Badge variant="secondary" className="text-[10px] uppercase">
-                      {t(`cm.status.${c.status}`)}
+                      {t(statusKey(c.status))}
                     </Badge>
                   </span>
                   <span className="mt-1 block text-xs text-muted-foreground">
@@ -204,7 +207,7 @@ function CommitmentsPage() {
                     <SelectContent>
                       {STATUSES.map((s) => (
                         <SelectItem key={s} value={s}>
-                          {t(`cm.status.${s}`)}
+                          {t(statusKey(s))}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -220,7 +223,7 @@ function CommitmentsPage() {
                         <p className="mt-0.5">
                           {e.eventType === "CREATED" && t("cm.created")}
                           {e.eventType === "STATUS_CHANGED" &&
-                            `${t(`cm.status.${e.fromStatus}`)} → ${t(`cm.status.${e.toStatus}`)}`}
+                            `${t(statusKey(e.fromStatus ?? "OPEN"))} → ${t(statusKey(e.toStatus ?? "OPEN"))}`}
                           {e.eventType === "NOTE" && e.note}
                         </p>
                         {e.eventType === "STATUS_CHANGED" && e.note && (
