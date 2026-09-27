@@ -2128,6 +2128,73 @@ export type Database = {
           },
         ]
       }
+      consultation_bookings: {
+        Row: {
+          created_at: string
+          customer_name: string
+          guest_invite_token: string | null
+          id: string
+          meeting_id: string | null
+          preferred_start_at: string
+          request_id: string | null
+          service: string | null
+          task_id: string | null
+          tenant_id: string | null
+          tracking_token_hash: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_name: string
+          guest_invite_token?: string | null
+          id?: string
+          meeting_id?: string | null
+          preferred_start_at: string
+          request_id?: string | null
+          service?: string | null
+          task_id?: string | null
+          tenant_id?: string | null
+          tracking_token_hash: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_name?: string
+          guest_invite_token?: string | null
+          id?: string
+          meeting_id?: string | null
+          preferred_start_at?: string
+          request_id?: string | null
+          service?: string | null
+          task_id?: string | null
+          tenant_id?: string | null
+          tracking_token_hash?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultation_bookings_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consultation_bookings_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consultation_bookings_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversation_import_messages: {
         Row: {
           attachments: Json
@@ -11815,6 +11882,7 @@ export type Database = {
         Returns: Json
       }
       get_ai_task_brief: { Args: { _task_id: string }; Returns: Json }
+      get_consultation_booking: { Args: { _token: string }; Returns: Json }
       get_conversation_source: {
         Args: { _limit?: number; _source_id: string; _source_type: string }
         Returns: Json
@@ -13693,6 +13761,18 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      submit_consultation_booking: {
+        Args: {
+          _company: string
+          _email: string
+          _message: string
+          _name: string
+          _phone: string
+          _preferred_at: string
+          _service: string
+        }
+        Returns: Json
       }
       submit_consultation_request: {
         Args: {
