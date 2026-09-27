@@ -32,6 +32,12 @@ export const Route = createFileRoute("/tai-nguyen/$slug")({
     }
     const a = loaderData.article;
     const description = a.seoDescription || a.summary || a.title;
+    const imageMeta = a.coverUrl
+      ? [
+          { property: "og:image", content: a.coverUrl },
+          { name: "twitter:image", content: a.coverUrl },
+        ]
+      : [];
     return {
       meta: [
         { title: a.seoTitle || `${a.title} — Tài nguyên UniWork` },
@@ -40,6 +46,7 @@ export const Route = createFileRoute("/tai-nguyen/$slug")({
         { property: "og:description", content: description },
         { property: "og:type", content: "article" },
         { name: "twitter:card", content: "summary_large_image" },
+        ...imageMeta,
       ],
     };
   },

@@ -67,23 +67,35 @@ function ResourcesPage() {
               {articles.map((a) => (
                 <article
                   key={a.id}
-                  className="flex flex-col rounded-xl border border-border bg-card p-6 shadow-sm"
+                   className="flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm"
                 >
-                  <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-                    <BookOpen className="h-3 w-3" aria-hidden="true" />
-                    {String(a.data.category ?? "")}
-                  </span>
-                  <h2 className="mt-4 text-lg font-semibold">{a.title}</h2>
-                  <p className="mt-2 line-clamp-3 flex-1 text-sm leading-relaxed text-muted-foreground">
-                    {a.summary}
-                  </p>
-                  <Link
-                    to="/tai-nguyen/$slug"
-                    params={{ slug: a.slug }}
-                    className="mt-5 inline-flex min-h-11 items-center gap-2 text-sm font-medium text-primary"
-                  >
-                    {c.resourcePages.readMore} <ArrowRight className="h-4 w-4" />
-                  </Link>
+                   {a.coverUrl && (
+                     <Link to="/tai-nguyen/$slug" params={{ slug: a.slug }} tabIndex={-1}>
+                       <img
+                         src={a.coverUrl}
+                         alt={a.title}
+                         className="aspect-[16/9] w-full object-cover"
+                         loading="lazy"
+                       />
+                     </Link>
+                   )}
+                   <div className="flex flex-1 flex-col p-6">
+                     <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                       <BookOpen className="h-3 w-3" aria-hidden="true" />
+                       {String(a.data.category ?? "")}
+                     </span>
+                     <h2 className="mt-4 text-lg font-semibold">{a.title}</h2>
+                     <p className="mt-2 line-clamp-3 flex-1 text-sm leading-relaxed text-muted-foreground">
+                       {a.summary}
+                     </p>
+                     <Link
+                       to="/tai-nguyen/$slug"
+                       params={{ slug: a.slug }}
+                       className="mt-5 inline-flex min-h-11 items-center gap-2 text-sm font-medium text-primary"
+                     >
+                       {c.resourcePages.readMore} <ArrowRight className="h-4 w-4" />
+                     </Link>
+                   </div>
                 </article>
               ))}
             </div>

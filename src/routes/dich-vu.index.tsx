@@ -101,28 +101,40 @@ function ServicesPage() {
               return (
                 <article
                   key={service.id}
-                  className="flex flex-col rounded-xl border border-border bg-card p-6 shadow-sm"
+                   className="flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm"
                 >
-                  <span className="grid h-11 w-11 place-items-center rounded-lg bg-primary/10 text-primary">
-                    <Icon className="h-5 w-5" aria-hidden="true" />
-                  </span>
-                  <h2 className="mt-5 text-xl font-semibold">{service.title}</h2>
-                  <p className="mt-2 leading-relaxed text-muted-foreground">{service.summary}</p>
-                  {steps.length > 0 && (
-                    <ul className="mt-5 flex-1 space-y-2 text-sm">
-                      {steps.map((step) => (
-                        <li key={step} className="flex gap-3">
-                          <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
-                          <span>{step}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  <Button asChild variant="outline" className="mt-6 h-11 justify-between">
-                    <Link to="/dich-vu/$slug" params={{ slug: service.slug }}>
-                      {c.servicePages.viewDetail} <ArrowRight className="h-4 w-4" />
-                    </Link>
-                  </Button>
+                   {service.coverUrl && (
+                     <Link to="/dich-vu/$slug" params={{ slug: service.slug }} tabIndex={-1}>
+                       <img
+                         src={service.coverUrl}
+                         alt={service.title}
+                         className="aspect-[16/9] w-full object-cover"
+                         loading="lazy"
+                       />
+                     </Link>
+                   )}
+                   <div className="flex flex-1 flex-col p-6">
+                     <span className="grid h-11 w-11 place-items-center rounded-lg bg-primary/10 text-primary">
+                       <Icon className="h-5 w-5" aria-hidden="true" />
+                     </span>
+                     <h2 className="mt-5 text-xl font-semibold">{service.title}</h2>
+                     <p className="mt-2 leading-relaxed text-muted-foreground">{service.summary}</p>
+                     {steps.length > 0 && (
+                       <ul className="mt-5 flex-1 space-y-2 text-sm">
+                         {steps.map((step) => (
+                           <li key={step} className="flex gap-3">
+                             <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                             <span>{step}</span>
+                           </li>
+                         ))}
+                       </ul>
+                     )}
+                     <Button asChild variant="outline" className="mt-6 h-11 justify-between">
+                       <Link to="/dich-vu/$slug" params={{ slug: service.slug }}>
+                         {c.servicePages.viewDetail} <ArrowRight className="h-4 w-4" />
+                       </Link>
+                     </Button>
+                   </div>
                 </article>
               );
             })}
