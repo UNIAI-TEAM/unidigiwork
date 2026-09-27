@@ -94,7 +94,7 @@ export const saveConversationImport = createServerFn({ method: "POST" })
         sourceGroupName: z.string().min(1).max(200),
         sharedByLabel: z.string().max(200).nullish(),
         originalAt: z.string().datetime({ offset: true }).nullish(),
-        visibility: z.enum(["PRIVATE", "TENANT"]).default("TENANT"),
+        visibility: z.enum(["PRIVATE", "TENANT", "PROJECT"]).default("TENANT"),
         notes: z.string().max(2000).nullish(),
         messages: z.array(importMessageSchema).min(1).max(500),
       })
@@ -580,4 +580,64 @@ export const listMessagingConnections = createServerFn({ method: "POST" })
       lastHealthAt: r.last_health_at ?? null,
       lastError: r.last_error ?? null,
     }));
+  });
+
+/* ------------------------- Per-conversation visibility ------------------------- */
+
+export const getConversationImportAccess = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ importId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const ctx = context as unknown as Ctx;
+    const { data: ci, error } = await ctx.supabase
+      .from("conversation_imports")
+      .select("id, tenant_id, workspace_id, visibility, imported_by")
+      .eq("id", data.importId)
+      .maybeSingle();
+    if (error) mapPgError(error, "PERMISSION_DENIED");
+    if (!ci) throw new ApiError("NOT_FOUND" as any, "Not found");
+    const { data: viewers } = await ctx.supabase
+      .from("conversation_import_viewers")
+      .select("user_id")
+      .eq("import_id", data.importId);
+    const { data: people } = await ctx.supabase.rpc("list_tenant_member_profiles", {
+      _tenant_id: ci.tenant_id,
+    });
+    const [{ data: isOwner }, { data: isAdmin }] = await Promise.all([
+      ctx.supabase.rpc("has_tenant_role", { _tenant_id: ci.tenant_id, _role: "tenant_owner" }),
+      ctx.supabase.rpc("has_tenant_role", { _tenant_id: ci.tenant_id, _role: "tenant_admin" }),
+    ]);
+    return {
+      visibility: ci.visibility as string,
+      hasProject: !!ci.workspace_id,
+      canManage: ci.imported_by === ctx.userId || !!isOwner || !!isAdmin,
+      viewerIds: ((viewers ?? []) as any[]).map((v) => v.user_id as string),
+      people: ((people ?? []) as any[]).map((p) => ({
+        userId: (p.user_id ?? p.id) as string,
+        name: (p.display_name ?? p.full_name ?? p.email ?? "") as string,
+        email: (p.email ?? null) as string | null,
+      })),
+    };
+  });
+
+export const setConversationImportVisibility = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        importId: z.string().uuid(),
+        visibility: z.enum(["PRIVATE", "TENANT", "PROJECT", "SELECTED"]),
+        viewerIds: z.array(z.string().uuid()).max(200).default([]),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const ctx = context as unknown as Ctx;
+    const { error } = await ctx.supabase.rpc("set_conversation_import_visibility", {
+      _import_id: data.importId,
+      _visibility: data.visibility,
+      _viewer_ids: data.viewerIds,
+    });
+    if (error) mapPgError(error, "PERMISSION_DENIED");
+    return { ok: true };
   });
