@@ -12,6 +12,7 @@ export type DashboardSectionKey =
   | "ai";
 
 export type DashboardCardSize = "sm" | "md" | "lg" | "full";
+export type DashboardCardHeight = "auto" | "short" | "medium" | "tall";
 
 export const DASHBOARD_SECTIONS: Array<{ key: DashboardSectionKey; label: string }> = [
   { key: "kpis", label: "Chỉ số KPI" },
@@ -35,10 +36,22 @@ export const DASHBOARD_SIZES: Array<{
   { key: "full", label: "Toàn hàng", hint: "Cả hàng" },
 ];
 
+export const DASHBOARD_HEIGHTS: Array<{
+  key: DashboardCardHeight;
+  label: string;
+  hint: string;
+}> = [
+  { key: "auto", label: "Tự động", hint: "Theo nội dung" },
+  { key: "short", label: "Thấp", hint: "240px" },
+  { key: "medium", label: "Vừa", hint: "360px" },
+  { key: "tall", label: "Cao", hint: "520px" },
+];
+
 export type DashboardLayoutPrefs = {
   enabled: Record<DashboardSectionKey, boolean>;
   order: DashboardSectionKey[];
   sizes: Record<DashboardSectionKey, DashboardCardSize>;
+  heights: Record<DashboardSectionKey, DashboardCardHeight>;
 };
 
 export const DEFAULT_DASHBOARD_ORDER = DASHBOARD_SECTIONS.map((item) => item.key);
@@ -59,9 +72,14 @@ export const DEFAULT_DASHBOARD_PREFS: DashboardLayoutPrefs = {
     workspaces: "full",
     ai: "md",
   },
+  heights: Object.fromEntries(DASHBOARD_SECTIONS.map((item) => [item.key, "auto"])) as Record<
+    DashboardSectionKey,
+    DashboardCardHeight
+  >,
 };
 
 const SIZE_PREFIX = `${DASHBOARD_PREFIX}size:`;
+const HEIGHT_PREFIX = `${DASHBOARD_PREFIX}height:`;
 
 function isSection(value: string): value is DashboardSectionKey {
   return DASHBOARD_SECTIONS.some((item) => item.key === value);
@@ -71,17 +89,29 @@ function isSize(value: string): value is DashboardCardSize {
   return DASHBOARD_SIZES.some((item) => item.key === value);
 }
 
+function isHeight(value: string): value is DashboardCardHeight {
+  return DASHBOARD_HEIGHTS.some((item) => item.key === value);
+}
+
 export function readDashboardLayoutPrefs(
   sections: Record<string, boolean> | null,
   order: string[] | null,
 ): DashboardLayoutPrefs {
   const enabled = { ...DEFAULT_DASHBOARD_PREFS.enabled };
   const sizes = { ...DEFAULT_DASHBOARD_PREFS.sizes };
+  const heights = { ...DEFAULT_DASHBOARD_PREFS.heights };
   const hasNamespacedValues = Object.keys(sections ?? {}).some((key) =>
     key.startsWith(DASHBOARD_PREFIX),
   );
 
   for (const [key, value] of Object.entries(sections ?? {})) {
+    if (key.startsWith(HEIGHT_PREFIX)) {
+      const [section, height] = key.slice(HEIGHT_PREFIX.length).split(":");
+      if (value && section && height && isSection(section) && isHeight(height)) {
+        heights[section] = height;
+      }
+      continue;
+    }
     if (key.startsWith(SIZE_PREFIX)) {
       const [section, size] = key.slice(SIZE_PREFIX.length).split(":");
       if (value && section && size && isSection(section) && isSize(size)) sizes[section] = size;
@@ -107,7 +137,7 @@ export function readDashboardLayoutPrefs(
     ...DEFAULT_DASHBOARD_ORDER.filter((key) => !savedOrder.includes(key)),
   ];
 
-  return { enabled, order: normalizedOrder, sizes };
+  return { enabled, order: normalizedOrder, sizes, heights };
 }
 
 export function writeDashboardLayoutPrefs(
@@ -123,6 +153,9 @@ export function writeDashboardLayoutPrefs(
     sections[`${DASHBOARD_PREFIX}${key}`] = prefs.enabled[key];
     for (const size of DASHBOARD_SIZES) {
       sections[`${SIZE_PREFIX}${key}:${size.key}`] = prefs.sizes[key] === size.key;
+    }
+    for (const height of DASHBOARD_HEIGHTS) {
+      sections[`${HEIGHT_PREFIX}${key}:${height.key}`] = prefs.heights[key] === height.key;
     }
   }
   const keptOrder = (currentOrder ?? []).filter(

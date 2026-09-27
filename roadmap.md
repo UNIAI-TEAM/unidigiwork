@@ -39,6 +39,7 @@
 - [x] Sắp xếp và chỉnh kích thước card Trang chủ, lưu theo người dùng
 - [x] Hoàn thiện kéo thả và kích thước card My Space trên desktop/tablet/mobile
 - [x] Xác minh hai cấu hình độc lập và giữ nguyên sau khi tải lại
+- [x] Dashboard: kéo thả ổn định, resize cạnh phải/cạnh dưới/góc và lưu chiều cao theo người dùng
 
 ## PWA Native AI
 
