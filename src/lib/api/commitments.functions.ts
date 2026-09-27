@@ -7,6 +7,12 @@ import { mapPgError } from "@/lib/api/business.server";
 
 type Ctx = { supabase: any; userId: string };
 
+async function currentTenantId(supabase: any, userId: string, workspaceId?: string | null) {
+  const { resolveTenantId } = await import("./work-deliverables.server");
+  const { readActiveTenantCookie } = await import("./active-tenant.server");
+  return resolveTenantId(supabase, userId, workspaceId ?? null, readActiveTenantCookie());
+}
+
 export type CommitmentStatus = "OPEN" | "IN_PROGRESS" | "FULFILLED" | "BROKEN" | "CANCELED";
 
 export interface CommitmentDTO {
@@ -67,7 +73,10 @@ export const listCommitments = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const ctx = context as unknown as Ctx;
+    const tenantId = await currentTenantId(ctx.supabase, ctx.userId);
+    if (!tenantId) throw new ApiError({ code: "PERMISSION_DENIED", message: "TENANT_REQUIRED" });
     const { data: rows, error } = await ctx.supabase.rpc("list_commitments", {
+      _tenant_id: tenantId,
       _status: data.status ?? null,
       _owner_id: data.ownerId ?? null,
       _limit: data.limit,
@@ -97,7 +106,10 @@ export const createCommitment = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const ctx = context as unknown as Ctx;
+    const tenantId = await currentTenantId(ctx.supabase, ctx.userId, data.workspaceId);
+    if (!tenantId) throw new ApiError({ code: "PERMISSION_DENIED", message: "TENANT_REQUIRED" });
     const { data: id, error } = await ctx.supabase.rpc("create_commitment", {
+      _tenant_id: tenantId,
       _workspace_id: data.workspaceId ?? null,
       _title: data.title.trim(),
       _description: data.description ?? null,
