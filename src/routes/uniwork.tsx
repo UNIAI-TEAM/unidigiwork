@@ -116,7 +116,7 @@ function UniworkHome() {
               src={kol.url}
               alt="Đội ngũ đại diện UniWork cùng linh vật W"
               className="w-full rounded-3xl"
-              width={700}
+              width={560}
               height={420}
             />
           </div>
