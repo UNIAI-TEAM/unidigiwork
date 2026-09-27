@@ -8,9 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/lib/i18n";
 import { SaveToUniworkDialog } from "@/components/conversation/save-to-uniwork-dialog";
-import { ConversationIntelligencePanel } from "@/components/conversation/conversation-intelligence-panel";
 import {
-  getConversationSource,
   listConversationImports,
   type ConversationImportDTO,
 } from "@/lib/api/conversation-work.functions";
@@ -40,17 +38,10 @@ function ConversationWorkPage() {
   const { t, lang } = useI18n();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
-  const [selected, setSelected] = useState<string | null>(null);
 
   const importsQuery = useQuery({
     queryKey: ["conversation-imports"],
     queryFn: () => listConversationImports({ data: { limit: 20 } }),
-  });
-
-  const sourceQuery = useQuery({
-    queryKey: ["conversation-source", selected],
-    queryFn: () => getConversationSource({ data: { sourceType: "IMPORT", sourceId: selected! } }),
-    enabled: Boolean(selected),
   });
 
   return (
