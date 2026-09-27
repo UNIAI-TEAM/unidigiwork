@@ -33,6 +33,7 @@ import {
   History,
   Waypoints,
   UserCog,
+  Handshake,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { Key } from "@/lib/i18n";
@@ -248,6 +249,17 @@ export const NAV_ITEMS: NavItem[] = [
     visibility: "everyone",
     order: 1.55,
     mobile: { placement: "more", href: "/m/task-ops", order: 3.25 },
+  },
+  {
+    id: "commitments",
+    labelKey: "nav.commitments",
+    icon: Handshake,
+    href: "/commitments",
+    group: "results",
+    match: ["/commitments"],
+    visibility: "everyone",
+    order: 1.57,
+    mobile: { placement: "more", href: "/commitments", order: 3.27 },
   },
   {
     id: "work-graph",

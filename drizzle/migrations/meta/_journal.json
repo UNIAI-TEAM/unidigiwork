@@ -456,6 +456,27 @@
       "when": 1790166865489,
       "tag": "0064_fix_conversation_audit_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "7",
+      "when": 1790482230205,
+      "tag": "0065_commitments_module",
+      "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1790482481524,
+      "tag": "0066_commitment_chat_relationship",
+      "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1790482647948,
+      "tag": "0067_commitments_rpc_tenant_param",
+      "breakpoints": true
     }
   ]
 }

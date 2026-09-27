@@ -64,6 +64,7 @@ import { Route as AuthenticatedDecisionsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedDecisionHistoryRouteImport } from './routes/_authenticated/decision-history'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedConversationsRouteImport } from './routes/_authenticated/conversations'
+import { Route as AuthenticatedCommitmentsRouteImport } from './routes/_authenticated/commitments'
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/chat'
 import { Route as AuthenticatedCeoRouteImport } from './routes/_authenticated/ceo'
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar'
@@ -486,6 +487,12 @@ const AuthenticatedConversationsRoute =
   AuthenticatedConversationsRouteImport.update({
     id: '/conversations',
     path: '/conversations',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCommitmentsRoute =
+  AuthenticatedCommitmentsRouteImport.update({
+    id: '/commitments',
+    path: '/commitments',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedChatRoute = AuthenticatedChatRouteImport.update({
@@ -1302,6 +1309,7 @@ export interface FileRoutesByFullPath {
   '/calendar': typeof AuthenticatedCalendarRoute
   '/ceo': typeof AuthenticatedCeoRoute
   '/chat': typeof AuthenticatedChatRoute
+  '/commitments': typeof AuthenticatedCommitmentsRoute
   '/conversations': typeof AuthenticatedConversationsRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/decision-history': typeof AuthenticatedDecisionHistoryRoute
@@ -1497,6 +1505,7 @@ export interface FileRoutesByTo {
   '/calendar': typeof AuthenticatedCalendarRoute
   '/ceo': typeof AuthenticatedCeoRoute
   '/chat': typeof AuthenticatedChatRoute
+  '/commitments': typeof AuthenticatedCommitmentsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/decision-history': typeof AuthenticatedDecisionHistoryRoute
   '/decisions': typeof AuthenticatedDecisionsRoute
@@ -1693,6 +1702,7 @@ export interface FileRoutesById {
   '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
   '/_authenticated/ceo': typeof AuthenticatedCeoRoute
   '/_authenticated/chat': typeof AuthenticatedChatRoute
+  '/_authenticated/commitments': typeof AuthenticatedCommitmentsRoute
   '/_authenticated/conversations': typeof AuthenticatedConversationsRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/decision-history': typeof AuthenticatedDecisionHistoryRoute
@@ -1892,6 +1902,7 @@ export interface FileRouteTypes {
     | '/calendar'
     | '/ceo'
     | '/chat'
+    | '/commitments'
     | '/conversations'
     | '/dashboard'
     | '/decision-history'
@@ -2087,6 +2098,7 @@ export interface FileRouteTypes {
     | '/calendar'
     | '/ceo'
     | '/chat'
+    | '/commitments'
     | '/dashboard'
     | '/decision-history'
     | '/decisions'
@@ -2282,6 +2294,7 @@ export interface FileRouteTypes {
     | '/_authenticated/calendar'
     | '/_authenticated/ceo'
     | '/_authenticated/chat'
+    | '/_authenticated/commitments'
     | '/_authenticated/conversations'
     | '/_authenticated/dashboard'
     | '/_authenticated/decision-history'
@@ -2889,6 +2902,13 @@ declare module '@tanstack/react-router' {
       path: '/conversations'
       fullPath: '/conversations'
       preLoaderRoute: typeof AuthenticatedConversationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/commitments': {
+      id: '/_authenticated/commitments'
+      path: '/commitments'
+      fullPath: '/commitments'
+      preLoaderRoute: typeof AuthenticatedCommitmentsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/chat': {
@@ -4199,6 +4219,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
   AuthenticatedCeoRoute: typeof AuthenticatedCeoRoute
   AuthenticatedChatRoute: typeof AuthenticatedChatRoute
+  AuthenticatedCommitmentsRoute: typeof AuthenticatedCommitmentsRoute
   AuthenticatedConversationsRoute: typeof AuthenticatedConversationsRouteWithChildren
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDecisionHistoryRoute: typeof AuthenticatedDecisionHistoryRoute
@@ -4256,6 +4277,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
   AuthenticatedCeoRoute: AuthenticatedCeoRoute,
   AuthenticatedChatRoute: AuthenticatedChatRoute,
+  AuthenticatedCommitmentsRoute: AuthenticatedCommitmentsRoute,
   AuthenticatedConversationsRoute: AuthenticatedConversationsRouteWithChildren,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDecisionHistoryRoute: AuthenticatedDecisionHistoryRoute,

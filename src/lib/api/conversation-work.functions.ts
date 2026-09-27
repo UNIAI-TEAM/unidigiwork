@@ -368,7 +368,25 @@ export const approveExtractionProposal = createServerFn({ method: "POST" })
     let entityType: "TASK" | "DECISION" | "KNOWLEDGE" | "COMMITMENT" = "TASK";
     let entityId: string | null = null;
 
-    if (kind === "TASK" || kind === "COMMITMENT") {
+    if (kind === "COMMITMENT") {
+      // Module Cam kết riêng: trạng thái + người theo dõi + timeline, nối Work Graph.
+      const { data: createdId, error } = await ctx.supabase.rpc("create_commitment", {
+        _tenant_id: proposal.tenant_id,
+        _workspace_id: workspaceId,
+        _title: data.title.trim(),
+        _description: data.description ?? null,
+        _counterparty: null,
+        _owner_id: data.assigneeId ?? null,
+        _due_at: data.dueAt ?? null,
+        _source_type: run?.source_type ?? null,
+        _source_id: run?.source_id ?? null,
+        _source_excerpt: proposal.evidence ?? null,
+        _idempotency_key: `extract:${proposal.id}`,
+      });
+      if (error) mapPgError(error, "VALIDATION_FAILED");
+      entityId = (createdId as string) ?? null;
+      entityType = "COMMITMENT";
+    } else if (kind === "TASK") {
       if (!workspaceId)
         throw new ApiError({ code: "VALIDATION_FAILED", message: "WORKSPACE_REQUIRED" });
       const { data: created, error } = await ctx.supabase.rpc("create_task", {
@@ -383,10 +401,7 @@ export const approveExtractionProposal = createServerFn({ method: "POST" })
       if (error) mapPgError(error, "TASK_NOT_FOUND");
       const row = Array.isArray(created) ? created[0] : created;
       entityId = (row as any)?.id ?? null;
-      entityType = kind === "COMMITMENT" ? "COMMITMENT" : "TASK";
-      if (entityId && kind === "COMMITMENT") {
-        await ctx.supabase.rpc("set_task_tags", { _task_id: entityId, _tags: ["commitment"] });
-      }
+      entityType = "TASK";
     } else if (kind === "DECISION") {
       const { data: created, error } = await ctx.supabase
         .from("decisions")
@@ -453,7 +468,7 @@ export const approveExtractionProposal = createServerFn({ method: "POST" })
       (entityType === "TASK" || entityType === "COMMITMENT")
     ) {
       await ctx.supabase.rpc("link_work_entities", {
-        _source_type: "TASK",
+        _source_type: entityType,
         _source_id: entityId,
         _target_type: "CHAT_CHANNEL",
         _target_id: run.source_id,
