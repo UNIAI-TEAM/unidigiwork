@@ -206,3 +206,57 @@ export const deleteCmsEntry = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/* ---------------------- Consultation routing (admin) ---------------------- */
+
+export const getConsultationRouting = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const sb = context.supabase as any;
+    const { data: isAdmin } = await sb.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+    if (!isAdmin) throw new Error("FORBIDDEN");
+    const [{ data: lead }, { data: routing }] = await Promise.all([
+      sb.from("cms_settings").select("value").eq("key", "lead_workspace").maybeSingle(),
+      sb.from("cms_settings").select("value").eq("key", "consultation_routing").maybeSingle(),
+    ]);
+    const wsId = ((lead?.value as any)?.workspace_id as string | undefined) ?? null;
+    let members: { id: string; name: string }[] = [];
+    if (wsId) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: wm } = await (supabaseAdmin as any)
+        .from("workspace_members")
+        .select("user_id")
+        .eq("workspace_id", wsId);
+      const ids = ((wm ?? []) as any[]).map((r) => r.user_id as string);
+      if (ids.length) {
+        const { data: profs } = await (supabaseAdmin as any)
+          .from("profiles")
+          .select("id, email, display_name")
+          .in("id", ids);
+        members = ((profs ?? []) as any[])
+          .map((p) => ({ id: p.id as string, name: (p.display_name || p.email || p.id) as string }))
+          .sort((a, b) => a.name.localeCompare(b.name));
+      }
+    }
+    return {
+      workspaceId: wsId,
+      members,
+      routing: ((routing?.value ?? {}) as Record<string, string>),
+    };
+  });
+
+export const setConsultationRouting = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({ routing: z.record(z.string().regex(/^[a-z0-9-]+$/), z.string().uuid()) }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { error } = await (context.supabase as any).from("cms_settings").upsert({
+      key: "consultation_routing",
+      value: data.routing,
+      updated_by: context.userId,
+      updated_at: new Date().toISOString(),
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
