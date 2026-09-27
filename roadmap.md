@@ -137,3 +137,9 @@
 - [ ] Trang quản lý người dùng theo vai trò: đồng nghiệp đăng ký vào tổ chức, xem công việc mình theo dõi
 - [ ] Kết nối hộp thư ngoài Outlook/Gmail vào Email Hub (đang làm)
 - [ ] Thiết kế lại Email Hub kiểu Outlook: ribbon soạn thư, lịch/lịch sử, nút mở hộp thư ngoài
+
+## Website dịch vụ doanh nghiệp
+
+- [ ] Tạo trang danh mục `/dich-vu` từ nội dung CMS đã xuất bản.
+- [ ] Tạo 5 trang chi tiết dịch vụ theo slug, có quy trình, phạm vi, tích hợp UniWork và biểu mẫu tư vấn.
+- [ ] Nối thẻ dịch vụ trên `/uniwork` tới trang chi tiết; bổ sung SEO và kiểm tra mobile/tablet/desktop.
