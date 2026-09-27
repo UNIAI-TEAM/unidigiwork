@@ -3,6 +3,7 @@ import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { ArrowLeft, ArrowRight, BookOpen } from "lucide-react";
 import { PublicShell } from "@/components/public-shell";
 import { Button } from "@/components/ui/button";
+import { Markdown } from "@/components/marketing/markdown";
 import { listPublishedCms } from "@/lib/api/cms.functions";
 import { useI18n } from "@/lib/i18n";
 import { mk } from "@/lib/i18n-locales/marketing";
@@ -29,10 +30,11 @@ export const Route = createFileRoute("/tai-nguyen/$slug")({
         ],
       };
     }
-    const description = loaderData.article.summary ?? loaderData.article.title;
+    const a = loaderData.article;
+    const description = a.seoDescription || a.summary || a.title;
     return {
       meta: [
-        { title: `${loaderData.article.title} — Tài nguyên UniWork` },
+        { title: a.seoTitle || `${a.title} — Tài nguyên UniWork` },
         { name: "description", content: description },
         { property: "og:title", content: `${loaderData.article.title} — UniWork` },
         { property: "og:description", content: description },
@@ -77,9 +79,14 @@ function ArticleDetailPage() {
         </section>
 
         <section className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-          <div className="whitespace-pre-wrap text-base leading-relaxed text-foreground/90">
-            {article.body || article.summary}
-          </div>
+          {article.coverUrl && (
+            <img
+              src={article.coverUrl}
+              alt={article.title}
+              className="mb-8 aspect-video w-full rounded-2xl object-cover"
+            />
+          )}
+          <Markdown source={article.body || article.summary || ""} className="text-foreground/90" />
           <Button asChild className="mt-10 h-11 gap-2 px-5">
             <Link to="/uniwork">
               {c.resourcePages.exploreUniwork} <ArrowRight className="h-4 w-4" />
