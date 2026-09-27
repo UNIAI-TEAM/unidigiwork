@@ -371,6 +371,7 @@ export const approveExtractionProposal = createServerFn({ method: "POST" })
     if (kind === "COMMITMENT") {
       // Module Cam kết riêng: trạng thái + người theo dõi + timeline, nối Work Graph.
       const { data: createdId, error } = await ctx.supabase.rpc("create_commitment", {
+        _tenant_id: proposal.tenant_id,
         _workspace_id: workspaceId,
         _title: data.title.trim(),
         _description: data.description ?? null,
