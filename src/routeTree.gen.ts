@@ -30,6 +30,7 @@ import { Route as AiRouteImport } from './routes/ai'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TaiNguyenIndexRouteImport } from './routes/tai-nguyen.index'
 import { Route as ReportsIndexRouteImport } from './routes/reports.index'
 import { Route as DichVuIndexRouteImport } from './routes/dich-vu.index'
 import { Route as WorkflowsRunsRouteImport } from './routes/workflows_.runs'
@@ -38,6 +39,7 @@ import { Route as WorkflowsCalendarRouteImport } from './routes/workflows_.calen
 import { Route as WorkflowsAgentsRouteImport } from './routes/workflows_.agents'
 import { Route as WorkflowsIdRouteImport } from './routes/workflows.$id'
 import { Route as TasksIdRouteImport } from './routes/tasks_.$id'
+import { Route as TaiNguyenSlugRouteImport } from './routes/tai-nguyen.$slug'
 import { Route as ReportsDetailRouteImport } from './routes/reports.detail'
 import { Route as ReportsTypeRouteImport } from './routes/reports.$type'
 import { Route as MeetingHistoryRouteImport } from './routes/meeting_.history'
@@ -317,6 +319,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TaiNguyenIndexRoute = TaiNguyenIndexRouteImport.update({
+  id: '/tai-nguyen/',
+  path: '/tai-nguyen/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ReportsIndexRoute = ReportsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -355,6 +362,11 @@ const WorkflowsIdRoute = WorkflowsIdRouteImport.update({
 const TasksIdRoute = TasksIdRouteImport.update({
   id: '/tasks_/$id',
   path: '/tasks/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TaiNguyenSlugRoute = TaiNguyenSlugRouteImport.update({
+  id: '/tai-nguyen/$slug',
+  path: '/tai-nguyen/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReportsDetailRoute = ReportsDetailRouteImport.update({
@@ -1380,6 +1392,7 @@ export interface FileRoutesByFullPath {
   '/meeting/history': typeof MeetingHistoryRoute
   '/reports/$type': typeof ReportsTypeRoute
   '/reports/detail': typeof ReportsDetailRoute
+  '/tai-nguyen/$slug': typeof TaiNguyenSlugRoute
   '/tasks/$id': typeof TasksIdRoute
   '/workflows/$id': typeof WorkflowsIdRoute
   '/workflows/agents': typeof WorkflowsAgentsRoute
@@ -1388,6 +1401,7 @@ export interface FileRoutesByFullPath {
   '/workflows/runs': typeof WorkflowsRunsRoute
   '/dich-vu/': typeof DichVuIndexRoute
   '/reports/': typeof ReportsIndexRoute
+  '/tai-nguyen/': typeof TaiNguyenIndexRoute
   '/admin/accounts': typeof AuthenticatedAdminAccountsRoute
   '/admin/ai-actions': typeof AuthenticatedAdminAiActionsRoute
   '/admin/ai-context': typeof AuthenticatedAdminAiContextRoute
@@ -1579,6 +1593,7 @@ export interface FileRoutesByTo {
   '/meeting/history': typeof MeetingHistoryRoute
   '/reports/$type': typeof ReportsTypeRoute
   '/reports/detail': typeof ReportsDetailRoute
+  '/tai-nguyen/$slug': typeof TaiNguyenSlugRoute
   '/tasks/$id': typeof TasksIdRoute
   '/workflows/$id': typeof WorkflowsIdRoute
   '/workflows/agents': typeof WorkflowsAgentsRoute
@@ -1587,6 +1602,7 @@ export interface FileRoutesByTo {
   '/workflows/runs': typeof WorkflowsRunsRoute
   '/dich-vu': typeof DichVuIndexRoute
   '/reports': typeof ReportsIndexRoute
+  '/tai-nguyen': typeof TaiNguyenIndexRoute
   '/admin/accounts': typeof AuthenticatedAdminAccountsRoute
   '/admin/ai-actions': typeof AuthenticatedAdminAiActionsRoute
   '/admin/ai-context': typeof AuthenticatedAdminAiContextRoute
@@ -1784,6 +1800,7 @@ export interface FileRoutesById {
   '/meeting_/history': typeof MeetingHistoryRoute
   '/reports/$type': typeof ReportsTypeRoute
   '/reports/detail': typeof ReportsDetailRoute
+  '/tai-nguyen/$slug': typeof TaiNguyenSlugRoute
   '/tasks_/$id': typeof TasksIdRoute
   '/workflows/$id': typeof WorkflowsIdRoute
   '/workflows_/agents': typeof WorkflowsAgentsRoute
@@ -1792,6 +1809,7 @@ export interface FileRoutesById {
   '/workflows_/runs': typeof WorkflowsRunsRoute
   '/dich-vu/': typeof DichVuIndexRoute
   '/reports/': typeof ReportsIndexRoute
+  '/tai-nguyen/': typeof TaiNguyenIndexRoute
   '/_authenticated/admin/accounts': typeof AuthenticatedAdminAccountsRoute
   '/_authenticated/admin/ai-actions': typeof AuthenticatedAdminAiActionsRoute
   '/_authenticated/admin/ai-context': typeof AuthenticatedAdminAiContextRoute
@@ -1990,6 +2008,7 @@ export interface FileRouteTypes {
     | '/meeting/history'
     | '/reports/$type'
     | '/reports/detail'
+    | '/tai-nguyen/$slug'
     | '/tasks/$id'
     | '/workflows/$id'
     | '/workflows/agents'
@@ -1998,6 +2017,7 @@ export interface FileRouteTypes {
     | '/workflows/runs'
     | '/dich-vu/'
     | '/reports/'
+    | '/tai-nguyen/'
     | '/admin/accounts'
     | '/admin/ai-actions'
     | '/admin/ai-context'
@@ -2189,6 +2209,7 @@ export interface FileRouteTypes {
     | '/meeting/history'
     | '/reports/$type'
     | '/reports/detail'
+    | '/tai-nguyen/$slug'
     | '/tasks/$id'
     | '/workflows/$id'
     | '/workflows/agents'
@@ -2197,6 +2218,7 @@ export interface FileRouteTypes {
     | '/workflows/runs'
     | '/dich-vu'
     | '/reports'
+    | '/tai-nguyen'
     | '/admin/accounts'
     | '/admin/ai-actions'
     | '/admin/ai-context'
@@ -2393,6 +2415,7 @@ export interface FileRouteTypes {
     | '/meeting_/history'
     | '/reports/$type'
     | '/reports/detail'
+    | '/tai-nguyen/$slug'
     | '/tasks_/$id'
     | '/workflows/$id'
     | '/workflows_/agents'
@@ -2401,6 +2424,7 @@ export interface FileRouteTypes {
     | '/workflows_/runs'
     | '/dich-vu/'
     | '/reports/'
+    | '/tai-nguyen/'
     | '/_authenticated/admin/accounts'
     | '/_authenticated/admin/ai-actions'
     | '/_authenticated/admin/ai-context'
@@ -2563,11 +2587,13 @@ export interface RootRouteChildren {
   InviteTokenRoute: typeof InviteTokenRoute
   MeetingIdRoute: typeof MeetingIdRoute
   MeetingHistoryRoute: typeof MeetingHistoryRoute
+  TaiNguyenSlugRoute: typeof TaiNguyenSlugRoute
   TasksIdRoute: typeof TasksIdRoute
   WorkflowsAgentsRoute: typeof WorkflowsAgentsRoute
   WorkflowsCalendarRoute: typeof WorkflowsCalendarRoute
   WorkflowsPermissionsRoute: typeof WorkflowsPermissionsRoute
   WorkflowsRunsRoute: typeof WorkflowsRunsRoute
+  TaiNguyenIndexRoute: typeof TaiNguyenIndexRoute
   ApiAdminWorkProductGraphBackfillRoute: typeof ApiAdminWorkProductGraphBackfillRoute
   ApiOfficeDownloadRoute: typeof ApiOfficeDownloadRoute
   ApiOfficeSessionsRoute: typeof ApiOfficeSessionsRouteWithChildren
@@ -2739,6 +2765,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tai-nguyen/': {
+      id: '/tai-nguyen/'
+      path: '/tai-nguyen'
+      fullPath: '/tai-nguyen/'
+      preLoaderRoute: typeof TaiNguyenIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reports/': {
       id: '/reports/'
       path: '/'
@@ -2793,6 +2826,13 @@ declare module '@tanstack/react-router' {
       path: '/tasks/$id'
       fullPath: '/tasks/$id'
       preLoaderRoute: typeof TasksIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tai-nguyen/$slug': {
+      id: '/tai-nguyen/$slug'
+      path: '/tai-nguyen/$slug'
+      fullPath: '/tai-nguyen/$slug'
+      preLoaderRoute: typeof TaiNguyenSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reports/detail': {
@@ -4548,11 +4588,13 @@ const rootRouteChildren: RootRouteChildren = {
   InviteTokenRoute: InviteTokenRoute,
   MeetingIdRoute: MeetingIdRoute,
   MeetingHistoryRoute: MeetingHistoryRoute,
+  TaiNguyenSlugRoute: TaiNguyenSlugRoute,
   TasksIdRoute: TasksIdRoute,
   WorkflowsAgentsRoute: WorkflowsAgentsRoute,
   WorkflowsCalendarRoute: WorkflowsCalendarRoute,
   WorkflowsPermissionsRoute: WorkflowsPermissionsRoute,
   WorkflowsRunsRoute: WorkflowsRunsRoute,
+  TaiNguyenIndexRoute: TaiNguyenIndexRoute,
   ApiAdminWorkProductGraphBackfillRoute: ApiAdminWorkProductGraphBackfillRoute,
   ApiOfficeDownloadRoute: ApiOfficeDownloadRoute,
   ApiOfficeSessionsRoute: ApiOfficeSessionsRouteWithChildren,
