@@ -122,6 +122,7 @@ import { Route as AuthenticatedMSplatRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedEmailComposeRouteImport } from './routes/_authenticated/email_.compose'
 import { Route as AuthenticatedEmailIdRouteImport } from './routes/_authenticated/email_.$id'
 import { Route as AuthenticatedDocumentsIdRouteImport } from './routes/_authenticated/documents.$id'
+import { Route as AuthenticatedConversationsImportIdRouteImport } from './routes/_authenticated/conversations.$importId'
 import { Route as AuthenticatedChatChannelIdRouteImport } from './routes/_authenticated/chat_.$channelId'
 import { Route as AuthenticatedCeoTaskTrackingRouteImport } from './routes/_authenticated/ceo_.task-tracking'
 import { Route as AuthenticatedCeoStandupRouteImport } from './routes/_authenticated/ceo_.standup'
@@ -797,6 +798,12 @@ const AuthenticatedDocumentsIdRoute =
     path: '/$id',
     getParentRoute: () => AuthenticatedDocumentsRoute,
   } as any)
+const AuthenticatedConversationsImportIdRoute =
+  AuthenticatedConversationsImportIdRouteImport.update({
+    id: '/$importId',
+    path: '/$importId',
+    getParentRoute: () => AuthenticatedConversationsRoute,
+  } as any)
 const AuthenticatedChatChannelIdRoute =
   AuthenticatedChatChannelIdRouteImport.update({
     id: '/chat_/$channelId',
@@ -1288,7 +1295,7 @@ export interface FileRoutesByFullPath {
   '/calendar': typeof AuthenticatedCalendarRoute
   '/ceo': typeof AuthenticatedCeoRoute
   '/chat': typeof AuthenticatedChatRoute
-  '/conversations': typeof AuthenticatedConversationsRoute
+  '/conversations': typeof AuthenticatedConversationsRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/decision-history': typeof AuthenticatedDecisionHistoryRoute
   '/decisions': typeof AuthenticatedDecisionsRoute
@@ -1352,6 +1359,7 @@ export interface FileRoutesByFullPath {
   '/ceo/standup': typeof AuthenticatedCeoStandupRoute
   '/ceo/task-tracking': typeof AuthenticatedCeoTaskTrackingRoute
   '/chat/$channelId': typeof AuthenticatedChatChannelIdRoute
+  '/conversations/$importId': typeof AuthenticatedConversationsImportIdRoute
   '/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/email/$id': typeof AuthenticatedEmailIdRoute
   '/email/compose': typeof AuthenticatedEmailComposeRoute
@@ -1481,7 +1489,7 @@ export interface FileRoutesByTo {
   '/calendar': typeof AuthenticatedCalendarRoute
   '/ceo': typeof AuthenticatedCeoRoute
   '/chat': typeof AuthenticatedChatRoute
-  '/conversations': typeof AuthenticatedConversationsRoute
+  '/conversations': typeof AuthenticatedConversationsRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/decision-history': typeof AuthenticatedDecisionHistoryRoute
   '/decisions': typeof AuthenticatedDecisionsRoute
@@ -1544,6 +1552,7 @@ export interface FileRoutesByTo {
   '/ceo/standup': typeof AuthenticatedCeoStandupRoute
   '/ceo/task-tracking': typeof AuthenticatedCeoTaskTrackingRoute
   '/chat/$channelId': typeof AuthenticatedChatChannelIdRoute
+  '/conversations/$importId': typeof AuthenticatedConversationsImportIdRoute
   '/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/email/$id': typeof AuthenticatedEmailIdRoute
   '/email/compose': typeof AuthenticatedEmailComposeRoute
@@ -1676,7 +1685,7 @@ export interface FileRoutesById {
   '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
   '/_authenticated/ceo': typeof AuthenticatedCeoRoute
   '/_authenticated/chat': typeof AuthenticatedChatRoute
-  '/_authenticated/conversations': typeof AuthenticatedConversationsRoute
+  '/_authenticated/conversations': typeof AuthenticatedConversationsRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/decision-history': typeof AuthenticatedDecisionHistoryRoute
   '/_authenticated/decisions': typeof AuthenticatedDecisionsRoute
@@ -1740,6 +1749,7 @@ export interface FileRoutesById {
   '/_authenticated/ceo_/standup': typeof AuthenticatedCeoStandupRoute
   '/_authenticated/ceo_/task-tracking': typeof AuthenticatedCeoTaskTrackingRoute
   '/_authenticated/chat_/$channelId': typeof AuthenticatedChatChannelIdRoute
+  '/_authenticated/conversations/$importId': typeof AuthenticatedConversationsImportIdRoute
   '/_authenticated/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/_authenticated/email_/$id': typeof AuthenticatedEmailIdRoute
   '/_authenticated/email_/compose': typeof AuthenticatedEmailComposeRoute
@@ -1937,6 +1947,7 @@ export interface FileRouteTypes {
     | '/ceo/standup'
     | '/ceo/task-tracking'
     | '/chat/$channelId'
+    | '/conversations/$importId'
     | '/documents/$id'
     | '/email/$id'
     | '/email/compose'
@@ -2129,6 +2140,7 @@ export interface FileRouteTypes {
     | '/ceo/standup'
     | '/ceo/task-tracking'
     | '/chat/$channelId'
+    | '/conversations/$importId'
     | '/documents/$id'
     | '/email/$id'
     | '/email/compose'
@@ -2324,6 +2336,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ceo_/standup'
     | '/_authenticated/ceo_/task-tracking'
     | '/_authenticated/chat_/$channelId'
+    | '/_authenticated/conversations/$importId'
     | '/_authenticated/documents/$id'
     | '/_authenticated/email_/$id'
     | '/_authenticated/email_/compose'
@@ -3273,6 +3286,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDocumentsIdRouteImport
       parentRoute: typeof AuthenticatedDocumentsRoute
     }
+    '/_authenticated/conversations/$importId': {
+      id: '/_authenticated/conversations/$importId'
+      path: '/$importId'
+      fullPath: '/conversations/$importId'
+      preLoaderRoute: typeof AuthenticatedConversationsImportIdRouteImport
+      parentRoute: typeof AuthenticatedConversationsRoute
+    }
     '/_authenticated/chat_/$channelId': {
       id: '/_authenticated/chat_/$channelId'
       path: '/chat/$channelId'
@@ -3908,6 +3928,21 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
 const AuthenticatedAdminRouteWithChildren =
   AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
 
+interface AuthenticatedConversationsRouteChildren {
+  AuthenticatedConversationsImportIdRoute: typeof AuthenticatedConversationsImportIdRoute
+}
+
+const AuthenticatedConversationsRouteChildren: AuthenticatedConversationsRouteChildren =
+  {
+    AuthenticatedConversationsImportIdRoute:
+      AuthenticatedConversationsImportIdRoute,
+  }
+
+const AuthenticatedConversationsRouteWithChildren =
+  AuthenticatedConversationsRoute._addFileChildren(
+    AuthenticatedConversationsRouteChildren,
+  )
+
 interface AuthenticatedDocumentsRouteChildren {
   AuthenticatedDocumentsIdRoute: typeof AuthenticatedDocumentsIdRoute
 }
@@ -4144,7 +4179,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
   AuthenticatedCeoRoute: typeof AuthenticatedCeoRoute
   AuthenticatedChatRoute: typeof AuthenticatedChatRoute
-  AuthenticatedConversationsRoute: typeof AuthenticatedConversationsRoute
+  AuthenticatedConversationsRoute: typeof AuthenticatedConversationsRouteWithChildren
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDecisionHistoryRoute: typeof AuthenticatedDecisionHistoryRoute
   AuthenticatedDecisionsRoute: typeof AuthenticatedDecisionsRoute
@@ -4201,7 +4236,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
   AuthenticatedCeoRoute: AuthenticatedCeoRoute,
   AuthenticatedChatRoute: AuthenticatedChatRoute,
-  AuthenticatedConversationsRoute: AuthenticatedConversationsRoute,
+  AuthenticatedConversationsRoute: AuthenticatedConversationsRouteWithChildren,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDecisionHistoryRoute: AuthenticatedDecisionHistoryRoute,
   AuthenticatedDecisionsRoute: AuthenticatedDecisionsRoute,
