@@ -22,7 +22,8 @@ export type PublicNav =
   | "blog"
   | "uniwork"
   | "unioffice"
-  | "services";
+  | "services"
+  | "resources";
 
 function PublicHeader({ active }: { active?: PublicNav }) {
   const { t } = useI18n();
@@ -30,6 +31,7 @@ function PublicHeader({ active }: { active?: PublicNav }) {
     { key: "uniwork", label: "UniWork", to: "/uniwork" },
     { key: "services", label: "Dịch vụ", to: "/dich-vu" },
     { key: "unioffice", label: "uniOffice", to: "/unioffice" },
+    { key: "resources", label: "Tài nguyên", to: "/tai-nguyen" },
     { key: "pricing", label: "Bảng giá", to: "/pricing" },
     { key: "about", label: "Giới thiệu", to: "/about" },
     { key: "blog", label: "Blog", to: "/blog" },
@@ -100,6 +102,7 @@ function PublicFooter() {
           items={[
             { label: "Dịch vụ doanh nghiệp", to: "/dich-vu" },
             { label: "Bảng giá", to: "/pricing" },
+            { label: "Tài nguyên", to: "/tai-nguyen" },
             { label: "Demo Meeting", to: "/meeting" },
             { label: "Tài liệu", to: "/documents" },
             { label: "Workflow", to: "/workflows" },
