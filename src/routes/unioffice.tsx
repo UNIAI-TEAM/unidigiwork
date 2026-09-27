@@ -21,16 +21,22 @@ export const Route = createFileRoute("/unioffice")({
       { title: "uniOffice — Word, Excel, PowerPoint, PDF có AI" },
       {
         name: "description",
-        content: "uniOffice thay thế MS Office: soạn thảo, bảng tính, trình chiếu, PDF có AI, mở đúng định dạng Office, lưu trong UniWork.",
+        content:
+          "uniOffice thay thế MS Office: soạn thảo, bảng tính, trình chiếu, PDF có AI, mở đúng định dạng Office, lưu trong UniWork.",
       },
       { property: "og:title", content: "uniOffice — bộ văn phòng có AI của UniWork" },
-      { property: "og:description", content: "So sánh với MS Office và hướng dẫn chuyển đổi từng bước." },
+      {
+        property: "og:description",
+        content: "So sánh với MS Office và hướng dẫn chuyển đổi từng bước.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   loader: ({ context }) => context.queryClient.ensureQueryData(servicesQuery),
-  errorComponent: () => <div className="p-10 text-center text-sm text-muted-foreground">Không tải được trang.</div>,
+  errorComponent: () => (
+    <div className="p-10 text-center text-sm text-muted-foreground">Không tải được trang.</div>
+  ),
   notFoundComponent: () => <div className="p-10 text-center">404</div>,
   component: UniOfficePage,
 });
@@ -61,7 +67,13 @@ function UniOfficePage() {
                 </Button>
               </div>
             </div>
-            <img src={card.url} alt="uniOffice: Word, Excel, PowerPoint, PDF" className="w-full rounded-3xl shadow-md" width={690} height={400} />
+            <img
+              src={card.url}
+              alt="uniOffice: Word, Excel, PowerPoint, PDF"
+              className="w-full rounded-3xl shadow-md"
+              width={690}
+              height={400}
+            />
           </div>
         </section>
 
@@ -90,7 +102,9 @@ function UniOfficePage() {
                 <thead>
                   <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
                     {c.compareCols.map((h) => (
-                      <th key={h} className="px-4 py-3">{h}</th>
+                      <th key={h} className="px-4 py-3">
+                        {h}
+                      </th>
                     ))}
                   </tr>
                 </thead>

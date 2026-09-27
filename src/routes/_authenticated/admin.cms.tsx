@@ -12,7 +12,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   deleteCmsEntry,
   getCmsAdminState,
@@ -28,7 +34,10 @@ export const Route = createFileRoute("/_authenticated/admin/cms")({
   head: () => ({
     meta: [
       { title: "Website & CMS — UNIWORK" },
-      { name: "description", content: "Quản trị dịch vụ, bảng giá và bài viết của website UniWork." },
+      {
+        name: "description",
+        content: "Quản trị dịch vụ, bảng giá và bài viết của website UniWork.",
+      },
     ],
   }),
   component: AdminCmsPage,
@@ -101,7 +110,10 @@ function AdminCmsPage() {
 
   const save = useMutation({
     mutationFn: (d: Draft) => {
-      const items = d.list.split("\n").map((x) => x.trim()).filter(Boolean);
+      const items = d.list
+        .split("\n")
+        .map((x) => x.trim())
+        .filter(Boolean);
       const data: Record<string, unknown> =
         d.kind === "service"
           ? { icon: d.icon || undefined, steps: items }
@@ -174,7 +186,9 @@ function AdminCmsPage() {
         >
           <option value="">{t("cms.none")}</option>
           {state.data.workspaces.map((w) => (
-            <option key={w.id} value={w.id}>{w.name}</option>
+            <option key={w.id} value={w.id}>
+              {w.name}
+            </option>
           ))}
         </select>
         <p className="text-xs text-muted-foreground">{t("cms.leadHint")}</p>
@@ -195,7 +209,9 @@ function AdminCmsPage() {
 
       <div className="divide-y divide-border rounded-2xl border border-border">
         {list.isLoading && <Skeleton className="m-4 h-12" />}
-        {list.data?.length === 0 && <p className="p-4 text-sm text-muted-foreground">{t("cms.empty")}</p>}
+        {list.data?.length === 0 && (
+          <p className="p-4 text-sm text-muted-foreground">{t("cms.empty")}</p>
+        )}
         {list.data?.map((e) => (
           <div key={e.id} className="flex min-h-14 items-center gap-3 px-4 py-2">
             <div className="min-w-0 flex-1">
@@ -205,9 +221,16 @@ function AdminCmsPage() {
                   {t(e.status === "published" ? "cms.published" : "cms.draft")}
                 </Badge>
               </div>
-              <p className="truncate text-xs text-muted-foreground">/{e.slug} · {e.summary}</p>
+              <p className="truncate text-xs text-muted-foreground">
+                /{e.slug} · {e.summary}
+              </p>
             </div>
-            <Button variant="ghost" className="h-11 w-11 p-0" aria-label={t("cms.edit")} onClick={() => setDraft(toDraft(kind, e))}>
+            <Button
+              variant="ghost"
+              className="h-11 w-11 p-0"
+              aria-label={t("cms.edit")}
+              onClick={() => setDraft(toDraft(kind, e))}
+            >
               <Pencil className="h-4 w-4" />
             </Button>
             <Button
@@ -230,27 +253,63 @@ function AdminCmsPage() {
           {draft && (
             <div className="grid gap-3">
               <F id="c-title" label={t("cms.titleF")}>
-                <Input id="c-title" className="h-11" value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
+                <Input
+                  id="c-title"
+                  className="h-11"
+                  value={draft.title}
+                  onChange={(e) => setDraft({ ...draft, title: e.target.value })}
+                />
               </F>
               <F id="c-slug" label={t("cms.slug")}>
-                <Input id="c-slug" className="h-11" placeholder={slugify(draft.title)} value={draft.slug} onChange={(e) => setDraft({ ...draft, slug: slugify(e.target.value) })} />
+                <Input
+                  id="c-slug"
+                  className="h-11"
+                  placeholder={slugify(draft.title)}
+                  value={draft.slug}
+                  onChange={(e) => setDraft({ ...draft, slug: slugify(e.target.value) })}
+                />
               </F>
               <F id="c-sum" label={t("cms.summary")}>
-                <Textarea id="c-sum" rows={2} value={draft.summary} onChange={(e) => setDraft({ ...draft, summary: e.target.value })} />
+                <Textarea
+                  id="c-sum"
+                  rows={2}
+                  value={draft.summary}
+                  onChange={(e) => setDraft({ ...draft, summary: e.target.value })}
+                />
               </F>
               <F id="c-body" label={t("cms.body")}>
-                <Textarea id="c-body" rows={draft.kind === "article" ? 10 : 3} value={draft.body} onChange={(e) => setDraft({ ...draft, body: e.target.value })} />
+                <Textarea
+                  id="c-body"
+                  rows={draft.kind === "article" ? 10 : 3}
+                  value={draft.body}
+                  onChange={(e) => setDraft({ ...draft, body: e.target.value })}
+                />
               </F>
               {draft.kind !== "article" && (
-                <F id="c-list" label={t(draft.kind === "service" ? "cms.listService" : "cms.listPricing")}>
-                  <Textarea id="c-list" rows={4} value={draft.list} onChange={(e) => setDraft({ ...draft, list: e.target.value })} />
+                <F
+                  id="c-list"
+                  label={t(draft.kind === "service" ? "cms.listService" : "cms.listPricing")}
+                >
+                  <Textarea
+                    id="c-list"
+                    rows={4}
+                    value={draft.list}
+                    onChange={(e) => setDraft({ ...draft, list: e.target.value })}
+                  />
                 </F>
               )}
               {draft.kind === "service" && (
                 <F id="c-icon" label={t("cms.icon")}>
-                  <select id="c-icon" className="h-11 rounded-lg border border-input bg-background px-3 text-sm" value={draft.icon} onChange={(e) => setDraft({ ...draft, icon: e.target.value })}>
+                  <select
+                    id="c-icon"
+                    className="h-11 rounded-lg border border-input bg-background px-3 text-sm"
+                    value={draft.icon}
+                    onChange={(e) => setDraft({ ...draft, icon: e.target.value })}
+                  >
                     {["", "building", "scale", "calculator", "signature", "receipt"].map((i) => (
-                      <option key={i} value={i}>{i || "—"}</option>
+                      <option key={i} value={i}>
+                        {i || "—"}
+                      </option>
                     ))}
                   </select>
                 </F>
@@ -258,28 +317,56 @@ function AdminCmsPage() {
               {draft.kind === "pricing" && (
                 <>
                   <F id="c-price" label={t("cms.price")}>
-                    <Input id="c-price" className="h-11" value={draft.price} onChange={(e) => setDraft({ ...draft, price: e.target.value })} />
+                    <Input
+                      id="c-price"
+                      className="h-11"
+                      value={draft.price}
+                      onChange={(e) => setDraft({ ...draft, price: e.target.value })}
+                    />
                   </F>
                   <label className="flex min-h-11 items-center gap-3 text-sm">
-                    <Switch checked={draft.featured} onCheckedChange={(v) => setDraft({ ...draft, featured: v })} /> {t("cms.featured")}
+                    <Switch
+                      checked={draft.featured}
+                      onCheckedChange={(v) => setDraft({ ...draft, featured: v })}
+                    />{" "}
+                    {t("cms.featured")}
                   </label>
                 </>
               )}
               {draft.kind === "article" && (
                 <F id="c-cat" label={t("cms.category")}>
-                  <Input id="c-cat" className="h-11" value={draft.category} onChange={(e) => setDraft({ ...draft, category: e.target.value })} />
+                  <Input
+                    id="c-cat"
+                    className="h-11"
+                    value={draft.category}
+                    onChange={(e) => setDraft({ ...draft, category: e.target.value })}
+                  />
                 </F>
               )}
               <F id="c-order" label={t("cms.order")}>
-                <Input id="c-order" type="number" className="h-11" value={draft.sortOrder} onChange={(e) => setDraft({ ...draft, sortOrder: Number(e.target.value) || 0 })} />
+                <Input
+                  id="c-order"
+                  type="number"
+                  className="h-11"
+                  value={draft.sortOrder}
+                  onChange={(e) => setDraft({ ...draft, sortOrder: Number(e.target.value) || 0 })}
+                />
               </F>
               <label className="flex min-h-11 items-center gap-3 text-sm">
-                <Switch checked={draft.published} onCheckedChange={(v) => setDraft({ ...draft, published: v })} /> {t("cms.published")}
+                <Switch
+                  checked={draft.published}
+                  onCheckedChange={(v) => setDraft({ ...draft, published: v })}
+                />{" "}
+                {t("cms.published")}
               </label>
             </div>
           )}
           <DialogFooter>
-            <Button className="h-11" disabled={!draft?.title || save.isPending} onClick={() => draft && save.mutate(draft)}>
+            <Button
+              className="h-11"
+              disabled={!draft?.title || save.isPending}
+              onClick={() => draft && save.mutate(draft)}
+            >
               {t("cms.save")}
             </Button>
           </DialogFooter>

@@ -150,6 +150,7 @@ import { Route as AuthenticatedAdminKnowledgeRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminEconomicsRouteImport } from './routes/_authenticated/admin.economics'
 import { Route as AuthenticatedAdminDocumentAccessRouteImport } from './routes/_authenticated/admin.document-access'
 import { Route as AuthenticatedAdminCohortsRouteImport } from './routes/_authenticated/admin.cohorts'
+import { Route as AuthenticatedAdminCmsRouteImport } from './routes/_authenticated/admin.cms'
 import { Route as AuthenticatedAdminBackupRouteImport } from './routes/_authenticated/admin.backup'
 import { Route as AuthenticatedAdminAiContextRouteImport } from './routes/_authenticated/admin.ai-context'
 import { Route as AuthenticatedAdminAiActionsRouteImport } from './routes/_authenticated/admin.ai-actions'
@@ -959,6 +960,11 @@ const AuthenticatedAdminCohortsRoute =
     path: '/cohorts',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminCmsRoute = AuthenticatedAdminCmsRouteImport.update({
+  id: '/cms',
+  path: '/cms',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 const AuthenticatedAdminBackupRoute =
   AuthenticatedAdminBackupRouteImport.update({
     id: '/backup',
@@ -1365,6 +1371,7 @@ export interface FileRoutesByFullPath {
   '/admin/ai-actions': typeof AuthenticatedAdminAiActionsRoute
   '/admin/ai-context': typeof AuthenticatedAdminAiContextRoute
   '/admin/backup': typeof AuthenticatedAdminBackupRoute
+  '/admin/cms': typeof AuthenticatedAdminCmsRoute
   '/admin/cohorts': typeof AuthenticatedAdminCohortsRoute
   '/admin/document-access': typeof AuthenticatedAdminDocumentAccessRoute
   '/admin/economics': typeof AuthenticatedAdminEconomicsRoute
@@ -1561,6 +1568,7 @@ export interface FileRoutesByTo {
   '/admin/ai-actions': typeof AuthenticatedAdminAiActionsRoute
   '/admin/ai-context': typeof AuthenticatedAdminAiContextRoute
   '/admin/backup': typeof AuthenticatedAdminBackupRoute
+  '/admin/cms': typeof AuthenticatedAdminCmsRoute
   '/admin/cohorts': typeof AuthenticatedAdminCohortsRoute
   '/admin/document-access': typeof AuthenticatedAdminDocumentAccessRoute
   '/admin/economics': typeof AuthenticatedAdminEconomicsRoute
@@ -1762,6 +1770,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/ai-actions': typeof AuthenticatedAdminAiActionsRoute
   '/_authenticated/admin/ai-context': typeof AuthenticatedAdminAiContextRoute
   '/_authenticated/admin/backup': typeof AuthenticatedAdminBackupRoute
+  '/_authenticated/admin/cms': typeof AuthenticatedAdminCmsRoute
   '/_authenticated/admin/cohorts': typeof AuthenticatedAdminCohortsRoute
   '/_authenticated/admin/document-access': typeof AuthenticatedAdminDocumentAccessRoute
   '/_authenticated/admin/economics': typeof AuthenticatedAdminEconomicsRoute
@@ -1964,6 +1973,7 @@ export interface FileRouteTypes {
     | '/admin/ai-actions'
     | '/admin/ai-context'
     | '/admin/backup'
+    | '/admin/cms'
     | '/admin/cohorts'
     | '/admin/document-access'
     | '/admin/economics'
@@ -2160,6 +2170,7 @@ export interface FileRouteTypes {
     | '/admin/ai-actions'
     | '/admin/ai-context'
     | '/admin/backup'
+    | '/admin/cms'
     | '/admin/cohorts'
     | '/admin/document-access'
     | '/admin/economics'
@@ -2360,6 +2371,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/ai-actions'
     | '/_authenticated/admin/ai-context'
     | '/_authenticated/admin/backup'
+    | '/_authenticated/admin/cms'
     | '/_authenticated/admin/cohorts'
     | '/_authenticated/admin/document-access'
     | '/_authenticated/admin/economics'
@@ -3532,6 +3544,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminCohortsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/cms': {
+      id: '/_authenticated/admin/cms'
+      path: '/cms'
+      fullPath: '/admin/cms'
+      preLoaderRoute: typeof AuthenticatedAdminCmsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/backup': {
       id: '/_authenticated/admin/backup'
       path: '/backup'
@@ -3961,6 +3980,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminAiActionsRoute: typeof AuthenticatedAdminAiActionsRoute
   AuthenticatedAdminAiContextRoute: typeof AuthenticatedAdminAiContextRoute
   AuthenticatedAdminBackupRoute: typeof AuthenticatedAdminBackupRoute
+  AuthenticatedAdminCmsRoute: typeof AuthenticatedAdminCmsRoute
   AuthenticatedAdminCohortsRoute: typeof AuthenticatedAdminCohortsRoute
   AuthenticatedAdminDocumentAccessRoute: typeof AuthenticatedAdminDocumentAccessRoute
   AuthenticatedAdminEconomicsRoute: typeof AuthenticatedAdminEconomicsRoute
@@ -3984,6 +4004,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminAiActionsRoute: AuthenticatedAdminAiActionsRoute,
   AuthenticatedAdminAiContextRoute: AuthenticatedAdminAiContextRoute,
   AuthenticatedAdminBackupRoute: AuthenticatedAdminBackupRoute,
+  AuthenticatedAdminCmsRoute: AuthenticatedAdminCmsRoute,
   AuthenticatedAdminCohortsRoute: AuthenticatedAdminCohortsRoute,
   AuthenticatedAdminDocumentAccessRoute: AuthenticatedAdminDocumentAccessRoute,
   AuthenticatedAdminEconomicsRoute: AuthenticatedAdminEconomicsRoute,

@@ -56,7 +56,9 @@ const map = (r: any): CmsEntry => ({
 const COLS = "id, kind, slug, title, summary, body, data, status, sort_order, updated_at";
 
 export const listPublishedCms = createServerFn({ method: "GET" })
-  .inputValidator((i) => z.object({ kind: kindSchema, limit: z.number().int().max(50).default(20) }).parse(i))
+  .inputValidator((i) =>
+    z.object({ kind: kindSchema, limit: z.number().int().max(50).default(20) }).parse(i),
+  )
   .handler(async ({ data }): Promise<CmsEntry[]> => {
     const { data: rows, error } = await publicClient()
       .from("cms_entries")
@@ -116,7 +118,10 @@ export const getCmsAdminState = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const sb = context.supabase as any;
-    const { data: isAdmin } = await sb.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+    const { data: isAdmin } = await sb.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
     if (!isAdmin) return { isAdmin: false, leadWorkspaceId: null, workspaces: [] };
     const [{ data: setting }, { data: ws }] = await Promise.all([
       sb.from("cms_settings").select("value").eq("key", "lead_workspace").maybeSingle(),
@@ -125,7 +130,10 @@ export const getCmsAdminState = createServerFn({ method: "GET" })
     return {
       isAdmin: true,
       leadWorkspaceId: ((setting?.value as any)?.workspace_id as string | undefined) ?? null,
-      workspaces: ((ws ?? []) as any[]).map((w) => ({ id: w.id as string, name: w.name as string })),
+      workspaces: ((ws ?? []) as any[]).map((w) => ({
+        id: w.id as string,
+        name: w.name as string,
+      })),
     };
   });
 
@@ -150,7 +158,12 @@ export const saveCmsEntry = createServerFn({ method: "POST" })
       .object({
         id: z.string().uuid().nullish(),
         kind: kindSchema,
-        slug: z.string().trim().min(1).max(120).regex(/^[a-z0-9-]+$/),
+        slug: z
+          .string()
+          .trim()
+          .min(1)
+          .max(120)
+          .regex(/^[a-z0-9-]+$/),
         title: z.string().trim().min(1).max(200),
         summary: z.string().max(1000).nullish(),
         body: z.string().max(50000).nullish(),
@@ -186,7 +199,10 @@ export const deleteCmsEntry = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
-    const { error } = await (context.supabase as any).from("cms_entries").delete().eq("id", data.id);
+    const { error } = await (context.supabase as any)
+      .from("cms_entries")
+      .delete()
+      .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

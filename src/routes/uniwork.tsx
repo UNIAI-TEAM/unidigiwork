@@ -39,7 +39,10 @@ export const Route = createFileRoute("/uniwork")({
           "UniWork gom công việc, dịch vụ thành lập doanh nghiệp, pháp lý, kế toán, chữ ký số, hoá đơn điện tử và uniOffice vào một tài khoản.",
       },
       { property: "og:title", content: "UniWork — Start. Run. Grow. With ONE Business OS" },
-      { property: "og:description", content: "Một tài khoản, một hoá đơn, một đầu mối hỗ trợ cho doanh nghiệp." },
+      {
+        property: "og:description",
+        content: "Một tài khoản, một hoá đơn, một đầu mối hỗ trợ cho doanh nghiệp.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -51,7 +54,9 @@ export const Route = createFileRoute("/uniwork")({
       context.queryClient.ensureQueryData(cmsQuery("article")),
     ]);
   },
-  errorComponent: () => <div className="p-10 text-center text-sm text-muted-foreground">Không tải được trang.</div>,
+  errorComponent: () => (
+    <div className="p-10 text-center text-sm text-muted-foreground">Không tải được trang.</div>
+  ),
   notFoundComponent: () => <div className="p-10 text-center">404</div>,
   component: UniworkHome,
 });
@@ -85,7 +90,9 @@ function UniworkHome() {
                 <br />
                 <span className="text-primary">{c.heroB}</span>
               </h1>
-              <p className="mt-5 max-w-xl text-base text-muted-foreground md:text-lg">{c.heroSub}</p>
+              <p className="mt-5 max-w-xl text-base text-muted-foreground md:text-lg">
+                {c.heroSub}
+              </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Button asChild className="h-11 gap-2 px-5">
                   <Link to="/auth">
@@ -129,7 +136,10 @@ function UniworkHome() {
                   <h3 className="mt-4 text-lg font-semibold">{t}</h3>
                   <p className="mt-1 text-sm text-muted-foreground">{d}</p>
                   {i === 3 && (
-                    <Link to="/unioffice" className="mt-3 inline-flex min-h-11 items-center gap-1 text-sm font-medium text-primary">
+                    <Link
+                      to="/unioffice"
+                      className="mt-3 inline-flex min-h-11 items-center gap-1 text-sm font-medium text-primary"
+                    >
                       uniOffice <ArrowRight className="h-4 w-4" />
                     </Link>
                   )}
@@ -149,7 +159,10 @@ function UniworkHome() {
                 const Icon = serviceIcon[s.data.icon as string] ?? Sparkles;
                 const steps = (s.data.steps as string[] | undefined) ?? [];
                 return (
-                  <article key={s.id} className="flex flex-col rounded-2xl border border-border bg-card p-6 shadow-sm">
+                  <article
+                    key={s.id}
+                    className="flex flex-col rounded-2xl border border-border bg-card p-6 shadow-sm"
+                  >
                     <span className="grid h-11 w-11 place-items-center rounded-xl bg-primary/10 text-primary">
                       <Icon className="h-5 w-5" />
                     </span>
@@ -194,7 +207,9 @@ function UniworkHome() {
         {pricing.length > 0 && (
           <section className="bg-muted/30">
             <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 md:py-16">
-              <h2 className="text-2xl font-semibold tracking-tight md:text-3xl">{c.pricingTitle}</h2>
+              <h2 className="text-2xl font-semibold tracking-tight md:text-3xl">
+                {c.pricingTitle}
+              </h2>
               <div className="mt-8 grid gap-4 md:grid-cols-3">
                 {pricing.map((p) => {
                   const featured = !!p.data.featured;
@@ -216,7 +231,11 @@ function UniworkHome() {
                           </li>
                         ))}
                       </ul>
-                      <Button asChild variant={featured ? "default" : "outline"} className="mt-6 h-11">
+                      <Button
+                        asChild
+                        variant={featured ? "default" : "outline"}
+                        className="mt-6 h-11"
+                      >
                         <a href="#tu-van">{c.choose}</a>
                       </Button>
                     </div>
