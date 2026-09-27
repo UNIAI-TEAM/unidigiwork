@@ -467,7 +467,7 @@ export const approveExtractionProposal = createServerFn({ method: "POST" })
       (entityType === "TASK" || entityType === "COMMITMENT")
     ) {
       await ctx.supabase.rpc("link_work_entities", {
-        _source_type: "TASK",
+        _source_type: entityType,
         _source_id: entityId,
         _target_type: "CHAT_CHANNEL",
         _target_id: run.source_id,
