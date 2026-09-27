@@ -38,6 +38,7 @@ import { Route as WorkflowsPermissionsRouteImport } from './routes/workflows_.pe
 import { Route as WorkflowsCalendarRouteImport } from './routes/workflows_.calendar'
 import { Route as WorkflowsAgentsRouteImport } from './routes/workflows_.agents'
 import { Route as WorkflowsIdRouteImport } from './routes/workflows.$id'
+import { Route as TuVanTokenRouteImport } from './routes/tu-van.$token'
 import { Route as TasksIdRouteImport } from './routes/tasks_.$id'
 import { Route as TaiNguyenSlugRouteImport } from './routes/tai-nguyen.$slug'
 import { Route as ReportsDetailRouteImport } from './routes/reports.detail'
@@ -358,6 +359,11 @@ const WorkflowsIdRoute = WorkflowsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => WorkflowsRoute,
+} as any)
+const TuVanTokenRoute = TuVanTokenRouteImport.update({
+  id: '/tu-van/$token',
+  path: '/tu-van/$token',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const TasksIdRoute = TasksIdRouteImport.update({
   id: '/tasks_/$id',
@@ -1394,6 +1400,7 @@ export interface FileRoutesByFullPath {
   '/reports/detail': typeof ReportsDetailRoute
   '/tai-nguyen/$slug': typeof TaiNguyenSlugRoute
   '/tasks/$id': typeof TasksIdRoute
+  '/tu-van/$token': typeof TuVanTokenRoute
   '/workflows/$id': typeof WorkflowsIdRoute
   '/workflows/agents': typeof WorkflowsAgentsRoute
   '/workflows/calendar': typeof WorkflowsCalendarRoute
@@ -1595,6 +1602,7 @@ export interface FileRoutesByTo {
   '/reports/detail': typeof ReportsDetailRoute
   '/tai-nguyen/$slug': typeof TaiNguyenSlugRoute
   '/tasks/$id': typeof TasksIdRoute
+  '/tu-van/$token': typeof TuVanTokenRoute
   '/workflows/$id': typeof WorkflowsIdRoute
   '/workflows/agents': typeof WorkflowsAgentsRoute
   '/workflows/calendar': typeof WorkflowsCalendarRoute
@@ -1802,6 +1810,7 @@ export interface FileRoutesById {
   '/reports/detail': typeof ReportsDetailRoute
   '/tai-nguyen/$slug': typeof TaiNguyenSlugRoute
   '/tasks_/$id': typeof TasksIdRoute
+  '/tu-van/$token': typeof TuVanTokenRoute
   '/workflows/$id': typeof WorkflowsIdRoute
   '/workflows_/agents': typeof WorkflowsAgentsRoute
   '/workflows_/calendar': typeof WorkflowsCalendarRoute
@@ -2010,6 +2019,7 @@ export interface FileRouteTypes {
     | '/reports/detail'
     | '/tai-nguyen/$slug'
     | '/tasks/$id'
+    | '/tu-van/$token'
     | '/workflows/$id'
     | '/workflows/agents'
     | '/workflows/calendar'
@@ -2211,6 +2221,7 @@ export interface FileRouteTypes {
     | '/reports/detail'
     | '/tai-nguyen/$slug'
     | '/tasks/$id'
+    | '/tu-van/$token'
     | '/workflows/$id'
     | '/workflows/agents'
     | '/workflows/calendar'
@@ -2417,6 +2428,7 @@ export interface FileRouteTypes {
     | '/reports/detail'
     | '/tai-nguyen/$slug'
     | '/tasks_/$id'
+    | '/tu-van/$token'
     | '/workflows/$id'
     | '/workflows_/agents'
     | '/workflows_/calendar'
@@ -2589,6 +2601,7 @@ export interface RootRouteChildren {
   MeetingHistoryRoute: typeof MeetingHistoryRoute
   TaiNguyenSlugRoute: typeof TaiNguyenSlugRoute
   TasksIdRoute: typeof TasksIdRoute
+  TuVanTokenRoute: typeof TuVanTokenRoute
   WorkflowsAgentsRoute: typeof WorkflowsAgentsRoute
   WorkflowsCalendarRoute: typeof WorkflowsCalendarRoute
   WorkflowsPermissionsRoute: typeof WorkflowsPermissionsRoute
@@ -2820,6 +2833,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/workflows/$id'
       preLoaderRoute: typeof WorkflowsIdRouteImport
       parentRoute: typeof WorkflowsRoute
+    }
+    '/tu-van/$token': {
+      id: '/tu-van/$token'
+      path: '/tu-van/$token'
+      fullPath: '/tu-van/$token'
+      preLoaderRoute: typeof TuVanTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/tasks_/$id': {
       id: '/tasks_/$id'
@@ -4590,6 +4610,7 @@ const rootRouteChildren: RootRouteChildren = {
   MeetingHistoryRoute: MeetingHistoryRoute,
   TaiNguyenSlugRoute: TaiNguyenSlugRoute,
   TasksIdRoute: TasksIdRoute,
+  TuVanTokenRoute: TuVanTokenRoute,
   WorkflowsAgentsRoute: WorkflowsAgentsRoute,
   WorkflowsCalendarRoute: WorkflowsCalendarRoute,
   WorkflowsPermissionsRoute: WorkflowsPermissionsRoute,
