@@ -8,12 +8,14 @@ import { queryOptions, useSuspenseQuery, useQuery, useQueryClient } from "@tanst
 import { getDashboardPrefs, saveDashboardPrefs } from "@/lib/api/dashboard-prefs.functions";
 import {
   DASHBOARD_SECTIONS,
+  DASHBOARD_HEIGHTS,
   DASHBOARD_SIZES,
   DEFAULT_DASHBOARD_PREFS,
   moveDashboardSection,
   readDashboardLayoutPrefs,
   writeDashboardLayoutPrefs,
   type DashboardCardSize,
+  type DashboardCardHeight,
   type DashboardLayoutPrefs,
   type DashboardSectionKey,
 } from "@/lib/dashboard-layout-prefs";
@@ -531,6 +533,7 @@ function DashboardPage() {
 const SECTIONS_STORAGE_KEY = "uniwork.dashboard.sections";
 const ORDER_STORAGE_KEY = "uniwork.dashboard.order.v1";
 const SIZES_STORAGE_KEY = "uniwork.dashboard.sizes.v1";
+const HEIGHTS_STORAGE_KEY = "uniwork.dashboard.heights.v1";
 
 const SECTION_SPAN: Record<DashboardCardSize, string> = {
   sm: "lg:col-span-4",
@@ -555,6 +558,7 @@ function DashboardInner() {
   const [sections, setSections] = useState(DEFAULT_DASHBOARD_PREFS.enabled);
   const [order, setOrder] = useState(DEFAULT_DASHBOARD_PREFS.order);
   const [sizes, setSizes] = useState(DEFAULT_DASHBOARD_PREFS.sizes);
+  const [heights, setHeights] = useState(DEFAULT_DASHBOARD_PREFS.heights);
   const [dragKey, setDragKey] = useState<DashboardSectionKey | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const queryClient = useQueryClient();
@@ -593,6 +597,14 @@ function DashboardInner() {
     } catch {
       setSizes(DEFAULT_DASHBOARD_PREFS.sizes);
     }
+    try {
+      const rawHeights = localStorage.getItem(HEIGHTS_STORAGE_KEY);
+      if (rawHeights) {
+        setHeights({ ...DEFAULT_DASHBOARD_PREFS.heights, ...JSON.parse(rawHeights) });
+      }
+    } catch {
+      setHeights(DEFAULT_DASHBOARD_PREFS.heights);
+    }
     setHydrated(true);
   }, []);
 
@@ -606,10 +618,12 @@ function DashboardInner() {
     setSections(remote.enabled);
     setOrder(remote.order);
     setSizes(remote.sizes);
+    setHeights(remote.heights);
     try {
       localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(remote.order));
       localStorage.setItem(SECTIONS_STORAGE_KEY, JSON.stringify(remote.enabled));
       localStorage.setItem(SIZES_STORAGE_KEY, JSON.stringify(remote.sizes));
+      localStorage.setItem(HEIGHTS_STORAGE_KEY, JSON.stringify(remote.heights));
     } catch {
       handleStorageFailure();
     }
@@ -648,7 +662,7 @@ function DashboardInner() {
       return;
     }
     setSections(next);
-    persistLayout({ enabled: next, order, sizes }, "Không đồng bộ được tuỳ chỉnh lên tài khoản");
+    persistLayout({ enabled: next, order, sizes, heights }, "Không đồng bộ được tuỳ chỉnh lên tài khoản");
   };
 
   // Kéo-thả sắp xếp thứ tự khối.
@@ -663,7 +677,7 @@ function DashboardInner() {
       /* ignore */
     }
     persistLayout(
-      { enabled: sections, order: next, sizes },
+      { enabled: sections, order: next, sizes, heights },
       "Không đồng bộ được thứ tự khối lên tài khoản",
     );
   };
@@ -678,12 +692,16 @@ function DashboardInner() {
       /* ignore */
     }
     persistLayout(
-      { enabled: sections, order: next, sizes },
+      { enabled: sections, order: next, sizes, heights },
       "Không đồng bộ được thứ tự khối lên tài khoản",
     );
   };
 
-  const changeSectionSize = (key: DashboardSectionKey, size: DashboardCardSize) => {
+  const changeSectionSize = (
+    key: DashboardSectionKey,
+    size: DashboardCardSize,
+    persist = true,
+  ) => {
     const next = { ...sizes, [key]: size };
     setSizes(next);
     try {
@@ -691,8 +709,43 @@ function DashboardInner() {
     } catch {
       /* ignore */
     }
+    if (persist) {
+      persistLayout(
+        { enabled: sections, order, sizes: next, heights },
+        "Không đồng bộ được kích thước khối lên tài khoản",
+      );
+    }
+  };
+
+  const changeSectionHeight = (
+    key: DashboardSectionKey,
+    height: DashboardCardHeight,
+    persist = true,
+  ) => {
+    const next = { ...heights, [key]: height };
+    setHeights(next);
+    try {
+      localStorage.setItem(HEIGHTS_STORAGE_KEY, JSON.stringify(next));
+    } catch {
+      /* ignore */
+    }
+    if (persist) {
+      persistLayout(
+        { enabled: sections, order, sizes, heights: next },
+        "Không đồng bộ được chiều cao khối lên tài khoản",
+      );
+    }
+  };
+
+  const finishSectionResize = (
+    key: DashboardSectionKey,
+    size: DashboardCardSize,
+    height: DashboardCardHeight,
+  ) => {
+    const nextSizes = { ...sizes, [key]: size };
+    const nextHeights = { ...heights, [key]: height };
     persistLayout(
-      { enabled: sections, order, sizes: next },
+      { enabled: sections, order, sizes: nextSizes, heights: nextHeights },
       "Không đồng bộ được kích thước khối lên tài khoản",
     );
   };
@@ -701,10 +754,12 @@ function DashboardInner() {
     setSections(DEFAULT_DASHBOARD_PREFS.enabled);
     setOrder(DEFAULT_DASHBOARD_PREFS.order);
     setSizes(DEFAULT_DASHBOARD_PREFS.sizes);
+    setHeights(DEFAULT_DASHBOARD_PREFS.heights);
     try {
       localStorage.removeItem(SECTIONS_STORAGE_KEY);
       localStorage.removeItem(ORDER_STORAGE_KEY);
       localStorage.removeItem(SIZES_STORAGE_KEY);
+      localStorage.removeItem(HEIGHTS_STORAGE_KEY);
     } catch {
       /* ignore */
     }
@@ -714,6 +769,7 @@ function DashboardInner() {
   const visible = hydrated ? sections : DEFAULT_DASHBOARD_PREFS.enabled;
   const layoutOrder = hydrated ? order : DEFAULT_DASHBOARD_PREFS.order;
   const layoutSizes = hydrated ? sizes : DEFAULT_DASHBOARD_PREFS.sizes;
+  const layoutHeights = hydrated ? heights : DEFAULT_DASHBOARD_PREFS.heights;
   const showAI = visible.ai;
   const { workspaceId: activeWorkspaceId, workspaceName: activeWorkspaceName } =
     useActiveWorkspace();
@@ -1025,8 +1081,9 @@ function DashboardInner() {
                               />
                             </div>
                             {visible[key] && key !== "ai" ? (
-                              <div className="grid grid-cols-4 gap-1.5 px-2 pb-2">
-                                {DASHBOARD_SIZES.map((size) => (
+                              <div className="space-y-2 px-2 pb-2">
+                                <div className="grid grid-cols-4 gap-1.5">
+                                  {DASHBOARD_SIZES.map((size) => (
                                   <button
                                     key={size.key}
                                     type="button"
@@ -1041,7 +1098,26 @@ function DashboardInner() {
                                   >
                                     {size.label}
                                   </button>
-                                ))}
+                                  ))}
+                                </div>
+                                <div className="grid grid-cols-4 gap-1.5">
+                                  {DASHBOARD_HEIGHTS.map((height) => (
+                                    <button
+                                      key={height.key}
+                                      type="button"
+                                      onClick={() => changeSectionHeight(key, height.key)}
+                                      aria-pressed={layoutHeights[key] === height.key}
+                                      title={height.hint}
+                                      className={`min-h-11 rounded-md border px-1 text-xs transition-colors ${
+                                        layoutHeights[key] === height.key
+                                          ? "border-primary bg-primary/5 text-foreground"
+                                          : "border-border text-muted-foreground hover:bg-surface-2"
+                                      }`}
+                                    >
+                                      {height.label}
+                                    </button>
+                                  ))}
+                                </div>
                               </div>
                             ) : null}
                           </li>
@@ -1339,13 +1415,24 @@ function DashboardInner() {
                         key={k}
                         cardKey={k}
                         size={layoutSizes[k]}
+                        height={layoutHeights[k]}
                         label={DASHBOARD_SECTIONS.find((s) => s.key === k)?.label ?? k}
                         className={SECTION_SPAN[layoutSizes[k]]}
                         onReorder={(from, to) =>
                           moveSection(from as DashboardSectionKey, to as DashboardSectionKey)
                         }
                         onResize={(key, size) =>
-                          changeSectionSize(key as DashboardSectionKey, size)
+                          changeSectionSize(key as DashboardSectionKey, size, false)
+                        }
+                        onResizeHeight={(key, height) =>
+                          changeSectionHeight(key as DashboardSectionKey, height, false)
+                        }
+                        onResizeEnd={(key, size, height) =>
+                          finishSectionResize(
+                            key as DashboardSectionKey,
+                            size,
+                            height as DashboardCardHeight,
+                          )
                         }
                       >
                         {blocks[k]}
