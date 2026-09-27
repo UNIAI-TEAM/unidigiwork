@@ -11025,6 +11025,7 @@ export type Database = {
           _source_excerpt?: string
           _source_id?: string
           _source_type?: string
+          _tenant_id: string
           _title: string
           _workspace_id: string
         }
@@ -11903,6 +11904,7 @@ export type Database = {
           _offset?: number
           _owner_id?: string
           _status?: string
+          _tenant_id: string
         }
         Returns: {
           counterparty: string

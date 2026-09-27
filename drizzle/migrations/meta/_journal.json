@@ -470,6 +470,13 @@
       "when": 1790482481524,
       "tag": "0066_commitment_chat_relationship",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1790482647948,
+      "tag": "0067_commitments_rpc_tenant_param",
+      "breakpoints": true
     }
   ]
 }
