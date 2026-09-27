@@ -83,14 +83,11 @@ function ConversationWorkPage() {
                 <p className="text-sm text-muted-foreground">{t("cw.noImports")}</p>
               )}
               {(importsQuery.data ?? []).map((imp: ConversationImportDTO) => (
-                <button
+                <Link
                   key={imp.id}
-                  type="button"
-                  onClick={() => setSelected(imp.id)}
-                  onDoubleClick={() =>
-                    navigate({ to: "/conversations/$importId", params: { importId: imp.id } })
-                  }
-                  className={`min-h-11 rounded-xl border px-3 py-2 text-left text-sm transition ${
+                  to="/conversations/$importId"
+                  params={{ importId: imp.id }}
+                  className={`block min-h-11 rounded-xl border px-3 py-2 text-left text-sm transition ${
                     selected === imp.id
                       ? "border-primary bg-primary/5"
                       : "border-border hover:bg-muted/50"
