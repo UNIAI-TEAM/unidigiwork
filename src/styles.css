@@ -896,3 +896,14 @@ html[data-font-family="mono"] body {
   min-height: 0;
   flex: 1 1 auto;
 }
+
+/* Tone xanh dương thương hiệu UniWork cho trang marketing /uniwork, /unioffice */
+.brand-uniwork-blue {
+  --primary: oklch(0.55 0.22 262);
+  --primary-foreground: oklch(1 0 0);
+  --ring: oklch(0.55 0.22 262);
+}
+.dark .brand-uniwork-blue {
+  --primary: oklch(0.68 0.17 258);
+  --primary-foreground: oklch(0.15 0.03 262);
+}

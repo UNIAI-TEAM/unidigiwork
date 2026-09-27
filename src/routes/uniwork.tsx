@@ -79,7 +79,7 @@ function UniworkHome() {
 
   return (
     <PublicShell>
-      <main>
+      <main className="brand-uniwork-blue">
         {/* Hero */}
         <section className="bg-gradient-to-b from-primary/5 to-background">
           <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-12 sm:px-6 md:py-20 lg:grid-cols-2">
