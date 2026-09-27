@@ -8,7 +8,7 @@ import type { Database } from "@/integrations/supabase/types";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-const kindSchema = z.enum(["service", "pricing", "article"]);
+const kindSchema = z.enum(["service", "pricing", "article", "plan"]);
 export type CmsKind = z.infer<typeof kindSchema>;
 
 export type CmsEntry = {
@@ -22,6 +22,11 @@ export type CmsEntry = {
   status: "draft" | "published";
   sortOrder: number;
   updatedAt: string;
+  coverPath: string | null;
+  coverUrl: string | null;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  publishAt: string | null;
 };
 
 function publicClient() {
@@ -51,16 +56,33 @@ const map = (r: any): CmsEntry => ({
   status: r.status,
   sortOrder: r.sort_order,
   updatedAt: r.updated_at,
+  coverPath: r.cover_path ?? null,
+  coverUrl: null,
+  seoTitle: r.seo_title ?? null,
+  seoDescription: r.seo_description ?? null,
+  publishAt: r.publish_at ?? null,
 });
 
-const COLS = "id, kind, slug, title, summary, body, data, status, sort_order, updated_at";
+async function withCovers(sb: any, entries: CmsEntry[]): Promise<CmsEntry[]> {
+  const paths = entries.map((e) => e.coverPath).filter(Boolean) as string[];
+  if (!paths.length) return entries;
+  const { data } = await sb.storage.from("cms-media").createSignedUrls(paths, 60 * 60 * 24);
+  const byPath = new Map<string, string>(
+    ((data ?? []) as any[]).filter((d) => d.signedUrl).map((d) => [d.path, d.signedUrl]),
+  );
+  return entries.map((e) => ({ ...e, coverUrl: e.coverPath ? (byPath.get(e.coverPath) ?? null) : null }));
+}
+
+const COLS =
+  "id, kind, slug, title, summary, body, data, status, sort_order, updated_at, cover_path, seo_title, seo_description, publish_at";
 
 export const listPublishedCms = createServerFn({ method: "GET" })
   .inputValidator((i) =>
     z.object({ kind: kindSchema, limit: z.number().int().max(50).default(20) }).parse(i),
   )
   .handler(async ({ data }): Promise<CmsEntry[]> => {
-    const { data: rows, error } = await publicClient()
+    const sb = publicClient();
+    const { data: rows, error } = await sb
       .from("cms_entries")
       .select(COLS)
       .eq("kind", data.kind)
@@ -69,7 +91,7 @@ export const listPublishedCms = createServerFn({ method: "GET" })
       .order("updated_at", { ascending: false })
       .limit(data.limit);
     if (error) throw new Error(error.message);
-    return (rows ?? []).map(map);
+    return withCovers(sb, (rows ?? []).map(map));
   });
 
 export const submitConsultation = createServerFn({ method: "POST" })
@@ -162,7 +184,7 @@ export const listCmsEntries = createServerFn({ method: "GET" })
       .order("sort_order")
       .order("updated_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return (rows ?? []).map(map);
+    return withCovers(context.supabase, (rows ?? []).map(map));
   });
 
 export const getCmsAdminState = createServerFn({ method: "GET" })
@@ -221,6 +243,10 @@ export const saveCmsEntry = createServerFn({ method: "POST" })
         data: z.record(z.string(), z.any()).default({}),
         status: z.enum(["draft", "published"]),
         sortOrder: z.number().int().min(0).max(10000).default(0),
+        coverPath: z.string().max(300).nullish(),
+        seoTitle: z.string().max(200).nullish(),
+        seoDescription: z.string().max(400).nullish(),
+        publishAt: z.string().datetime({ offset: true }).nullish(),
       })
       .parse(i),
   )
@@ -235,6 +261,10 @@ export const saveCmsEntry = createServerFn({ method: "POST" })
       data: data.data,
       status: data.status,
       sort_order: data.sortOrder,
+      cover_path: data.coverPath ?? null,
+      seo_title: data.seoTitle ?? null,
+      seo_description: data.seoDescription ?? null,
+      publish_at: data.publishAt ?? null,
       updated_by: context.userId,
       updated_at: new Date().toISOString(),
     };
@@ -255,6 +285,21 @@ export const deleteCmsEntry = createServerFn({ method: "POST" })
       .delete()
       .eq("id", data.id);
     if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const reorderCmsEntries = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ ids: z.array(z.string().uuid()).min(1).max(200) }).parse(i))
+  .handler(async ({ data, context }) => {
+    const sb = context.supabase as any;
+    for (const [i, id] of data.ids.entries()) {
+      const { error } = await sb
+        .from("cms_entries")
+        .update({ sort_order: i * 10, updated_by: context.userId })
+        .eq("id", id);
+      if (error) throw new Error(error.message);
+    }
     return { ok: true };
   });
 
