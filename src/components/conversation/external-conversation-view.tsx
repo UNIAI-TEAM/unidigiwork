@@ -57,11 +57,13 @@ export function ExternalConversationView({ importId }: { importId: string }) {
           </Badge>
         )}
         <Badge variant="outline">{t("cw.ext.manual")}</Badge>
-        {src && (
-          <Badge variant="outline">{t(visKey(src.visibility as Vis))}</Badge>
-        )}
+        {src && <Badge variant="outline">{t(visKey(src.visibility as Vis))}</Badge>}
         <div className="ml-auto flex gap-1">
-          <Button variant="ghost" className="h-11 gap-1 px-2 text-xs" onClick={() => setAccessOpen(true)}>
+          <Button
+            variant="ghost"
+            className="h-11 gap-1 px-2 text-xs"
+            onClick={() => setAccessOpen(true)}
+          >
             <ShieldCheck className="h-4 w-4" />
             {t("cw.ext.access")}
           </Button>
@@ -79,7 +81,11 @@ export function ExternalConversationView({ importId }: { importId: string }) {
         {messages.map((m) => {
           const own = !!mine && m.author.trim().toLowerCase() === mine;
           return (
-            <div key={m.id} id={`msg-${m.id}`} className={`flex ${own ? "justify-end" : "justify-start"}`}>
+            <div
+              key={m.id}
+              id={`msg-${m.id}`}
+              className={`flex ${own ? "justify-end" : "justify-start"}`}
+            >
               <div
                 className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${
                   own ? "bg-primary text-primary-foreground" : "bg-surface-2 text-foreground"
@@ -174,7 +180,10 @@ function AccessDialog({
         {vis === "SELECTED" && (
           <div className="max-h-64 space-y-1 overflow-y-auto">
             {(data?.people ?? []).map((p) => (
-              <label key={p.userId} className="flex min-h-11 items-center gap-3 rounded-xl px-2 hover:bg-muted/50">
+              <label
+                key={p.userId}
+                className="flex min-h-11 items-center gap-3 rounded-xl px-2 hover:bg-muted/50"
+              >
                 <Checkbox
                   disabled={!canManage}
                   checked={ids.includes(p.userId)}
@@ -184,14 +193,20 @@ function AccessDialog({
                 />
                 <span className="min-w-0 text-sm">
                   <span className="block truncate">{p.name || p.email}</span>
-                  {p.email && <span className="block truncate text-xs text-muted-foreground">{p.email}</span>}
+                  {p.email && (
+                    <span className="block truncate text-xs text-muted-foreground">{p.email}</span>
+                  )}
                 </span>
               </label>
             ))}
           </div>
         )}
         <DialogFooter>
-          <Button className="h-11" disabled={!canManage || save.isPending} onClick={() => save.mutate()}>
+          <Button
+            className="h-11"
+            disabled={!canManage || save.isPending}
+            onClick={() => save.mutate()}
+          >
             {t("cw.ext.save")}
           </Button>
         </DialogFooter>
