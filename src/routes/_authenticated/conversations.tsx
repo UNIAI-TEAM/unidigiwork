@@ -78,11 +78,7 @@ function ConversationWorkPage() {
                   key={imp.id}
                   to="/conversations/$importId"
                   params={{ importId: imp.id }}
-                  className={`block min-h-11 rounded-xl border px-3 py-2 text-left text-sm transition ${
-                    selected === imp.id
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:bg-muted/50"
-                  }`}
+                  className="block min-h-11 rounded-xl border border-border px-3 py-2 text-left text-sm transition hover:bg-muted/50"
                 >
                   <span className="flex items-center gap-2">
                     <Badge variant="secondary" className="text-[10px] uppercase">
@@ -97,42 +93,11 @@ function ConversationWorkPage() {
                 </Link>
               ))}
             </aside>
-
-            <section className="grid content-start gap-4 rounded-2xl border border-border bg-surface p-4">
-              {!selected && <p className="text-sm text-muted-foreground">{t("cw.noImports")}</p>}
-              {selected && sourceQuery.data && (
-                <>
-                  <div className="grid gap-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="text-base font-semibold">{sourceQuery.data.source.title}</h2>
-                      <Badge variant="outline" className="text-[10px]">
-                        {t("cw.manualBadge")}
-                      </Badge>
-                    </div>
-                    <div className="max-h-72 overflow-y-auto rounded-xl border border-border bg-muted/30 p-3">
-                      <ul className="grid gap-2 text-sm">
-                        {sourceQuery.data.messages.map((m) => (
-                          <li key={m.id}>
-                            <span className="font-medium">{m.author}: </span>
-                            <span className="text-muted-foreground">{m.body}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                  <ConversationIntelligencePanel sourceType="IMPORT" sourceId={selected} />
-                </>
-              )}
-            </section>
           </div>
         </main>
       </div>
 
-      <SaveToUniworkDialog
-        open={saveOpen}
-        onOpenChange={setSaveOpen}
-        onSaved={(id) => setSelected(id)}
-      />
+      <SaveToUniworkDialog open={saveOpen} onOpenChange={setSaveOpen} />
     </div>
   );
 }
