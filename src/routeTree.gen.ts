@@ -22,6 +22,7 @@ import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as MeetingRouteImport } from './routes/meeting'
 import { Route as KnowledgeRouteImport } from './routes/knowledge'
+import { Route as DichVuRouteImport } from './routes/dich-vu'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as BlogRouteImport } from './routes/blog'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -277,6 +278,11 @@ const KnowledgeRoute = KnowledgeRouteImport.update({
   path: '/knowledge',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DichVuRoute = DichVuRouteImport.update({
+  id: '/dich-vu',
+  path: '/dich-vu',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
@@ -317,9 +323,9 @@ const ReportsIndexRoute = ReportsIndexRouteImport.update({
   getParentRoute: () => ReportsRoute,
 } as any)
 const DichVuIndexRoute = DichVuIndexRouteImport.update({
-  id: '/dich-vu/',
-  path: '/dich-vu/',
-  getParentRoute: () => rootRouteImport,
+  id: '/',
+  path: '/',
+  getParentRoute: () => DichVuRoute,
 } as any)
 const WorkflowsRunsRoute = WorkflowsRunsRouteImport.update({
   id: '/workflows_/runs',
@@ -382,9 +388,9 @@ const InviteTokenRoute = InviteTokenRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const DichVuSlugRoute = DichVuSlugRouteImport.update({
-  id: '/dich-vu/$slug',
-  path: '/dich-vu/$slug',
-  getParentRoute: () => rootRouteImport,
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => DichVuRoute,
 } as any)
 const BlogSlugRoute = BlogSlugRouteImport.update({
   id: '/$slug',
@@ -1321,6 +1327,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/blog': typeof BlogRouteWithChildren
   '/contact': typeof ContactRoute
+  '/dich-vu': typeof DichVuRouteWithChildren
   '/knowledge': typeof KnowledgeRouteWithChildren
   '/meeting': typeof MeetingRoute
   '/onboarding': typeof OnboardingRoute
@@ -1724,6 +1731,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/blog': typeof BlogRouteWithChildren
   '/contact': typeof ContactRoute
+  '/dich-vu': typeof DichVuRouteWithChildren
   '/knowledge': typeof KnowledgeRouteWithChildren
   '/meeting': typeof MeetingRoute
   '/onboarding': typeof OnboardingRoute
@@ -1929,6 +1937,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/blog'
     | '/contact'
+    | '/dich-vu'
     | '/knowledge'
     | '/meeting'
     | '/onboarding'
@@ -2331,6 +2340,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/blog'
     | '/contact'
+    | '/dich-vu'
     | '/knowledge'
     | '/meeting'
     | '/onboarding'
@@ -2536,6 +2546,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   BlogRoute: typeof BlogRouteWithChildren
   ContactRoute: typeof ContactRoute
+  DichVuRoute: typeof DichVuRouteWithChildren
   KnowledgeRoute: typeof KnowledgeRouteWithChildren
   MeetingRoute: typeof MeetingRoute
   OnboardingRoute: typeof OnboardingRoute
@@ -2549,7 +2560,6 @@ export interface RootRouteChildren {
   UniworkRoute: typeof UniworkRoute
   WelcomeRoute: typeof WelcomeRoute
   WorkflowsRoute: typeof WorkflowsRouteWithChildren
-  DichVuSlugRoute: typeof DichVuSlugRoute
   InviteTokenRoute: typeof InviteTokenRoute
   MeetingIdRoute: typeof MeetingIdRoute
   MeetingHistoryRoute: typeof MeetingHistoryRoute
@@ -2558,7 +2568,6 @@ export interface RootRouteChildren {
   WorkflowsCalendarRoute: typeof WorkflowsCalendarRoute
   WorkflowsPermissionsRoute: typeof WorkflowsPermissionsRoute
   WorkflowsRunsRoute: typeof WorkflowsRunsRoute
-  DichVuIndexRoute: typeof DichVuIndexRoute
   ApiAdminWorkProductGraphBackfillRoute: typeof ApiAdminWorkProductGraphBackfillRoute
   ApiOfficeDownloadRoute: typeof ApiOfficeDownloadRoute
   ApiOfficeSessionsRoute: typeof ApiOfficeSessionsRouteWithChildren
@@ -2674,6 +2683,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof KnowledgeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dich-vu': {
+      id: '/dich-vu'
+      path: '/dich-vu'
+      fullPath: '/dich-vu'
+      preLoaderRoute: typeof DichVuRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/contact': {
       id: '/contact'
       path: '/contact'
@@ -2732,10 +2748,10 @@ declare module '@tanstack/react-router' {
     }
     '/dich-vu/': {
       id: '/dich-vu/'
-      path: '/dich-vu'
+      path: '/'
       fullPath: '/dich-vu/'
       preLoaderRoute: typeof DichVuIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof DichVuRoute
     }
     '/workflows_/runs': {
       id: '/workflows_/runs'
@@ -2823,10 +2839,10 @@ declare module '@tanstack/react-router' {
     }
     '/dich-vu/$slug': {
       id: '/dich-vu/$slug'
-      path: '/dich-vu/$slug'
+      path: '/$slug'
       fullPath: '/dich-vu/$slug'
       preLoaderRoute: typeof DichVuSlugRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof DichVuRoute
     }
     '/blog/$slug': {
       id: '/blog/$slug'
@@ -4444,6 +4460,19 @@ const BlogRouteChildren: BlogRouteChildren = {
 
 const BlogRouteWithChildren = BlogRoute._addFileChildren(BlogRouteChildren)
 
+interface DichVuRouteChildren {
+  DichVuSlugRoute: typeof DichVuSlugRoute
+  DichVuIndexRoute: typeof DichVuIndexRoute
+}
+
+const DichVuRouteChildren: DichVuRouteChildren = {
+  DichVuSlugRoute: DichVuSlugRoute,
+  DichVuIndexRoute: DichVuIndexRoute,
+}
+
+const DichVuRouteWithChildren =
+  DichVuRoute._addFileChildren(DichVuRouteChildren)
+
 interface KnowledgeRouteChildren {
   KnowledgeSlugRoute: typeof KnowledgeSlugRoute
 }
@@ -4502,6 +4531,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   BlogRoute: BlogRouteWithChildren,
   ContactRoute: ContactRoute,
+  DichVuRoute: DichVuRouteWithChildren,
   KnowledgeRoute: KnowledgeRouteWithChildren,
   MeetingRoute: MeetingRoute,
   OnboardingRoute: OnboardingRoute,
@@ -4515,7 +4545,6 @@ const rootRouteChildren: RootRouteChildren = {
   UniworkRoute: UniworkRoute,
   WelcomeRoute: WelcomeRoute,
   WorkflowsRoute: WorkflowsRouteWithChildren,
-  DichVuSlugRoute: DichVuSlugRoute,
   InviteTokenRoute: InviteTokenRoute,
   MeetingIdRoute: MeetingIdRoute,
   MeetingHistoryRoute: MeetingHistoryRoute,
@@ -4524,7 +4553,6 @@ const rootRouteChildren: RootRouteChildren = {
   WorkflowsCalendarRoute: WorkflowsCalendarRoute,
   WorkflowsPermissionsRoute: WorkflowsPermissionsRoute,
   WorkflowsRunsRoute: WorkflowsRunsRoute,
-  DichVuIndexRoute: DichVuIndexRoute,
   ApiAdminWorkProductGraphBackfillRoute: ApiAdminWorkProductGraphBackfillRoute,
   ApiOfficeDownloadRoute: ApiOfficeDownloadRoute,
   ApiOfficeSessionsRoute: ApiOfficeSessionsRouteWithChildren,
