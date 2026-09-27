@@ -73,6 +73,7 @@ import { Route as AuthenticatedAiBrainRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedWorkspaceIndexRouteImport } from './routes/_authenticated/workspace.index'
 import { Route as AuthenticatedMIndexRouteImport } from './routes/_authenticated/m/index'
+import { Route as AuthenticatedConversationsIndexRouteImport } from './routes/_authenticated/conversations.index'
 import { Route as AuthenticatedAiMarketIndexRouteImport } from './routes/_authenticated/ai-market.index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as ShareWorkGraphTokenRouteImport } from './routes/share.work-graph.$token'
@@ -122,6 +123,7 @@ import { Route as AuthenticatedMSplatRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedEmailComposeRouteImport } from './routes/_authenticated/email_.compose'
 import { Route as AuthenticatedEmailIdRouteImport } from './routes/_authenticated/email_.$id'
 import { Route as AuthenticatedDocumentsIdRouteImport } from './routes/_authenticated/documents.$id'
+import { Route as AuthenticatedConversationsImportIdRouteImport } from './routes/_authenticated/conversations.$importId'
 import { Route as AuthenticatedChatChannelIdRouteImport } from './routes/_authenticated/chat_.$channelId'
 import { Route as AuthenticatedCeoTaskTrackingRouteImport } from './routes/_authenticated/ceo_.task-tracking'
 import { Route as AuthenticatedCeoStandupRouteImport } from './routes/_authenticated/ceo_.standup'
@@ -533,6 +535,12 @@ const AuthenticatedMIndexRoute = AuthenticatedMIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedMRoute,
 } as any)
+const AuthenticatedConversationsIndexRoute =
+  AuthenticatedConversationsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedConversationsRoute,
+  } as any)
 const AuthenticatedAiMarketIndexRoute =
   AuthenticatedAiMarketIndexRouteImport.update({
     id: '/ai-market/',
@@ -796,6 +804,12 @@ const AuthenticatedDocumentsIdRoute =
     id: '/$id',
     path: '/$id',
     getParentRoute: () => AuthenticatedDocumentsRoute,
+  } as any)
+const AuthenticatedConversationsImportIdRoute =
+  AuthenticatedConversationsImportIdRouteImport.update({
+    id: '/$importId',
+    path: '/$importId',
+    getParentRoute: () => AuthenticatedConversationsRoute,
   } as any)
 const AuthenticatedChatChannelIdRoute =
   AuthenticatedChatChannelIdRouteImport.update({
@@ -1288,7 +1302,7 @@ export interface FileRoutesByFullPath {
   '/calendar': typeof AuthenticatedCalendarRoute
   '/ceo': typeof AuthenticatedCeoRoute
   '/chat': typeof AuthenticatedChatRoute
-  '/conversations': typeof AuthenticatedConversationsRoute
+  '/conversations': typeof AuthenticatedConversationsRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/decision-history': typeof AuthenticatedDecisionHistoryRoute
   '/decisions': typeof AuthenticatedDecisionsRoute
@@ -1352,6 +1366,7 @@ export interface FileRoutesByFullPath {
   '/ceo/standup': typeof AuthenticatedCeoStandupRoute
   '/ceo/task-tracking': typeof AuthenticatedCeoTaskTrackingRoute
   '/chat/$channelId': typeof AuthenticatedChatChannelIdRoute
+  '/conversations/$importId': typeof AuthenticatedConversationsImportIdRoute
   '/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/email/$id': typeof AuthenticatedEmailIdRoute
   '/email/compose': typeof AuthenticatedEmailComposeRoute
@@ -1401,6 +1416,7 @@ export interface FileRoutesByFullPath {
   '/share/work-graph/$token': typeof ShareWorkGraphTokenRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/ai-market/': typeof AuthenticatedAiMarketIndexRoute
+  '/conversations/': typeof AuthenticatedConversationsIndexRoute
   '/m/': typeof AuthenticatedMIndexRoute
   '/workspace/': typeof AuthenticatedWorkspaceIndexRoute
   '/admin/sell-work/pilots': typeof AuthenticatedAdminSellWorkPilotsRouteWithChildren
@@ -1481,7 +1497,6 @@ export interface FileRoutesByTo {
   '/calendar': typeof AuthenticatedCalendarRoute
   '/ceo': typeof AuthenticatedCeoRoute
   '/chat': typeof AuthenticatedChatRoute
-  '/conversations': typeof AuthenticatedConversationsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/decision-history': typeof AuthenticatedDecisionHistoryRoute
   '/decisions': typeof AuthenticatedDecisionsRoute
@@ -1544,6 +1559,7 @@ export interface FileRoutesByTo {
   '/ceo/standup': typeof AuthenticatedCeoStandupRoute
   '/ceo/task-tracking': typeof AuthenticatedCeoTaskTrackingRoute
   '/chat/$channelId': typeof AuthenticatedChatChannelIdRoute
+  '/conversations/$importId': typeof AuthenticatedConversationsImportIdRoute
   '/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/email/$id': typeof AuthenticatedEmailIdRoute
   '/email/compose': typeof AuthenticatedEmailComposeRoute
@@ -1593,6 +1609,7 @@ export interface FileRoutesByTo {
   '/share/work-graph/$token': typeof ShareWorkGraphTokenRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/ai-market': typeof AuthenticatedAiMarketIndexRoute
+  '/conversations': typeof AuthenticatedConversationsIndexRoute
   '/m': typeof AuthenticatedMIndexRoute
   '/workspace': typeof AuthenticatedWorkspaceIndexRoute
   '/admin/sell-work/pilots': typeof AuthenticatedAdminSellWorkPilotsRouteWithChildren
@@ -1676,7 +1693,7 @@ export interface FileRoutesById {
   '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
   '/_authenticated/ceo': typeof AuthenticatedCeoRoute
   '/_authenticated/chat': typeof AuthenticatedChatRoute
-  '/_authenticated/conversations': typeof AuthenticatedConversationsRoute
+  '/_authenticated/conversations': typeof AuthenticatedConversationsRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/decision-history': typeof AuthenticatedDecisionHistoryRoute
   '/_authenticated/decisions': typeof AuthenticatedDecisionsRoute
@@ -1740,6 +1757,7 @@ export interface FileRoutesById {
   '/_authenticated/ceo_/standup': typeof AuthenticatedCeoStandupRoute
   '/_authenticated/ceo_/task-tracking': typeof AuthenticatedCeoTaskTrackingRoute
   '/_authenticated/chat_/$channelId': typeof AuthenticatedChatChannelIdRoute
+  '/_authenticated/conversations/$importId': typeof AuthenticatedConversationsImportIdRoute
   '/_authenticated/documents/$id': typeof AuthenticatedDocumentsIdRoute
   '/_authenticated/email_/$id': typeof AuthenticatedEmailIdRoute
   '/_authenticated/email_/compose': typeof AuthenticatedEmailComposeRoute
@@ -1789,6 +1807,7 @@ export interface FileRoutesById {
   '/share/work-graph/$token': typeof ShareWorkGraphTokenRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/ai-market/': typeof AuthenticatedAiMarketIndexRoute
+  '/_authenticated/conversations/': typeof AuthenticatedConversationsIndexRoute
   '/_authenticated/m/': typeof AuthenticatedMIndexRoute
   '/_authenticated/workspace/': typeof AuthenticatedWorkspaceIndexRoute
   '/_authenticated/admin/sell-work/pilots': typeof AuthenticatedAdminSellWorkPilotsRouteWithChildren
@@ -1937,6 +1956,7 @@ export interface FileRouteTypes {
     | '/ceo/standup'
     | '/ceo/task-tracking'
     | '/chat/$channelId'
+    | '/conversations/$importId'
     | '/documents/$id'
     | '/email/$id'
     | '/email/compose'
@@ -1986,6 +2006,7 @@ export interface FileRouteTypes {
     | '/share/work-graph/$token'
     | '/admin/'
     | '/ai-market/'
+    | '/conversations/'
     | '/m/'
     | '/workspace/'
     | '/admin/sell-work/pilots'
@@ -2066,7 +2087,6 @@ export interface FileRouteTypes {
     | '/calendar'
     | '/ceo'
     | '/chat'
-    | '/conversations'
     | '/dashboard'
     | '/decision-history'
     | '/decisions'
@@ -2129,6 +2149,7 @@ export interface FileRouteTypes {
     | '/ceo/standup'
     | '/ceo/task-tracking'
     | '/chat/$channelId'
+    | '/conversations/$importId'
     | '/documents/$id'
     | '/email/$id'
     | '/email/compose'
@@ -2178,6 +2199,7 @@ export interface FileRouteTypes {
     | '/share/work-graph/$token'
     | '/admin'
     | '/ai-market'
+    | '/conversations'
     | '/m'
     | '/workspace'
     | '/admin/sell-work/pilots'
@@ -2324,6 +2346,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ceo_/standup'
     | '/_authenticated/ceo_/task-tracking'
     | '/_authenticated/chat_/$channelId'
+    | '/_authenticated/conversations/$importId'
     | '/_authenticated/documents/$id'
     | '/_authenticated/email_/$id'
     | '/_authenticated/email_/compose'
@@ -2373,6 +2396,7 @@ export interface FileRouteTypes {
     | '/share/work-graph/$token'
     | '/_authenticated/admin/'
     | '/_authenticated/ai-market/'
+    | '/_authenticated/conversations/'
     | '/_authenticated/m/'
     | '/_authenticated/workspace/'
     | '/_authenticated/admin/sell-work/pilots'
@@ -2930,6 +2954,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMIndexRouteImport
       parentRoute: typeof AuthenticatedMRoute
     }
+    '/_authenticated/conversations/': {
+      id: '/_authenticated/conversations/'
+      path: '/'
+      fullPath: '/conversations/'
+      preLoaderRoute: typeof AuthenticatedConversationsIndexRouteImport
+      parentRoute: typeof AuthenticatedConversationsRoute
+    }
     '/_authenticated/ai-market/': {
       id: '/_authenticated/ai-market/'
       path: '/ai-market'
@@ -3272,6 +3303,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/documents/$id'
       preLoaderRoute: typeof AuthenticatedDocumentsIdRouteImport
       parentRoute: typeof AuthenticatedDocumentsRoute
+    }
+    '/_authenticated/conversations/$importId': {
+      id: '/_authenticated/conversations/$importId'
+      path: '/$importId'
+      fullPath: '/conversations/$importId'
+      preLoaderRoute: typeof AuthenticatedConversationsImportIdRouteImport
+      parentRoute: typeof AuthenticatedConversationsRoute
     }
     '/_authenticated/chat_/$channelId': {
       id: '/_authenticated/chat_/$channelId'
@@ -3908,6 +3946,23 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
 const AuthenticatedAdminRouteWithChildren =
   AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
 
+interface AuthenticatedConversationsRouteChildren {
+  AuthenticatedConversationsImportIdRoute: typeof AuthenticatedConversationsImportIdRoute
+  AuthenticatedConversationsIndexRoute: typeof AuthenticatedConversationsIndexRoute
+}
+
+const AuthenticatedConversationsRouteChildren: AuthenticatedConversationsRouteChildren =
+  {
+    AuthenticatedConversationsImportIdRoute:
+      AuthenticatedConversationsImportIdRoute,
+    AuthenticatedConversationsIndexRoute: AuthenticatedConversationsIndexRoute,
+  }
+
+const AuthenticatedConversationsRouteWithChildren =
+  AuthenticatedConversationsRoute._addFileChildren(
+    AuthenticatedConversationsRouteChildren,
+  )
+
 interface AuthenticatedDocumentsRouteChildren {
   AuthenticatedDocumentsIdRoute: typeof AuthenticatedDocumentsIdRoute
 }
@@ -4144,7 +4199,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
   AuthenticatedCeoRoute: typeof AuthenticatedCeoRoute
   AuthenticatedChatRoute: typeof AuthenticatedChatRoute
-  AuthenticatedConversationsRoute: typeof AuthenticatedConversationsRoute
+  AuthenticatedConversationsRoute: typeof AuthenticatedConversationsRouteWithChildren
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDecisionHistoryRoute: typeof AuthenticatedDecisionHistoryRoute
   AuthenticatedDecisionsRoute: typeof AuthenticatedDecisionsRoute
@@ -4201,7 +4256,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
   AuthenticatedCeoRoute: AuthenticatedCeoRoute,
   AuthenticatedChatRoute: AuthenticatedChatRoute,
-  AuthenticatedConversationsRoute: AuthenticatedConversationsRoute,
+  AuthenticatedConversationsRoute: AuthenticatedConversationsRouteWithChildren,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDecisionHistoryRoute: AuthenticatedDecisionHistoryRoute,
   AuthenticatedDecisionsRoute: AuthenticatedDecisionsRoute,
