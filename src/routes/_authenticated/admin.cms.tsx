@@ -29,6 +29,7 @@ import {
   type CmsKind,
 } from "@/lib/api/cms.functions";
 import { useI18n } from "@/lib/i18n";
+import { ConsultationRouting } from "@/components/marketing/consultation-routing";
 
 export const Route = createFileRoute("/_authenticated/admin/cms")({
   head: () => ({
@@ -193,6 +194,8 @@ function AdminCmsPage() {
         </select>
         <p className="text-xs text-muted-foreground">{t("cms.leadHint")}</p>
       </div>
+
+      <ConsultationRouting leadWorkspaceId={state.data.leadWorkspaceId} />
 
       <div className="flex flex-wrap items-center gap-3">
         <Tabs value={kind} onValueChange={(v) => setKind(v as CmsKind)}>
