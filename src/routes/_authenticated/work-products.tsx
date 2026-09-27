@@ -565,18 +565,6 @@ function WorkProductsPage() {
                   <X className="h-4 w-4" />
                 </Button>
               )}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setView(view === "list" ? "grid" : "list")}
-                aria-label={t("wp.toggleView")}
-              >
-                {view === "list" ? (
-                  <LayoutGrid className="h-4 w-4" />
-                ) : (
-                  <ListIcon className="h-4 w-4" />
-                )}
-              </Button>
             </div>
           </div>
 
@@ -588,7 +576,7 @@ function WorkProductsPage() {
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
                 <h2 className="font-heading text-lg font-semibold">{t("wp.title")}</h2>
-                <p className="text-xs text-muted-foreground">{items?.length ?? 0} {t("wp.weekly.total").toLowerCase()}</p>
+                <p className="text-xs tabular-nums text-muted-foreground">{items?.length ?? 0}</p>
               </div>
               <div className="flex items-center rounded-md border border-border bg-card p-1">
                 <Button
