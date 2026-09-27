@@ -51,6 +51,17 @@ export const marketing = {
     choose: "Chọn gói",
     resourcesTitle: "Tài nguyên",
     resourcesEmpty: "Bài viết sẽ sớm xuất hiện.",
+    resourcePages: {
+      eyebrow: "TÀI NGUYÊN",
+      title: "Bài viết và hướng dẫn vận hành doanh nghiệp",
+      intro:
+        "Kinh nghiệm quản trị công việc, sử dụng dịch vụ doanh nghiệp và chuyển đổi số cùng UniWork.",
+      readMore: "Đọc bài viết",
+      allArticles: "Tất cả bài viết",
+      otherArticles: "Bài viết khác",
+      exploreUniwork: "Khám phá UniWork",
+      viewAll: "Xem tất cả tài nguyên",
+    },
     oneTitle: "Một tài khoản. Một hoá đơn. Một đầu mối hỗ trợ.",
     one: [
       "Không còn nhiều nhà cung cấp",
@@ -152,6 +163,17 @@ export const marketing = {
     choose: "Choose",
     resourcesTitle: "Resources",
     resourcesEmpty: "Articles coming soon.",
+    resourcePages: {
+      eyebrow: "RESOURCES",
+      title: "Articles and guides for running your business",
+      intro:
+        "Practical knowledge on work management, business services and digital transformation with UniWork.",
+      readMore: "Read article",
+      allArticles: "All articles",
+      otherArticles: "More articles",
+      exploreUniwork: "Explore UniWork",
+      viewAll: "View all resources",
+    },
     oneTitle: "One account. One bill. One support.",
     one: [
       "No more multiple vendors",

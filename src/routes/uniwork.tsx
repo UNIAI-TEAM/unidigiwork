@@ -253,19 +253,32 @@ function UniworkHome() {
 
         {/* Resources */}
         <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 md:py-16">
-          <h2 className="text-2xl font-semibold tracking-tight md:text-3xl">{c.resourcesTitle}</h2>
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <h2 className="text-2xl font-semibold tracking-tight md:text-3xl">{c.resourcesTitle}</h2>
+            <Link
+              to="/tai-nguyen"
+              className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-primary"
+            >
+              {c.resourcePages.viewAll} <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
           {articles.length === 0 ? (
             <p className="mt-4 text-sm text-muted-foreground">{c.resourcesEmpty}</p>
           ) : (
             <div className="mt-8 grid gap-4 md:grid-cols-3">
               {articles.map((a) => (
-                <article key={a.id} className="rounded-2xl border border-border p-6">
+                <Link
+                  key={a.id}
+                  to="/tai-nguyen/$slug"
+                  params={{ slug: a.slug }}
+                  className="rounded-2xl border border-border p-6 transition-colors hover:border-primary"
+                >
                   <p className="text-xs uppercase tracking-wide text-muted-foreground">
                     {String(a.data.category ?? "")}
                   </p>
                   <h3 className="mt-2 text-lg font-semibold">{a.title}</h3>
                   <p className="mt-1 line-clamp-3 text-sm text-muted-foreground">{a.summary}</p>
-                </article>
+                </Link>
               ))}
             </div>
           )}
