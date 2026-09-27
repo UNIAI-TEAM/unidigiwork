@@ -103,7 +103,7 @@ function ConversationWorkPage() {
                     {imp.messageCount} {t("cw.messages")} ·{" "}
                     {new Date(imp.createdAt).toLocaleString(lang === "en" ? "en-US" : "vi-VN")}
                   </span>
-                </button>
+                </Link>
               ))}
             </aside>
 
