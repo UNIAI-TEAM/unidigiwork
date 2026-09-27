@@ -52,7 +52,14 @@ function ConversationWorkDetailPage() {
   const summaryMutation = useMutation({
     mutationFn: () =>
       askConversationIntelligence({
-        data: { sourceType: "IMPORT", sourceId: importId, question: "summary" },
+        data: {
+          sourceType: "IMPORT",
+          sourceId: importId,
+          question:
+            lang === "en"
+              ? "Summarize this conversation: key points, decisions, and open items."
+              : "Tóm tắt hội thoại này: ý chính, quyết định và việc còn treo.",
+        },
       }),
     onSuccess: (res) => setSummary(res.answer),
   });
