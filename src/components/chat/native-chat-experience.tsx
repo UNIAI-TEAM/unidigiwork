@@ -28,6 +28,8 @@ import { useActiveTenant } from "@/features/tenants/hooks";
 import { localeTag, useI18n } from "@/lib/i18n";
 import { SaveToUniworkDialog } from "@/components/conversation/save-to-uniwork-dialog";
 import { ConversationIntelligencePanel } from "@/components/conversation/conversation-intelligence-panel";
+import { ExternalConversationView } from "@/components/conversation/external-conversation-view";
+import { listConversationImports } from "@/lib/api/conversation-work.functions";
 
 export function NativeChatExperience({
   initialChannelId,
@@ -44,6 +46,8 @@ export function NativeChatExperience({
   const [selected, setSelected] = useState<string | null>(initialChannelId ?? null);
   const [saveOpen, setSaveOpen] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
+  const [externalId, setExternalId] = useState<string | null>(null);
+  const importsFn = useServerFn(listConversationImports);
 
   // Tổ chức đang chọn: danh sách phòng phải tách theo tenant để đổi tổ chức không thấy phòng cũ.
   const activeTenant = useActiveTenant();
@@ -94,8 +98,15 @@ export function NativeChatExperience({
 
   const select = (id: string) => {
     setSelected(id);
+    setExternalId(null);
     void navigate({ to: "/chat/$channelId", params: { channelId: id } });
   };
+
+  const imports = useQuery({
+    queryKey: ["conversation-imports", tenantId, search],
+    queryFn: () => importsFn({ data: { limit: 30, search: search.trim() || null } }),
+    enabled: !activeTenant.isLoading,
+  });
 
   const active = channels.find((c) => c.id === selected) ?? null;
 
@@ -103,7 +114,7 @@ export function NativeChatExperience({
     <div className="mx-auto flex h-[calc(100dvh-4rem)] w-full max-w-6xl gap-0 overflow-hidden px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 md:gap-4 md:px-4">
       {/* Danh sách phòng — ẩn trên điện thoại khi đang mở phòng */}
       <aside
-        className={`${selected ? "hidden md:flex" : "flex"} w-full flex-col gap-3 md:w-72 md:shrink-0`}
+        className={`${selected || externalId ? "hidden md:flex" : "flex"} w-full flex-col gap-3 md:w-72 md:shrink-0`}
       >
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -177,14 +188,61 @@ export function NativeChatExperience({
               )}
             </button>
           ))}
+          {(imports.data?.length ?? 0) > 0 && (
+            <p className="px-3 pb-1 pt-4 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {t("cw.ext.group")}
+            </p>
+          )}
+          {(imports.data ?? []).map((imp) => (
+            <button
+              key={imp.id}
+              onClick={() => {
+                setExternalId(imp.id);
+                setSelected(null);
+              }}
+              className={`flex w-full min-h-14 items-center gap-3 rounded-2xl px-3 py-2 text-left transition hover:bg-surface-2 ${
+                imp.id === externalId ? "bg-surface-2" : ""
+              }`}
+            >
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface-2 text-xs font-semibold uppercase">
+                {imp.channel.slice(0, 2)}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-medium">{imp.groupName}</span>
+                <span className="block truncate text-xs capitalize text-muted-foreground">
+                  {imp.channel} · {imp.messageCount}
+                </span>
+              </span>
+            </button>
+          ))}
         </div>
       </aside>
 
       {/* Phòng đang mở */}
       <section
-        className={`${selected ? "flex" : "hidden md:flex"} min-w-0 flex-1 flex-col rounded-3xl border border-border bg-surface p-3`}
+        className={`${selected || externalId ? "flex" : "hidden md:flex"} min-w-0 flex-1 flex-col rounded-3xl border border-border bg-surface p-3`}
       >
-        {selected ? (
+        {externalId && !selected ? (
+          <>
+            <Button
+              variant="ghost"
+              className="mb-1 h-10 self-start px-2 text-sm md:hidden"
+              onClick={() => setExternalId(null)}
+            >
+              {t("m.chat.backList")}
+            </Button>
+            <div className="flex min-h-0 flex-1 gap-3">
+              <div className="min-w-0 flex-1">
+                <ExternalConversationView importId={externalId} />
+              </div>
+              {panelOpen && (
+                <div className="hidden w-[340px] shrink-0 overflow-y-auto rounded-2xl border border-border p-3 lg:block">
+                  <ConversationIntelligencePanel sourceType="IMPORT" sourceId={externalId} />
+                </div>
+              )}
+            </div>
+          </>
+        ) : selected ? (
           <>
             <div className="mb-2 flex items-center gap-2">
               <Button
