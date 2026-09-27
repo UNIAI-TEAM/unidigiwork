@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { submitConsultation, type CmsEntry } from "@/lib/api/cms.functions";
+import { submitConsultationBooking, type CmsEntry } from "@/lib/api/cms.functions";
 import { useI18n } from "@/lib/i18n";
 import { mk } from "@/lib/i18n-locales/marketing";
 
@@ -19,7 +20,8 @@ export function ConsultationForm({
 }) {
   const { lang } = useI18n();
   const c = mk(lang);
-  const fn = useServerFn(submitConsultation);
+  const fn = useServerFn(submitConsultationBooking);
+  const navigate = useNavigate();
   const [f, setF] = useState({
     name: "",
     email: "",
@@ -27,12 +29,16 @@ export function ConsultationForm({
     company: "",
     service: defaultService,
     message: "",
+    when: "",
   });
   const m = useMutation({
-    mutationFn: () => fn({ data: f }),
-    onSuccess: () => {
+    mutationFn: () => {
+      const { when, ...rest } = f;
+      return fn({ data: { ...rest, preferredAt: new Date(when).toISOString() } });
+    },
+    onSuccess: (res) => {
       toast.success(c.sent);
-      setF({ name: "", email: "", phone: "", company: "", service: defaultService, message: "" });
+      void navigate({ to: "/tu-van/$token", params: { token: res.token } });
     },
     onError: () => toast.error(c.error),
   });
@@ -106,6 +112,17 @@ export function ConsultationForm({
             </option>
           ))}
         </select>
+      </Field>
+      <Field id="cf-when" label={c.preferredAt}>
+        <Input
+          id="cf-when"
+          type="datetime-local"
+          required
+          className="h-11"
+          value={f.when}
+          onChange={set("when")}
+        />
+        <p className="text-xs text-muted-foreground">{c.preferredHint}</p>
       </Field>
       <Field id="cf-msg" label={c.message}>
         <Textarea

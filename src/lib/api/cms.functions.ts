@@ -98,6 +98,57 @@ export const submitConsultation = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const submitConsultationBooking = createServerFn({ method: "POST" })
+  .inputValidator((i) =>
+    z
+      .object({
+        name: z.string().trim().min(1).max(120),
+        email: z.string().trim().email().max(200),
+        phone: z.string().trim().max(40).default(""),
+        company: z.string().trim().max(200).default(""),
+        service: z.string().trim().max(120).default(""),
+        message: z.string().trim().max(4000).default(""),
+        preferredAt: z.string().datetime({ offset: true }),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data }) => {
+    const { data: res, error } = await (publicClient() as any).rpc("submit_consultation_booking", {
+      _name: data.name,
+      _email: data.email,
+      _phone: data.phone,
+      _company: data.company,
+      _service: data.service,
+      _message: data.message,
+      _preferred_at: data.preferredAt,
+    });
+    if (error) throw new Error(error.message);
+    return { token: (res as any).token as string };
+  });
+
+export type ConsultationBooking = {
+  service: string;
+  name: string;
+  created_at: string;
+  task_status: string | null;
+  assigned: boolean;
+  start_at: string;
+  end_at: string | null;
+  meeting_status: string | null;
+  meeting_id: string | null;
+  invite: string | null;
+};
+
+export const getConsultationBooking = createServerFn({ method: "GET" })
+  .inputValidator((i) => z.object({ token: z.string().regex(/^[a-f0-9]{64}$/) }).parse(i))
+  .handler(async ({ data }): Promise<ConsultationBooking | null> => {
+    const { data: res, error } = await (publicClient() as any).rpc("get_consultation_booking", {
+      _token: data.token,
+    });
+    if (error) throw new Error(error.message);
+    return (res ?? null) as ConsultationBooking | null;
+  });
+
 /* ------------------------------- Admin (RLS) ------------------------------- */
 
 export const listCmsEntries = createServerFn({ method: "GET" })
