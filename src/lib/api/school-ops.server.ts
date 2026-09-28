@@ -67,7 +67,37 @@ export async function generateBrief(
   } catch {
     /* bỏ qua nếu không đọc được lịch */
   }
-  const hasData = facts.length > 0 && (rows.some((r) => r.open_tasks + r.done_7d + r.meetings_7d > 0) || facts.some((f) => f.includes("] họp: ")));
+  if (department) {
+    try {
+      // Chỉ đạo của tổ: quyết định từ cuộc họp có việc do người trong tổ phụ trách (chưa khép lại)
+      const d = db as any;
+      const { data: mem } = await d.from("tenant_member_profiles").select("user_id").eq("tenant_id", tenantId).eq("department", department);
+      const users = ((mem ?? []) as { user_id: string }[]).map((x) => x.user_id);
+      if (users.length) {
+        const { data: tk } = await d.from("tasks").select("id,title,status,due_at").eq("tenant_id", tenantId).in("human_owner_id", users).limit(500);
+        const tmap = new Map(((tk ?? []) as { id: string; title: string; status: string; due_at: string | null }[]).map((x) => [x.id, x]));
+        const ids = [...tmap.keys()];
+        const { data: ai } = ids.length ? await d.from("meeting_action_item_states").select("meeting_id,task_id").in("task_id", ids) : { data: [] };
+        const byM = new Map<string, string[]>();
+        for (const r of (ai ?? []) as { meeting_id: string; task_id: string }[]) byM.set(r.meeting_id, [...(byM.get(r.meeting_id) ?? []), r.task_id]);
+        if (byM.size) {
+          const { data: decs } = await d.from("decisions").select("title,status,source_id,accepted_at").eq("tenant_id", tenantId).in("source_id", [...byM.keys()]).is("accepted_at", null).limit(30);
+          const nowMs = Date.now();
+          for (const dc of (decs ?? []) as { title: string; status: string; source_id: string }[]) {
+            if (["REJECTED", "SUPERSEDED", "CANCELED"].includes(String(dc.status).toUpperCase())) continue;
+            const ts = (byM.get(dc.source_id) ?? []).map((i) => tmap.get(i)!).filter(Boolean);
+            const open = ts.filter((x) => x.status !== "done" && x.status !== "canceled");
+            const late = open.filter((x) => x.due_at && new Date(x.due_at).getTime() < nowMs).length;
+            const blocked = open.filter((x) => x.status === "blocked").length;
+            facts.push(`[${department}] chỉ đạo: "${dc.title}" — việc của tổ ${ts.length - open.length}/${ts.length} xong${late ? `, ${late} quá hạn` : ""}${blocked ? `, ${blocked} bị chặn` : ""}${ts.length && !open.length ? ", chờ BGH nghiệm thu" : ""}`);
+          }
+        }
+      }
+    } catch {
+      /* bỏ qua nếu không đọc được chỉ đạo */
+    }
+  }
+  const hasData = facts.length > 0 && (rows.some((r) => r.open_tasks + r.done_7d + r.meetings_7d > 0) || facts.some((f) => f.includes("] họp: ") || f.includes("] chỉ đạo: ")));
   if (!hasData) return { status: "no_data", content: "", facts };
   const apiKey = process.env["LOVABLE_API_KEY"];
   if (!apiKey) return { status: "error", content: "", facts };
@@ -138,11 +168,14 @@ export async function runScheduledBriefs(admin: Db, now = new Date()) {
     for (const dept of depts.slice(0, 30)) {
       const bd = await generateBrief(admin, t.id, dept);
       if (bd.status === "no_data") continue;
-      const { error: de } = await admin.rpc("save_school_brief_v2", {
+      const { data: did, error: de } = await admin.rpc("save_school_brief_v2", {
         _tenant_id: t.id, _department: dept, _content: bd.content, _facts: bd.facts,
         _trigger: "scheduled", _status: bd.status, _idempotency_key: `sched:${dateKey}:${dept}`,
       });
-      if (!de) created += 1;
+      if (de || !did) continue;
+      created += 1;
+      // Gửi thông báo cho Tổ trưởng của tổ
+      if (bd.status === "ok") await (admin as any).rpc("notify_school_dept_brief", { _brief_id: did });
     }
   }
   return { created };
