@@ -76,11 +76,11 @@ function Card({ d }: { d: Directive }) {
   const ev = d.tasks.reduce((a, x) => a + x.evidence, 0);
   const lastUpd = d.tasks.map((x) => x.updated_at).filter(Boolean).sort().pop() ?? null;
   const steps = [
-    { k: "source", on: true, at: d.meeting?.start_at ?? d.created_at },
-    { k: "assign", on: d.tasks.length > 0, at: d.confirmed_at },
-    { k: "update", on: !!lastUpd, at: lastUpd },
-    { k: "evidence", on: ev > 0, at: null },
-    { k: "accept", on: d.state === "closed", at: null },
+    { k: "source" as const, on: true, at: d.meeting?.start_at ?? d.created_at },
+    { k: "assign" as const, on: d.tasks.length > 0, at: d.confirmed_at },
+    { k: "update" as const, on: !!lastUpd, at: lastUpd },
+    { k: "evidence" as const, on: ev > 0, at: null },
+    { k: "accept" as const, on: d.state === "closed", at: null },
   ];
   return (
     <article className="space-y-4 rounded-xl border bg-card p-4 shadow-sm md:p-5">
@@ -105,7 +105,7 @@ function Card({ d }: { d: Directive }) {
       </ol>
 
       <div className="rounded-lg bg-muted/50 p-3 text-sm">
-        <span className="font-medium">{t("sdt.next")}:</span> {t(d.next)}
+        <span className="font-medium">{t("sdt.next")}:</span> {t(d.next as never)}
         {d.why && <span className="block text-xs text-muted-foreground">{t("sdt.why")}: {d.why}</span>}
       </div>
 
