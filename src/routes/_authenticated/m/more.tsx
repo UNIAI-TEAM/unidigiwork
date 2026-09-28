@@ -29,8 +29,9 @@ function MorePage() {
   const { theme } = useTheme();
   const { data } = useQuery({
     queryKey: ["admin", "isAdmin"],
-    queryFn: () => getMyIsAdmin(),
+    queryFn: () => getMyIsAdmin().catch(() => ({ isAdmin: false })),
     staleTime: 5 * 60_000,
+    retry: false,
   });
   const isAdmin = data?.isAdmin === true;
 
