@@ -67,7 +67,7 @@ function MinutesActionDialog({ meetingId, title, onClose }: { meetingId: string;
   const load = (s: MeetingSummary) => {
     setSummary(s);
     setResults(null);
-    setDecs(s.decisions.map((d) => ({ title: d.title, detail: d.detail, on: d.confidence !== "LOW", ev: evidence(s, d.sourceIds) })));
+    setDecs(s.decisions.map((d) => ({ title: d.title, detail: d.detail, on: d.confidence !== "UNCLEAR", ev: evidence(s, d.sourceIds) })));
     setTasks(s.actionItems.map((a) => ({
       key: actionItemKey(a), on: true, title: a.title, owner: a.owner, hint: a.dueHint, due: "", assignee: "", ev: evidence(s, a.sourceIds),
     })));
