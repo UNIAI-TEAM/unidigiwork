@@ -76,7 +76,7 @@ export function DirectiveCard({ d, bgh = true }: { d: Directive; bgh?: boolean }
           {inspect.isPending ? t("sdt.inspecting") : t("sdt.inspect")}
         </Button>
       </div>}
-      {bgh && d.state === "review" && (
+      {(bgh || d.ownDept) && d.state === "review" && (
         <div className="space-y-2 rounded-lg border p-3">
           <Textarea aria-label={t("sdt.reviewNote")} placeholder={t("sdt.reviewNote")} rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
           <div className="flex flex-wrap gap-2">
@@ -86,6 +86,7 @@ export function DirectiveCard({ d, bgh = true }: { d: Directive; bgh?: boolean }
         </div>
       )}
 
+      {!bgh && !d.ownDept && d.state === "review" && <p className="text-xs text-muted-foreground">{t("sdd.sharedHint")}</p>}
       <div className="space-y-2">
         <div className="flex items-center justify-between text-sm">
           <span className="font-medium">{t("sdt.tasks")} · <span className="tabular-nums">{done}/{d.tasks.length}</span></span>

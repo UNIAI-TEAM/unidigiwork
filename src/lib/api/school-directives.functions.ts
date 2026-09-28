@@ -13,7 +13,7 @@ export type DirectiveTask = {
 export type Directive = {
   id: string; title: string; detail: string | null; status: string; created_at: string;
   confirmed_at: string | null; accepted_at: string | null; note: string | null; meeting: { id: string; title: string; start_at: string | null } | null;
-  state: DirectiveState; missingEvidence: boolean; next: string; why: string | null; tasks: DirectiveTask[];
+  ownDept?: boolean; state: DirectiveState; missingEvidence: boolean; next: string; why: string | null; tasks: DirectiveTask[];
 };
 
 type Row = Record<string, unknown>;
@@ -73,6 +73,8 @@ async function loadDirectives(sb: any, userId: string, scope: "bgh" | "dept" = "
     }
     const meetMap = new Map(((meets ?? []) as Row[]).map((m) => [m.id as string, { id: m.id as string, title: m.title as string, start_at: (m.start_at as string) ?? null }]));
 
+    const totalBy = new Map<string, number>();
+    for (const i of (items ?? []) as Row[]) totalBy.set(i.meeting_id as string, (totalBy.get(i.meeting_id as string) ?? 0) + 1);
     const meetDept = new Map(((meets ?? []) as Row[]).map((m) => [m.id as string, (m.department as string) ?? null]));
     const scoped = deptUsers ? list.filter((d) => (byMeeting.get(d.source_id as string)?.length ?? 0) > 0 || meetDept.get(d.source_id as string) === ctx.dept) : list;
     const out: Directive[] = scoped.map((d) => {
@@ -92,7 +94,7 @@ async function loadDirectives(sb: any, userId: string, scope: "bgh" | "dept" = "
       return {
         id: d.id as string, title: d.title as string, detail: (d.detail as string) ?? null, status,
         created_at: d.created_at as string, confirmed_at: (d.confirmed_at as string) ?? null, accepted_at: (d.accepted_at as string) ?? null, note: (d.acceptance_note as string) || null,
-        meeting: meetMap.get(mid) ?? null, state, missingEvidence: doneNoEv, next, why, tasks: ts,
+        meeting: meetMap.get(mid) ?? null, ownDept: !!deptUsers && ts.length > 0 && ts.length === (totalBy.get(mid) ?? 0), state, missingEvidence: doneNoEv, next, why, tasks: ts,
       };
     });
     return { enabled: true as const, allowed: true, items: out, dept: scope === "dept" ? ctx.dept : null };
