@@ -209,3 +209,68 @@ export const getSchoolAgenda = createServerFn({ method: "GET" })
     if (error) { console.error("school_agenda", error.message); throw new Error("AGENDA_FAILED"); }
     return (rows ?? []) as AgendaItem[];
   });
+
+export interface SchoolMeeting {
+  id: string; title: string; start_at: string; end_at: string; status: string;
+  location: string | null; agenda: string | null; department: string | null; row_version: number; can_manage: boolean;
+}
+
+export const listSchoolMeetings = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ department: z.string().max(80).nullable(), from: z.string().datetime(), to: z.string().datetime() }).parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const ctx = await schoolContext(context.supabase as never, context.userId);
+    if (!ctx) return { enabled: false as const, role: "teacher" as SchoolRole, myDept: null as string | null, meetings: [] as SchoolMeeting[] };
+    const dept = ctx.role === "bgh" ? data.department : ctx.dept;
+    if (!dept && ctx.role !== "bgh") return { enabled: true as const, role: ctx.role, myDept: ctx.dept, meetings: [] as SchoolMeeting[] };
+    const { data: rows, error } = await context.supabase.rpc("school_meetings", {
+      _tenant_id: ctx.tenantId, _department: dept as string, _from: data.from, _to: data.to,
+    });
+    if (error) throw new Error(stableCode(error.message));
+    return { enabled: true as const, role: ctx.role, myDept: ctx.dept, meetings: (rows ?? []) as SchoolMeeting[] };
+  });
+
+export const saveSchoolMeeting = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      meetingId: z.string().uuid().nullable(),
+      title: z.string().trim().min(1).max(500),
+      startAt: z.string().datetime(),
+      endAt: z.string().datetime(),
+      location: z.string().max(500).nullable(),
+      agenda: z.string().max(10000).nullable(),
+      department: z.string().trim().max(80).nullable(),
+      idempotencyKey: z.string().min(8).max(200),
+    }).parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const ctx = await schoolContext(context.supabase as never, context.userId);
+    if (!ctx) throw new Error("PACK_DISABLED");
+    const { data: id, error } = await context.supabase.rpc("school_save_meeting", {
+      _tenant_id: ctx.tenantId, _meeting_id: data.meetingId as string, _title: data.title,
+      _start_at: data.startAt, _end_at: data.endAt, _location: (data.location ?? null) as string,
+      _agenda: (data.agenda ?? null) as string, _department: (data.department || null) as string,
+      _idempotency_key: data.idempotencyKey, _correlation_id: data.idempotencyKey,
+    });
+    if (error) throw new Error(stableCode(error.message));
+    return { id: id as string };
+  });
+
+export const cancelSchoolMeeting = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ meetingId: z.string().uuid(), reason: z.string().max(1000).nullable(), idempotencyKey: z.string().min(8).max(200) }).parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const ctx = await schoolContext(context.supabase as never, context.userId);
+    if (!ctx) throw new Error("PACK_DISABLED");
+    const { error } = await context.supabase.rpc("school_cancel_meeting", {
+      _tenant_id: ctx.tenantId, _meeting_id: data.meetingId, _reason: (data.reason ?? null) as string,
+      _idempotency_key: data.idempotencyKey, _correlation_id: data.idempotencyKey,
+    });
+    if (error) throw new Error(stableCode(error.message));
+    return { ok: true as const };
+  });
