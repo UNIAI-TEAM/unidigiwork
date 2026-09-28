@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActivePack } from "./industry-pack.server";
-import { generateBrief, loadOverview } from "./school-ops.server";
+import { draftSchoolNews, generateBrief, loadOverview } from "./school-ops.server";
 
 export type SchoolBrief = {
   id: string;
@@ -52,4 +52,20 @@ export const createSchoolBrief = createServerFn({ method: "POST" })
     });
     if (error) throw new Error(error.message.includes("FORBIDDEN") ? "FORBIDDEN" : "SAVE_FAILED");
     return { id: id as string, status: b.status };
+  });
+
+/** Quản trị nội dung: tạo nháp bài tin trường học (chưa lưu, admin duyệt rồi mới đăng). */
+export const draftSchoolNewsArticle = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: isAdmin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+    if (!isAdmin) throw new Error("FORBIDDEN");
+    const { tenantId, pack } = await resolveActivePack(context.supabase as never, context.userId);
+    if (!tenantId || pack !== "school") throw new Error("PACK_DISABLED");
+    try {
+      return await draftSchoolNews(context.supabase, tenantId);
+    } catch (e) {
+      const m = e instanceof Error ? e.message : "";
+      throw new Error(["NO_BRIEF", "NO_AI_BACKEND"].includes(m) ? m : "AI_ERROR");
+    }
   });

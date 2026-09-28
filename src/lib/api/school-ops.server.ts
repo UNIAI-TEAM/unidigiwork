@@ -1,6 +1,6 @@
 // Điều hành trường học — bản tin BGH/tổ chuyên môn dựa trên dữ liệu thật (grounded), lớp gói "school".
 import { streamText } from "ai";
-import { effectiveItem, listPackRows } from "./pack-admin.server";
+import { effectiveItem, listPackRows, mergedVocabulary } from "./pack-admin.server";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = any;
@@ -71,6 +71,9 @@ export async function generateBrief(
       model: provider.responses(MODEL),
       system: rules + (workspaceId ? "\nPhạm vi: chỉ một tổ chuyên môn." : "\nPhạm vi: toàn trường."),
       prompt: `DỮ LIỆU THẬT (${new Date().toLocaleDateString("vi-VN")}):\n${facts.join("\n")}`,
+      providerOptions: {
+        openai: { forceReasoning: true, reasoningEffort: "low", reasoningSummary: "auto", store: false, include: ["reasoning.encrypted_content"] },
+      },
     });
     const content = (await result.text).trim();
     return { status: content ? "ok" : "error", content, facts };
@@ -110,4 +113,41 @@ export async function runScheduledBriefs(admin: Db, now = new Date()) {
     created += 1;
   }
   return { created };
+}
+
+/** Soạn bài tin công khai (nháp) từ bản tin toàn trường mới nhất, theo Skill + bộ từ ngữ của gói. */
+export async function draftSchoolNews(db: Db, tenantId: string) {
+  const { data: briefs } = await db.rpc("list_school_briefs", { _tenant_id: tenantId, _workspace_id: null, _limit: 10 });
+  const brief = ((briefs ?? []) as Array<{ status: string; content: string; created_at: string }>).find((b) => b.status === "ok");
+  if (!brief) throw new Error("NO_BRIEF");
+  const apiKey = process.env["LOVABLE_API_KEY"];
+  if (!apiKey) throw new Error("NO_AI_BACKEND");
+  const rows = await listPackRows(db, tenantId);
+  const skillBody = effectiveItem(rows, "skill", "executive_brief")?.content?.["body"];
+  const vocab = Object.entries(mergedVocabulary(rows).vi).slice(0, 60).map(([k, v]) => `${k} = ${v}`).join("\n");
+  const { createLovableResponsesProvider } = await import("@/lib/ai-gateway.server");
+  const provider = createLovableResponsesProvider(apiKey);
+  const result = streamText({
+    model: provider.responses(MODEL),
+    system:
+      (typeof skillBody === "string" && skillBody.trim() ? skillBody : DEFAULT_RULES) +
+      `\n\nNHIỆM VỤ MỚI: viết lại bản tin nội bộ thành BÀI TIN CÔNG KHAI cho website nhà trường (phụ huynh, cộng đồng đọc).
+Bắt buộc: không nêu tên người, không nêu thông tin học sinh, không nêu việc quá hạn/bị chặn/số liệu rủi ro nội bộ, không nêu tiêu đề công việc nội bộ; chỉ nêu hoạt động tích cực, lịch họp/sự kiện chung. Không bịa.
+Dùng đúng các từ ngữ của nhà trường (nếu có):\n${vocab || "(không có)"}
+Trả về đúng định dạng:
+TIÊU ĐỀ: <≤ 90 ký tự>
+TÓM TẮT: <1–2 câu>
+---
+<nội dung markdown, dùng ## cho tiêu đề mục, tối đa 300 từ>`,
+    prompt: `BẢN TIN NỘI BỘ (${new Date(brief.created_at).toLocaleDateString("vi-VN")}):\n${brief.content}`,
+    providerOptions: {
+      openai: { forceReasoning: true, reasoningEffort: "low", reasoningSummary: "auto", store: false, include: ["reasoning.encrypted_content"] },
+    },
+  });
+  const text = (await result.text).trim();
+  if (!text) throw new Error("AI_ERROR");
+  const [head, ...rest] = text.split(/\n-{3,}\n/);
+  const title = head.match(/TIÊU ĐỀ:\s*(.+)/)?.[1]?.trim().slice(0, 200) || "Bản tin nhà trường";
+  const summary = head.match(/TÓM TẮT:\s*(.+)/)?.[1]?.trim().slice(0, 1000) ?? "";
+  return { title, summary, body: (rest.join("\n---\n") || text).trim() };
 }
