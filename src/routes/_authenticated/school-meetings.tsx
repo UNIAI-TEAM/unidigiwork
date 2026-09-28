@@ -215,25 +215,25 @@ function SchoolMeetingsPage() {
           <DialogHeader><DialogTitle>{draft?.id ? t("smt.edit") : t("smt.new")}</DialogTitle></DialogHeader>
           {draft && (
             <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); save.mutate({ ...draft, idem: key() }); }}>
-              <div><Label>{t("smt.name")}</Label><Input className="h-11" required maxLength={500} value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} /></div>
+              <div><Label>{t("smt.name")}</Label><Input aria-label={t("smt.name")} className="h-11" required maxLength={500} value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} /></div>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                <div className="col-span-2 sm:col-span-1"><Label>{t("smt.date")}</Label><Input className="h-11" type="date" required value={draft.date} onChange={(e) => setDraft({ ...draft, date: e.target.value })} /></div>
-                <div><Label>{t("smt.start")}</Label><Input className="h-11" type="time" required value={draft.start} onChange={(e) => setDraft({ ...draft, start: e.target.value })} /></div>
-                <div><Label>{t("smt.end")}</Label><Input className="h-11" type="time" required value={draft.end} onChange={(e) => setDraft({ ...draft, end: e.target.value })} /></div>
+                <div className="col-span-2 sm:col-span-1"><Label>{t("smt.date")}</Label><Input aria-label={t("smt.date")} className="h-11" type="date" required value={draft.date} onChange={(e) => setDraft({ ...draft, date: e.target.value })} /></div>
+                <div><Label>{t("smt.start")}</Label><Input aria-label={t("smt.start")} className="h-11" type="time" required value={draft.start} onChange={(e) => setDraft({ ...draft, start: e.target.value })} /></div>
+                <div><Label>{t("smt.end")}</Label><Input aria-label={t("smt.end")} className="h-11" type="time" required value={draft.end} onChange={(e) => setDraft({ ...draft, end: e.target.value })} /></div>
               </div>
-              <div><Label>{t("smt.location")}</Label><Input className="h-11" maxLength={500} value={draft.location} onChange={(e) => setDraft({ ...draft, location: e.target.value })} /></div>
+              <div><Label>{t("smt.location")}</Label><Input aria-label={t("smt.location")} className="h-11" maxLength={500} value={draft.location} onChange={(e) => setDraft({ ...draft, location: e.target.value })} /></div>
               <div>
                 <Label>{t("smt.dept")}</Label>
                 {isBgh ? (
                   <>
-                    <Input className="h-11" list="smt-depts" placeholder={t("smt.deptAll")} maxLength={80} value={draft.department} onChange={(e) => setDraft({ ...draft, department: e.target.value })} />
+                    <Input aria-label={t("smt.dept")} className="h-11" list="smt-depts" placeholder={t("smt.deptAll")} maxLength={80} value={draft.department} onChange={(e) => setDraft({ ...draft, department: e.target.value })} />
                     <datalist id="smt-depts">{depts.map((d) => <option key={d} value={d} />)}</datalist>
                   </>
                 ) : (
                   <Input className="h-11" disabled value={draft.department} />
                 )}
               </div>
-              <div><Label>{t("smt.agenda")}</Label><Textarea rows={4} maxLength={10000} value={draft.agenda} onChange={(e) => setDraft({ ...draft, agenda: e.target.value })} /></div>
+              <div><Label>{t("smt.agenda")}</Label><Textarea aria-label={t("smt.agenda")} rows={4} maxLength={10000} value={draft.agenda} onChange={(e) => setDraft({ ...draft, agenda: e.target.value })} /></div>
               <DialogFooter className="gap-2">
                 <Button type="button" variant="outline" className="h-11" onClick={() => setDraft(null)}>{t("smt.close")}</Button>
                 <Button type="submit" className="h-11" disabled={save.isPending}>{t("smt.save")}</Button>
@@ -248,7 +248,7 @@ function SchoolMeetingsPage() {
           <DialogHeader><DialogTitle>{t("smt.cancel")}</DialogTitle></DialogHeader>
           <p className="text-sm text-muted-foreground">{t("smt.cancelConfirm")}</p>
           <p className="text-sm font-medium">{cancelling?.title}</p>
-          <div><Label>{t("smt.reason")}</Label><Input className="h-11" maxLength={1000} value={reason} onChange={(e) => setReason(e.target.value)} /></div>
+          <div><Label>{t("smt.reason")}</Label><Input aria-label={t("smt.reason")} className="h-11" maxLength={1000} value={reason} onChange={(e) => setReason(e.target.value)} /></div>
           <DialogFooter className="gap-2">
             <Button variant="outline" className="h-11" onClick={() => setCancelling(null)}>{t("smt.close")}</Button>
             <Button variant="destructive" className="h-11" disabled={cancel.isPending} onClick={() => cancelling && cancel.mutate(cancelling)}>{t("smt.cancel")}</Button>
