@@ -63,6 +63,7 @@ import { Route as AuthenticatedSchoolOpsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedSchoolMeetingsRouteImport } from './routes/_authenticated/school-meetings'
 import { Route as AuthenticatedSchoolDirectivesRouteImport } from './routes/_authenticated/school-directives'
 import { Route as AuthenticatedSchoolDeptDirectivesRouteImport } from './routes/_authenticated/school-dept-directives'
+import { Route as AuthenticatedSchoolDeptCalendarRouteImport } from './routes/_authenticated/school-dept-calendar'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
 import { Route as AuthenticatedPeopleRouteImport } from './routes/_authenticated/people'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
@@ -497,6 +498,12 @@ const AuthenticatedSchoolDeptDirectivesRoute =
   AuthenticatedSchoolDeptDirectivesRouteImport.update({
     id: '/school-dept-directives',
     path: '/school-dept-directives',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSchoolDeptCalendarRoute =
+  AuthenticatedSchoolDeptCalendarRouteImport.update({
+    id: '/school-dept-calendar',
+    path: '/school-dept-calendar',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedProjectsRoute = AuthenticatedProjectsRouteImport.update({
@@ -1429,6 +1436,7 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof AuthenticatedNotificationsRouteWithChildren
   '/people': typeof AuthenticatedPeopleRoute
   '/projects': typeof AuthenticatedProjectsRoute
+  '/school-dept-calendar': typeof AuthenticatedSchoolDeptCalendarRoute
   '/school-dept-directives': typeof AuthenticatedSchoolDeptDirectivesRoute
   '/school-directives': typeof AuthenticatedSchoolDirectivesRoute
   '/school-meetings': typeof AuthenticatedSchoolMeetingsRoute
@@ -1638,6 +1646,7 @@ export interface FileRoutesByTo {
   '/notifications': typeof AuthenticatedNotificationsRouteWithChildren
   '/people': typeof AuthenticatedPeopleRoute
   '/projects': typeof AuthenticatedProjectsRoute
+  '/school-dept-calendar': typeof AuthenticatedSchoolDeptCalendarRoute
   '/school-dept-directives': typeof AuthenticatedSchoolDeptDirectivesRoute
   '/school-directives': typeof AuthenticatedSchoolDirectivesRoute
   '/school-meetings': typeof AuthenticatedSchoolMeetingsRoute
@@ -1853,6 +1862,7 @@ export interface FileRoutesById {
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRouteWithChildren
   '/_authenticated/people': typeof AuthenticatedPeopleRoute
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
+  '/_authenticated/school-dept-calendar': typeof AuthenticatedSchoolDeptCalendarRoute
   '/_authenticated/school-dept-directives': typeof AuthenticatedSchoolDeptDirectivesRoute
   '/_authenticated/school-directives': typeof AuthenticatedSchoolDirectivesRoute
   '/_authenticated/school-meetings': typeof AuthenticatedSchoolMeetingsRoute
@@ -2069,6 +2079,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/people'
     | '/projects'
+    | '/school-dept-calendar'
     | '/school-dept-directives'
     | '/school-directives'
     | '/school-meetings'
@@ -2278,6 +2289,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/people'
     | '/projects'
+    | '/school-dept-calendar'
     | '/school-dept-directives'
     | '/school-directives'
     | '/school-meetings'
@@ -2492,6 +2504,7 @@ export interface FileRouteTypes {
     | '/_authenticated/notifications'
     | '/_authenticated/people'
     | '/_authenticated/projects'
+    | '/_authenticated/school-dept-calendar'
     | '/_authenticated/school-dept-directives'
     | '/_authenticated/school-directives'
     | '/_authenticated/school-meetings'
@@ -3097,6 +3110,13 @@ declare module '@tanstack/react-router' {
       path: '/school-dept-directives'
       fullPath: '/school-dept-directives'
       preLoaderRoute: typeof AuthenticatedSchoolDeptDirectivesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/school-dept-calendar': {
+      id: '/_authenticated/school-dept-calendar'
+      path: '/school-dept-calendar'
+      fullPath: '/school-dept-calendar'
+      preLoaderRoute: typeof AuthenticatedSchoolDeptCalendarRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/projects': {
@@ -4551,6 +4571,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRouteWithChildren
   AuthenticatedPeopleRoute: typeof AuthenticatedPeopleRoute
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
+  AuthenticatedSchoolDeptCalendarRoute: typeof AuthenticatedSchoolDeptCalendarRoute
   AuthenticatedSchoolDeptDirectivesRoute: typeof AuthenticatedSchoolDeptDirectivesRoute
   AuthenticatedSchoolDirectivesRoute: typeof AuthenticatedSchoolDirectivesRoute
   AuthenticatedSchoolMeetingsRoute: typeof AuthenticatedSchoolMeetingsRoute
@@ -4615,6 +4636,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRouteWithChildren,
   AuthenticatedPeopleRoute: AuthenticatedPeopleRoute,
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
+  AuthenticatedSchoolDeptCalendarRoute: AuthenticatedSchoolDeptCalendarRoute,
   AuthenticatedSchoolDeptDirectivesRoute:
     AuthenticatedSchoolDeptDirectivesRoute,
   AuthenticatedSchoolDirectivesRoute: AuthenticatedSchoolDirectivesRoute,
