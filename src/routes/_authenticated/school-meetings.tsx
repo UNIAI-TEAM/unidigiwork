@@ -78,7 +78,7 @@ function SchoolMeetingsPage() {
   const errMsg = (e: unknown) => {
     const c = e instanceof Error ? e.message : "FAILED";
     const k = `smt.err.${c}`;
-    return t(k) === k ? t("smt.err.FAILED") : t(k);
+    return t(k as never) === k ? t("smt.err.FAILED") : t(k as never);
   };
 
   const save = useMutation({
