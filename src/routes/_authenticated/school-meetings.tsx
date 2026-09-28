@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { MinutesActionButton } from "@/components/school/minutes-action-dialog";
 
 export const Route = createFileRoute("/_authenticated/school-meetings")({
   head: () => ({
@@ -190,10 +191,11 @@ function SchoolMeetingsPage() {
                           <div className="mt-1 text-muted-foreground">{off ? t("smt.canceled") : (m.department ?? t("smt.all"))}</div>
                         </button>
                         {!off && (
-                          <div className="mt-1 flex gap-1">
+                          <div className="mt-1 flex flex-wrap gap-1">
                             <Link to="/meeting/$id" params={{ id: m.id }} className="inline-flex min-h-11 flex-1 items-center justify-center gap-1 rounded-md border text-xs hover:bg-accent md:min-h-8">
                               <Video className="h-3 w-3" />{t("smt.openRoom")}
                             </Link>
+                            {m.can_manage && <MinutesActionButton meetingId={m.id} title={m.title} />}
                             {m.can_manage && m.status !== "ended" && (
                               <button onClick={() => setCancelling(m)} className="min-h-11 rounded-md border px-2 text-xs text-destructive hover:bg-destructive/10 md:min-h-8">{t("smt.cancel")}</button>
                             )}
