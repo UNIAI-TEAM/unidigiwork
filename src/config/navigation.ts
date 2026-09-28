@@ -34,6 +34,7 @@ import {
   Waypoints,
   UserCog,
   Handshake,
+  GraduationCap,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { Key } from "@/lib/i18n";
@@ -60,7 +61,7 @@ export type NavGroupId =
 export type NavBadge = "notifications" | "chat" | "email" | "live";
 
 /** Quyền hiển thị. Chỉ dùng cho UX; backend vẫn là security authority. */
-export type NavVisibility = "everyone" | "admin";
+export type NavVisibility = "everyone" | "admin" | "school";
 
 export type NavItem = {
   id: string;
@@ -96,6 +97,15 @@ export const NAV_GROUPS: NavGroup[] = [
 ];
 
 export const NAV_ITEMS: NavItem[] = [
+  {
+    id: "school-ops",
+    labelKey: "nav.schoolOps",
+    icon: GraduationCap,
+    href: "/school-ops",
+    group: "home",
+    visibility: "school",
+    order: 0.5,
+  },
   // HOME — các điểm vào cá nhân luôn hiển thị, không collapse.
   {
     id: "home",
@@ -502,9 +512,10 @@ export const NAV_ITEMS: NavItem[] = [
   },
 ];
 
-export type NavPermissions = { isAdmin: boolean };
+export type NavPermissions = { isAdmin: boolean; pack?: string };
 
 export function isNavItemVisible(item: NavItem, perms: NavPermissions) {
+  if (item.visibility === "school") return perms.pack === "school";
   return item.visibility === "everyone" || perms.isAdmin;
 }
 
