@@ -94,6 +94,6 @@ export const getSchoolAgenda = createServerFn({ method: "GET" })
       _from: data.from,
       _to: data.to,
     });
-    if (error) throw new Error("AGENDA_FAILED");
+    if (error) { console.error("school_agenda", error.message); throw new Error("AGENDA_FAILED"); }
     return (rows ?? []) as AgendaItem[];
   });
