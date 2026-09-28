@@ -11,7 +11,7 @@ export const getMinutesContext = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: m, error } = await context.supabase
       .from("meetings")
-      .select("id, workspace_id, start_at")
+      .select("id, workspace_id, start_at, department")
       .eq("id", data.meetingId)
       .maybeSingle();
     if (error) mapPgError(error, "MEETING_NOT_FOUND");
@@ -22,6 +22,7 @@ export const getMinutesContext = createServerFn({ method: "POST" })
     return {
       workspaceId: ((m as { workspace_id?: string } | null)?.workspace_id ?? null) as string | null,
       startAt: ((m as { start_at?: string } | null)?.start_at ?? null) as string | null,
+      department: ((m as { department?: string | null } | null)?.department ?? null) as string | null,
       segments: Number(count ?? 0),
     };
   });
