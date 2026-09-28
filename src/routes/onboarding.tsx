@@ -20,6 +20,8 @@ export const Route = createFileRoute("/onboarding")({
   beforeLoad: async () => {
     const { data } = await supabase.auth.getUser();
     if (!data.user) throw redirect({ to: "/auth" });
+    const activeTenant = await getActiveTenant();
+    if (activeTenant) throw redirect({ to: "/dashboard" });
   },
   component: OnboardingPage,
 });
