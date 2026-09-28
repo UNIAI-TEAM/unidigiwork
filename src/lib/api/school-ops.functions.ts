@@ -22,7 +22,7 @@ export const getSchoolOps = createServerFn({ method: "GET" })
     const [depts, lead, briefs] = await Promise.all([
       loadOverview(context.supabase, tenantId),
       context.supabase.rpc("_school_is_leader", { _tenant_id: tenantId, _uid: context.userId }),
-      context.supabase.rpc("list_school_briefs", { _tenant_id: tenantId, _workspace_id: data.workspaceId, _limit: 10 }),
+      context.supabase.rpc("list_school_briefs", { _tenant_id: tenantId, _workspace_id: data.workspaceId as string, _limit: 10 }),
     ]);
     return {
       enabled: true as const,
