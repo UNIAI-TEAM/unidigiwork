@@ -13404,6 +13404,22 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      school_agenda: {
+        Args: {
+          _from: string
+          _tenant_id: string
+          _to: string
+          _workspace_id: string
+        }
+        Returns: {
+          at: string
+          end_at: string
+          id: string
+          kind: string
+          status: string
+          title: string
+        }[]
+      }
       school_overview: {
         Args: { _tenant_id: string }
         Returns: {

@@ -8,6 +8,7 @@ import { createSchoolBrief, getSchoolOps, type SchoolBrief } from "@/lib/api/sch
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { SchoolTimetable } from "@/components/school/school-timetable";
 
 export const Route = createFileRoute("/_authenticated/school-ops")({
   head: () => ({
@@ -27,6 +28,7 @@ function SchoolOps() {
   const { t, lang } = useI18n();
   const qc = useQueryClient();
   const [ws, setWs] = useState<string | null>(null);
+  const [pick, setPick] = useState<string | null>(null);
   const fetchOps = useServerFn(getSchoolOps);
   const gen = useServerFn(createSchoolBrief);
   const q = useQuery({ queryKey: ["school-ops", ws], queryFn: () => fetchOps({ data: { workspaceId: ws } }) });
@@ -35,13 +37,15 @@ function SchoolOps() {
     onSuccess: (r) => {
       if (r.status === "no_data") toast.info(t("sops.noData"));
       else if (r.status === "error") toast.error(t("sops.error"));
+      setPick(null);
       qc.invalidateQueries({ queryKey: ["school-ops"] });
+      qc.invalidateQueries({ queryKey: ["school-agenda"] });
     },
     onError: (e) => toast.error(e instanceof Error && e.message === "FORBIDDEN" ? t("sops.forbidden") : t("sops.error")),
   });
 
   const d = q.data;
-  const latest = d?.briefs.find((b) => b.status === "ok");
+  const latest = (pick && d?.briefs.find((b) => b.id === pick)) || d?.briefs.find((b) => b.status === "ok");
   const canGen = !!d && (ws !== null || d.isLeader);
 
   return (
@@ -86,11 +90,11 @@ function SchoolOps() {
                   </thead>
                   <tbody>
                     {d.isLeader && (
-                      <Row active={ws === null} onClick={() => setWs(null)} name={t("sops.all")}
+                      <Row active={ws === null} onClick={() => { setWs(null); setPick(null); }} name={t("sops.all")}
                         v={d.depts.reduce((a, r) => [a[0] + r.open_tasks, a[1] + r.overdue, a[2] + r.blocked, a[3] + r.done_7d, a[4] + r.meetings_7d], [0, 0, 0, 0, 0])} bold />
                     )}
                     {d.depts.map((r) => (
-                      <Row key={r.workspace_id} active={ws === r.workspace_id} onClick={() => setWs(r.workspace_id)} name={r.name}
+                      <Row key={r.workspace_id} active={ws === r.workspace_id} onClick={() => { setWs(r.workspace_id); setPick(null); }} name={r.name}
                         v={[r.open_tasks, r.overdue, r.blocked, r.done_7d, r.meetings_7d]} />
                     ))}
                   </tbody>
@@ -99,7 +103,9 @@ function SchoolOps() {
             )}
           </section>
 
-          <section className="grid gap-6 lg:grid-cols-[1fr_280px]">
+          <SchoolTimetable workspaceId={ws} onOpenBrief={(id) => { setPick(id); document.getElementById("sops-brief")?.scrollIntoView({ behavior: "smooth" }); }} />
+
+          <section id="sops-brief" className="grid gap-6 lg:grid-cols-[1fr_280px]">
             <div className="rounded-xl border bg-card p-5 shadow-sm">
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                 <h2 className="text-base font-semibold">
@@ -116,11 +122,13 @@ function SchoolOps() {
               <h3 className="mb-3 text-sm font-medium">{t("sops.history")}</h3>
               <ul className="space-y-2 text-sm">
                 {d.briefs.map((b) => (
-                  <li key={b.id} className="flex items-center justify-between gap-2 rounded-md border px-3 py-2">
+                  <li key={b.id}>
+                  <button type="button" onClick={() => setPick(b.id)} className={cn("flex min-h-11 w-full items-center justify-between gap-2 rounded-md border px-3 py-2 text-left hover:bg-accent", latest?.id === b.id && "border-primary/50 bg-primary/5")}>
                     <span className="tabular-nums">{new Date(b.created_at).toLocaleString(lang === "vi" ? "vi-VN" : "en-GB")}</span>
                     <span className={cn("text-xs", b.status === "ok" ? "text-muted-foreground" : "text-destructive")}>
                       {b.status === "ok" ? t(b.trigger === "scheduled" ? "sops.scheduled" : "sops.manual") : t(b.status === "no_data" ? "sops.noData" : "sops.error")}
                     </span>
+                  </button>
                   </li>
                 ))}
               </ul>
