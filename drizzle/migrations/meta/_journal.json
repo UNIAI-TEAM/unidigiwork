@@ -575,6 +575,13 @@
       "when": 1790602991082,
       "tag": "0081_school_meetings",
       "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "7",
+      "when": 1790606656370,
+      "tag": "0082_school_directive_acceptance",
+      "breakpoints": true
     }
   ]
 }

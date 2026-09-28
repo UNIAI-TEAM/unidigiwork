@@ -1,5 +1,7 @@
 // Skill school-directive-tracker: chế độ inspect (chỉ đọc). Chỉ đạo = quyết định của tổ chức; trạng thái nghiệp vụ là lớp diễn giải.
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { streamText } from "ai";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { schoolContext } from "./school-ops.functions";
 
@@ -10,23 +12,21 @@ export type DirectiveTask = {
 };
 export type Directive = {
   id: string; title: string; detail: string | null; status: string; created_at: string;
-  confirmed_at: string | null; meeting: { id: string; title: string; start_at: string | null } | null;
+  confirmed_at: string | null; accepted_at: string | null; note: string | null; meeting: { id: string; title: string; start_at: string | null } | null;
   state: DirectiveState; missingEvidence: boolean; next: string; why: string | null; tasks: DirectiveTask[];
 };
 
 type Row = Record<string, unknown>;
 
-export const listSchoolDirectives = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const sb = context.supabase;
-    const ctx = await schoolContext(sb as never, context.userId);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function loadDirectives(sb: any, userId: string) {
+    const ctx = await schoolContext(sb as never, userId);
     if (!ctx) return { enabled: false as const, allowed: false, items: [] as Directive[] };
     if (ctx.role !== "bgh") return { enabled: true as const, allowed: false, items: [] as Directive[] };
 
     const { data: decs } = await sb
       .from("decisions")
-      .select("id,title,detail,status,source_type,source_id,created_at,confirmed_at")
+      .select("id,title,detail,status,source_type,source_id,created_at,confirmed_at,accepted_at,acceptance_note")
       .eq("tenant_id", ctx.tenantId).order("created_at", { ascending: false }).limit(200);
     const list = (decs ?? []) as Row[];
     const meetingIds = [...new Set(list.filter((d) => d.source_type === "MEETING" || d.source_type === "meeting").map((d) => d.source_id as string).filter(Boolean))];
@@ -74,7 +74,8 @@ export const listSchoolDirectives = createServerFn({ method: "GET" })
       const open = ts.filter((t) => t.status !== "done" && t.status !== "canceled");
       const doneNoEv = ts.some((t) => t.status === "done" && t.evidence === 0);
       let state: DirectiveState; let next: string; let why: string | null = null;
-      if (["REJECTED", "SUPERSEDED", "CANCELED", "CANCELLED"].includes(status)) { state = "closed"; next = "sdt.n.closed"; }
+      if (d.accepted_at) { state = "closed"; next = "sdt.n.closed"; }
+      else if (["REJECTED", "SUPERSEDED", "CANCELED", "CANCELLED"].includes(status)) { state = "closed"; next = "sdt.n.closed"; }
       else if (status !== "CONFIRMED") { state = "decide"; next = "sdt.n.decide"; }
       else if (ts.some((t) => t.status === "blocked")) { state = "blocked"; next = "sdt.n.blocked"; why = ts.find((t) => t.status === "blocked")!.title; }
       else if (ts.some((t) => t.overdue)) { state = "overdue"; next = "sdt.n.overdue"; why = ts.find((t) => t.overdue)!.title; }
@@ -82,9 +83,57 @@ export const listSchoolDirectives = createServerFn({ method: "GET" })
       else { state = "progress"; next = ts.length ? "sdt.n.progress" : "sdt.n.assign"; }
       return {
         id: d.id as string, title: d.title as string, detail: (d.detail as string) ?? null, status,
-        created_at: d.created_at as string, confirmed_at: (d.confirmed_at as string) ?? null,
+        created_at: d.created_at as string, confirmed_at: (d.confirmed_at as string) ?? null, accepted_at: (d.accepted_at as string) ?? null, note: (d.acceptance_note as string) || null,
         meeting: meetMap.get(mid) ?? null, state, missingEvidence: doneNoEv, next, why, tasks: ts,
       };
     });
     return { enabled: true as const, allowed: true, items: out };
+}
+
+export const listSchoolDirectives = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => loadDirectives(context.supabase, context.userId));
+
+/** Nghiệm thu hoặc yêu cầu sửa — chỉ BGH, sau khi người dùng bấm xác nhận. */
+export const reviewSchoolDirective = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ id: z.string().uuid(), accept: z.boolean(), note: z.string().max(2000).default(""), idempotencyKey: z.string().min(8).max(200) }).parse(d))
+  .handler(async ({ context, data }) => {
+    const { error } = await context.supabase.rpc("school_review_directive", {
+      _decision_id: data.id, _accept: data.accept, _note: data.note, _idempotency_key: data.idempotencyKey,
+    });
+    if (error) throw new Error(/[A-Z_]{6,}/.exec(error.message)?.[0] ?? "DIRECTIVE_REVIEW_FAILED");
+    return { ok: true };
+  });
+
+/** Skill school-directive-tracker, chế độ inspect: AI phân tích một chỉ đạo từ dữ liệu thật (chỉ đọc). */
+export const inspectSchoolDirective = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ context, data }) => {
+    const ctx = await schoolContext(context.supabase as never, context.userId);
+    if (!ctx || ctx.role !== "bgh") throw new Error("DIRECTIVE_ACCESS_DENIED");
+    const all = await loadDirectives(context.supabase, context.userId);
+    const d = all.items.find((x) => x.id === data.id);
+    if (!d) throw new Error("DECISION_NOT_FOUND");
+    const apiKey = process.env["LOVABLE_API_KEY"];
+    if (!apiKey) throw new Error("NO_AI_BACKEND");
+    const { createLovableResponsesProvider } = await import("@/lib/ai-gateway.server");
+    const provider = createLovableResponsesProvider(apiKey);
+    const result = streamText({
+      model: provider.responses("openai/gpt-6-astra"),
+      system: [
+        "Bạn là Skill school-directive-tracker (chế độ inspect, chỉ đọc) cho Ban Giám hiệu.",
+        "Chỉ dùng DỮ LIỆU được cung cấp. Không bịa nguyên nhân; nếu không rõ ghi 'chưa rõ nguyên nhân'.",
+        "Không chấm điểm hay nhận xét con người (lười/chậm). Không nêu thông tin học sinh.",
+        "AI không tự nghiệm thu, không đóng chỉ đạo, không gửi nhắc việc; chỉ gợi ý người cần xác nhận.",
+        "Phân biệt: Done nhưng thiếu minh chứng ≠ chờ nghiệm thu ≠ đã nghiệm thu.",
+        "Trả markdown ngắn tiếng Việt: ## Hiện trạng · ## Vì sao (kèm tên công việc làm nguồn) · ## Việc tiếp theo (ai làm, cần ai xác nhận).",
+      ].join("\n"),
+      prompt: JSON.stringify({ asOf: new Date().toISOString(), directive: d }),
+      providerOptions: { openai: { forceReasoning: true, reasoningEffort: "low", reasoningSummary: "auto", store: false, include: ["reasoning.encrypted_content"] } },
+    });
+    const text = (await result.text).trim();
+    if (!text) throw new Error("AI_EMPTY");
+    return { text };
   });

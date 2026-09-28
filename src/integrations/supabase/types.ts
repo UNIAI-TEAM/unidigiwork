@@ -2480,6 +2480,9 @@ export type Database = {
       }
       decisions: {
         Row: {
+          acceptance_note: string | null
+          accepted_at: string | null
+          accepted_by: string | null
           confirmed_at: string | null
           confirmed_by: string | null
           created_at: string
@@ -2503,6 +2506,9 @@ export type Database = {
           workspace_id: string | null
         }
         Insert: {
+          acceptance_note?: string | null
+          accepted_at?: string | null
+          accepted_by?: string | null
           confirmed_at?: string | null
           confirmed_by?: string | null
           created_at?: string
@@ -2526,6 +2532,9 @@ export type Database = {
           workspace_id?: string | null
         }
         Update: {
+          acceptance_note?: string | null
+          accepted_at?: string | null
+          accepted_by?: string | null
           confirmed_at?: string | null
           confirmed_by?: string | null
           created_at?: string
@@ -11299,6 +11308,9 @@ export type Database = {
       confirm_decision: {
         Args: { _confirm?: boolean; _decision_id: string }
         Returns: {
+          acceptance_note: string | null
+          accepted_at: string | null
+          accepted_by: string | null
           confirmed_at: string | null
           confirmed_by: string | null
           created_at: string
@@ -13591,6 +13603,16 @@ export type Database = {
           role: string
           status: string
         }[]
+      }
+      school_review_directive: {
+        Args: {
+          _accept: boolean
+          _correlation_id?: string
+          _decision_id: string
+          _idempotency_key: string
+          _note: string
+        }
+        Returns: string
       }
       school_save_meeting: {
         Args: {

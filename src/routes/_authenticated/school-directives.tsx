@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeft } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
-import { listSchoolDirectives, type Directive, type DirectiveState } from "@/lib/api/school-directives.functions";
+import { inspectSchoolDirective, reviewSchoolDirective, listSchoolDirectives, type Directive, type DirectiveState } from "@/lib/api/school-directives.functions";
 
 export const Route = createFileRoute("/_authenticated/school-directives")({
   head: () => ({
@@ -72,6 +75,21 @@ function DirectivesPage() {
 
 function Card({ d }: { d: Directive }) {
   const { t } = useI18n();
+  const qc = useQueryClient();
+  const reviewFn = useServerFn(reviewSchoolDirective);
+  const inspectFn = useServerFn(inspectSchoolDirective);
+  const [note, setNote] = useState("");
+  const [ai, setAi] = useState<string | null>(null);
+  const review = useMutation({
+    mutationFn: (accept: boolean) => reviewFn({ data: { id: d.id, accept, note, idempotencyKey: `dir:${d.id}:${accept ? "a" : "r"}:${Date.now()}` } }),
+    onSuccess: (_r, accept) => { toast.success(t(accept ? "sdt.accepted" : "sdt.revised")); setNote(""); void qc.invalidateQueries({ queryKey: ["school-directives"] }); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : t("mta.failed")),
+  });
+  const inspect = useMutation({
+    mutationFn: () => inspectFn({ data: { id: d.id } }),
+    onSuccess: (r) => setAi(r.text),
+    onError: (e) => toast.error(e instanceof Error ? e.message : t("mta.failed")),
+  });
   const done = d.tasks.filter((x) => x.status === "done").length;
   const ev = d.tasks.reduce((a, x) => a + x.evidence, 0);
   const lastUpd = d.tasks.map((x) => x.updated_at).filter(Boolean).sort().pop() ?? null;
@@ -80,7 +98,7 @@ function Card({ d }: { d: Directive }) {
     { k: "assign" as const, on: d.tasks.length > 0, at: d.confirmed_at },
     { k: "update" as const, on: !!lastUpd, at: lastUpd },
     { k: "evidence" as const, on: ev > 0, at: null },
-    { k: "accept" as const, on: d.state === "closed", at: null },
+    { k: "accept" as const, on: !!d.accepted_at, at: d.accepted_at },
   ];
   return (
     <article className="space-y-4 rounded-xl border bg-card p-4 shadow-sm md:p-5">
@@ -108,6 +126,23 @@ function Card({ d }: { d: Directive }) {
         <span className="font-medium">{t("sdt.next")}:</span> {t(d.next as never)}
         {d.why && <span className="block text-xs text-muted-foreground">{t("sdt.why")}: {d.why}</span>}
       </div>
+
+      {d.note && <p className="text-xs text-muted-foreground break-words">{t("sdt.noteLabel")}: {d.note}</p>}
+      {ai && <div className="whitespace-pre-wrap rounded-lg border p-3 text-sm break-words">{ai}</div>}
+      <div className="flex flex-wrap gap-2">
+        <Button variant="outline" className="h-11" disabled={inspect.isPending} onClick={() => inspect.mutate()}>
+          {inspect.isPending ? t("sdt.inspecting") : t("sdt.inspect")}
+        </Button>
+      </div>
+      {d.state === "review" && (
+        <div className="space-y-2 rounded-lg border p-3">
+          <Textarea aria-label={t("sdt.reviewNote")} placeholder={t("sdt.reviewNote")} rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
+          <div className="flex flex-wrap gap-2">
+            <Button className="h-11" disabled={review.isPending} onClick={() => { if (confirm(t("sdt.confirmAccept"))) review.mutate(true); }}>{t("sdt.accept")}</Button>
+            <Button variant="outline" className="h-11" disabled={review.isPending || !note.trim()} onClick={() => review.mutate(false)}>{t("sdt.revise")}</Button>
+          </div>
+        </div>
+      )}
 
       <div className="space-y-2">
         <div className="flex items-center justify-between text-sm">
