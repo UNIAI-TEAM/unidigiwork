@@ -540,6 +540,13 @@
       "when": 1790599651321,
       "tag": "0076_school_briefs",
       "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "7",
+      "when": 1790601556559,
+      "tag": "0077_school_agenda",
+      "breakpoints": true
     }
   ]
 }
