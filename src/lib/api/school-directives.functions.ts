@@ -8,7 +8,7 @@ import { schoolContext } from "./school-ops.functions";
 export type DirectiveState = "decide" | "blocked" | "overdue" | "review" | "closed" | "progress";
 export type DirectiveTask = {
   id: string; title: string; status: string; due_at: string | null; owner: string | null;
-  evidence: number; updated_at: string | null; overdue: boolean;
+  evidence: number; updated_at: string | null; completed_at?: string | null; overdue: boolean;
 };
 export type Directive = {
   id: string; title: string; detail: string | null; status: string; created_at: string;
@@ -43,7 +43,7 @@ async function loadDirectives(sb: any, userId: string, scope: "bgh" | "dept" = "
     ]);
     const taskIds = [...new Set(((items ?? []) as Row[]).map((i) => i.task_id as string))];
     const [{ data: tasks }, { data: atts }] = await Promise.all([
-      taskIds.length ? sb.from("tasks").select("id,title,status,due_at,human_owner_id,updated_at").in("id", taskIds).then((r: { data: Row[] | null }) => ({ data: deptUsers ? (r.data ?? []).filter((t) => deptUsers!.has(t.human_owner_id as string)) : r.data })) : Promise.resolve({ data: [] }),
+      taskIds.length ? sb.from("tasks").select("id,title,status,due_at,human_owner_id,updated_at,completed_at").in("id", taskIds).then((r: { data: Row[] | null }) => ({ data: deptUsers ? (r.data ?? []).filter((t) => deptUsers!.has(t.human_owner_id as string)) : r.data })) : Promise.resolve({ data: [] }),
       taskIds.length ? sb.from("task_attachments").select("task_id").in("task_id", taskIds) : Promise.resolve({ data: [] }),
     ]);
     const ownerIds = [...new Set(((tasks ?? []) as Row[]).map((t) => t.human_owner_id as string).filter(Boolean))];
@@ -59,7 +59,7 @@ async function loadDirectives(sb: any, userId: string, scope: "bgh" | "dept" = "
       return [t.id as string, {
         id: t.id as string, title: t.title as string, status: t.status as string, due_at: (t.due_at as string) ?? null,
         owner: t.human_owner_id ? name.get(t.human_owner_id as string) ?? null : null,
-        evidence: evCount.get(t.id as string) ?? 0, updated_at: (t.updated_at as string) ?? null,
+        evidence: evCount.get(t.id as string) ?? 0, updated_at: (t.updated_at as string) ?? null, completed_at: (t.completed_at as string) ?? null,
         overdue: !done && !!t.due_at && new Date(t.due_at as string).getTime() < now,
       } satisfies DirectiveTask];
     }));
