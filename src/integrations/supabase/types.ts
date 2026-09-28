@@ -5929,6 +5929,69 @@ export type Database = {
         }
         Relationships: []
       }
+      school_briefs: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string | null
+          facts: Json
+          id: string
+          idempotency_key: string | null
+          row_version: number
+          status: string
+          tenant_id: string
+          trigger: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          facts?: Json
+          id?: string
+          idempotency_key?: string | null
+          row_version?: number
+          status?: string
+          tenant_id: string
+          trigger?: string
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          facts?: Json
+          id?: string
+          idempotency_key?: string | null
+          row_version?: number
+          status?: string
+          tenant_id?: string
+          trigger?: string
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_briefs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_briefs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sell_work_commercial_events: {
         Row: {
           actor_id: string | null
@@ -10274,6 +10337,14 @@ export type Database = {
         Args: { _workspace_id: string }
         Returns: string
       }
+      _school_can_view_ws: {
+        Args: { _tenant_id: string; _uid: string; _ws: string }
+        Returns: boolean
+      }
+      _school_is_leader: {
+        Args: { _tenant_id: string; _uid: string }
+        Returns: boolean
+      }
       _set_correlation_context: {
         Args: { _correlation_id: string }
         Returns: undefined
@@ -12217,6 +12288,30 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      list_school_briefs: {
+        Args: { _limit?: number; _tenant_id: string; _workspace_id: string }
+        Returns: {
+          content: string
+          created_at: string
+          created_by: string | null
+          facts: Json
+          id: string
+          idempotency_key: string | null
+          row_version: number
+          status: string
+          tenant_id: string
+          trigger: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "school_briefs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       list_task_classification_candidates: {
         Args: { _limit?: number; _task_id: string }
         Returns: {
@@ -12494,6 +12589,10 @@ export type Database = {
           _task_id: string
         }
         Returns: string
+      }
+      notify_school_brief: {
+        Args: { _brief_id: string; _roles: string[] }
+        Returns: number
       }
       open_meeting_attendance: {
         Args: { _correlation_id?: string; _meeting_id: string }
@@ -13246,6 +13345,19 @@ export type Database = {
         }
         Returns: string
       }
+      save_school_brief: {
+        Args: {
+          _content: string
+          _correlation_id?: string
+          _facts: Json
+          _idempotency_key?: string
+          _status: string
+          _tenant_id: string
+          _trigger: string
+          _workspace_id: string
+        }
+        Returns: string
+      }
       schedule_meeting: {
         Args: {
           _agenda?: string
@@ -13291,6 +13403,19 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      school_overview: {
+        Args: { _tenant_id: string }
+        Returns: {
+          blocked: number
+          done_7d: number
+          meetings_7d: number
+          name: string
+          open_tasks: number
+          overdue: number
+          overdue_titles: string[]
+          workspace_id: string
+        }[]
       }
       search_email_messages: {
         Args: {

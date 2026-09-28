@@ -1,3 +1,4 @@
+import { useIndustryPackSnapshot } from "@/lib/industry-pack-store";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -71,12 +72,13 @@ export function DesktopNavigation({ collapsed }: { collapsed?: boolean }) {
     staleTime: 5 * 60_000,
   });
   const isAdmin = adminData?.isAdmin === true;
-  const groups = visibleNavigation({ isAdmin });
+  const pack = useIndustryPackSnapshot();
+  const groups = visibleNavigation({ isAdmin, pack });
   const activeGroup =
     groups.find((g) => g.items.some((i) => isNavItemActive(i, pathname)))?.group.id ?? null;
   const { isCollapsed, toggle } = useCollapsedGroups(activeGroup);
   // Chỉ 1 mục sáng: ưu tiên đường dẫn khớp dài nhất (/ai-brain/skills thắng /ai-brain).
-  const activeItemId = findActiveNavItem(pathname, { isAdmin })?.id ?? null;
+  const activeItemId = findActiveNavItem(pathname, { isAdmin, pack })?.id ?? null;
 
   const badgeFor = (item: NavItem) => {
     if (collapsed) return null;
