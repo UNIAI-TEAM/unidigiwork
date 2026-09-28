@@ -13542,6 +13542,17 @@ export type Database = {
           overdue_titles: string[]
         }[]
       }
+      school_pending_invites: {
+        Args: { _tenant_id: string }
+        Returns: {
+          department: string
+          email: string
+          expires_at: string
+          id: string
+          role: string
+          status: string
+        }[]
+      }
       school_staff: {
         Args: { _tenant_id: string }
         Returns: {
