@@ -37,7 +37,8 @@ export const commitMinutesActions = createServerFn({ method: "POST" })
       .object({
         meetingId: z.string().uuid(),
         workspaceId: z.string().uuid(),
-        decisions: z.array(z.string().min(1).max(300)).max(50),
+        department: z.string().max(120).nullish(),
+        decisions: z.array(z.object({ title: z.string().min(1).max(300), detail: z.string().max(4000).nullish(), evidence: z.string().max(1000).nullish() })).max(50),
         tasks: z
           .array(
             z.object({
@@ -55,36 +56,13 @@ export const commitMinutesActions = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const results: CommitItemResult[] = [];
 
-    if (data.decisions.length) {
-      const { data: row, error } = await context.supabase.rpc("extract_decisions_from_meeting", {
-        _meeting_id: data.meetingId,
+    // Chỉ đạo ghi thẳng từ biên bản đã duyệt (không phụ thuộc bản tóm tắt AI); idempotent theo cuộc họp + tiêu đề.
+    for (const d of data.decisions) {
+      const { data: id, error } = await context.supabase.rpc("school_record_minutes_decision", {
+        _meeting_id: data.meetingId, _title: d.title, _detail: d.detail ?? "", _evidence: d.evidence ?? "",
+        _department: data.department ?? "", _idempotency_key: `minutes:${data.meetingId}:${d.title.trim().toLowerCase()}`.slice(0, 200),
       });
-      if (error) mapPgError(error, "MEETING_NOT_FOUND");
-      const r = (Array.isArray(row) ? row[0] : row) as Record<string, unknown> | null;
-      const created = Array.isArray(r?.decision_ids) ? (r!.decision_ids as string[]) : [];
-      // Gồm cả quyết định đã trích trước đó từ cùng cuộc họp.
-      const { data: rows } = await context.supabase
-        .from("decisions")
-        .select("id, title, status, source_id")
-        .or(`source_id.eq.${data.meetingId}${created.length ? `,id.in.(${created.join(",")})` : ""}`);
-      const list = (rows ?? []) as Array<{ id: string; title: string; status: string }>;
-      const norm = (s: string) => s.trim().toLowerCase();
-      for (const title of data.decisions) {
-        const hit = list.find((d) => norm(d.title) === norm(title));
-        if (!hit) {
-          results.push({ key: title, kind: "decision", ok: false, id: null });
-          continue;
-        }
-        if (hit.status === "CONFIRMED") {
-          results.push({ key: title, kind: "decision", ok: true, id: hit.id });
-          continue;
-        }
-        const { error: cErr } = await context.supabase.rpc("confirm_decision", {
-          _decision_id: hit.id,
-          _confirm: true,
-        });
-        results.push({ key: title, kind: "decision", ok: !cErr, id: hit.id });
-      }
+      results.push({ key: d.title, kind: "decision", ok: !error, id: (id as string | null) ?? null });
     }
 
     for (const t of data.tasks) {

@@ -13696,6 +13696,18 @@ export type Database = {
           status: string
         }[]
       }
+      school_record_minutes_decision: {
+        Args: {
+          _correlation_id?: string
+          _department: string
+          _detail: string
+          _evidence: string
+          _idempotency_key: string
+          _meeting_id: string
+          _title: string
+        }
+        Returns: string
+      }
       school_review_directive: {
         Args: {
           _accept: boolean
