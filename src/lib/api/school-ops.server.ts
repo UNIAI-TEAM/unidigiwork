@@ -49,6 +49,7 @@ export async function generateBrief(
   const all = await loadOverview(db, tenantId);
   const rows = department ? all.filter((r) => r.department === department) : all;
   const facts = buildFacts(rows);
+  const meetingLines: string[] = [];
   try {
     // Đồng bộ lịch họp 7 ngày tới vào bản tin (bỏ lịch đã hủy)
     const now = new Date();
@@ -61,6 +62,7 @@ export async function generateBrief(
     for (const m of (ms ?? []) as { title: string; start_at: string; location: string | null; department: string | null }[]) {
       const at = new Date(m.start_at).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
       facts.push(`[${m.department ?? "Toàn trường"}] họp: "${m.title}" lúc ${at}${m.location ? ` tại ${m.location}` : ""}`);
+      meetingLines.push(`- ${at} · ${m.title}${m.location ? ` · ${m.location}` : ""}${department ? "" : ` · ${m.department ?? "Toàn trường"}`}`);
     }
   } catch {
     /* bỏ qua nếu không đọc được lịch */
@@ -91,7 +93,11 @@ export async function generateBrief(
         openai: { forceReasoning: true, reasoningEffort: "low", reasoningSummary: "auto", store: false, include: ["reasoning.encrypted_content"] },
       },
     });
-    const content = (await result.text).trim();
+    let content = (await result.text).trim();
+    // Luôn đảm bảo có mục lịch họp 7 ngày tới từ dữ liệu thật
+    if (content && meetingLines.length && !/##\s*Lịch họp/i.test(content)) {
+      content += `\n\n## Lịch họp 7 ngày tới\n${meetingLines.join("\n")}`;
+    }
     return { status: content ? "ok" : "error", content, facts };
   } catch {
     return { status: "error", content: "", facts };
@@ -127,6 +133,17 @@ export async function runScheduledBriefs(admin: Db, now = new Date()) {
     if (error || !id) continue;
     if (b.status === "ok") await admin.rpc("notify_school_brief", { _brief_id: id, _roles: c.roles ?? ["tenant_owner", "tenant_admin"] });
     created += 1;
+    // Bản tin riêng cho từng tổ chuyên môn (kèm lịch họp của tổ)
+    const depts = (await loadOverview(admin, t.id).catch(() => [])).map((r) => r.department).filter(Boolean);
+    for (const dept of depts.slice(0, 30)) {
+      const bd = await generateBrief(admin, t.id, dept);
+      if (bd.status === "no_data") continue;
+      const { error: de } = await admin.rpc("save_school_brief_v2", {
+        _tenant_id: t.id, _department: dept, _content: bd.content, _facts: bd.facts,
+        _trigger: "scheduled", _status: bd.status, _idempotency_key: `sched:${dateKey}:${dept}`,
+      });
+      if (!de) created += 1;
+    }
   }
   return { created };
 }
