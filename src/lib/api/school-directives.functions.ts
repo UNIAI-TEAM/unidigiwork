@@ -19,10 +19,16 @@ export type Directive = {
 type Row = Record<string, unknown>;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function loadDirectives(sb: any, userId: string) {
+async function loadDirectives(sb: any, userId: string, scope: "bgh" | "dept" = "bgh") {
     const ctx = await schoolContext(sb as never, userId);
     if (!ctx) return { enabled: false as const, allowed: false, items: [] as Directive[] };
-    if (ctx.role !== "bgh") return { enabled: true as const, allowed: false, items: [] as Directive[] };
+    if (scope === "bgh" && ctx.role !== "bgh") return { enabled: true as const, allowed: false, items: [] as Directive[], dept: null as string | null };
+    if (scope === "dept" && (ctx.role !== "lead" || !ctx.dept)) return { enabled: true as const, allowed: false, items: [] as Directive[], dept: null as string | null };
+    let deptUsers: Set<string> | null = null;
+    if (scope === "dept") {
+      const { data: mem } = await sb.from("tenant_member_profiles").select("user_id").eq("tenant_id", ctx.tenantId).eq("department", ctx.dept);
+      deptUsers = new Set(((mem ?? []) as Row[]).map((m) => m.user_id as string));
+    }
 
     const { data: decs } = await sb
       .from("decisions")
@@ -32,12 +38,12 @@ async function loadDirectives(sb: any, userId: string) {
     const meetingIds = [...new Set(list.filter((d) => d.source_type === "MEETING" || d.source_type === "meeting").map((d) => d.source_id as string).filter(Boolean))];
 
     const [{ data: meets }, { data: items }] = await Promise.all([
-      meetingIds.length ? sb.from("meetings").select("id,title,start_at").in("id", meetingIds) : Promise.resolve({ data: [] }),
+      meetingIds.length ? sb.from("meetings").select("id,title,start_at,department").in("id", meetingIds) : Promise.resolve({ data: [] }),
       meetingIds.length ? sb.from("meeting_action_item_states").select("meeting_id,task_id").in("meeting_id", meetingIds).not("task_id", "is", null) : Promise.resolve({ data: [] }),
     ]);
     const taskIds = [...new Set(((items ?? []) as Row[]).map((i) => i.task_id as string))];
     const [{ data: tasks }, { data: atts }] = await Promise.all([
-      taskIds.length ? sb.from("tasks").select("id,title,status,due_at,human_owner_id,updated_at").in("id", taskIds) : Promise.resolve({ data: [] }),
+      taskIds.length ? sb.from("tasks").select("id,title,status,due_at,human_owner_id,updated_at").in("id", taskIds).then((r: { data: Row[] | null }) => ({ data: deptUsers ? (r.data ?? []).filter((t) => deptUsers!.has(t.human_owner_id as string)) : r.data })) : Promise.resolve({ data: [] }),
       taskIds.length ? sb.from("task_attachments").select("task_id").in("task_id", taskIds) : Promise.resolve({ data: [] }),
     ]);
     const ownerIds = [...new Set(((tasks ?? []) as Row[]).map((t) => t.human_owner_id as string).filter(Boolean))];
@@ -67,7 +73,9 @@ async function loadDirectives(sb: any, userId: string) {
     }
     const meetMap = new Map(((meets ?? []) as Row[]).map((m) => [m.id as string, { id: m.id as string, title: m.title as string, start_at: (m.start_at as string) ?? null }]));
 
-    const out: Directive[] = list.map((d) => {
+    const meetDept = new Map(((meets ?? []) as Row[]).map((m) => [m.id as string, (m.department as string) ?? null]));
+    const scoped = deptUsers ? list.filter((d) => (byMeeting.get(d.source_id as string)?.length ?? 0) > 0 || meetDept.get(d.source_id as string) === ctx.dept) : list;
+    const out: Directive[] = scoped.map((d) => {
       const status = String(d.status ?? "").toUpperCase();
       const mid = d.source_id as string;
       const ts = byMeeting.get(mid) ?? [];
@@ -87,12 +95,17 @@ async function loadDirectives(sb: any, userId: string) {
         meeting: meetMap.get(mid) ?? null, state, missingEvidence: doneNoEv, next, why, tasks: ts,
       };
     });
-    return { enabled: true as const, allowed: true, items: out };
+    return { enabled: true as const, allowed: true, items: out, dept: scope === "dept" ? ctx.dept : null };
 }
 
 export const listSchoolDirectives = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => loadDirectives(context.supabase, context.userId));
+
+// Tổ trưởng: chỉ chỉ đạo có việc do người trong tổ phụ trách hoặc họp của tổ; chỉ việc của tổ.
+export const listDeptDirectives = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => loadDirectives(context.supabase, context.userId, "dept"));
 
 /** Nghiệm thu hoặc yêu cầu sửa — chỉ BGH, sau khi người dùng bấm xác nhận. */
 export const reviewSchoolDirective = createServerFn({ method: "POST" })
