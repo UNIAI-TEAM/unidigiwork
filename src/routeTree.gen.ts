@@ -58,6 +58,7 @@ import { Route as AuthenticatedTaskOpsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSearchRouteImport } from './routes/_authenticated/search'
 import { Route as AuthenticatedSchoolPackRouteImport } from './routes/_authenticated/school-pack'
+import { Route as AuthenticatedSchoolOpsRouteImport } from './routes/_authenticated/school-ops'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
 import { Route as AuthenticatedPeopleRouteImport } from './routes/_authenticated/people'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
@@ -463,6 +464,11 @@ const AuthenticatedSearchRoute = AuthenticatedSearchRouteImport.update({
 const AuthenticatedSchoolPackRoute = AuthenticatedSchoolPackRouteImport.update({
   id: '/school-pack',
   path: '/school-pack',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSchoolOpsRoute = AuthenticatedSchoolOpsRouteImport.update({
+  id: '/school-ops',
+  path: '/school-ops',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedProjectsRoute = AuthenticatedProjectsRouteImport.update({
@@ -1395,6 +1401,7 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof AuthenticatedNotificationsRouteWithChildren
   '/people': typeof AuthenticatedPeopleRoute
   '/projects': typeof AuthenticatedProjectsRoute
+  '/school-ops': typeof AuthenticatedSchoolOpsRoute
   '/school-pack': typeof AuthenticatedSchoolPackRoute
   '/search': typeof AuthenticatedSearchRoute
   '/settings': typeof AuthenticatedSettingsRouteWithChildren
@@ -1599,6 +1606,7 @@ export interface FileRoutesByTo {
   '/notifications': typeof AuthenticatedNotificationsRouteWithChildren
   '/people': typeof AuthenticatedPeopleRoute
   '/projects': typeof AuthenticatedProjectsRoute
+  '/school-ops': typeof AuthenticatedSchoolOpsRoute
   '/school-pack': typeof AuthenticatedSchoolPackRoute
   '/search': typeof AuthenticatedSearchRoute
   '/settings': typeof AuthenticatedSettingsRouteWithChildren
@@ -1809,6 +1817,7 @@ export interface FileRoutesById {
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRouteWithChildren
   '/_authenticated/people': typeof AuthenticatedPeopleRoute
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
+  '/_authenticated/school-ops': typeof AuthenticatedSchoolOpsRoute
   '/_authenticated/school-pack': typeof AuthenticatedSchoolPackRoute
   '/_authenticated/search': typeof AuthenticatedSearchRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
@@ -2020,6 +2029,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/people'
     | '/projects'
+    | '/school-ops'
     | '/school-pack'
     | '/search'
     | '/settings'
@@ -2224,6 +2234,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/people'
     | '/projects'
+    | '/school-ops'
     | '/school-pack'
     | '/search'
     | '/settings'
@@ -2433,6 +2444,7 @@ export interface FileRouteTypes {
     | '/_authenticated/notifications'
     | '/_authenticated/people'
     | '/_authenticated/projects'
+    | '/_authenticated/school-ops'
     | '/_authenticated/school-pack'
     | '/_authenticated/search'
     | '/_authenticated/settings'
@@ -2998,6 +3010,13 @@ declare module '@tanstack/react-router' {
       path: '/school-pack'
       fullPath: '/school-pack'
       preLoaderRoute: typeof AuthenticatedSchoolPackRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/school-ops': {
+      id: '/_authenticated/school-ops'
+      path: '/school-ops'
+      fullPath: '/school-ops'
+      preLoaderRoute: typeof AuthenticatedSchoolOpsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/projects': {
@@ -4452,6 +4471,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRouteWithChildren
   AuthenticatedPeopleRoute: typeof AuthenticatedPeopleRoute
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
+  AuthenticatedSchoolOpsRoute: typeof AuthenticatedSchoolOpsRoute
   AuthenticatedSchoolPackRoute: typeof AuthenticatedSchoolPackRoute
   AuthenticatedSearchRoute: typeof AuthenticatedSearchRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
@@ -4511,6 +4531,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRouteWithChildren,
   AuthenticatedPeopleRoute: AuthenticatedPeopleRoute,
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
+  AuthenticatedSchoolOpsRoute: AuthenticatedSchoolOpsRoute,
   AuthenticatedSchoolPackRoute: AuthenticatedSchoolPackRoute,
   AuthenticatedSearchRoute: AuthenticatedSearchRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,
