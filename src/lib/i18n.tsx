@@ -5685,7 +5685,12 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     if (typeof document !== "undefined") document.documentElement.lang = l;
   };
 
+  const pack = useIndustryPackSnapshot();
   const t = (k: Key) => {
+    if (pack === "school") {
+      const o = (lang === "en" ? schoolEn : lang === "vi" ? schoolVi : undefined)?.[k];
+      if (o) return o;
+    }
     if (lang === "vi" || lang === "en") {
       return (
         (dict[lang] as Record<string, string>)[k] ?? (dict.vi as Record<string, string>)[k] ?? k

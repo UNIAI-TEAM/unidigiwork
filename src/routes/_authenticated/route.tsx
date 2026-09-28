@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CommandPalette } from "@/components/command-palette";
 import { UniCopilot, openUniCopilot } from "@/components/ai/uni-copilot";
 import { useActiveTenant } from "@/features/tenants/hooks";
+import { IndustryPackSync } from "@/features/tenants/industry-pack";
 import { AlertTriangle, Loader2, Sparkles } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 
@@ -90,6 +91,7 @@ function AuthenticatedLayout() {
           </Link>
         </div>
       )}
+      <IndustryPackSync />
       <Outlet />
       <CommandPalette />
       {!location.pathname.startsWith("/m") && <UniCopilot />}
