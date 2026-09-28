@@ -39,6 +39,7 @@ function DeptDirectivesPage() {
         <div className="min-w-0">
           <h1 className="text-2xl font-semibold tracking-tight">{t("sdd.title")}{q.data?.dept ? ` · ${q.data.dept}` : ""}</h1>
           <p className="text-sm text-muted-foreground">{t("sdd.desc")}</p>
+          <Link to="/school-dept-calendar" className="mt-2 inline-flex min-h-11 items-center rounded-md border px-4 text-sm hover:bg-accent">{t("sdc.open")}</Link>
         </div>
       </div>
 
