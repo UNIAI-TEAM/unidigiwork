@@ -568,6 +568,13 @@
       "when": 1790602720531,
       "tag": "0080_school_pending_invites",
       "breakpoints": true
+    },
+    {
+      "idx": 81,
+      "version": "7",
+      "when": 1790602991082,
+      "tag": "0081_school_meetings",
+      "breakpoints": true
     }
   ]
 }

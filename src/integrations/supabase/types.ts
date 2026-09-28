@@ -10343,6 +10343,15 @@ export type Database = {
         Args: { _workspace_id: string }
         Returns: string
       }
+      _school_can_manage_meeting: {
+        Args: {
+          _created_by: string
+          _department: string
+          _tenant_id: string
+          _uid: string
+        }
+        Returns: boolean
+      }
       _school_can_view_dept: {
         Args: { _dept: string; _tenant_id: string; _uid: string }
         Returns: boolean
@@ -13504,6 +13513,16 @@ export type Database = {
           title: string
         }[]
       }
+      school_cancel_meeting: {
+        Args: {
+          _correlation_id: string
+          _idempotency_key: string
+          _meeting_id: string
+          _reason: string
+          _tenant_id: string
+        }
+        Returns: string
+      }
       school_invite: {
         Args: {
           _correlation_id?: string
@@ -13515,6 +13534,26 @@ export type Database = {
           _token_hash: string
         }
         Returns: string
+      }
+      school_meetings: {
+        Args: {
+          _department: string
+          _from: string
+          _tenant_id: string
+          _to: string
+        }
+        Returns: {
+          agenda: string
+          can_manage: boolean
+          department: string
+          end_at: string
+          id: string
+          location: string
+          row_version: number
+          start_at: string
+          status: string
+          title: string
+        }[]
       }
       school_overview: {
         Args: { _tenant_id: string }
@@ -13552,6 +13591,21 @@ export type Database = {
           role: string
           status: string
         }[]
+      }
+      school_save_meeting: {
+        Args: {
+          _agenda: string
+          _correlation_id: string
+          _department: string
+          _end_at: string
+          _idempotency_key: string
+          _location: string
+          _meeting_id: string
+          _start_at: string
+          _tenant_id: string
+          _title: string
+        }
+        Returns: string
       }
       school_staff: {
         Args: { _tenant_id: string }
