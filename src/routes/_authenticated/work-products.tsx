@@ -1,5 +1,11 @@
 // Kết quả công việc — danh sách, bộ lọc và tạo mới.
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import {
+  SCHOOL_TEMPLATE_KEYS,
+  SCHOOL_TEMPLATE_TYPE,
+  type SchoolTemplateKey,
+} from "@/lib/school-templates";
+import { useTenantPack } from "@/features/tenants/industry-pack";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
