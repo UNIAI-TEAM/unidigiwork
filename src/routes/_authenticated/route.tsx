@@ -56,6 +56,13 @@ function AuthenticatedLayout() {
 
   // No tenant → onboarding (trừ khi đã ở đó, đang nhận lời mời, hoặc ngoại tuyến).
   const isInviteFlow = location.pathname.startsWith("/workspace/invite");
+  const pendingInvite =
+    typeof window !== "undefined" ? window.localStorage.getItem("uniwork_invite_redirect") : null;
+  if (pendingInvite && /^\/invite\/[a-f0-9]+$/.test(pendingInvite)) {
+    window.localStorage.removeItem("uniwork_invite_redirect");
+    window.location.assign(pendingInvite);
+    return null;
+  }
   if (!active.data && !offline && !isInviteFlow && !location.pathname.startsWith("/onboarding")) {
     navigate({ to: "/onboarding" });
     return null;
