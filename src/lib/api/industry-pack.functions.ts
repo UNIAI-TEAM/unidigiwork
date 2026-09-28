@@ -10,13 +10,18 @@ export type TenantPackDto = {
   tenantId: string | null;
   pack: "business" | "school";
   canManage: boolean;
+  vocabulary?: { vi: Record<string, string>; en: Record<string, string> };
 };
 
 export const getTenantPack = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<TenantPackDto> => {
     const { resolveActivePack } = await import("./industry-pack.server");
-    return resolveActivePack(context.supabase as never, context.userId);
+    const cur = await resolveActivePack(context.supabase as never, context.userId);
+    if (cur.pack !== "school") return cur;
+    const { listPackRows, mergedVocabulary } = await import("./pack-admin.server");
+    const rows = await listPackRows(context.supabase, cur.tenantId);
+    return { ...cur, vocabulary: mergedVocabulary(rows) };
   });
 
 export const setTenantPack = createServerFn({ method: "POST" })

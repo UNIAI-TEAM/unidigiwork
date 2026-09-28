@@ -526,6 +526,13 @@
       "when": 1790596194237,
       "tag": "0074_tenant_industry_pack",
       "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "7",
+      "when": 1790599064049,
+      "tag": "0075_industry_pack_items",
+      "breakpoints": true
     }
   ]
 }

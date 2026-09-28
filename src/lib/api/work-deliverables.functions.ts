@@ -259,6 +259,16 @@ export const createWorkDeliverable = createServerFn({ method: "POST" })
       const { packForTenant } = await import("./industry-pack.server");
       if ((await packForTenant(context.supabase as never, tenantId)) === "school") {
         content = schoolTemplateBody(data.schoolTemplate, data.title);
+        const { listPackRows, effectiveItem } = await import("./pack-admin.server");
+        const tpl = effectiveItem(
+          await listPackRows(context.supabase, tenantId),
+          "template",
+          data.schoolTemplate,
+        );
+        const body = tpl?.content?.["body"];
+        if (typeof body === "string" && body.trim()) {
+          content = `# ${data.title}\n\n${body.replaceAll("{{title}}", data.title)}`;
+        }
       }
     }
 
