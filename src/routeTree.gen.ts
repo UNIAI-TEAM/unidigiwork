@@ -173,6 +173,7 @@ import { Route as AuthenticatedMAiWorkforceIndexRouteImport } from './routes/_au
 import { Route as AuthenticatedMAiMarketIndexRouteImport } from './routes/_authenticated/m/ai-market.index'
 import { Route as AuthenticatedMAdminIndexRouteImport } from './routes/_authenticated/m/admin.index'
 import { Route as ApiPublicWorkGraphTokenRouteImport } from './routes/api/public/work-graph/$token'
+import { Route as ApiPublicHooksSchoolBriefCronRouteImport } from './routes/api/public/hooks/school-brief-cron'
 import { Route as ApiPublicHooksProcessQuotaExportsRouteImport } from './routes/api/public/hooks/process-quota-exports'
 import { Route as ApiPublicHooksProcessOutboxRouteImport } from './routes/api/public/hooks/process-outbox'
 import { Route as ApiPublicHooksLivekitReconcileRouteImport } from './routes/api/public/hooks/livekit-reconcile'
@@ -1094,6 +1095,12 @@ const ApiPublicWorkGraphTokenRoute = ApiPublicWorkGraphTokenRouteImport.update({
   path: '/api/public/work-graph/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksSchoolBriefCronRoute =
+  ApiPublicHooksSchoolBriefCronRouteImport.update({
+    id: '/api/public/hooks/school-brief-cron',
+    path: '/api/public/hooks/school-brief-cron',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksProcessQuotaExportsRoute =
   ApiPublicHooksProcessQuotaExportsRouteImport.update({
     id: '/api/public/hooks/process-quota-exports',
@@ -1533,6 +1540,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/livekit-reconcile': typeof ApiPublicHooksLivekitReconcileRoute
   '/api/public/hooks/process-outbox': typeof ApiPublicHooksProcessOutboxRoute
   '/api/public/hooks/process-quota-exports': typeof ApiPublicHooksProcessQuotaExportsRoute
+  '/api/public/hooks/school-brief-cron': typeof ApiPublicHooksSchoolBriefCronRoute
   '/api/public/work-graph/$token': typeof ApiPublicWorkGraphTokenRoute
   '/m/admin/': typeof AuthenticatedMAdminIndexRoute
   '/m/ai-market/': typeof AuthenticatedMAiMarketIndexRoute
@@ -1735,6 +1743,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/livekit-reconcile': typeof ApiPublicHooksLivekitReconcileRoute
   '/api/public/hooks/process-outbox': typeof ApiPublicHooksProcessOutboxRoute
   '/api/public/hooks/process-quota-exports': typeof ApiPublicHooksProcessQuotaExportsRoute
+  '/api/public/hooks/school-brief-cron': typeof ApiPublicHooksSchoolBriefCronRoute
   '/api/public/work-graph/$token': typeof ApiPublicWorkGraphTokenRoute
   '/m/admin': typeof AuthenticatedMAdminIndexRoute
   '/m/ai-market': typeof AuthenticatedMAiMarketIndexRoute
@@ -1945,6 +1954,7 @@ export interface FileRoutesById {
   '/api/public/hooks/livekit-reconcile': typeof ApiPublicHooksLivekitReconcileRoute
   '/api/public/hooks/process-outbox': typeof ApiPublicHooksProcessOutboxRoute
   '/api/public/hooks/process-quota-exports': typeof ApiPublicHooksProcessQuotaExportsRoute
+  '/api/public/hooks/school-brief-cron': typeof ApiPublicHooksSchoolBriefCronRoute
   '/api/public/work-graph/$token': typeof ApiPublicWorkGraphTokenRoute
   '/_authenticated/m/admin/': typeof AuthenticatedMAdminIndexRoute
   '/_authenticated/m/ai-market/': typeof AuthenticatedMAiMarketIndexRoute
@@ -2155,6 +2165,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/livekit-reconcile'
     | '/api/public/hooks/process-outbox'
     | '/api/public/hooks/process-quota-exports'
+    | '/api/public/hooks/school-brief-cron'
     | '/api/public/work-graph/$token'
     | '/m/admin/'
     | '/m/ai-market/'
@@ -2357,6 +2368,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/livekit-reconcile'
     | '/api/public/hooks/process-outbox'
     | '/api/public/hooks/process-quota-exports'
+    | '/api/public/hooks/school-brief-cron'
     | '/api/public/work-graph/$token'
     | '/m/admin'
     | '/m/ai-market'
@@ -2566,6 +2578,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/livekit-reconcile'
     | '/api/public/hooks/process-outbox'
     | '/api/public/hooks/process-quota-exports'
+    | '/api/public/hooks/school-brief-cron'
     | '/api/public/work-graph/$token'
     | '/_authenticated/m/admin/'
     | '/_authenticated/m/ai-market/'
@@ -2636,6 +2649,7 @@ export interface RootRouteChildren {
   ApiPublicHooksLivekitReconcileRoute: typeof ApiPublicHooksLivekitReconcileRoute
   ApiPublicHooksProcessOutboxRoute: typeof ApiPublicHooksProcessOutboxRoute
   ApiPublicHooksProcessQuotaExportsRoute: typeof ApiPublicHooksProcessQuotaExportsRoute
+  ApiPublicHooksSchoolBriefCronRoute: typeof ApiPublicHooksSchoolBriefCronRoute
   ApiPublicWorkGraphTokenRoute: typeof ApiPublicWorkGraphTokenRoute
   ApiInternalOfficeV1RenderRoute: typeof ApiInternalOfficeV1RenderRoute
   ApiPublicHooksMessagingProviderRoute: typeof ApiPublicHooksMessagingProviderRoute
@@ -3791,6 +3805,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWorkGraphTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/school-brief-cron': {
+      id: '/api/public/hooks/school-brief-cron'
+      path: '/api/public/hooks/school-brief-cron'
+      fullPath: '/api/public/hooks/school-brief-cron'
+      preLoaderRoute: typeof ApiPublicHooksSchoolBriefCronRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/process-quota-exports': {
       id: '/api/public/hooks/process-quota-exports'
       path: '/api/public/hooks/process-quota-exports'
@@ -4655,6 +4676,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksProcessOutboxRoute: ApiPublicHooksProcessOutboxRoute,
   ApiPublicHooksProcessQuotaExportsRoute:
     ApiPublicHooksProcessQuotaExportsRoute,
+  ApiPublicHooksSchoolBriefCronRoute: ApiPublicHooksSchoolBriefCronRoute,
   ApiPublicWorkGraphTokenRoute: ApiPublicWorkGraphTokenRoute,
   ApiInternalOfficeV1RenderRoute: ApiInternalOfficeV1RenderRoute,
   ApiPublicHooksMessagingProviderRoute: ApiPublicHooksMessagingProviderRoute,
