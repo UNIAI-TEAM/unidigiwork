@@ -216,10 +216,10 @@ function SchoolMeetingsPage() {
           {draft && (
             <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); save.mutate({ ...draft, idem: key() }); }}>
               <div><Label>{t("smt.name")}</Label><Input className="h-11" required maxLength={500} value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} /></div>
-              <div className="grid grid-cols-3 gap-2">
-                <div className="col-span-3 sm:col-span-1"><Label>{t("smt.date")}</Label><Input className="h-11" type="date" required value={draft.date} onChange={(e) => setDraft({ ...draft, date: e.target.value })} /></div>
-                <div className="col-span-3/2 sm:col-span-1"><Label>{t("smt.start")}</Label><Input className="h-11" type="time" required value={draft.start} onChange={(e) => setDraft({ ...draft, start: e.target.value })} /></div>
-                <div className="sm:col-span-1"><Label>{t("smt.end")}</Label><Input className="h-11" type="time" required value={draft.end} onChange={(e) => setDraft({ ...draft, end: e.target.value })} /></div>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                <div className="col-span-2 sm:col-span-1"><Label>{t("smt.date")}</Label><Input className="h-11" type="date" required value={draft.date} onChange={(e) => setDraft({ ...draft, date: e.target.value })} /></div>
+                <div><Label>{t("smt.start")}</Label><Input className="h-11" type="time" required value={draft.start} onChange={(e) => setDraft({ ...draft, start: e.target.value })} /></div>
+                <div><Label>{t("smt.end")}</Label><Input className="h-11" type="time" required value={draft.end} onChange={(e) => setDraft({ ...draft, end: e.target.value })} /></div>
               </div>
               <div><Label>{t("smt.location")}</Label><Input className="h-11" maxLength={500} value={draft.location} onChange={(e) => setDraft({ ...draft, location: e.target.value })} /></div>
               <div>
