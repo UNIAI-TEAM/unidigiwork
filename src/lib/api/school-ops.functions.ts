@@ -69,3 +69,31 @@ export const draftSchoolNewsArticle = createServerFn({ method: "POST" })
       throw new Error(["NO_BRIEF", "NO_AI_BACKEND"].includes(m) ? m : "AI_ERROR");
     }
   });
+
+export type AgendaItem = {
+  kind: "meeting" | "task" | "brief";
+  id: string;
+  title: string;
+  at: string;
+  end_at: string | null;
+  status: string;
+};
+
+/** Thời gian biểu: lịch họp, hạn công việc, bản tin trong khoảng ngày (tối đa 62 ngày). */
+export const getSchoolAgenda = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ workspaceId: z.string().uuid().nullable(), from: z.string().datetime(), to: z.string().datetime() }).parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const { tenantId, pack } = await resolveActivePack(context.supabase as never, context.userId);
+    if (!tenantId || pack !== "school") return [] as AgendaItem[];
+    const { data: rows, error } = await context.supabase.rpc("school_agenda", {
+      _tenant_id: tenantId,
+      _workspace_id: data.workspaceId as string,
+      _from: data.from,
+      _to: data.to,
+    });
+    if (error) throw new Error("AGENDA_FAILED");
+    return (rows ?? []) as AgendaItem[];
+  });
