@@ -94,13 +94,7 @@ export const getSchoolStaff = createServerFn({ method: "GET" })
     if (error) throw new Error("STAFF_FAILED");
     let invites: SchoolInvite[] = [];
     if (ctx.role === "bgh") {
-      const { data: inv } = await context.supabase
-        .from("tenant_invitations")
-        .select("id, email, role, department, status, expires_at")
-        .eq("tenant_id", ctx.tenantId)
-        .eq("status", "pending")
-        .order("created_at", { ascending: false })
-        .limit(200);
+      const { data: inv } = await context.supabase.rpc("school_pending_invites", { _tenant_id: ctx.tenantId });
       invites = (inv ?? []) as SchoolInvite[];
     }
     return { enabled: true as const, role: ctx.role, isOwner: ctx.tenantRole === "tenant_owner", staff: (staff ?? []) as SchoolStaff[], invites };
