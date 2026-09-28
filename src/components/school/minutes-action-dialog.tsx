@@ -19,7 +19,7 @@ import { commitMinutesActions, getMinutesContext, type CommitItemResult } from "
 import { getSchoolStaff } from "@/lib/api/school-ops.functions";
 import { actionItemKey, type MeetingSummary } from "@/domain/meeting-intelligence/contracts";
 
-type TaskRow = { key: string; on: boolean; title: string; owner: string | null; hint: string | null; due: string; assignee: string; ev: string };
+type TaskRow = { key: string; on: boolean; title: string; owner: string | null; hint: string | null; due: string; assignee: string; ev: string; desc: string };
 type DecRow = { title: string; on: boolean; detail: string; ev: string };
 
 function evidence(s: MeetingSummary, ids: string[]) {
@@ -58,6 +58,7 @@ function MinutesActionDialog({ meetingId, title, onClose }: { meetingId: string;
   const [summary, setSummary] = useState<MeetingSummary | null>(null);
   const [decs, setDecs] = useState<DecRow[]>([]);
   const [tasks, setTasks] = useState<TaskRow[]>([]);
+  const [dept, setDept] = useState<string | null>(null);
   const [results, setResults] = useState<CommitItemResult[] | null>(null);
 
   const ctx = useQuery({ queryKey: ["mta-ctx", meetingId], queryFn: () => ctxFn({ data: { meetingId } }) });
@@ -69,10 +70,12 @@ function MinutesActionDialog({ meetingId, title, onClose }: { meetingId: string;
     setResults(null);
     setDecs(s.decisions.map((d) => ({ title: d.title, detail: d.detail, on: d.confidence !== "UNCLEAR", ev: evidence(s, d.sourceIds) })));
     setTasks(s.actionItems.map((a) => ({
-      key: actionItemKey(a), on: true, title: a.title, owner: a.owner, hint: a.dueHint, due: "", assignee: "", ev: evidence(s, a.sourceIds),
+      key: actionItemKey(a), on: true, title: a.title, owner: a.owner, hint: a.dueHint, due: "", assignee: "", ev: evidence(s, a.sourceIds), desc: "",
     })));
   };
   useEffect(() => { if (existing.data && !summary) load(existing.data); }, [existing.data]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => { if (dept === null && ctx.data?.department) setDept(ctx.data.department); }, [ctx.data?.department]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const errText = (e: unknown) => (e instanceof Error && e.message ? e.message : t("mta.failed"));
 
@@ -92,7 +95,7 @@ function MinutesActionDialog({ meetingId, title, onClose }: { meetingId: string;
         workspaceId: ctx.data!.workspaceId!,
         decisions: decs.filter((d) => d.on).map((d) => d.title),
         tasks: tasks.filter((x) => x.on).map((x) => ({
-          itemKey: x.key, title: x.title.trim(), description: x.ev ? `${t("mta.evidence")}: ${x.ev}`.slice(0, 2000) : null,
+          itemKey: x.key, title: x.title.trim(), description: [x.desc.trim(), x.ev ? `${t("mta.evidence")}: ${x.ev}` : "", dept ? `${t("mta.dept")}: ${dept}` : ""].filter(Boolean).join("\n\n").slice(0, 2000) || null,
           dueAt: x.due ? new Date(`${x.due}T17:00`).toISOString() : null, assigneeId: x.assignee || null,
         })),
       },
@@ -101,13 +104,16 @@ function MinutesActionDialog({ meetingId, title, onClose }: { meetingId: string;
       setResults(r.results);
       void qc.invalidateQueries({ queryKey: ["school-agenda"] });
       void qc.invalidateQueries({ queryKey: ["school-ops"] });
+      void qc.invalidateQueries({ queryKey: ["school-meetings"] });
       if (r.status === "completed") toast.success(t("mta.done"));
       else toast.error(t(r.status === "partial" ? "mta.partial" : "mta.failed"));
     },
     onError: (e) => toast.error(errText(e)),
   });
 
-  const people = (staff.data?.staff ?? []);
+  const allPeople = staff.data?.staff ?? [];
+  const depts = Array.from(new Set(allPeople.map((p) => p.department).filter(Boolean))) as string[];
+  const people = dept ? allPeople.filter((p) => p.department === dept) : allPeople;
   const selected = decs.filter((d) => d.on).length + tasks.filter((x) => x.on && x.title.trim()).length;
   const resFor = (kind: "decision" | "task", key: string) => results?.find((r) => r.kind === kind && r.key === key);
   const badge = (r?: CommitItemResult) =>
@@ -158,6 +164,16 @@ function MinutesActionDialog({ meetingId, title, onClose }: { meetingId: string;
               </ul>
             </section>
 
+            <section className="space-y-1">
+              <label htmlFor="mta-dept" className="text-sm font-medium">{t("mta.dept")}</label>
+              <select id="mta-dept" aria-label={t("mta.dept")} className="h-11 w-full rounded-md border bg-background px-2 text-sm" value={dept ?? ""} disabled={!!results}
+                onChange={(e) => { const v = e.target.value || null; setDept(v); setTasks((a) => a.map((x) => ({ ...x, assignee: x.assignee && allPeople.find((p) => p.user_id === x.assignee)?.department === v ? x.assignee : "" }))); }}>
+                <option value="">{t("mta.allDept")}</option>
+                {depts.map((d) => <option key={d} value={d}>{d}</option>)}
+              </select>
+              <p className="text-xs text-muted-foreground">{t("mta.deptHint")}</p>
+            </section>
+
             <section>
               <h3 className="mb-2 text-sm font-semibold">{t("mta.tab.tasks")} · {tasks.length}</h3>
               {tasks.length === 0 && <p className="text-sm text-muted-foreground">{t("mta.none")}</p>}
@@ -178,6 +194,8 @@ function MinutesActionDialog({ meetingId, title, onClose }: { meetingId: string;
                             </select>
                             <Input type="date" aria-label={t("mta.due")} className="h-11" value={x.due} disabled={!!results} onChange={(e) => set({ due: e.target.value })} />
                           </div>
+                          <Textarea aria-label={t("mta.desc")} rows={2} placeholder={t("mta.desc")} value={x.desc} disabled={!!results} onChange={(e) => set({ desc: e.target.value })} />
+                          {x.on && (!x.assignee || !x.due) && <p className="text-xs text-muted-foreground">{t("mta.warnSync")}</p>}
                           {(x.owner || x.hint) && (
                             <p className="text-xs text-muted-foreground">{t("mta.aiSaid")}: {[x.owner, x.hint].filter(Boolean).join(" · ")}</p>
                           )}
