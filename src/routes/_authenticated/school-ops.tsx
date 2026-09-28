@@ -9,6 +9,7 @@ import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { SchoolTimetable } from "@/components/school/school-timetable";
+import { BriefMeetingButton } from "@/components/school/brief-meeting-dialog";
 
 export const Route = createFileRoute("/_authenticated/school-ops")({
   head: () => ({
@@ -122,10 +123,13 @@ function SchoolOps() {
                 <h2 className="text-base font-semibold">
                   {t("sops.brief")} · {effDept ?? t("sops.all")}
                 </h2>
+                <div className="flex flex-wrap gap-2">
+                {canGen && latest?.status === "ok" && <BriefMeetingButton brief={latest} department={effDept} />}
                 <Button className="min-h-11" disabled={!canGen || m.isPending} onClick={() => m.mutate()}>
                   <Sparkles className="mr-2 h-4 w-4" />
                   {m.isPending ? t("sops.generating") : t("sops.generate")}
                 </Button>
+                </div>
               </div>
               {latest ? <BriefBody b={latest} lang={lang} /> : <p className="text-sm text-muted-foreground">{t("sops.empty")}</p>}
             </div>
