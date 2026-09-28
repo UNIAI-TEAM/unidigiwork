@@ -6,6 +6,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { commandMetadataSchema } from "@/contracts/common/base";
 import { ApiError } from "@/contracts/errors";
 import { mapPgError } from "./business.server";
+import { SCHOOL_TEMPLATE_KEYS, schoolTemplateBody } from "@/lib/school-templates";
 
 export const BUSINESS_TYPES = [
   "PROPOSAL",
@@ -238,6 +239,7 @@ export const createWorkDeliverable = createServerFn({ method: "POST" })
         primaryContextType: contextTypeSchema.nullable().optional(),
         primaryContextId: z.string().uuid().nullable().optional(),
         useTemplate: z.boolean().default(true),
+        schoolTemplate: z.enum(SCHOOL_TEMPLATE_KEYS).optional(),
       })
       .parse(i),
   )
@@ -251,6 +253,15 @@ export const createWorkDeliverable = createServerFn({ method: "POST" })
       readActiveTenantCookie(),
     );
 
+    // Mẫu trường học chỉ áp dụng khi tổ chức đã bật Gói Trường học (máy chủ quyết định).
+    let content = data.useTemplate ? templateFor(data.businessType, data.title) : "";
+    if (data.schoolTemplate) {
+      const { packForTenant } = await import("./industry-pack.server");
+      if ((await packForTenant(context.supabase as never, tenantId)) === "school") {
+        content = schoolTemplateBody(data.schoolTemplate, data.title);
+      }
+    }
+
     const { data: row, error } = await context.supabase
       .from("work_products")
       .insert({
@@ -259,7 +270,7 @@ export const createWorkDeliverable = createServerFn({ method: "POST" })
         title: data.title,
         description: data.description ?? null,
         business_type: data.businessType,
-        content: data.useTemplate ? templateFor(data.businessType, data.title) : "",
+        content,
         owner_id: context.userId,
         created_by: context.userId,
         primary_context_type: data.primaryContextType ?? null,

@@ -6910,6 +6910,7 @@ export type Database = {
           created_by: string | null
           deleted_at: string | null
           id: string
+          industry_pack: string
           max_users: number | null
           name: string
           row_version: number
@@ -6923,6 +6924,7 @@ export type Database = {
           created_by?: string | null
           deleted_at?: string | null
           id?: string
+          industry_pack?: string
           max_users?: number | null
           name: string
           row_version?: number
@@ -6936,6 +6938,7 @@ export type Database = {
           created_by?: string | null
           deleted_at?: string | null
           id?: string
+          industry_pack?: string
           max_users?: number | null
           name?: string
           row_version?: number
@@ -10941,6 +10944,7 @@ export type Database = {
           created_by: string | null
           deleted_at: string | null
           id: string
+          industry_pack: string
           max_users: number | null
           name: string
           row_version: number
@@ -11932,6 +11936,10 @@ export type Database = {
           row_version: number
           title: string
         }[]
+      }
+      get_tenant_industry_pack: {
+        Args: { _tenant_id: string }
+        Returns: string
       }
       get_unread_counts: {
         Args: never
@@ -13456,6 +13464,15 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      set_tenant_industry_pack: {
+        Args: {
+          _correlation_id?: string
+          _idempotency_key?: string
+          _pack: string
+          _tenant_id: string
+        }
+        Returns: string
       }
       set_workflow_permission: {
         Args: {

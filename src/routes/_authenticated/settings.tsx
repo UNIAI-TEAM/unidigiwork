@@ -1,3 +1,4 @@
+import { IndustryPackPanel } from "@/features/tenants/industry-pack";
 import { createFileRoute, useNavigate, useRouterState, useSearch } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -698,6 +699,15 @@ function IntegrationsSection() {
 }
 
 function TeamSection() {
+  return (
+    <>
+      <IndustryPackPanel />
+      <TeamMembersSection />
+    </>
+  );
+}
+
+function TeamMembersSection() {
   const members = [
     { n: "Nguyễn Văn A", r: "Owner", e: "nguyenvana@unicom.vn" },
     { n: "Trần Thị B", r: "Admin", e: "tranthib@unicom.vn" },

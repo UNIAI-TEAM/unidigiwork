@@ -1,5 +1,11 @@
 // Kết quả công việc — danh sách, bộ lọc và tạo mới.
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import {
+  SCHOOL_TEMPLATE_KEYS,
+  SCHOOL_TEMPLATE_TYPE,
+  type SchoolTemplateKey,
+} from "@/lib/school-templates";
+import { useTenantPack } from "@/features/tenants/industry-pack";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -706,6 +712,8 @@ function CreateDialog({
   const [description, setDescription] = useState("");
   const [workspaceId, setWorkspaceId] = useState<string>("NONE");
   const [useTemplate, setUseTemplate] = useState(true);
+  const [schoolTpl, setSchoolTpl] = useState<SchoolTemplateKey | null>(null);
+  const { data: pack } = useTenantPack();
   const [busy, setBusy] = useState(false);
 
   const reset = () => {
@@ -715,6 +723,7 @@ function CreateDialog({
     setDescription("");
     setWorkspaceId("NONE");
     setUseTemplate(true);
+    setSchoolTpl(null);
   };
 
   const submit = async () => {
@@ -731,6 +740,7 @@ function CreateDialog({
           primaryContextType: workspaceId === "NONE" ? null : "WORKSPACE",
           primaryContextId: workspaceId === "NONE" ? null : workspaceId,
           useTemplate,
+          schoolTemplate: useTemplate && schoolTpl ? schoolTpl : undefined,
         },
       });
       onOpenChange(false);
@@ -786,6 +796,34 @@ function CreateDialog({
               />
               {t("wp.create.template")}
             </label>
+            {pack?.pack === "school" && (
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">{t("wp.create.schoolTemplate")}</label>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {SCHOOL_TEMPLATE_KEYS.map((k) => (
+                    <button
+                      key={k}
+                      type="button"
+                      aria-pressed={schoolTpl === k}
+                      onClick={() => {
+                        const next = schoolTpl === k ? null : k;
+                        setSchoolTpl(next);
+                        if (next) {
+                          setBusinessType(SCHOOL_TEMPLATE_TYPE[next]);
+                          setUseTemplate(true);
+                        }
+                      }}
+                      className={cn(
+                        "min-h-11 rounded-lg border px-3 py-2 text-left text-sm transition-colors",
+                        schoolTpl === k ? "border-primary bg-primary/10 text-primary" : "hover:bg-accent",
+                      )}
+                    >
+                      {t(`wp.school.${k}` as never)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="space-y-4">
