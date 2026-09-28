@@ -191,7 +191,7 @@ function SchoolMeetingsPage() {
                           <div className="mt-1 text-muted-foreground">{off ? t("smt.canceled") : (m.department ?? t("smt.all"))}</div>
                         </button>
                         {!off && (
-                          <div className="mt-1 flex gap-1">
+                          <div className="mt-1 flex flex-wrap gap-1">
                             <Link to="/meeting/$id" params={{ id: m.id }} className="inline-flex min-h-11 flex-1 items-center justify-center gap-1 rounded-md border text-xs hover:bg-accent md:min-h-8">
                               <Video className="h-3 w-3" />{t("smt.openRoom")}
                             </Link>
