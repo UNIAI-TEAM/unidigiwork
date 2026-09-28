@@ -8,8 +8,8 @@ type Db = any;
 const MODEL = "openai/gpt-6-astra";
 
 export type DeptRow = {
-  workspace_id: string;
-  name: string;
+  department: string;
+  members: number;
   open_tasks: number;
   overdue: number;
   blocked: number;
@@ -25,7 +25,7 @@ Cấu trúc markdown: ## Điểm nóng cần xử lý · ## Tình hình các t�
 Ngắn gọn, tối đa 250 từ.`;
 
 export async function loadOverview(db: Db, tenantId: string): Promise<DeptRow[]> {
-  const { data, error } = await db.rpc("school_overview", { _tenant_id: tenantId });
+  const { data, error } = await db.rpc("school_overview_v2", { _tenant_id: tenantId });
   if (error) throw new Error(error.message);
   return (data ?? []) as DeptRow[];
 }
@@ -34,9 +34,9 @@ export function buildFacts(rows: DeptRow[]): string[] {
   const f: string[] = [];
   for (const r of rows) {
     f.push(
-      `[${r.name}] việc đang mở ${r.open_tasks}, quá hạn ${r.overdue}, bị chặn ${r.blocked}, hoàn thành 7 ngày ${r.done_7d}, họp 7 ngày tới ${r.meetings_7d}`,
+      `[${r.department}] việc đang mở ${r.open_tasks}, quá hạn ${r.overdue}, bị chặn ${r.blocked}, hoàn thành 7 ngày ${r.done_7d}, họp 7 ngày tới ${r.meetings_7d}`,
     );
-    for (const t of r.overdue_titles ?? []) f.push(`[${r.name}] quá hạn: "${t}"`);
+    for (const t of r.overdue_titles ?? []) f.push(`[${r.department}] quá hạn: "${t}"`);
   }
   return f;
 }
@@ -44,10 +44,10 @@ export function buildFacts(rows: DeptRow[]): string[] {
 export async function generateBrief(
   db: Db,
   tenantId: string,
-  workspaceId: string | null,
+  department: string | null,
 ): Promise<{ status: "ok" | "no_data" | "error"; content: string; facts: string[] }> {
   const all = await loadOverview(db, tenantId);
-  const rows = workspaceId ? all.filter((r) => r.workspace_id === workspaceId) : all;
+  const rows = department ? all.filter((r) => r.department === department) : all;
   const facts = buildFacts(rows);
   const hasData = rows.some((r) => r.open_tasks + r.done_7d + r.meetings_7d > 0);
   if (!hasData) return { status: "no_data", content: "", facts };
@@ -69,7 +69,7 @@ export async function generateBrief(
     const provider = createLovableResponsesProvider(apiKey);
     const result = streamText({
       model: provider.responses(MODEL),
-      system: rules + (workspaceId ? "\nPhạm vi: chỉ một tổ chuyên môn." : "\nPhạm vi: toàn trường."),
+      system: rules + (department ? `\nPhạm vi: chỉ ${department}.` : "\nPhạm vi: toàn trường."),
       prompt: `DỮ LIỆU THẬT (${new Date().toLocaleDateString("vi-VN")}):\n${facts.join("\n")}`,
       providerOptions: {
         openai: { forceReasoning: true, reasoningEffort: "low", reasoningSummary: "auto", store: false, include: ["reasoning.encrypted_content"] },
@@ -99,9 +99,9 @@ export async function runScheduledBriefs(admin: Db, now = new Date()) {
     const target = (h || 0) * 60 + (m || 0);
     if (mins < target || mins >= target + 15) continue;
     const b = await generateBrief(admin, t.id, null);
-    const { data: id, error } = await admin.rpc("save_school_brief", {
+    const { data: id, error } = await admin.rpc("save_school_brief_v2", {
       _tenant_id: t.id,
-      _workspace_id: null,
+      _department: null,
       _content: b.content,
       _facts: b.facts,
       _trigger: "scheduled",
@@ -117,7 +117,7 @@ export async function runScheduledBriefs(admin: Db, now = new Date()) {
 
 /** Soạn bài tin công khai (nháp) từ bản tin toàn trường mới nhất, theo Skill + bộ từ ngữ của gói. */
 export async function draftSchoolNews(db: Db, tenantId: string) {
-  const { data: briefs } = await db.rpc("list_school_briefs", { _tenant_id: tenantId, _workspace_id: null, _limit: 10 });
+  const { data: briefs } = await db.rpc("list_school_briefs_v2", { _tenant_id: tenantId, _department: null, _limit: 10 });
   const brief = ((briefs ?? []) as Array<{ status: string; content: string; created_at: string }>).find((b) => b.status === "ok");
   if (!brief) throw new Error("NO_BRIEF");
   const apiKey = process.env["LOVABLE_API_KEY"];
