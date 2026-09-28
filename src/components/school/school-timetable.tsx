@@ -66,7 +66,7 @@ export function SchoolTimetable({ workspaceId, onOpenBrief }: { workspaceId: str
           {days.map((d) => {
             const items = byDay.get(dayKey(d)) ?? [];
             return (
-              <div key={d.toISOString()} className={cn("min-h-24 min-w-0 rounded-lg border p-2", dayKey(d) === today && "border-primary/50 bg-primary/5")}>
+              <div key={d.toISOString()} className={cn("min-w-0 rounded-lg border p-2 md:min-h-24", dayKey(d) === today && "border-primary/50 bg-primary/5")}>
                 <div className="mb-1 text-xs font-medium text-muted-foreground">
                   {d.toLocaleDateString(loc, { weekday: "short", day: "2-digit", month: "2-digit" })}
                 </div>
