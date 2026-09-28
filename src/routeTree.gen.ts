@@ -61,6 +61,7 @@ import { Route as AuthenticatedSchoolStaffRouteImport } from './routes/_authenti
 import { Route as AuthenticatedSchoolPackRouteImport } from './routes/_authenticated/school-pack'
 import { Route as AuthenticatedSchoolOpsRouteImport } from './routes/_authenticated/school-ops'
 import { Route as AuthenticatedSchoolMeetingsRouteImport } from './routes/_authenticated/school-meetings'
+import { Route as AuthenticatedSchoolDirectivesRouteImport } from './routes/_authenticated/school-directives'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
 import { Route as AuthenticatedPeopleRouteImport } from './routes/_authenticated/people'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
@@ -483,6 +484,12 @@ const AuthenticatedSchoolMeetingsRoute =
   AuthenticatedSchoolMeetingsRouteImport.update({
     id: '/school-meetings',
     path: '/school-meetings',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSchoolDirectivesRoute =
+  AuthenticatedSchoolDirectivesRouteImport.update({
+    id: '/school-directives',
+    path: '/school-directives',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedProjectsRoute = AuthenticatedProjectsRouteImport.update({
@@ -1415,6 +1422,7 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof AuthenticatedNotificationsRouteWithChildren
   '/people': typeof AuthenticatedPeopleRoute
   '/projects': typeof AuthenticatedProjectsRoute
+  '/school-directives': typeof AuthenticatedSchoolDirectivesRoute
   '/school-meetings': typeof AuthenticatedSchoolMeetingsRoute
   '/school-ops': typeof AuthenticatedSchoolOpsRoute
   '/school-pack': typeof AuthenticatedSchoolPackRoute
@@ -1622,6 +1630,7 @@ export interface FileRoutesByTo {
   '/notifications': typeof AuthenticatedNotificationsRouteWithChildren
   '/people': typeof AuthenticatedPeopleRoute
   '/projects': typeof AuthenticatedProjectsRoute
+  '/school-directives': typeof AuthenticatedSchoolDirectivesRoute
   '/school-meetings': typeof AuthenticatedSchoolMeetingsRoute
   '/school-ops': typeof AuthenticatedSchoolOpsRoute
   '/school-pack': typeof AuthenticatedSchoolPackRoute
@@ -1835,6 +1844,7 @@ export interface FileRoutesById {
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRouteWithChildren
   '/_authenticated/people': typeof AuthenticatedPeopleRoute
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
+  '/_authenticated/school-directives': typeof AuthenticatedSchoolDirectivesRoute
   '/_authenticated/school-meetings': typeof AuthenticatedSchoolMeetingsRoute
   '/_authenticated/school-ops': typeof AuthenticatedSchoolOpsRoute
   '/_authenticated/school-pack': typeof AuthenticatedSchoolPackRoute
@@ -2049,6 +2059,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/people'
     | '/projects'
+    | '/school-directives'
     | '/school-meetings'
     | '/school-ops'
     | '/school-pack'
@@ -2256,6 +2267,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/people'
     | '/projects'
+    | '/school-directives'
     | '/school-meetings'
     | '/school-ops'
     | '/school-pack'
@@ -2468,6 +2480,7 @@ export interface FileRouteTypes {
     | '/_authenticated/notifications'
     | '/_authenticated/people'
     | '/_authenticated/projects'
+    | '/_authenticated/school-directives'
     | '/_authenticated/school-meetings'
     | '/_authenticated/school-ops'
     | '/_authenticated/school-pack'
@@ -3057,6 +3070,13 @@ declare module '@tanstack/react-router' {
       path: '/school-meetings'
       fullPath: '/school-meetings'
       preLoaderRoute: typeof AuthenticatedSchoolMeetingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/school-directives': {
+      id: '/_authenticated/school-directives'
+      path: '/school-directives'
+      fullPath: '/school-directives'
+      preLoaderRoute: typeof AuthenticatedSchoolDirectivesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/projects': {
@@ -4511,6 +4531,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRouteWithChildren
   AuthenticatedPeopleRoute: typeof AuthenticatedPeopleRoute
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
+  AuthenticatedSchoolDirectivesRoute: typeof AuthenticatedSchoolDirectivesRoute
   AuthenticatedSchoolMeetingsRoute: typeof AuthenticatedSchoolMeetingsRoute
   AuthenticatedSchoolOpsRoute: typeof AuthenticatedSchoolOpsRoute
   AuthenticatedSchoolPackRoute: typeof AuthenticatedSchoolPackRoute
@@ -4573,6 +4594,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRouteWithChildren,
   AuthenticatedPeopleRoute: AuthenticatedPeopleRoute,
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
+  AuthenticatedSchoolDirectivesRoute: AuthenticatedSchoolDirectivesRoute,
   AuthenticatedSchoolMeetingsRoute: AuthenticatedSchoolMeetingsRoute,
   AuthenticatedSchoolOpsRoute: AuthenticatedSchoolOpsRoute,
   AuthenticatedSchoolPackRoute: AuthenticatedSchoolPackRoute,

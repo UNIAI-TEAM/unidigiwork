@@ -1,0 +1,90 @@
+// Skill school-directive-tracker: chế độ inspect (chỉ đọc). Chỉ đạo = quyết định của tổ chức; trạng thái nghiệp vụ là lớp diễn giải.
+import { createServerFn } from "@tanstack/react-start";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { schoolContext } from "./school-ops.functions";
+
+export type DirectiveState = "decide" | "blocked" | "overdue" | "review" | "closed" | "progress";
+export type DirectiveTask = {
+  id: string; title: string; status: string; due_at: string | null; owner: string | null;
+  evidence: number; updated_at: string | null; overdue: boolean;
+};
+export type Directive = {
+  id: string; title: string; detail: string | null; status: string; created_at: string;
+  confirmed_at: string | null; meeting: { id: string; title: string; start_at: string | null } | null;
+  state: DirectiveState; missingEvidence: boolean; next: string; why: string | null; tasks: DirectiveTask[];
+};
+
+type Row = Record<string, unknown>;
+
+export const listSchoolDirectives = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const sb = context.supabase;
+    const ctx = await schoolContext(sb as never, context.userId);
+    if (!ctx) return { enabled: false as const, allowed: false, items: [] as Directive[] };
+    if (ctx.role !== "bgh") return { enabled: true as const, allowed: false, items: [] as Directive[] };
+
+    const { data: decs } = await sb
+      .from("decisions")
+      .select("id,title,detail,status,source_type,source_id,created_at,confirmed_at")
+      .eq("tenant_id", ctx.tenantId).order("created_at", { ascending: false }).limit(200);
+    const list = (decs ?? []) as Row[];
+    const meetingIds = [...new Set(list.filter((d) => d.source_type === "MEETING" || d.source_type === "meeting").map((d) => d.source_id as string).filter(Boolean))];
+
+    const [{ data: meets }, { data: items }] = await Promise.all([
+      meetingIds.length ? sb.from("meetings").select("id,title,start_at").in("id", meetingIds) : Promise.resolve({ data: [] }),
+      meetingIds.length ? sb.from("meeting_action_item_states").select("meeting_id,task_id").in("meeting_id", meetingIds).not("task_id", "is", null) : Promise.resolve({ data: [] }),
+    ]);
+    const taskIds = [...new Set(((items ?? []) as Row[]).map((i) => i.task_id as string))];
+    const [{ data: tasks }, { data: atts }] = await Promise.all([
+      taskIds.length ? sb.from("tasks").select("id,title,status,due_at,human_owner_id,updated_at").in("id", taskIds) : Promise.resolve({ data: [] }),
+      taskIds.length ? sb.from("task_attachments").select("task_id").in("task_id", taskIds) : Promise.resolve({ data: [] }),
+    ]);
+    const ownerIds = [...new Set(((tasks ?? []) as Row[]).map((t) => t.human_owner_id as string).filter(Boolean))];
+    const { data: profs } = ownerIds.length
+      ? await sb.from("profiles").select("id,display_name,email").in("id", ownerIds)
+      : { data: [] };
+    const name = new Map(((profs ?? []) as Row[]).map((p) => [p.id as string, (p.display_name || p.email) as string]));
+    const evCount = new Map<string, number>();
+    for (const a of (atts ?? []) as Row[]) evCount.set(a.task_id as string, (evCount.get(a.task_id as string) ?? 0) + 1);
+    const now = Date.now();
+    const taskMap = new Map(((tasks ?? []) as Row[]).map((t) => {
+      const done = t.status === "done" || t.status === "canceled";
+      return [t.id as string, {
+        id: t.id as string, title: t.title as string, status: t.status as string, due_at: (t.due_at as string) ?? null,
+        owner: t.human_owner_id ? name.get(t.human_owner_id as string) ?? null : null,
+        evidence: evCount.get(t.id as string) ?? 0, updated_at: (t.updated_at as string) ?? null,
+        overdue: !done && !!t.due_at && new Date(t.due_at as string).getTime() < now,
+      } satisfies DirectiveTask];
+    }));
+    const byMeeting = new Map<string, DirectiveTask[]>();
+    for (const i of (items ?? []) as Row[]) {
+      const t = taskMap.get(i.task_id as string);
+      if (!t) continue;
+      const arr = byMeeting.get(i.meeting_id as string) ?? [];
+      arr.push(t);
+      byMeeting.set(i.meeting_id as string, arr);
+    }
+    const meetMap = new Map(((meets ?? []) as Row[]).map((m) => [m.id as string, { id: m.id as string, title: m.title as string, start_at: (m.start_at as string) ?? null }]));
+
+    const out: Directive[] = list.map((d) => {
+      const status = String(d.status ?? "").toUpperCase();
+      const mid = d.source_id as string;
+      const ts = byMeeting.get(mid) ?? [];
+      const open = ts.filter((t) => t.status !== "done" && t.status !== "canceled");
+      const doneNoEv = ts.some((t) => t.status === "done" && t.evidence === 0);
+      let state: DirectiveState; let next: string; let why: string | null = null;
+      if (["REJECTED", "SUPERSEDED", "CANCELED", "CANCELLED"].includes(status)) { state = "closed"; next = "sdt.n.closed"; }
+      else if (status !== "CONFIRMED") { state = "decide"; next = "sdt.n.decide"; }
+      else if (ts.some((t) => t.status === "blocked")) { state = "blocked"; next = "sdt.n.blocked"; why = ts.find((t) => t.status === "blocked")!.title; }
+      else if (ts.some((t) => t.overdue)) { state = "overdue"; next = "sdt.n.overdue"; why = ts.find((t) => t.overdue)!.title; }
+      else if (ts.length > 0 && open.length === 0) { state = "review"; next = doneNoEv ? "sdt.n.evidence" : "sdt.n.review"; }
+      else { state = "progress"; next = ts.length ? "sdt.n.progress" : "sdt.n.assign"; }
+      return {
+        id: d.id as string, title: d.title as string, detail: (d.detail as string) ?? null, status,
+        created_at: d.created_at as string, confirmed_at: (d.confirmed_at as string) ?? null,
+        meeting: meetMap.get(mid) ?? null, state, missingEvidence: doneNoEv, next, why, tasks: ts,
+      };
+    });
+    return { enabled: true as const, allowed: true, items: out };
+  });

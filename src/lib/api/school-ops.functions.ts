@@ -15,7 +15,7 @@ export type SchoolBrief = {
 
 export type SchoolRole = "bgh" | "lead" | "teacher";
 
-async function schoolContext(supabase: never, userId: string) {
+export async function schoolContext(supabase: never, userId: string) {
   const { tenantId, pack } = await resolveActivePack(supabase, userId);
   if (!tenantId || pack !== "school") return null;
   const db = supabase as unknown as { from: (t: string) => any };
