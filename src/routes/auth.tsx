@@ -37,12 +37,21 @@ function AuthPage() {
   const [code, setCode] = useState("");
   const [signupSent, setSignupSent] = useState(false);
 
+  const continueAfterAuth = () => {
+    const inviteRedirect = window.localStorage.getItem("uniwork_invite_redirect");
+    if (inviteRedirect && /^\/invite\/[a-f0-9]+$/.test(inviteRedirect)) {
+      window.location.assign(inviteRedirect);
+      return;
+    }
+    navigate({ to: "/tasks" });
+  };
+
   useEffect(() => {
     setReady(true);
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/tasks" });
+      if (data.session) continueAfterAuth();
     });
-  }, [navigate]);
+  }, []);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,7 +89,7 @@ function AuthPage() {
           type: "email",
         });
         if (error) throw error;
-        navigate({ to: "/tasks" });
+        continueAfterAuth();
         return;
       }
       if (mode === "signup") {
@@ -100,7 +109,7 @@ function AuthPage() {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       }
-      navigate({ to: "/tasks" });
+      continueAfterAuth();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : t("ac.10"));
     } finally {

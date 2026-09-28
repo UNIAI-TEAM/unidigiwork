@@ -1,6 +1,6 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { BrandMark } from "@/components/brand-logo";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getActiveTenant } from "@/lib/api/active-tenant.functions";
 import { useProvisionTenant, useSetActiveTenant } from "@/features/tenants/hooks";
@@ -20,6 +20,8 @@ export const Route = createFileRoute("/onboarding")({
   beforeLoad: async () => {
     const { data } = await supabase.auth.getUser();
     if (!data.user) throw redirect({ to: "/auth" });
+    const activeTenant = await getActiveTenant();
+    if (activeTenant) throw redirect({ to: "/dashboard" });
   },
   component: OnboardingPage,
 });
@@ -46,6 +48,16 @@ function OnboardingPage() {
 
   const provision = useProvisionTenant();
   const setActive = useSetActiveTenant();
+  const [checkingInvite, setCheckingInvite] = useState(true);
+
+  useEffect(() => {
+    const inviteRedirect = window.localStorage.getItem("uniwork_invite_redirect");
+    if (inviteRedirect && /^\/invite\/[a-f0-9]+$/.test(inviteRedirect)) {
+      window.location.replace(inviteRedirect);
+      return;
+    }
+    setCheckingInvite(false);
+  }, []);
 
   // Idempotency key: stable for the lifetime of this page render.
   const idempotencyKey = useMemo(() => `onboard-${crypto.randomUUID()}`, []);
@@ -55,6 +67,14 @@ function OnboardingPage() {
   const nameValid = name.trim().length >= 2;
   const step1Valid = nameValid && slugValid;
   const step2Valid = workspaceName.trim().length >= 2;
+
+  if (checkingInvite) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   const onCreate = async () => {
     const attempt = async (trySlug: string, key: string) =>

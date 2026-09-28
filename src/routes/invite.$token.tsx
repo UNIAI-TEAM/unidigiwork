@@ -32,19 +32,23 @@ function InviteAcceptPage() {
     setAutoStarted(true);
     try {
       await accept.mutateAsync({ token, idempotencyKey });
+      window.localStorage.removeItem("uniwork_invite_redirect");
       toast.success("Đã tham gia tổ chức");
       // Force server to pick this tenant if it becomes the only membership.
       window.location.assign("/dashboard");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Không thể chấp nhận lời mời";
+      if (msg === "TENANT_INVITATION_ALREADY_ACCEPTED") {
+        window.localStorage.removeItem("uniwork_invite_redirect");
+        window.location.assign("/dashboard");
+        return;
+      }
       const friendly =
         msg === "TENANT_INVITATION_EXPIRED"
           ? "Lời mời đã hết hạn."
           : msg === "TENANT_INVITATION_REVOKED"
             ? "Lời mời đã bị thu hồi."
-            : msg === "TENANT_INVITATION_ALREADY_ACCEPTED"
-              ? "Lời mời đã được sử dụng."
-              : msg === "TENANT_INVITATION_NOT_FOUND"
+             : msg === "TENANT_INVITATION_NOT_FOUND"
                 ? "Lời mời không hợp lệ."
                 : msg === "AUTHENTICATION_REQUIRED"
                   ? "Bạn cần đăng nhập trước."
