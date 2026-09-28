@@ -58,8 +58,10 @@ import { Route as AuthenticatedTaskOpsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSearchRouteImport } from './routes/_authenticated/search'
 import { Route as AuthenticatedSchoolStaffRouteImport } from './routes/_authenticated/school-staff'
+import { Route as AuthenticatedSchoolPoliciesRouteImport } from './routes/_authenticated/school-policies'
 import { Route as AuthenticatedSchoolPackRouteImport } from './routes/_authenticated/school-pack'
 import { Route as AuthenticatedSchoolOpsRouteImport } from './routes/_authenticated/school-ops'
+import { Route as AuthenticatedSchoolMyDirectivesRouteImport } from './routes/_authenticated/school-my-directives'
 import { Route as AuthenticatedSchoolMeetingsRouteImport } from './routes/_authenticated/school-meetings'
 import { Route as AuthenticatedSchoolDirectivesRouteImport } from './routes/_authenticated/school-directives'
 import { Route as AuthenticatedSchoolDeptDirectivesRouteImport } from './routes/_authenticated/school-dept-directives'
@@ -472,6 +474,12 @@ const AuthenticatedSchoolStaffRoute =
     path: '/school-staff',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSchoolPoliciesRoute =
+  AuthenticatedSchoolPoliciesRouteImport.update({
+    id: '/school-policies',
+    path: '/school-policies',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSchoolPackRoute = AuthenticatedSchoolPackRouteImport.update({
   id: '/school-pack',
   path: '/school-pack',
@@ -482,6 +490,12 @@ const AuthenticatedSchoolOpsRoute = AuthenticatedSchoolOpsRouteImport.update({
   path: '/school-ops',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSchoolMyDirectivesRoute =
+  AuthenticatedSchoolMyDirectivesRouteImport.update({
+    id: '/school-my-directives',
+    path: '/school-my-directives',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSchoolMeetingsRoute =
   AuthenticatedSchoolMeetingsRouteImport.update({
     id: '/school-meetings',
@@ -1440,8 +1454,10 @@ export interface FileRoutesByFullPath {
   '/school-dept-directives': typeof AuthenticatedSchoolDeptDirectivesRoute
   '/school-directives': typeof AuthenticatedSchoolDirectivesRoute
   '/school-meetings': typeof AuthenticatedSchoolMeetingsRoute
+  '/school-my-directives': typeof AuthenticatedSchoolMyDirectivesRoute
   '/school-ops': typeof AuthenticatedSchoolOpsRoute
   '/school-pack': typeof AuthenticatedSchoolPackRoute
+  '/school-policies': typeof AuthenticatedSchoolPoliciesRoute
   '/school-staff': typeof AuthenticatedSchoolStaffRoute
   '/search': typeof AuthenticatedSearchRoute
   '/settings': typeof AuthenticatedSettingsRouteWithChildren
@@ -1650,8 +1666,10 @@ export interface FileRoutesByTo {
   '/school-dept-directives': typeof AuthenticatedSchoolDeptDirectivesRoute
   '/school-directives': typeof AuthenticatedSchoolDirectivesRoute
   '/school-meetings': typeof AuthenticatedSchoolMeetingsRoute
+  '/school-my-directives': typeof AuthenticatedSchoolMyDirectivesRoute
   '/school-ops': typeof AuthenticatedSchoolOpsRoute
   '/school-pack': typeof AuthenticatedSchoolPackRoute
+  '/school-policies': typeof AuthenticatedSchoolPoliciesRoute
   '/school-staff': typeof AuthenticatedSchoolStaffRoute
   '/search': typeof AuthenticatedSearchRoute
   '/settings': typeof AuthenticatedSettingsRouteWithChildren
@@ -1866,8 +1884,10 @@ export interface FileRoutesById {
   '/_authenticated/school-dept-directives': typeof AuthenticatedSchoolDeptDirectivesRoute
   '/_authenticated/school-directives': typeof AuthenticatedSchoolDirectivesRoute
   '/_authenticated/school-meetings': typeof AuthenticatedSchoolMeetingsRoute
+  '/_authenticated/school-my-directives': typeof AuthenticatedSchoolMyDirectivesRoute
   '/_authenticated/school-ops': typeof AuthenticatedSchoolOpsRoute
   '/_authenticated/school-pack': typeof AuthenticatedSchoolPackRoute
+  '/_authenticated/school-policies': typeof AuthenticatedSchoolPoliciesRoute
   '/_authenticated/school-staff': typeof AuthenticatedSchoolStaffRoute
   '/_authenticated/search': typeof AuthenticatedSearchRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
@@ -2083,8 +2103,10 @@ export interface FileRouteTypes {
     | '/school-dept-directives'
     | '/school-directives'
     | '/school-meetings'
+    | '/school-my-directives'
     | '/school-ops'
     | '/school-pack'
+    | '/school-policies'
     | '/school-staff'
     | '/search'
     | '/settings'
@@ -2293,8 +2315,10 @@ export interface FileRouteTypes {
     | '/school-dept-directives'
     | '/school-directives'
     | '/school-meetings'
+    | '/school-my-directives'
     | '/school-ops'
     | '/school-pack'
+    | '/school-policies'
     | '/school-staff'
     | '/search'
     | '/settings'
@@ -2508,8 +2532,10 @@ export interface FileRouteTypes {
     | '/_authenticated/school-dept-directives'
     | '/_authenticated/school-directives'
     | '/_authenticated/school-meetings'
+    | '/_authenticated/school-my-directives'
     | '/_authenticated/school-ops'
     | '/_authenticated/school-pack'
+    | '/_authenticated/school-policies'
     | '/_authenticated/school-staff'
     | '/_authenticated/search'
     | '/_authenticated/settings'
@@ -3077,6 +3103,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSchoolStaffRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/school-policies': {
+      id: '/_authenticated/school-policies'
+      path: '/school-policies'
+      fullPath: '/school-policies'
+      preLoaderRoute: typeof AuthenticatedSchoolPoliciesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/school-pack': {
       id: '/_authenticated/school-pack'
       path: '/school-pack'
@@ -3089,6 +3122,13 @@ declare module '@tanstack/react-router' {
       path: '/school-ops'
       fullPath: '/school-ops'
       preLoaderRoute: typeof AuthenticatedSchoolOpsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/school-my-directives': {
+      id: '/_authenticated/school-my-directives'
+      path: '/school-my-directives'
+      fullPath: '/school-my-directives'
+      preLoaderRoute: typeof AuthenticatedSchoolMyDirectivesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/school-meetings': {
@@ -4575,8 +4615,10 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSchoolDeptDirectivesRoute: typeof AuthenticatedSchoolDeptDirectivesRoute
   AuthenticatedSchoolDirectivesRoute: typeof AuthenticatedSchoolDirectivesRoute
   AuthenticatedSchoolMeetingsRoute: typeof AuthenticatedSchoolMeetingsRoute
+  AuthenticatedSchoolMyDirectivesRoute: typeof AuthenticatedSchoolMyDirectivesRoute
   AuthenticatedSchoolOpsRoute: typeof AuthenticatedSchoolOpsRoute
   AuthenticatedSchoolPackRoute: typeof AuthenticatedSchoolPackRoute
+  AuthenticatedSchoolPoliciesRoute: typeof AuthenticatedSchoolPoliciesRoute
   AuthenticatedSchoolStaffRoute: typeof AuthenticatedSchoolStaffRoute
   AuthenticatedSearchRoute: typeof AuthenticatedSearchRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
@@ -4641,8 +4683,10 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedSchoolDeptDirectivesRoute,
   AuthenticatedSchoolDirectivesRoute: AuthenticatedSchoolDirectivesRoute,
   AuthenticatedSchoolMeetingsRoute: AuthenticatedSchoolMeetingsRoute,
+  AuthenticatedSchoolMyDirectivesRoute: AuthenticatedSchoolMyDirectivesRoute,
   AuthenticatedSchoolOpsRoute: AuthenticatedSchoolOpsRoute,
   AuthenticatedSchoolPackRoute: AuthenticatedSchoolPackRoute,
+  AuthenticatedSchoolPoliciesRoute: AuthenticatedSchoolPoliciesRoute,
   AuthenticatedSchoolStaffRoute: AuthenticatedSchoolStaffRoute,
   AuthenticatedSearchRoute: AuthenticatedSearchRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,
