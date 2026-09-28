@@ -46,6 +46,7 @@ const TABS = [
   { to: "/admin/knowledge" as const, label: "Knowledge", icon: BookOpen },
   { to: "/admin/leads" as const, label: "adm.tab.leads", icon: Inbox },
   { to: "/admin/cms" as const, label: "cms.tab", icon: Globe },
+  { to: "/school-pack" as const, label: "spa.open", icon: BookOpen },
   { to: "/admin/quota" as const, label: "Quota", icon: Activity },
   { to: "/admin/ai-context" as const, label: "Context Budget", icon: Gauge },
   { to: "/admin/ai-actions" as const, label: "AI Action", icon: Bot },
