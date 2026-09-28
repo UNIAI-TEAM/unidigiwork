@@ -16,6 +16,7 @@ import {
   Plus,
   Search,
   Trash2,
+  GraduationCap,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Markdown } from "@/components/marketing/markdown";
@@ -46,6 +47,8 @@ import {
   type CmsKind,
 } from "@/lib/api/cms.functions";
 import { useI18n } from "@/lib/i18n";
+import { draftSchoolNewsArticle } from "@/lib/api/school-ops.functions";
+import { useIndustryPackSnapshot } from "@/lib/industry-pack-store";
 import { ConsultationRouting } from "@/components/marketing/consultation-routing";
 
 export const Route = createFileRoute("/_authenticated/admin/cms")({
@@ -147,6 +150,22 @@ function AdminCmsPage() {
   const saveFn = useServerFn(saveCmsEntry);
   const delFn = useServerFn(deleteCmsEntry);
   const leadFn = useServerFn(setLeadWorkspace);
+  const schoolNewsFn = useServerFn(draftSchoolNewsArticle);
+  const pack = useIndustryPackSnapshot();
+  const schoolNews = useMutation({
+    mutationFn: () => schoolNewsFn(),
+    onSuccess: (r) => {
+      setKind("article");
+      setBodyTab("write");
+      const slug = `ban-tin-truong-${new Date().toISOString().slice(0, 10)}`;
+      setDraft({ ...toDraft("article"), slug, title: r.title, summary: r.summary, body: r.body, seoTitle: r.title, seoDescription: r.summary.slice(0, 160) });
+      toast.success(t("cms.schoolNews.ready"));
+    },
+    onError: (e) => {
+      const m = e instanceof Error ? e.message : "";
+      toast.error(t(m === "NO_BRIEF" ? "cms.schoolNews.noBrief" : m === "PACK_DISABLED" ? "cms.schoolNews.noPack" : "cms.schoolNews.failed"));
+    },
+  });
 
   const state = useQuery({ queryKey: ["cms-admin-state"], queryFn: () => stateFn() });
   const list = useQuery({
@@ -320,8 +339,13 @@ function AdminCmsPage() {
             <TabsTrigger value="plan">{t("cms.kind.plan")}</TabsTrigger>
           </TabsList>
         </Tabs>
+        {pack === "school" && (
+          <Button variant="outline" className="ml-auto h-11 gap-2" disabled={schoolNews.isPending} onClick={() => schoolNews.mutate()}>
+            <GraduationCap className="h-4 w-4" /> {schoolNews.isPending ? t("cms.schoolNews.writing") : t("cms.schoolNews.btn")}
+          </Button>
+        )}
         <Button
-          className="ml-auto h-11 gap-2"
+          className={pack === "school" ? "h-11 gap-2" : "ml-auto h-11 gap-2"}
           onClick={() => {
             setBodyTab("write");
             setDraft({ ...toDraft(kind), sortOrder: ((list.data?.length ?? 0) + 1) * 10 });
