@@ -93,7 +93,7 @@ function MinutesActionDialog({ meetingId, title, onClose }: { meetingId: string;
       data: {
         meetingId,
         workspaceId: ctx.data!.workspaceId!,
-        decisions: decs.filter((d) => d.on).map((d) => d.title),
+        department: dept, decisions: decs.filter((d) => d.on).map((d) => ({ title: d.title, detail: d.detail || null, evidence: d.ev || null })),
         tasks: tasks.filter((x) => x.on).map((x) => ({
           itemKey: x.key, title: x.title.trim(), description: [x.desc.trim(), x.ev ? `${t("mta.evidence")}: ${x.ev}` : "", dept ? `${t("mta.dept")}: ${dept}` : ""].filter(Boolean).join("\n\n").slice(0, 2000) || null,
           dueAt: x.due ? new Date(`${x.due}T17:00`).toISOString() : null, assigneeId: x.assignee || null,
@@ -105,6 +105,7 @@ function MinutesActionDialog({ meetingId, title, onClose }: { meetingId: string;
       void qc.invalidateQueries({ queryKey: ["school-agenda"] });
       void qc.invalidateQueries({ queryKey: ["school-ops"] });
       void qc.invalidateQueries({ queryKey: ["school-meetings"] });
+      for (const k of ["school-directives", "school-dept-directives", "school-my-directives"]) void qc.invalidateQueries({ queryKey: [k] });
       if (r.status === "completed") toast.success(t("mta.done"));
       else toast.error(t(r.status === "partial" ? "mta.partial" : "mta.failed"));
     },
