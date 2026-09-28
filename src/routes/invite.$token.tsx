@@ -84,7 +84,7 @@ function InviteAcceptPage() {
             <button
               type="button"
               onClick={() => {
-                sessionStorage.setItem("uniwork_invite_redirect", `/invite/${token}`);
+                localStorage.setItem("uniwork_invite_redirect", `/invite/${token}`);
                 navigate({ to: "/auth" });
               }}
               className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
