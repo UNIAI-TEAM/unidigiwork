@@ -123,7 +123,7 @@ export const updateSchoolStaff = createServerFn({ method: "POST" })
   });
 
 function stableCode(m: string) {
-  const codes = ["PERMISSION_DENIED", "TENANT_LAST_OWNER_PROTECTED", "TENANT_ROLE_CHANGE_FORBIDDEN", "TENANT_MEMBERSHIP_NOT_FOUND", "VALIDATION_FAILED", "TENANT_INVITATION", "FORBIDDEN", "MEETING_NOT_FOUND", "MEETING_NOT_EDITABLE", "RANGE_TOO_LARGE"];
+  const codes = ["PERMISSION_DENIED", "TENANT_LAST_OWNER_PROTECTED", "TENANT_ROLE_CHANGE_FORBIDDEN", "TENANT_MEMBERSHIP_NOT_FOUND", "VALIDATION_FAILED", "TENANT_INVITATION", "FORBIDDEN", "MEETING_NOT_FOUND", "MEETING_NOT_EDITABLE", "RANGE_TOO_LARGE", "QUOTA_EXCEEDED"];
   return codes.find((c) => m.toUpperCase().includes(c)) ?? "FAILED";
 }
 
@@ -255,7 +255,7 @@ export const saveSchoolMeeting = createServerFn({ method: "POST" })
       _agenda: (data.agenda ?? null) as string, _department: (data.department || null) as string,
       _idempotency_key: data.idempotencyKey, _correlation_id: data.idempotencyKey,
     });
-    if (error) { console.error("school_save_meeting", error.message); throw new Error(stableCode(error.message) + "::" + error.message); }
+    if (error) { console.error("school_save_meeting", error.message); throw new Error(stableCode(error.message)); }
     return { id: id as string };
   });
 
