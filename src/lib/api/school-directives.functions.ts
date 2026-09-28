@@ -19,12 +19,13 @@ export type Directive = {
 type Row = Record<string, unknown>;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function loadDirectives(sb: any, userId: string, scope: "bgh" | "dept" = "bgh") {
+async function loadDirectives(sb: any, userId: string, scope: "bgh" | "dept" | "mine" = "bgh") {
     const ctx = await schoolContext(sb as never, userId);
     if (!ctx) return { enabled: false as const, allowed: false, items: [] as Directive[] };
     if (scope === "bgh" && ctx.role !== "bgh") return { enabled: true as const, allowed: false, items: [] as Directive[], dept: null as string | null };
     if (scope === "dept" && (ctx.role !== "lead" || !ctx.dept)) return { enabled: true as const, allowed: false, items: [] as Directive[], dept: null as string | null };
     let deptUsers: Set<string> | null = null;
+    if (scope === "mine") deptUsers = new Set([userId]);
     if (scope === "dept") {
       const { data: mem } = await sb.from("tenant_member_profiles").select("user_id").eq("tenant_id", ctx.tenantId).eq("department", ctx.dept);
       deptUsers = new Set(((mem ?? []) as Row[]).map((m) => m.user_id as string));
@@ -76,7 +77,7 @@ async function loadDirectives(sb: any, userId: string, scope: "bgh" | "dept" = "
     const totalBy = new Map<string, number>();
     for (const i of (items ?? []) as Row[]) totalBy.set(i.meeting_id as string, (totalBy.get(i.meeting_id as string) ?? 0) + 1);
     const meetDept = new Map(((meets ?? []) as Row[]).map((m) => [m.id as string, (m.department as string) ?? null]));
-    const scoped = deptUsers ? list.filter((d) => (byMeeting.get(d.source_id as string)?.length ?? 0) > 0 || meetDept.get(d.source_id as string) === ctx.dept) : list;
+    const scoped = deptUsers ? list.filter((d) => (byMeeting.get(d.source_id as string)?.length ?? 0) > 0 || (scope === "dept" && meetDept.get(d.source_id as string) === ctx.dept)) : list;
     const out: Directive[] = scoped.map((d) => {
       const status = String(d.status ?? "").toUpperCase();
       const mid = d.source_id as string;
@@ -94,7 +95,7 @@ async function loadDirectives(sb: any, userId: string, scope: "bgh" | "dept" = "
       return {
         id: d.id as string, title: d.title as string, detail: (d.detail as string) ?? null, status,
         created_at: d.created_at as string, confirmed_at: (d.confirmed_at as string) ?? null, accepted_at: (d.accepted_at as string) ?? null, note: (d.acceptance_note as string) || null,
-        meeting: meetMap.get(mid) ?? null, ownDept: !!deptUsers && ts.length > 0 && ts.length === (totalBy.get(mid) ?? 0), state, missingEvidence: doneNoEv, next, why, tasks: ts,
+        meeting: meetMap.get(mid) ?? null, ownDept: scope === "dept" && ts.length > 0 && ts.length === (totalBy.get(mid) ?? 0), state, missingEvidence: doneNoEv, next, why, tasks: ts,
       };
     });
     return { enabled: true as const, allowed: true, items: out, dept: scope === "dept" ? ctx.dept : null };
@@ -108,6 +109,24 @@ export const listSchoolDirectives = createServerFn({ method: "GET" })
 export const listDeptDirectives = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => loadDirectives(context.supabase, context.userId, "dept"));
+
+// Giáo viên (mọi vai trò): chỉ chỉ đạo có việc do chính mình phụ trách; chỉ việc của mình.
+export const listMyDirectives = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => loadDirectives(context.supabase, context.userId, "mine"));
+
+/** Người phụ trách tự đánh dấu hoàn thành việc của mình (không nghiệm thu chỉ đạo). */
+export const completeMyDirectiveTask = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ taskId: z.string().uuid(), idempotencyKey: z.string().min(8).max(200) }).parse(d))
+  .handler(async ({ context, data }) => {
+    const { data: t } = await context.supabase.from("tasks").select("id,human_owner_id,status").eq("id", data.taskId).maybeSingle();
+    if (!t || t.human_owner_id !== context.userId) throw new Error("TASK_ACCESS_DENIED");
+    if (t.status === "done") return { ok: true };
+    const { error } = await context.supabase.rpc("transition_task", { _task_id: data.taskId, _to_status: "done", _idempotency_key: data.idempotencyKey } as never);
+    if (error) throw new Error(/[A-Z_]{6,}/.exec(error.message)?.[0] ?? "TASK_TRANSITION_FAILED");
+    return { ok: true };
+  });
 
 /** Nghiệm thu hoặc yêu cầu sửa — chỉ BGH, sau khi người dùng bấm xác nhận. */
 export const reviewSchoolDirective = createServerFn({ method: "POST" })

@@ -2729,6 +2729,78 @@ export type Database = {
           },
         ]
       }
+      document_policy_meta: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          department: string | null
+          doc_number: string | null
+          document_id: string
+          effective_from: string | null
+          effective_to: string | null
+          id: string
+          issued_at: string | null
+          issuer: string | null
+          last_verified_at: string | null
+          row_version: number
+          status: string
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          department?: string | null
+          doc_number?: string | null
+          document_id: string
+          effective_from?: string | null
+          effective_to?: string | null
+          id?: string
+          issued_at?: string | null
+          issuer?: string | null
+          last_verified_at?: string | null
+          row_version?: number
+          status?: string
+          tenant_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          department?: string | null
+          doc_number?: string | null
+          document_id?: string
+          effective_from?: string | null
+          effective_to?: string | null
+          id?: string
+          issued_at?: string | null
+          issuer?: string | null
+          last_verified_at?: string | null
+          row_version?: number
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_policy_meta_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: true
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_policy_meta_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_versions: {
         Row: {
           author_id: string | null
@@ -13331,6 +13403,21 @@ export type Database = {
       run_email_rules_for_message: {
         Args: { _message_id: string; _user_id: string }
         Returns: number
+      }
+      save_document_policy_meta: {
+        Args: {
+          _correlation_id?: string
+          _department: string
+          _doc_number: string
+          _document_id: string
+          _effective_from: string
+          _effective_to: string
+          _idempotency_key: string
+          _issued_at: string
+          _issuer: string
+          _status: string
+        }
+        Returns: string
       }
       save_meeting_summary: {
         Args: {
