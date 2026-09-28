@@ -49,7 +49,23 @@ export async function generateBrief(
   const all = await loadOverview(db, tenantId);
   const rows = department ? all.filter((r) => r.department === department) : all;
   const facts = buildFacts(rows);
-  const hasData = rows.some((r) => r.open_tasks + r.done_7d + r.meetings_7d > 0);
+  try {
+    // Đồng bộ lịch họp 7 ngày tới vào bản tin (bỏ lịch đã hủy)
+    const now = new Date();
+    let mq = (db as any).from("meetings").select("title,start_at,end_at,location,department,status")
+      .eq("tenant_id", tenantId).is("deleted_at", null).neq("status", "canceled")
+      .gte("start_at", now.toISOString()).lt("start_at", new Date(now.getTime() + 7 * 864e5).toISOString())
+      .order("start_at").limit(30);
+    if (department) mq = mq.eq("department", department);
+    const { data: ms } = await mq;
+    for (const m of (ms ?? []) as { title: string; start_at: string; location: string | null; department: string | null }[]) {
+      const at = new Date(m.start_at).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+      facts.push(`[${m.department ?? "Toàn trường"}] họp: "${m.title}" lúc ${at}${m.location ? ` tại ${m.location}` : ""}`);
+    }
+  } catch {
+    /* bỏ qua nếu không đọc được lịch */
+  }
+  const hasData = facts.length > 0 && (rows.some((r) => r.open_tasks + r.done_7d + r.meetings_7d > 0) || facts.some((f) => f.includes("] họp: ")));
   if (!hasData) return { status: "no_data", content: "", facts };
   const apiKey = process.env["LOVABLE_API_KEY"];
   if (!apiKey) return { status: "error", content: "", facts };

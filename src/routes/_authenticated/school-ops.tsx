@@ -63,6 +63,9 @@ function SchoolOps() {
         </div>
         {d?.enabled && (
           <div className="flex flex-wrap gap-2">
+          <Link to="/school-meetings" className="inline-flex min-h-11 items-center rounded-md border px-4 text-sm hover:bg-accent">
+            {t("smt.open")}
+          </Link>
           <Link to="/school-staff" className="inline-flex min-h-11 items-center rounded-md border px-4 text-sm hover:bg-accent">
             {t("sst.open")}
           </Link>
