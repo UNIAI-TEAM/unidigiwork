@@ -10369,6 +10369,10 @@ export type Database = {
         Args: { _tenant_id: string; _uid: string; _ws: string }
         Returns: boolean
       }
+      _school_directive_sole_dept: {
+        Args: { _decision_id: string; _uid: string }
+        Returns: boolean
+      }
       _school_is_bgh: {
         Args: { _tenant_id: string; _uid: string }
         Returns: boolean
