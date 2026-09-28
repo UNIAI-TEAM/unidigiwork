@@ -68,8 +68,9 @@ export function DesktopNavigation({ collapsed }: { collapsed?: boolean }) {
   const { unreadCount } = useUnreadNotifications();
   const { data: adminData } = useQuery({
     queryKey: ["admin", "isAdmin"],
-    queryFn: () => getMyIsAdmin(),
+    queryFn: () => getMyIsAdmin().catch(() => ({ isAdmin: false })),
     staleTime: 5 * 60_000,
+    retry: false,
   });
   const isAdmin = adminData?.isAdmin === true;
   const pack = useIndustryPackSnapshot();
