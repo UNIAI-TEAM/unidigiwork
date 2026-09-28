@@ -12669,6 +12669,7 @@ export type Database = {
         Args: { _brief_id: string; _roles: string[] }
         Returns: number
       }
+      notify_school_dept_brief: { Args: { _brief_id: string }; Returns: number }
       open_meeting_attendance: {
         Args: { _correlation_id?: string; _meeting_id: string }
         Returns: {

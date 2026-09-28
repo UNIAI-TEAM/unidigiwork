@@ -582,6 +582,13 @@
       "when": 1790606656370,
       "tag": "0082_school_directive_acceptance",
       "breakpoints": true
+    },
+    {
+      "idx": 83,
+      "version": "7",
+      "when": 1790607553912,
+      "tag": "0083_school_dept_brief_notify",
+      "breakpoints": true
     }
   ]
 }
