@@ -24,3 +24,14 @@ export function useIndustryPackSnapshot(): IndustryPack {
     () => "business",
   );
 }
+
+// Bộ từ ngữ do quản trị soạn (bản đang có hiệu lực), phủ lên bộ mặc định trong mã.
+type Vocab = { vi: Record<string, string>; en: Record<string, string> };
+let vocab: Vocab = { vi: {}, en: {} };
+export function setPackVocabulary(v: Vocab | undefined) {
+  vocab = v ?? { vi: {}, en: {} };
+  listeners.forEach((l) => l());
+}
+export function getPackVocabulary(): Vocab {
+  return vocab;
+}

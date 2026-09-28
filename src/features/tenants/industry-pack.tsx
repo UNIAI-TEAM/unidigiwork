@@ -2,9 +2,10 @@ import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { Link } from "@tanstack/react-router";
 import { GraduationCap, Building2 } from "lucide-react";
 import { getTenantPack, setTenantPack } from "@/lib/api/industry-pack.functions";
-import { setIndustryPackSnapshot, type IndustryPack } from "@/lib/industry-pack-store";
+import { setIndustryPackSnapshot, setPackVocabulary, type IndustryPack } from "@/lib/industry-pack-store";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
@@ -19,8 +20,9 @@ export function useTenantPack() {
 export function IndustryPackSync() {
   const { data } = useTenantPack();
   useEffect(() => {
+    setPackVocabulary(data?.vocabulary);
     setIndustryPackSnapshot(data?.pack ?? "business");
-  }, [data?.pack]);
+  }, [data?.pack, data?.vocabulary]);
   return null;
 }
 
@@ -74,6 +76,11 @@ export function IndustryPackPanel() {
           );
         })}
       </div>
+      {data?.pack === "school" && (
+        <Link to="/school-pack" className="inline-flex min-h-11 items-center text-sm font-medium text-primary hover:underline">
+          {t("spa.open")} →
+        </Link>
+      )}
       {!isLoading && !canManage && (
         <p className="text-xs text-muted-foreground">{t("pack.noPermission")}</p>
       )}
