@@ -4,7 +4,8 @@ export type PackItemRow = {
   tenant_id: string | null;
   kind: "template" | "vocabulary" | "skill" | "brief_schedule";
   item_key: string;
-  content: Record<string, unknown>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  content: Record<string, any>;
   status: "draft" | "published" | "archived";
   publish_at: string | null;
   note: string | null;
