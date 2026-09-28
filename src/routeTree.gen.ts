@@ -57,6 +57,7 @@ import { Route as AuthenticatedWorkApprovalsRouteImport } from './routes/_authen
 import { Route as AuthenticatedTaskOpsRouteImport } from './routes/_authenticated/task-ops'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSearchRouteImport } from './routes/_authenticated/search'
+import { Route as AuthenticatedSchoolStaffRouteImport } from './routes/_authenticated/school-staff'
 import { Route as AuthenticatedSchoolPackRouteImport } from './routes/_authenticated/school-pack'
 import { Route as AuthenticatedSchoolOpsRouteImport } from './routes/_authenticated/school-ops'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
@@ -461,6 +462,12 @@ const AuthenticatedSearchRoute = AuthenticatedSearchRouteImport.update({
   path: '/search',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSchoolStaffRoute =
+  AuthenticatedSchoolStaffRouteImport.update({
+    id: '/school-staff',
+    path: '/school-staff',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSchoolPackRoute = AuthenticatedSchoolPackRouteImport.update({
   id: '/school-pack',
   path: '/school-pack',
@@ -1403,6 +1410,7 @@ export interface FileRoutesByFullPath {
   '/projects': typeof AuthenticatedProjectsRoute
   '/school-ops': typeof AuthenticatedSchoolOpsRoute
   '/school-pack': typeof AuthenticatedSchoolPackRoute
+  '/school-staff': typeof AuthenticatedSchoolStaffRoute
   '/search': typeof AuthenticatedSearchRoute
   '/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/task-ops': typeof AuthenticatedTaskOpsRoute
@@ -1608,6 +1616,7 @@ export interface FileRoutesByTo {
   '/projects': typeof AuthenticatedProjectsRoute
   '/school-ops': typeof AuthenticatedSchoolOpsRoute
   '/school-pack': typeof AuthenticatedSchoolPackRoute
+  '/school-staff': typeof AuthenticatedSchoolStaffRoute
   '/search': typeof AuthenticatedSearchRoute
   '/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/task-ops': typeof AuthenticatedTaskOpsRoute
@@ -1819,6 +1828,7 @@ export interface FileRoutesById {
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
   '/_authenticated/school-ops': typeof AuthenticatedSchoolOpsRoute
   '/_authenticated/school-pack': typeof AuthenticatedSchoolPackRoute
+  '/_authenticated/school-staff': typeof AuthenticatedSchoolStaffRoute
   '/_authenticated/search': typeof AuthenticatedSearchRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/_authenticated/task-ops': typeof AuthenticatedTaskOpsRoute
@@ -2031,6 +2041,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/school-ops'
     | '/school-pack'
+    | '/school-staff'
     | '/search'
     | '/settings'
     | '/task-ops'
@@ -2236,6 +2247,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/school-ops'
     | '/school-pack'
+    | '/school-staff'
     | '/search'
     | '/settings'
     | '/task-ops'
@@ -2446,6 +2458,7 @@ export interface FileRouteTypes {
     | '/_authenticated/projects'
     | '/_authenticated/school-ops'
     | '/_authenticated/school-pack'
+    | '/_authenticated/school-staff'
     | '/_authenticated/search'
     | '/_authenticated/settings'
     | '/_authenticated/task-ops'
@@ -3003,6 +3016,13 @@ declare module '@tanstack/react-router' {
       path: '/search'
       fullPath: '/search'
       preLoaderRoute: typeof AuthenticatedSearchRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/school-staff': {
+      id: '/_authenticated/school-staff'
+      path: '/school-staff'
+      fullPath: '/school-staff'
+      preLoaderRoute: typeof AuthenticatedSchoolStaffRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/school-pack': {
@@ -4473,6 +4493,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
   AuthenticatedSchoolOpsRoute: typeof AuthenticatedSchoolOpsRoute
   AuthenticatedSchoolPackRoute: typeof AuthenticatedSchoolPackRoute
+  AuthenticatedSchoolStaffRoute: typeof AuthenticatedSchoolStaffRoute
   AuthenticatedSearchRoute: typeof AuthenticatedSearchRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
   AuthenticatedTaskOpsRoute: typeof AuthenticatedTaskOpsRoute
@@ -4533,6 +4554,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
   AuthenticatedSchoolOpsRoute: AuthenticatedSchoolOpsRoute,
   AuthenticatedSchoolPackRoute: AuthenticatedSchoolPackRoute,
+  AuthenticatedSchoolStaffRoute: AuthenticatedSchoolStaffRoute,
   AuthenticatedSearchRoute: AuthenticatedSearchRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,
   AuthenticatedTaskOpsRoute: AuthenticatedTaskOpsRoute,

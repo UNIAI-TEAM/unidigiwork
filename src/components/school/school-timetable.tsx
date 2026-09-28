@@ -18,15 +18,15 @@ function startOfWeek(d: Date) {
 const dayKey = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 
 /** Thời gian biểu tuần: lịch họp, hạn công việc, bản tin — dữ liệu thật theo quyền người xem. */
-export function SchoolTimetable({ workspaceId, onOpenBrief }: { workspaceId: string | null; onOpenBrief: (id: string) => void }) {
+export function SchoolTimetable({ department, onOpenBrief }: { department: string | null; onOpenBrief: (id: string) => void }) {
   const { t, lang } = useI18n();
   const loc = lang === "vi" ? "vi-VN" : "en-GB";
   const [week, setWeek] = useState(() => startOfWeek(new Date()));
   const end = useMemo(() => new Date(week.getTime() + 7 * DAY), [week]);
   const fetchAgenda = useServerFn(getSchoolAgenda);
   const q = useQuery({
-    queryKey: ["school-agenda", workspaceId, week.toISOString()],
-    queryFn: () => fetchAgenda({ data: { workspaceId, from: week.toISOString(), to: end.toISOString() } }),
+    queryKey: ["school-agenda", department, week.toISOString()],
+    queryFn: () => fetchAgenda({ data: { department, from: week.toISOString(), to: end.toISOString() } }),
   });
   const days = Array.from({ length: 7 }, (_, i) => new Date(week.getTime() + i * DAY));
   const byDay = new Map<string, AgendaItem[]>();

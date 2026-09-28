@@ -5934,6 +5934,7 @@ export type Database = {
           content: string
           created_at: string
           created_by: string | null
+          department: string | null
           facts: Json
           id: string
           idempotency_key: string | null
@@ -5949,6 +5950,7 @@ export type Database = {
           content?: string
           created_at?: string
           created_by?: string | null
+          department?: string | null
           facts?: Json
           id?: string
           idempotency_key?: string | null
@@ -5964,6 +5966,7 @@ export type Database = {
           content?: string
           created_at?: string
           created_by?: string | null
+          department?: string | null
           facts?: Json
           id?: string
           idempotency_key?: string | null
@@ -6821,6 +6824,7 @@ export type Database = {
           accepted_at: string | null
           accepted_by: string | null
           created_at: string
+          department: string | null
           email: string
           expires_at: string
           id: string
@@ -6837,6 +6841,7 @@ export type Database = {
           accepted_at?: string | null
           accepted_by?: string | null
           created_at?: string
+          department?: string | null
           email: string
           expires_at: string
           id?: string
@@ -6853,6 +6858,7 @@ export type Database = {
           accepted_at?: string | null
           accepted_by?: string | null
           created_at?: string
+          department?: string | null
           email?: string
           expires_at?: string
           id?: string
@@ -10337,13 +10343,34 @@ export type Database = {
         Args: { _workspace_id: string }
         Returns: string
       }
+      _school_can_view_dept: {
+        Args: { _dept: string; _tenant_id: string; _uid: string }
+        Returns: boolean
+      }
       _school_can_view_ws: {
         Args: { _tenant_id: string; _uid: string; _ws: string }
+        Returns: boolean
+      }
+      _school_is_bgh: {
+        Args: { _tenant_id: string; _uid: string }
         Returns: boolean
       }
       _school_is_leader: {
         Args: { _tenant_id: string; _uid: string }
         Returns: boolean
+      }
+      _school_task_in_dept: {
+        Args: {
+          _dept: string
+          _owner: string
+          _task_id: string
+          _tenant_id: string
+        }
+        Returns: boolean
+      }
+      _school_user_dept: {
+        Args: { _tenant_id: string; _uid: string }
+        Returns: string
       }
       _set_correlation_context: {
         Args: { _correlation_id: string }
@@ -11548,6 +11575,7 @@ export type Database = {
           accepted_at: string | null
           accepted_by: string | null
           created_at: string
+          department: string | null
           email: string
           expires_at: string
           id: string
@@ -12294,6 +12322,32 @@ export type Database = {
           content: string
           created_at: string
           created_by: string | null
+          department: string | null
+          facts: Json
+          id: string
+          idempotency_key: string | null
+          row_version: number
+          status: string
+          tenant_id: string
+          trigger: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "school_briefs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      list_school_briefs_v2: {
+        Args: { _department: string; _limit?: number; _tenant_id: string }
+        Returns: {
+          content: string
+          created_at: string
+          created_by: string | null
+          department: string | null
           facts: Json
           id: string
           idempotency_key: string | null
@@ -13228,6 +13282,7 @@ export type Database = {
           accepted_at: string | null
           accepted_by: string | null
           created_at: string
+          department: string | null
           email: string
           expires_at: string
           id: string
@@ -13358,6 +13413,19 @@ export type Database = {
         }
         Returns: string
       }
+      save_school_brief_v2: {
+        Args: {
+          _content: string
+          _correlation_id?: string
+          _department: string
+          _facts: Json
+          _idempotency_key?: string
+          _status: string
+          _tenant_id: string
+          _trigger: string
+        }
+        Returns: string
+      }
       schedule_meeting: {
         Args: {
           _agenda?: string
@@ -13420,6 +13488,34 @@ export type Database = {
           title: string
         }[]
       }
+      school_agenda_v2: {
+        Args: {
+          _department: string
+          _from: string
+          _tenant_id: string
+          _to: string
+        }
+        Returns: {
+          at: string
+          end_at: string
+          id: string
+          kind: string
+          status: string
+          title: string
+        }[]
+      }
+      school_invite: {
+        Args: {
+          _correlation_id?: string
+          _department: string
+          _email: string
+          _expires_at: string
+          _role: string
+          _tenant_id: string
+          _token_hash: string
+        }
+        Returns: string
+      }
       school_overview: {
         Args: { _tenant_id: string }
         Returns: {
@@ -13431,6 +13527,41 @@ export type Database = {
           overdue: number
           overdue_titles: string[]
           workspace_id: string
+        }[]
+      }
+      school_overview_v2: {
+        Args: { _tenant_id: string }
+        Returns: {
+          blocked: number
+          department: string
+          done_7d: number
+          meetings_7d: number
+          members: number
+          open_tasks: number
+          overdue: number
+          overdue_titles: string[]
+        }[]
+      }
+      school_pending_invites: {
+        Args: { _tenant_id: string }
+        Returns: {
+          department: string
+          email: string
+          expires_at: string
+          id: string
+          role: string
+          status: string
+        }[]
+      }
+      school_staff: {
+        Args: { _tenant_id: string }
+        Returns: {
+          department: string
+          display_name: string
+          email: string
+          role: string
+          title: string
+          user_id: string
         }[]
       }
       search_email_messages: {
@@ -13559,6 +13690,16 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      set_school_staff: {
+        Args: {
+          _correlation_id?: string
+          _department: string
+          _role: string
+          _tenant_id: string
+          _user_id: string
+        }
+        Returns: undefined
       }
       set_sell_work_pilot_status: {
         Args: {

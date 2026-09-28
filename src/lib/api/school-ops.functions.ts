@@ -6,27 +6,46 @@ import { draftSchoolNews, generateBrief, loadOverview } from "./school-ops.serve
 
 export type SchoolBrief = {
   id: string;
-  workspace_id: string | null;
+  department: string | null;
   trigger: "manual" | "scheduled";
   status: "ok" | "no_data" | "error";
   content: string;
   created_at: string;
 };
 
+export type SchoolRole = "bgh" | "lead" | "teacher";
+
+async function schoolContext(supabase: never, userId: string) {
+  const { tenantId, pack } = await resolveActivePack(supabase, userId);
+  if (!tenantId || pack !== "school") return null;
+  const db = supabase as unknown as { from: (t: string) => any };
+  const { data: m } = await db.from("tenant_members").select("role").eq("tenant_id", tenantId).eq("user_id", userId).maybeSingle();
+  const { data: p } = await db.from("tenant_member_profiles").select("department").eq("tenant_id", tenantId).eq("user_id", userId).maybeSingle();
+  const r = (m?.role ?? "member") as string;
+  const role: SchoolRole = r === "tenant_owner" || r === "tenant_admin" ? "bgh" : r === "manager" ? "lead" : "teacher";
+  const dept = typeof p?.department === "string" && p.department.trim() ? (p.department.trim() as string) : null;
+  return { tenantId, role, dept, tenantRole: r };
+}
+
 export const getSchoolOps = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ workspaceId: z.string().uuid().nullable() }).parse(d))
+  .inputValidator((d: unknown) => z.object({ department: z.string().max(80).nullable() }).parse(d))
   .handler(async ({ context, data }) => {
-    const { tenantId, pack } = await resolveActivePack(context.supabase as never, context.userId);
-    if (!tenantId || pack !== "school") return { enabled: false as const, isLeader: false, depts: [], briefs: [] as SchoolBrief[] };
-    const [depts, lead, briefs] = await Promise.all([
-      loadOverview(context.supabase, tenantId),
-      context.supabase.rpc("_school_is_leader", { _tenant_id: tenantId, _uid: context.userId }),
-      context.supabase.rpc("list_school_briefs", { _tenant_id: tenantId, _workspace_id: data.workspaceId as string, _limit: 10 }),
+    const ctx = await schoolContext(context.supabase as never, context.userId);
+    if (!ctx)
+      return { enabled: false as const, isLeader: false, role: "teacher" as SchoolRole, myDept: null as string | null, depts: [], briefs: [] as SchoolBrief[] };
+    const dept = ctx.role === "bgh" ? data.department : (ctx.dept ?? null);
+    const [depts, briefs] = await Promise.all([
+      loadOverview(context.supabase, ctx.tenantId),
+      dept === null && ctx.role !== "bgh"
+        ? Promise.resolve({ data: [] })
+        : context.supabase.rpc("list_school_briefs_v2", { _tenant_id: ctx.tenantId, _department: dept as string, _limit: 10 }),
     ]);
     return {
       enabled: true as const,
-      isLeader: lead.data === true,
+      isLeader: ctx.role === "bgh",
+      role: ctx.role,
+      myDept: ctx.dept,
       depts,
       briefs: (briefs.data ?? []) as SchoolBrief[],
     };
@@ -35,15 +54,15 @@ export const getSchoolOps = createServerFn({ method: "GET" })
 export const createSchoolBrief = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({ workspaceId: z.string().uuid().nullable(), idempotencyKey: z.string().min(8).max(100) }).parse(d),
+    z.object({ department: z.string().max(80).nullable(), idempotencyKey: z.string().min(8).max(100) }).parse(d),
   )
   .handler(async ({ context, data }) => {
-    const { tenantId, pack } = await resolveActivePack(context.supabase as never, context.userId);
-    if (!tenantId || pack !== "school") throw new Error("PACK_DISABLED");
-    const b = await generateBrief(context.supabase, tenantId, data.workspaceId);
-    const { data: id, error } = await context.supabase.rpc("save_school_brief", {
-      _tenant_id: tenantId,
-      _workspace_id: data.workspaceId as string,
+    const ctx = await schoolContext(context.supabase as never, context.userId);
+    if (!ctx) throw new Error("PACK_DISABLED");
+    const b = await generateBrief(context.supabase, ctx.tenantId, data.department);
+    const { data: id, error } = await context.supabase.rpc("save_school_brief_v2", {
+      _tenant_id: ctx.tenantId,
+      _department: data.department as string,
       _content: b.content,
       _facts: b.facts,
       _trigger: "manual",
@@ -52,6 +71,99 @@ export const createSchoolBrief = createServerFn({ method: "POST" })
     });
     if (error) throw new Error(error.message.includes("FORBIDDEN") ? "FORBIDDEN" : "SAVE_FAILED");
     return { id: id as string, status: b.status };
+  });
+
+export type SchoolStaff = {
+  user_id: string;
+  display_name: string | null;
+  email: string | null;
+  role: string;
+  department: string | null;
+  title: string | null;
+};
+
+export type SchoolInvite = { id: string; email: string; role: string; department: string | null; status: string; expires_at: string };
+
+/** Danh sách nhân sự (BGH thấy toàn trường; tổ trưởng/giáo viên thấy tổ mình). */
+export const getSchoolStaff = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const ctx = await schoolContext(context.supabase as never, context.userId);
+    if (!ctx) return { enabled: false as const, role: "teacher" as SchoolRole, isOwner: false, staff: [] as SchoolStaff[], invites: [] as SchoolInvite[] };
+    const { data: staff, error } = await context.supabase.rpc("school_staff", { _tenant_id: ctx.tenantId });
+    if (error) throw new Error("STAFF_FAILED");
+    let invites: SchoolInvite[] = [];
+    if (ctx.role === "bgh") {
+      const { data: inv } = await context.supabase.rpc("school_pending_invites", { _tenant_id: ctx.tenantId });
+      invites = (inv ?? []) as SchoolInvite[];
+    }
+    return { enabled: true as const, role: ctx.role, isOwner: ctx.tenantRole === "tenant_owner", staff: (staff ?? []) as SchoolStaff[], invites };
+  });
+
+const staffRole = z.enum(["tenant_admin", "manager", "member"]);
+const deptName = z.string().trim().max(80).nullable();
+
+export const updateSchoolStaff = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ userId: z.string().uuid(), role: staffRole.nullable(), department: deptName, correlationId: z.string().max(100).optional() }).parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const ctx = await schoolContext(context.supabase as never, context.userId);
+    if (!ctx) throw new Error("PACK_DISABLED");
+    const { error } = await context.supabase.rpc("set_school_staff", {
+      _tenant_id: ctx.tenantId,
+      _user_id: data.userId,
+      _role: data.role as string,
+      _department: data.department as string,
+      _correlation_id: data.correlationId,
+    });
+    if (error) throw new Error(stableCode(error.message));
+    return { ok: true };
+  });
+
+function stableCode(m: string) {
+  const codes = ["PERMISSION_DENIED", "TENANT_LAST_OWNER_PROTECTED", "TENANT_ROLE_CHANGE_FORBIDDEN", "TENANT_MEMBERSHIP_NOT_FOUND", "VALIDATION_FAILED", "TENANT_INVITATION"];
+  return codes.find((c) => m.toUpperCase().includes(c)) ?? "FAILED";
+}
+
+async function sha256(token: string) {
+  const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
+  return Array.from(new Uint8Array(d)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/** Mời một hoặc nhiều người (tối đa 200) — trả về liên kết mời (token chỉ trả một lần). */
+export const inviteSchoolStaff = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        rows: z.array(z.object({ email: z.string().trim().toLowerCase().email(), role: staffRole, department: deptName })).min(1).max(200),
+        correlationId: z.string().max(100).optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const ctx = await schoolContext(context.supabase as never, context.userId);
+    if (!ctx) throw new Error("PACK_DISABLED");
+    if (ctx.role !== "bgh") throw new Error("PERMISSION_DENIED");
+    const expires = new Date(Date.now() + 14 * 864e5).toISOString();
+    const out: Array<{ email: string; token?: string; error?: string }> = [];
+    for (const r of data.rows) {
+      const bytes = crypto.getRandomValues(new Uint8Array(32));
+      const token = Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
+      const { error } = await context.supabase.rpc("school_invite", {
+        _tenant_id: ctx.tenantId,
+        _email: r.email,
+        _role: r.role,
+        _department: r.department as string,
+        _token_hash: await sha256(token),
+        _expires_at: expires,
+        _correlation_id: data.correlationId,
+      });
+      out.push(error ? { email: r.email, error: stableCode(error.message) } : { email: r.email, token });
+    }
+    return out;
   });
 
 /** Quản trị nội dung: tạo nháp bài tin trường học (chưa lưu, admin duyệt rồi mới đăng). */
@@ -83,14 +195,14 @@ export type AgendaItem = {
 export const getSchoolAgenda = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({ workspaceId: z.string().uuid().nullable(), from: z.string().datetime(), to: z.string().datetime() }).parse(d),
+    z.object({ department: z.string().max(80).nullable(), from: z.string().datetime(), to: z.string().datetime() }).parse(d),
   )
   .handler(async ({ context, data }) => {
     const { tenantId, pack } = await resolveActivePack(context.supabase as never, context.userId);
     if (!tenantId || pack !== "school") return [] as AgendaItem[];
-    const { data: rows, error } = await context.supabase.rpc("school_agenda", {
+    const { data: rows, error } = await context.supabase.rpc("school_agenda_v2", {
       _tenant_id: tenantId,
-      _workspace_id: data.workspaceId as string,
+      _department: data.department as string,
       _from: data.from,
       _to: data.to,
     });

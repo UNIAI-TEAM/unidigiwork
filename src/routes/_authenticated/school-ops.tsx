@@ -31,9 +31,9 @@ function SchoolOps() {
   const [pick, setPick] = useState<string | null>(null);
   const fetchOps = useServerFn(getSchoolOps);
   const gen = useServerFn(createSchoolBrief);
-  const q = useQuery({ queryKey: ["school-ops", ws], queryFn: () => fetchOps({ data: { workspaceId: ws } }) });
+  const q = useQuery({ queryKey: ["school-ops", ws], queryFn: () => fetchOps({ data: { department: ws } }) });
   const m = useMutation({
-    mutationFn: () => gen({ data: { workspaceId: ws, idempotencyKey: crypto.randomUUID() } }),
+    mutationFn: () => gen({ data: { department: effDept, idempotencyKey: crypto.randomUUID() } }),
     onSuccess: (r) => {
       if (r.status === "no_data") toast.info(t("sops.noData"));
       else if (r.status === "error") toast.error(t("sops.error"));
@@ -45,8 +45,9 @@ function SchoolOps() {
   });
 
   const d = q.data;
+  const effDept = d && !d.isLeader ? d.myDept : ws;
   const latest = (pick && d?.briefs.find((b) => b.id === pick)) || d?.briefs.find((b) => b.status === "ok");
-  const canGen = !!d && (ws !== null || d.isLeader);
+  const canGen = !!d && (d.isLeader || (d.role === "lead" && !!d.myDept));
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6 md:px-8">
@@ -60,10 +61,17 @@ function SchoolOps() {
             <p className="text-sm text-muted-foreground">{t("sops.desc")}</p>
           </div>
         </div>
-        {d?.enabled && d.isLeader && (
+        {d?.enabled && (
+          <div className="flex flex-wrap gap-2">
+          <Link to="/school-staff" className="inline-flex min-h-11 items-center rounded-md border px-4 text-sm hover:bg-accent">
+            {t("sst.open")}
+          </Link>
+          {d.isLeader && (
           <Link to="/school-pack" className="inline-flex min-h-11 items-center rounded-md border px-4 text-sm hover:bg-accent">
             {t("spa.open")}
           </Link>
+          )}
+          </div>
         )}
       </header>
 
@@ -94,7 +102,7 @@ function SchoolOps() {
                         v={d.depts.reduce((a, r) => [a[0] + r.open_tasks, a[1] + r.overdue, a[2] + r.blocked, a[3] + r.done_7d, a[4] + r.meetings_7d], [0, 0, 0, 0, 0])} bold />
                     )}
                     {d.depts.map((r) => (
-                      <Row key={r.workspace_id} active={ws === r.workspace_id} onClick={() => { setWs(r.workspace_id); setPick(null); }} name={r.name}
+                      <Row key={r.department} active={effDept === r.department} onClick={() => { if (d.isLeader) { setWs(r.department); setPick(null); } }} name={`${r.department} · ${r.members}`}
                         v={[r.open_tasks, r.overdue, r.blocked, r.done_7d, r.meetings_7d]} />
                     ))}
                   </tbody>
@@ -103,13 +111,13 @@ function SchoolOps() {
             )}
           </section>
 
-          <SchoolTimetable workspaceId={ws} onOpenBrief={(id) => { setPick(id); document.getElementById("sops-brief")?.scrollIntoView({ behavior: "smooth" }); }} />
+          {(d.isLeader || d.myDept) ? <SchoolTimetable department={effDept} onOpenBrief={(id) => { setPick(id); document.getElementById("sops-brief")?.scrollIntoView({ behavior: "smooth" }); }} /> : <p className="rounded-xl border bg-card p-6 text-sm text-muted-foreground">{t("sst.noDept")}</p>}
 
           <section id="sops-brief" className="grid gap-6 lg:grid-cols-[1fr_280px]">
             <div className="rounded-xl border bg-card p-5 shadow-sm">
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                 <h2 className="text-base font-semibold">
-                  {t("sops.brief")} · {ws ? d.depts.find((x) => x.workspace_id === ws)?.name : t("sops.all")}
+                  {t("sops.brief")} · {effDept ?? t("sops.all")}
                 </h2>
                 <Button className="min-h-11" disabled={!canGen || m.isPending} onClick={() => m.mutate()}>
                   <Sparkles className="mr-2 h-4 w-4" />
