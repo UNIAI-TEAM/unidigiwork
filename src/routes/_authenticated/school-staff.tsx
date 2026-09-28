@@ -83,7 +83,7 @@ function SchoolStaffPage() {
   const errMsg = (e: unknown) => {
     const m = e instanceof Error ? e.message : "";
     const k = `sst.err.${m}`;
-    const v = t(k);
+    const v = t(k as never);
     return v === k ? t("sst.err.FAILED") : v;
   };
 
@@ -233,7 +233,7 @@ function SchoolStaffPage() {
                 {d.invites.map((i) => (
                   <li key={i.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2">
                     <span className="min-w-0 break-all">{i.email}</span>
-                    <span className="text-xs text-muted-foreground">{t(ROLE_KEYS[i.role] ?? "sst.role.teacher")}{i.department ? ` · ${i.department}` : ""}</span>
+                    <span className="text-xs text-muted-foreground">{t((ROLE_KEYS[i.role] ?? "sst.role.teacher") as never)}{i.department ? ` · ${i.department}` : ""}</span>
                   </li>
                 ))}
               </ul>
@@ -273,7 +273,7 @@ function StaffRow({ s, editable, allowAdmin, depts, busy, onSave }: {
           </Button>
         </div>
       ) : (
-        <span className="text-xs text-muted-foreground">{t(ROLE_KEYS[s.role] ?? "sst.role.teacher")}</span>
+        <span className="text-xs text-muted-foreground">{t((ROLE_KEYS[s.role] ?? "sst.role.teacher") as never)}</span>
       )}
     </li>
   );
