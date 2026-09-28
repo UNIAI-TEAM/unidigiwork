@@ -4,27 +4,27 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeft } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
-import { listSchoolDirectives, type DirectiveState } from "@/lib/api/school-directives.functions";
+import { listDeptDirectives, type DirectiveState } from "@/lib/api/school-directives.functions";
 import { DirectiveCard, DIRECTIVE_FILTERS as FILTERS } from "@/components/school/directive-card";
 
-export const Route = createFileRoute("/_authenticated/school-directives")({
+export const Route = createFileRoute("/_authenticated/school-dept-directives")({
   head: () => ({
     meta: [
-      { title: "Theo dõi chỉ đạo — UniWork" },
-      { name: "description", content: "Theo dõi chỉ đạo của Ban Giám hiệu từ giao việc đến nghiệm thu." },
-      { property: "og:title", content: "Theo dõi chỉ đạo — UniWork" },
-      { property: "og:description", content: "Theo dõi chỉ đạo của Ban Giám hiệu từ giao việc đến nghiệm thu." },
+      { title: "Chỉ đạo của tổ — UniWork" },
+      { name: "description", content: "Tổ trưởng theo dõi các chỉ đạo và công việc thuộc tổ chuyên môn của mình." },
+      { property: "og:title", content: "Chỉ đạo của tổ — UniWork" },
+      { property: "og:description", content: "Tổ trưởng theo dõi các chỉ đạo và công việc thuộc tổ chuyên môn của mình." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: DirectivesPage,
+  component: DeptDirectivesPage,
 });
 
-function DirectivesPage() {
+function DeptDirectivesPage() {
   const { t } = useI18n();
-  const fn = useServerFn(listSchoolDirectives);
-  const q = useQuery({ queryKey: ["school-directives"], queryFn: () => fn() });
+  const fn = useServerFn(listDeptDirectives);
+  const q = useQuery({ queryKey: ["school-dept-directives"], queryFn: () => fn() });
   const [f, setF] = useState<DirectiveState | "all">("all");
   const items = q.data?.items ?? [];
   const count = (s: DirectiveState | "all") => (s === "all" ? items.length : items.filter((i) => i.state === s).length);
@@ -37,13 +37,13 @@ function DirectivesPage() {
           <ArrowLeft className="h-4 w-4" />
         </Link>
         <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-tight">{t("sdt.title")}</h1>
-          <p className="text-sm text-muted-foreground">{t("sdt.desc")}</p>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("sdd.title")}{q.data?.dept ? ` · ${q.data.dept}` : ""}</h1>
+          <p className="text-sm text-muted-foreground">{t("sdd.desc")}</p>
         </div>
       </div>
 
       {q.data && !q.data.allowed ? (
-        <p className="rounded-lg border p-6 text-sm text-muted-foreground">{t("sdt.forbidden")}</p>
+        <p className="rounded-lg border p-6 text-sm text-muted-foreground">{t("sdd.forbidden")}</p>
       ) : (
         <>
           <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
@@ -56,7 +56,7 @@ function DirectivesPage() {
           </div>
           {q.isLoading && <p className="text-sm text-muted-foreground">…</p>}
           {!q.isLoading && shown.length === 0 && <p className="rounded-lg border p-6 text-sm text-muted-foreground">{t("sdt.empty")}</p>}
-          <div className="grid gap-4">{shown.map((d) => <DirectiveCard key={d.id} d={d} />)}</div>
+          <div className="grid gap-4">{shown.map((d) => <DirectiveCard key={d.id} d={d} bgh={false} />)}</div>
           <p className="text-xs text-muted-foreground">{t("sdt.note")}</p>
         </>
       )}
