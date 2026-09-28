@@ -603,6 +603,13 @@
       "when": 1790608547595,
       "tag": "0085_school_document_policy_meta",
       "breakpoints": true
+    },
+    {
+      "idx": 86,
+      "version": "7",
+      "when": 1790609040135,
+      "tag": "0086_school_record_minutes_decision",
+      "breakpoints": true
     }
   ]
 }
