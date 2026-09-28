@@ -18,11 +18,9 @@ export type Directive = {
 
 type Row = Record<string, unknown>;
 
-export const listSchoolDirectives = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const sb = context.supabase;
-    const ctx = await schoolContext(sb as never, context.userId);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function loadDirectives(sb: any, userId: string) {
+    const ctx = await schoolContext(sb as never, userId);
     if (!ctx) return { enabled: false as const, allowed: false, items: [] as Directive[] };
     if (ctx.role !== "bgh") return { enabled: true as const, allowed: false, items: [] as Directive[] };
 
@@ -90,7 +88,11 @@ export const listSchoolDirectives = createServerFn({ method: "GET" })
       };
     });
     return { enabled: true as const, allowed: true, items: out };
-  });
+}
+
+export const listSchoolDirectives = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => loadDirectives(context.supabase, context.userId));
 
 /** Nghiệm thu hoặc yêu cầu sửa — chỉ BGH, sau khi người dùng bấm xác nhận. */
 export const reviewSchoolDirective = createServerFn({ method: "POST" })
@@ -111,7 +113,7 @@ export const inspectSchoolDirective = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const ctx = await schoolContext(context.supabase as never, context.userId);
     if (!ctx || ctx.role !== "bgh") throw new Error("DIRECTIVE_ACCESS_DENIED");
-    const all = await listSchoolDirectives();
+    const all = await loadDirectives(context.supabase, context.userId);
     const d = all.items.find((x) => x.id === data.id);
     if (!d) throw new Error("DECISION_NOT_FOUND");
     const apiKey = process.env["LOVABLE_API_KEY"];
