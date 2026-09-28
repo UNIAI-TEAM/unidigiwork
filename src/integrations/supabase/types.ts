@@ -3734,6 +3734,65 @@ export type Database = {
         }
         Relationships: []
       }
+      industry_pack_items: {
+        Row: {
+          content: Json
+          created_at: string
+          created_by: string | null
+          id: string
+          item_key: string
+          kind: string
+          note: string | null
+          pack: string
+          publish_at: string | null
+          row_version: number
+          status: string
+          tenant_id: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          content?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          item_key: string
+          kind: string
+          note?: string | null
+          pack?: string
+          publish_at?: string | null
+          row_version?: number
+          status?: string
+          tenant_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          item_key?: string
+          kind?: string
+          note?: string | null
+          pack?: string
+          publish_at?: string | null
+          row_version?: number
+          status?: string
+          tenant_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "industry_pack_items_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invite_email_template_versions: {
         Row: {
           action: string
@@ -10547,6 +10606,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      archive_pack_item: {
+        Args: { _correlation_id?: string; _id: string }
+        Returns: undefined
+      }
       archive_workflow: {
         Args: {
           _archived?: boolean
@@ -12129,6 +12192,31 @@ export type Database = {
         }[]
       }
       list_meeting_guests: { Args: { _meeting_id: string }; Returns: Json }
+      list_pack_items: {
+        Args: { _tenant_id: string }
+        Returns: {
+          content: Json
+          created_at: string
+          created_by: string | null
+          id: string
+          item_key: string
+          kind: string
+          note: string | null
+          pack: string
+          publish_at: string | null
+          row_version: number
+          status: string
+          tenant_id: string | null
+          updated_at: string
+          updated_by: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "industry_pack_items"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       list_task_classification_candidates: {
         Args: { _limit?: number; _task_id: string }
         Returns: {
@@ -13143,6 +13231,20 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      save_pack_item: {
+        Args: {
+          _content: Json
+          _correlation_id?: string
+          _idempotency_key?: string
+          _item_key: string
+          _kind: string
+          _note?: string
+          _publish_at?: string
+          _status: string
+          _tenant_id: string
+        }
+        Returns: string
       }
       schedule_meeting: {
         Args: {
