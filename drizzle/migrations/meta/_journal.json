@@ -673,6 +673,13 @@
       "when": 1790690413580,
       "tag": "0095_school_teacher_my_space",
       "breakpoints": true
+    },
+    {
+      "idx": 96,
+      "version": "7",
+      "when": 1790690972734,
+      "tag": "0096_school_lead_task_scope",
+      "breakpoints": true
     }
   ]
 }
