@@ -3,9 +3,9 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { schoolContext } from "./school-ops.functions";
 
-export type ChatGroup = { id: string; name: string; description: string | null; is_dept: boolean; member_ids: string[] };
+export type ChatGroup = { id: string; name: string; description: string | null; is_dept: boolean; member_ids: string[]; department: string | null };
 
-const code = (m: string) => ["FORBIDDEN", "INVALID_NAME", "NOT_FOUND", "DEPT_GROUP", "NOT_MEMBER"].find((c) => m.includes(c)) ?? "FAILED";
+const code = (m: string) => ["FORBIDDEN", "INVALID_NAME", "NOT_FOUND", "DEPT_GROUP", "NOT_MEMBER", "NOT_IN_DEPT"].find((c) => m.includes(c)) ?? "FAILED";
 
 async function ctxOf(context: { supabase: unknown; userId: string }) {
   const ctx = await schoolContext(context.supabase as never, context.userId);
@@ -17,10 +17,11 @@ export const listChatGroups = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const ctx = await schoolContext(context.supabase as never, context.userId);
-    if (!ctx || ctx.role !== "bgh") return { allowed: false, groups: [] as ChatGroup[] };
+    if (!ctx || (ctx.role !== "bgh" && !(ctx.role === "lead" && ctx.dept)))
+      return { allowed: false, scope: null as string | null, groups: [] as ChatGroup[] };
     const { data, error } = await (context.supabase as any).rpc("school_list_chat_groups", { _tenant_id: ctx.tenantId });
     if (error) throw new Error(code(error.message));
-    return { allowed: true, groups: (data ?? []) as ChatGroup[] };
+    return { allowed: true, scope: ctx.role === "bgh" ? null : (ctx.dept as string | null), groups: (data ?? []) as ChatGroup[] };
   });
 
 export const saveChatGroup = createServerFn({ method: "POST" })

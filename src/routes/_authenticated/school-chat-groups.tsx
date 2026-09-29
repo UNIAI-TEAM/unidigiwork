@@ -59,7 +59,7 @@ function ChatGroupsPage() {
         </Link>
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-semibold tracking-tight">{t("scg.title")}</h1>
-          <p className="text-sm text-muted-foreground">{t("scg.desc")}</p>
+          <p className="text-sm text-muted-foreground">{q.data?.scope ? `${t("scg.leadDesc")} ${q.data.scope}` : t("scg.desc")}</p>
         </div>
         {q.data?.allowed && <Button className="h-11" onClick={() => setEdit("new")}><Plus className="mr-1 h-4 w-4" />{t("scg.new")}</Button>}
       </div>
@@ -76,6 +76,7 @@ function ChatGroupsPage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="break-words font-medium">{g.name}</span>
                   {g.is_dept && <span className="rounded border px-1.5 text-xs text-muted-foreground">{t("scg.deptTag")}</span>}
+                  {!g.is_dept && g.department && !q.data?.scope && <span className="rounded border px-1.5 text-xs text-muted-foreground">{g.department}</span>}
                 </div>
                 <p className="text-xs text-muted-foreground">{g.member_ids.length} {t("scg.members")}{g.description ? ` · ${g.description}` : ""}</p>
               </div>
