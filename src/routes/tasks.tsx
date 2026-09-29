@@ -1265,11 +1265,11 @@ function TaskCard({
   const visibleTags = task.tags?.slice(0, 2) ?? [];
   const remainingTags = Math.max((task.tags?.length ?? 0) - visibleTags.length, 0);
   return (
-    <div className="group rounded-lg border border-border bg-surface p-3 transition-colors hover:border-primary/40">
+    <div className="group rounded-lg border border-border bg-surface p-3 transition-colors hover:border-foreground/20">
       <Link
         to="/tasks/$id"
         params={{ id: task.id }}
-        className="block text-sm font-medium leading-snug transition-colors hover:text-primary"
+        className="block text-sm font-medium leading-snug"
       >
         {task.title}
       </Link>
@@ -1289,11 +1289,13 @@ function TaskCard({
         </div>
       )}
       <div className="mt-3 flex min-h-5 items-center gap-2">
-        <span
-          className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${priorityColors[task.priority]}`}
-        >
-          {task.priority}
-        </span>
+        {task.priority !== "normal" && (
+          <span
+            className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${priorityColors[task.priority]}`}
+          >
+            {t(`m.tasks.priority.${task.priority}` as never)}
+          </span>
+        )}
         {task.due_at && (
           <span
             className={`ml-auto flex items-center gap-1 text-[11px] ${overdue ? "text-warning" : "text-muted-foreground"}`}
@@ -1309,7 +1311,7 @@ function TaskCard({
         value={task.status}
         onChange={(e) => onMove(task.id, e.target.value as Status)}
         aria-label="Chuyển trạng thái"
-        className="mt-2 min-h-11 w-full rounded-md border border-transparent bg-surface-2 px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:border-border hover:bg-surface-3 focus:outline-none sm:min-h-8"
+        className="mt-2 min-h-11 w-full rounded-md border border-border/60 bg-transparent px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:bg-surface-2 focus:outline-none sm:min-h-8"
       >
         {columns.map((c) => (
           <option key={c.status} value={c.status}>
