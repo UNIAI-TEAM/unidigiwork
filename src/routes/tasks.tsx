@@ -456,28 +456,23 @@ function TasksPage() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="order-3 col-span-2 min-h-11 w-full justify-between sm:hidden"
+              <nav
+                role="tablist"
+                aria-label={t("tasks.viewMode" as Key)}
+                className="order-3 col-span-2 -mx-3 flex gap-2 overflow-x-auto px-3 pb-1 sm:hidden"
+              >
+                {taskTabs.map((id) => (
+                  <button
+                    key={id}
+                    role="tab"
+                    aria-selected={tab === id}
+                    onClick={() => setTab(id)}
+                    className={`inline-flex min-h-11 shrink-0 snap-start items-center gap-2 rounded-full border px-4 text-sm ${tab === id ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-accent"}`}
                   >
-                    <span className="min-w-0 truncate">{t(`tasks.tab.${tab}` as Key)}</span>
-                    <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-[calc(100vw-1.5rem)]">
-                  {taskTabs.map((id) => (
-                    <DropdownMenuItem key={id} onSelect={() => setTab(id)} className="min-h-11">
-                      <span className={tab === id ? "font-semibold text-primary" : undefined}>
-                        {t(`tasks.tab.${id}` as Key)}
-                      </span>
-                      {tab === id && <CheckCircle2 className="ml-auto h-4 w-4 text-primary" />}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    {t(`tasks.tab.${id}` as Key)}
+                  </button>
+                ))}
+              </nav>
 
               <nav className="hidden min-w-0 items-center gap-5 text-sm sm:flex">
                 {taskTabs.map((id) => (
