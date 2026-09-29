@@ -141,20 +141,27 @@ function SchoolStaffPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6 md:px-8">
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex items-start gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+    <div className="w-full space-y-6 px-3 py-5 sm:px-5 lg:px-6">
+      <header className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 sm:flex sm:flex-wrap sm:items-center sm:justify-between sm:gap-4">
+        <div className="flex min-w-0 items-start gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
             <Users className="h-5 w-5" />
           </div>
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">{t("sst.title")}</h1>
+          <div className="min-w-0">
+            <h1 className="truncate text-xl font-semibold tracking-tight sm:text-2xl">{t("sst.title")}</h1>
             <p className="text-sm text-muted-foreground">{t("sst.desc")}</p>
           </div>
         </div>
-        <Link to="/school-ops" className="inline-flex min-h-11 items-center gap-2 rounded-md border px-4 text-sm hover:bg-accent">
-          <ArrowLeft className="h-4 w-4" /> {t("nav.schoolOps")}
-        </Link>
+        <div className="flex shrink-0 items-center gap-2">
+          {(roleFilter || deptFilter) && (
+            <Button variant="outline" className="min-h-11 px-3" onClick={() => { setRoleFilter(""); setDeptFilter(""); }}>
+              <X className="h-4 w-4" /> <span className="hidden sm:inline">{t("tasks.filter.clear")}</span>
+            </Button>
+          )}
+          <Link to="/school-ops" className="inline-flex min-h-11 items-center gap-2 rounded-md border px-3 text-sm hover:bg-accent sm:px-4">
+            <ArrowLeft className="h-4 w-4" /> <span className="hidden sm:inline">{t("nav.schoolOps")}</span>
+          </Link>
+        </div>
       </header>
 
       {q.isLoading && <div className="h-40 animate-pulse rounded-xl bg-muted" />}
@@ -163,20 +170,75 @@ function SchoolStaffPage() {
 
       {d?.enabled && (
         <>
-          <section className="grid gap-3 sm:grid-cols-3">
+          <div className="flex snap-x items-stretch overflow-x-auto whitespace-nowrap rounded-lg border border-border bg-surface">
             {(["sst.role.bgh", "sst.role.lead", "sst.role.teacher"] as const).map((k, i) => {
               const n = d.staff.filter((s) =>
                 i === 0 ? ["tenant_owner", "tenant_admin"].includes(s.role) : i === 1 ? s.role === "manager" : ["member", "guest"].includes(s.role),
               ).length;
-              return (
-                <div key={k} className="rounded-xl border bg-card p-4 shadow-sm">
-                  <p className="text-xs text-muted-foreground">{t(k)}</p>
-                  <p className="text-2xl font-semibold tabular-nums">{n}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">{t(`${k}.desc`)}</p>
-                </div>
-              );
+              return <KpiCard key={k} label={t(k)} value={String(n)} />;
             })}
-          </section>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button variant="outline" className="min-h-11 flex-1 justify-between sm:hidden" onClick={() => setMobileFiltersOpen(true)}>
+              <span className="flex items-center gap-2"><Filter className="h-4 w-4" /> {t("tasks.filters")}</span>
+              {activeFilterCount > 0 && (
+                <span className="rounded-full bg-primary/15 px-2 py-0.5 text-xs text-primary">{activeFilterCount}</span>
+              )}
+            </Button>
+            <select aria-label={t("sst.filter.role")} value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}
+              className="hidden min-h-11 rounded-lg border border-border bg-background px-3 text-sm sm:block">
+              <option value="">{t("sst.filter.allRole")}</option>
+              <option value="tenant_admin">{t("sst.role.bgh")}</option>
+              <option value="manager">{t("sst.role.lead")}</option>
+              <option value="member">{t("sst.role.teacher")}</option>
+            </select>
+            <select aria-label={t("sst.filter.dept")} value={deptFilter} onChange={(e) => setDeptFilter(e.target.value)}
+              className="hidden min-h-11 rounded-lg border border-border bg-background px-3 text-sm sm:block">
+              <option value="">{t("sst.filter.allDept")}</option>
+              {depts.map((x) => <option key={x} value={x}>{x}</option>)}
+            </select>
+          </div>
+
+          <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
+            <SheetContent
+              side="bottom"
+              className="max-h-[85dvh] overflow-y-auto rounded-t-xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-5 sm:hidden"
+            >
+              <SheetHeader className="pr-8 text-left">
+                <SheetTitle>{t("tasks.filters")}</SheetTitle>
+                <SheetDescription>{t("sst.filter.dept")}</SheetDescription>
+              </SheetHeader>
+              <div className="mt-5 space-y-5">
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium">{t("sst.filter.role")}</span>
+                  <select aria-label={t("sst.filter.role")} value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}
+                    className="min-h-11 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring">
+                    <option value="">{t("sst.filter.allRole")}</option>
+                    <option value="tenant_admin">{t("sst.role.bgh")}</option>
+                    <option value="manager">{t("sst.role.lead")}</option>
+                    <option value="member">{t("sst.role.teacher")}</option>
+                  </select>
+                </label>
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium">{t("sst.filter.dept")}</span>
+                  <select aria-label={t("sst.filter.dept")} value={deptFilter} onChange={(e) => setDeptFilter(e.target.value)}
+                    className="min-h-11 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring">
+                    <option value="">{t("sst.filter.allDept")}</option>
+                    {depts.map((x) => <option key={x} value={x}>{x}</option>)}
+                  </select>
+                </label>
+                <div className="grid grid-cols-2 gap-2 pt-2">
+                  <Button variant="outline" className="min-h-11" onClick={() => { setRoleFilter(""); setDeptFilter(""); }}>
+                    {t("tasks.filter.clear")}
+                  </Button>
+                  <Button className="min-h-11" onClick={() => setMobileFiltersOpen(false)}>
+                    {t("tasks.filter.apply")}
+                  </Button>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
 
           {isBgh && (
             <section className="grid gap-6 lg:grid-cols-2">
