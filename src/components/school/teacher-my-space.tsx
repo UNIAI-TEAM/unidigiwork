@@ -115,7 +115,7 @@ export function TeacherMySpace() {
         </Button>
       </form>
 
-      <div className="grid min-w-0 gap-4 md:grid-cols-2">
+      <div className="grid min-w-0 content-start gap-4 md:grid-cols-2">
         <PlanList icon={<CalendarDays className="h-4 w-4" />} title={t("mys.lessons")} empty={t("mys.noLessons")} items={lessons} fmt={(x) => fmt(x.starts_at)} t={t} />
         <PlanList icon={<ClipboardList className="h-4 w-4" />} title={t("mys.assignments")} empty={t("mys.noAssignments")} items={assignments} fmt={(x) => fmt(x.starts_at ?? x.ends_at)} t={t} />
         <Link
