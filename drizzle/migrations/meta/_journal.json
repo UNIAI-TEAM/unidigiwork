@@ -617,6 +617,13 @@
       "when": 1790669420753,
       "tag": "0087_school_departments",
       "breakpoints": true
+    },
+    {
+      "idx": 88,
+      "version": "7",
+      "when": 1790671511551,
+      "tag": "0088_school_department_chat",
+      "breakpoints": true
     }
   ]
 }

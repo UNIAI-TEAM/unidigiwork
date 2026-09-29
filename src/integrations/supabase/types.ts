@@ -1724,6 +1724,7 @@ export type Database = {
           meeting_id: string | null
           name: string
           row_version: number
+          school_department_id: string | null
           task_id: string | null
           tenant_id: string
           updated_at: string
@@ -1743,6 +1744,7 @@ export type Database = {
           meeting_id?: string | null
           name: string
           row_version?: number
+          school_department_id?: string | null
           task_id?: string | null
           tenant_id: string
           updated_at?: string
@@ -1762,6 +1764,7 @@ export type Database = {
           meeting_id?: string | null
           name?: string
           row_version?: number
+          school_department_id?: string | null
           task_id?: string | null
           tenant_id?: string
           updated_at?: string
@@ -1774,6 +1777,13 @@ export type Database = {
             columns: ["meeting_id"]
             isOneToOne: false
             referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_channels_school_department_id_fkey"
+            columns: ["school_department_id"]
+            isOneToOne: false
+            referencedRelation: "school_departments"
             referencedColumns: ["id"]
           },
           {
@@ -10489,6 +10499,7 @@ export type Database = {
         Args: { _decision_id: string; _uid: string }
         Returns: boolean
       }
+      _school_ensure_dept_chat: { Args: { _dept_id: string }; Returns: string }
       _school_is_bgh: {
         Args: { _tenant_id: string; _uid: string }
         Returns: boolean
