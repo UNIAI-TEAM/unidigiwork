@@ -1,3 +1,4 @@
+import { withAppShell } from "@/components/page-shell";
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { z } from "zod";
@@ -67,7 +68,7 @@ export const Route = createFileRoute("/_authenticated/work-graph")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: WorkGraphPage,
+  component: withAppShell(WorkGraphPage),
 });
 
 const RUNNING_TASK = new Set(["in_progress", "blocked"]);

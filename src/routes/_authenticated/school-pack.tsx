@@ -1,3 +1,4 @@
+import { withAppShell } from "@/components/page-shell";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -19,7 +20,7 @@ export const Route = createFileRoute("/_authenticated/school-pack")({
       { name: "description", content: "Soạn mẫu văn bản, bộ từ ngữ, Skill bản tin và hẹn giờ xuất bản cho trường học." },
     ],
   }),
-  component: SchoolPackAdmin,
+  component: withAppShell(SchoolPackAdmin),
 });
 
 type Kind = PackItemRow["kind"];

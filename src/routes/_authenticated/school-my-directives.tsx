@@ -1,3 +1,4 @@
+import { withAppShell } from "@/components/page-shell";
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -19,7 +20,7 @@ export const Route = createFileRoute("/_authenticated/school-my-directives")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: MyDirectivesPage,
+  component: withAppShell(MyDirectivesPage),
 });
 
 const mineDone = (d: Directive) => d.tasks.length > 0 && d.tasks.every((t) => t.status === "done" || t.status === "canceled");

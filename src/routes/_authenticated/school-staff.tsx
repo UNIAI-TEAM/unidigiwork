@@ -1,3 +1,4 @@
+import { withAppShell } from "@/components/page-shell";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -26,7 +27,7 @@ export const Route = createFileRoute("/_authenticated/school-staff")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: SchoolStaffPage,
+  component: withAppShell(SchoolStaffPage),
 });
 
 type Role = "tenant_admin" | "manager" | "member";

@@ -1,3 +1,4 @@
+import { withAppShell } from "@/components/page-shell";
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -18,7 +19,7 @@ export const Route = createFileRoute("/_authenticated/school-dept-calendar")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: DeptCalendarPage,
+  component: withAppShell(DeptCalendarPage),
 });
 
 type Ev = { kind: "source" | "due" | "done" | "accept"; label: string; directive: string; taskId?: string; late?: boolean };

@@ -1,3 +1,4 @@
+import { withAppShell } from "@/components/page-shell";
 // Bàn gắn nhanh: kéo tài liệu (Kết quả công việc) thả vào công việc trong bản đồ.
 // Trên điện thoại: chạm chọn tài liệu rồi chạm công việc để gắn.
 import { useState } from "react";
@@ -27,7 +28,7 @@ export const Route = createFileRoute("/_authenticated/work-board")({
       },
     ],
   }),
-  component: WorkBoardPage,
+  component: withAppShell(WorkBoardPage),
 });
 
 function WorkBoardPage() {

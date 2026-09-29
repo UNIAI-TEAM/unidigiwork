@@ -1,3 +1,4 @@
+import { withAppShell } from "@/components/page-shell";
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -52,7 +53,7 @@ export const Route = createFileRoute("/_authenticated/human-agents")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: HumanAgentsPage,
+  component: withAppShell(HumanAgentsPage),
 });
 
 const ROLES = ["tenant_owner", "tenant_admin", "tenant_member", "tenant_guest"];
