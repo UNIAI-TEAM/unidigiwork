@@ -7105,6 +7105,8 @@ export type Database = {
       tenant_member_profiles: {
         Row: {
           about: string | null
+          avatar_bucket: string | null
+          avatar_object_key: string | null
           created_at: string
           department: string | null
           emp_id: string | null
@@ -7113,6 +7115,7 @@ export type Database = {
           phone: string | null
           reports_to: string | null
           skills: string[]
+          subject: string | null
           team: string | null
           teams: string[]
           tenant_id: string
@@ -7122,6 +7125,8 @@ export type Database = {
         }
         Insert: {
           about?: string | null
+          avatar_bucket?: string | null
+          avatar_object_key?: string | null
           created_at?: string
           department?: string | null
           emp_id?: string | null
@@ -7130,6 +7135,7 @@ export type Database = {
           phone?: string | null
           reports_to?: string | null
           skills?: string[]
+          subject?: string | null
           team?: string | null
           teams?: string[]
           tenant_id: string
@@ -7139,6 +7145,8 @@ export type Database = {
         }
         Update: {
           about?: string | null
+          avatar_bucket?: string | null
+          avatar_object_key?: string | null
           created_at?: string
           department?: string | null
           emp_id?: string | null
@@ -7147,6 +7155,7 @@ export type Database = {
           phone?: string | null
           reports_to?: string | null
           skills?: string[]
+          subject?: string | null
           team?: string | null
           teams?: string[]
           tenant_id?: string
@@ -13827,6 +13836,7 @@ export type Database = {
         Args: { _correlation_id?: string; _id: string; _tenant_id: string }
         Returns: undefined
       }
+      school_get_my_profile: { Args: { _tenant_id: string }; Returns: Json }
       school_invite: {
         Args: {
           _correlation_id?: string
@@ -13903,6 +13913,19 @@ export type Database = {
           status: Database["public"]["Enums"]["task_status"]
           title: string
           updated_at: string
+        }[]
+      }
+      school_list_my_plans: {
+        Args: { _from: string; _tenant_id: string; _to: string }
+        Returns: {
+          class_name: string
+          department: string
+          ends_at: string
+          id: string
+          kind: string
+          starts_at: string
+          task_status: string
+          title: string
         }[]
       }
       school_meetings: {
@@ -14100,6 +14123,18 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      school_update_my_profile: {
+        Args: {
+          _avatar_object_key: string
+          _display_name: string
+          _idempotency_key: string
+          _phone: string
+          _subject: string
+          _tenant_id: string
+          _title: string
+        }
+        Returns: undefined
       }
       search_email_messages: {
         Args: {
