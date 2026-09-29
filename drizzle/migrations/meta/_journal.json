@@ -610,6 +610,13 @@
       "when": 1790609040135,
       "tag": "0086_school_record_minutes_decision",
       "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "7",
+      "when": 1790669420753,
+      "tag": "0087_school_departments",
+      "breakpoints": true
     }
   ]
 }
