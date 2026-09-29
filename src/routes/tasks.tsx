@@ -1497,17 +1497,16 @@ function MyTasks({ tasks, onViewAll }: { tasks: Task[]; onViewAll: () => void })
       </div>
       <div className="mt-2 divide-y divide-border">
         {list.map((tk) => (
-          <div key={tk.id} className="flex items-center gap-2 py-2 text-xs">
-            <span className="h-2 w-2 rounded-full bg-primary" />
-            <span className="text-muted-foreground">{tk.id}</span>
+          <Link
+            key={tk.id}
+            to="/tasks/$id"
+            params={{ id: tk.id }}
+            className="flex items-center gap-2 py-2 text-xs"
+          >
+            <span className={`h-2 w-2 shrink-0 rounded-full ${statusDot[tk.status]}`} />
             <span className="flex-1 truncate text-foreground">{tk.title}</span>
-            <span
-              className={`hidden rounded px-1.5 py-0.5 text-[10px] font-medium sm:inline ${priorityColors[tk.priority]}`}
-            >
-              {tk.priority}
-            </span>
             <span className="hidden text-muted-foreground md:inline">{fmtDate(tk.due_at)}</span>
-          </div>
+          </Link>
         ))}
       </div>
       <button
