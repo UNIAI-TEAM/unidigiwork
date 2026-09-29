@@ -120,7 +120,7 @@ function SchoolOps() {
                 <div className="overflow-hidden rounded-lg border bg-card shadow-sm">
                   {attention.length === 0 ? <p className="p-5 text-sm text-muted-foreground">{t("sops.focusEmpty")}</p> : attention.map((r) => (
                     <button key={r.department} type="button" onClick={() => { setWs(r.department); setPick(null); }} className="grid min-h-16 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-b px-4 py-3 text-left last:border-0 hover:bg-accent/50">
-                      <span className="min-w-0"><span className="block truncate text-sm font-semibold">{r.department}</span><span className="mt-0.5 block text-xs text-muted-foreground">{r.members} {t("sst.members")} · {r.open_tasks} {t("sops.open").toLocaleLowerCase()}</span></span>
+                      <span className="min-w-0"><span className="block truncate text-sm font-semibold">{r.department}</span><span className="mt-0.5 block text-xs text-muted-foreground">{r.members} {t("sops.members")} · {r.open_tasks} {t("sops.open").toLocaleLowerCase()}</span></span>
                       <span className="text-right text-xs font-medium text-destructive">{r.overdue > 0 ? `${r.overdue} ${t("sops.overdue").toLocaleLowerCase()}` : `${r.blocked} ${t("sops.blocked").toLocaleLowerCase()}`}</span>
                     </button>
                   ))}
