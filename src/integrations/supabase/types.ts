@@ -1725,6 +1725,7 @@ export type Database = {
           name: string
           row_version: number
           school_department_id: string | null
+          school_scope_department_id: string | null
           task_id: string | null
           tenant_id: string
           updated_at: string
@@ -1745,6 +1746,7 @@ export type Database = {
           name: string
           row_version?: number
           school_department_id?: string | null
+          school_scope_department_id?: string | null
           task_id?: string | null
           tenant_id: string
           updated_at?: string
@@ -1765,6 +1767,7 @@ export type Database = {
           name?: string
           row_version?: number
           school_department_id?: string | null
+          school_scope_department_id?: string | null
           task_id?: string | null
           tenant_id?: string
           updated_at?: string
@@ -1782,6 +1785,13 @@ export type Database = {
           {
             foreignKeyName: "chat_channels_school_department_id_fkey"
             columns: ["school_department_id"]
+            isOneToOne: false
+            referencedRelation: "school_departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_channels_school_scope_department_id_fkey"
+            columns: ["school_scope_department_id"]
             isOneToOne: false
             referencedRelation: "school_departments"
             referencedColumns: ["id"]
@@ -10584,6 +10594,10 @@ export type Database = {
         Args: { _tenant_id: string; _uid: string; _ws: string }
         Returns: boolean
       }
+      _school_chat_dept: {
+        Args: { _c: Database["public"]["Tables"]["chat_channels"]["Row"] }
+        Returns: string
+      }
       _school_directive_sole_dept: {
         Args: { _decision_id: string; _uid: string }
         Returns: boolean
@@ -10607,6 +10621,10 @@ export type Database = {
         Returns: boolean
       }
       _school_lead_dept: {
+        Args: { _tenant_id: string; _uid: string }
+        Returns: string
+      }
+      _school_lead_dept_id: {
         Args: { _tenant_id: string; _uid: string }
         Returns: string
       }
@@ -13866,6 +13884,7 @@ export type Database = {
         Args: { _tenant_id: string }
         Returns: {
           created_at: string
+          department: string
           description: string
           id: string
           is_dept: boolean
