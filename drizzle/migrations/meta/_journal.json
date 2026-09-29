@@ -645,6 +645,13 @@
       "when": 1790685698555,
       "tag": "0091_school_department_task_board",
       "breakpoints": true
+    },
+    {
+      "idx": 92,
+      "version": "7",
+      "when": 1790686187288,
+      "tag": "0092_fix_school_department_task_member_email",
+      "breakpoints": true
     }
   ]
 }
