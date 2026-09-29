@@ -23,6 +23,9 @@ const STORE_KEY = "uniwork:nav-collapsed-groups";
 
 function useCollapsedGroups(activeGroup: NavGroupId | null) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({
+    communication: true,
+    results: true,
+    knowledge: true,
     automation: true,
     organization: true,
   });
