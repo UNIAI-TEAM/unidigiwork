@@ -128,6 +128,14 @@ const columns: { status: Status; key: Key; barColor: string }[] = [
   { status: "canceled", key: "tasks.col.canceled", barColor: "bg-muted" },
 ];
 
+const statusDot: Record<Status, string> = {
+  todo: "bg-muted-foreground",
+  in_progress: "bg-primary",
+  blocked: "bg-destructive",
+  done: "bg-success",
+  canceled: "bg-muted",
+};
+
 function fmtDate(v: string | null) {
   if (!v) return "";
   return new Date(v).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
