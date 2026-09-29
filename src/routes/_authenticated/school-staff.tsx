@@ -292,6 +292,9 @@ function SchoolStaffPage() {
           )}
 
           <section className="space-y-4">
+            {filtered.length === 0 && (
+              <p className="rounded-xl border bg-card p-6 text-sm text-muted-foreground">{t("sst.filter.empty")}</p>
+            )}
             {groups.map(([dept, rows]) => (
               <div key={dept || "_none"} className="rounded-xl border bg-card shadow-sm">
                 <h3 className="border-b px-4 py-3 text-sm font-semibold">
@@ -393,5 +396,14 @@ function DeptInput({ value, depts, onChange }: { value: string | null; depts: st
         {depts.map((x) => <option key={x} value={x} />)}
       </datalist>
     </>
+  );
+}
+
+function KpiCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-28 flex-1 snap-start border-r border-border px-3 py-2.5 last:border-r-0 sm:min-w-0 sm:px-4">
+      <div className="text-[11px] font-medium text-muted-foreground">{label}</div>
+      <div className="mt-0.5 text-lg font-semibold tabular-nums">{value}</div>
+    </div>
   );
 }
