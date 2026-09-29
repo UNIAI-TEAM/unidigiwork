@@ -638,6 +638,27 @@
       "when": 1790678043303,
       "tag": "0090_school_chat_groups",
       "breakpoints": true
+    },
+    {
+      "idx": 91,
+      "version": "7",
+      "when": 1790685698555,
+      "tag": "0091_school_department_task_board",
+      "breakpoints": true
+    },
+    {
+      "idx": 92,
+      "version": "7",
+      "when": 1790686187288,
+      "tag": "0092_fix_school_department_task_member_email",
+      "breakpoints": true
+    },
+    {
+      "idx": 93,
+      "version": "7",
+      "when": 1790686248462,
+      "tag": "0093_fix_school_department_task_list_scope",
+      "breakpoints": true
     }
   ]
 }

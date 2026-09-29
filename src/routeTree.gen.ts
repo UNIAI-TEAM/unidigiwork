@@ -65,6 +65,7 @@ import { Route as AuthenticatedSchoolOpsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedSchoolMyDirectivesRouteImport } from './routes/_authenticated/school-my-directives'
 import { Route as AuthenticatedSchoolMeetingsRouteImport } from './routes/_authenticated/school-meetings'
 import { Route as AuthenticatedSchoolDirectivesRouteImport } from './routes/_authenticated/school-directives'
+import { Route as AuthenticatedSchoolDeptTasksRouteImport } from './routes/_authenticated/school-dept-tasks'
 import { Route as AuthenticatedSchoolDeptProgressRouteImport } from './routes/_authenticated/school-dept-progress'
 import { Route as AuthenticatedSchoolDeptPlansRouteImport } from './routes/_authenticated/school-dept-plans'
 import { Route as AuthenticatedSchoolDeptDirectivesRouteImport } from './routes/_authenticated/school-dept-directives'
@@ -515,6 +516,12 @@ const AuthenticatedSchoolDirectivesRoute =
   AuthenticatedSchoolDirectivesRouteImport.update({
     id: '/school-directives',
     path: '/school-directives',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSchoolDeptTasksRoute =
+  AuthenticatedSchoolDeptTasksRouteImport.update({
+    id: '/school-dept-tasks',
+    path: '/school-dept-tasks',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedSchoolDeptProgressRoute =
@@ -1482,6 +1489,7 @@ export interface FileRoutesByFullPath {
   '/school-dept-directives': typeof AuthenticatedSchoolDeptDirectivesRoute
   '/school-dept-plans': typeof AuthenticatedSchoolDeptPlansRoute
   '/school-dept-progress': typeof AuthenticatedSchoolDeptProgressRoute
+  '/school-dept-tasks': typeof AuthenticatedSchoolDeptTasksRoute
   '/school-directives': typeof AuthenticatedSchoolDirectivesRoute
   '/school-meetings': typeof AuthenticatedSchoolMeetingsRoute
   '/school-my-directives': typeof AuthenticatedSchoolMyDirectivesRoute
@@ -1698,6 +1706,7 @@ export interface FileRoutesByTo {
   '/school-dept-directives': typeof AuthenticatedSchoolDeptDirectivesRoute
   '/school-dept-plans': typeof AuthenticatedSchoolDeptPlansRoute
   '/school-dept-progress': typeof AuthenticatedSchoolDeptProgressRoute
+  '/school-dept-tasks': typeof AuthenticatedSchoolDeptTasksRoute
   '/school-directives': typeof AuthenticatedSchoolDirectivesRoute
   '/school-meetings': typeof AuthenticatedSchoolMeetingsRoute
   '/school-my-directives': typeof AuthenticatedSchoolMyDirectivesRoute
@@ -1920,6 +1929,7 @@ export interface FileRoutesById {
   '/_authenticated/school-dept-directives': typeof AuthenticatedSchoolDeptDirectivesRoute
   '/_authenticated/school-dept-plans': typeof AuthenticatedSchoolDeptPlansRoute
   '/_authenticated/school-dept-progress': typeof AuthenticatedSchoolDeptProgressRoute
+  '/_authenticated/school-dept-tasks': typeof AuthenticatedSchoolDeptTasksRoute
   '/_authenticated/school-directives': typeof AuthenticatedSchoolDirectivesRoute
   '/_authenticated/school-meetings': typeof AuthenticatedSchoolMeetingsRoute
   '/_authenticated/school-my-directives': typeof AuthenticatedSchoolMyDirectivesRoute
@@ -2143,6 +2153,7 @@ export interface FileRouteTypes {
     | '/school-dept-directives'
     | '/school-dept-plans'
     | '/school-dept-progress'
+    | '/school-dept-tasks'
     | '/school-directives'
     | '/school-meetings'
     | '/school-my-directives'
@@ -2359,6 +2370,7 @@ export interface FileRouteTypes {
     | '/school-dept-directives'
     | '/school-dept-plans'
     | '/school-dept-progress'
+    | '/school-dept-tasks'
     | '/school-directives'
     | '/school-meetings'
     | '/school-my-directives'
@@ -2580,6 +2592,7 @@ export interface FileRouteTypes {
     | '/_authenticated/school-dept-directives'
     | '/_authenticated/school-dept-plans'
     | '/_authenticated/school-dept-progress'
+    | '/_authenticated/school-dept-tasks'
     | '/_authenticated/school-directives'
     | '/_authenticated/school-meetings'
     | '/_authenticated/school-my-directives'
@@ -3201,6 +3214,13 @@ declare module '@tanstack/react-router' {
       path: '/school-directives'
       fullPath: '/school-directives'
       preLoaderRoute: typeof AuthenticatedSchoolDirectivesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/school-dept-tasks': {
+      id: '/_authenticated/school-dept-tasks'
+      path: '/school-dept-tasks'
+      fullPath: '/school-dept-tasks'
+      preLoaderRoute: typeof AuthenticatedSchoolDeptTasksRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/school-dept-progress': {
@@ -4695,6 +4715,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSchoolDeptDirectivesRoute: typeof AuthenticatedSchoolDeptDirectivesRoute
   AuthenticatedSchoolDeptPlansRoute: typeof AuthenticatedSchoolDeptPlansRoute
   AuthenticatedSchoolDeptProgressRoute: typeof AuthenticatedSchoolDeptProgressRoute
+  AuthenticatedSchoolDeptTasksRoute: typeof AuthenticatedSchoolDeptTasksRoute
   AuthenticatedSchoolDirectivesRoute: typeof AuthenticatedSchoolDirectivesRoute
   AuthenticatedSchoolMeetingsRoute: typeof AuthenticatedSchoolMeetingsRoute
   AuthenticatedSchoolMyDirectivesRoute: typeof AuthenticatedSchoolMyDirectivesRoute
@@ -4767,6 +4788,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedSchoolDeptDirectivesRoute,
   AuthenticatedSchoolDeptPlansRoute: AuthenticatedSchoolDeptPlansRoute,
   AuthenticatedSchoolDeptProgressRoute: AuthenticatedSchoolDeptProgressRoute,
+  AuthenticatedSchoolDeptTasksRoute: AuthenticatedSchoolDeptTasksRoute,
   AuthenticatedSchoolDirectivesRoute: AuthenticatedSchoolDirectivesRoute,
   AuthenticatedSchoolMeetingsRoute: AuthenticatedSchoolMeetingsRoute,
   AuthenticatedSchoolMyDirectivesRoute: AuthenticatedSchoolMyDirectivesRoute,
