@@ -16,6 +16,7 @@ export type SchoolDeptTask = {
   row_version: number;
   updated_at: string;
   assignees: Array<{ user_id: string; display_name: string | null; email: string | null }>;
+  owner_id: string | null;
 };
 
 export type SchoolDeptTaskMember = { user_id: string; display_name: string; email: string };
@@ -29,7 +30,6 @@ export const listSchoolDeptTasks = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const ctx = await schoolContext(context.supabase as never, context.userId);
     if (!ctx) return { enabled: false as const, role: "teacher" as const, dept: null, tasks: [] as SchoolDeptTask[], members: [] as SchoolDeptTaskMember[] };
-    if (ctx.role === "teacher") throw new Error("FORBIDDEN");
     const dept = ctx.role === "bgh" ? data.department : ctx.dept;
     if (!dept) return { enabled: true as const, role: ctx.role, dept: null, tasks: [] as SchoolDeptTask[], members: [] as SchoolDeptTaskMember[] };
 
@@ -39,7 +39,7 @@ export const listSchoolDeptTasks = createServerFn({ method: "POST" })
     ]);
     if (taskResult.error) throw new Error(errorCode(taskResult.error.message));
     if (memberResult.error) throw new Error(errorCode(memberResult.error.message));
-    return { enabled: true as const, role: ctx.role, dept, tasks: (taskResult.data ?? []) as SchoolDeptTask[], members: (memberResult.data ?? []) as SchoolDeptTaskMember[] };
+    return { enabled: true as const, role: ctx.role, userId: context.userId, dept, tasks: (taskResult.data ?? []) as SchoolDeptTask[], members: (memberResult.data ?? []) as SchoolDeptTaskMember[] };
   });
 
 export const createSchoolDeptTask = createServerFn({ method: "POST" })
@@ -84,7 +84,7 @@ export const transitionSchoolDeptTask = createServerFn({ method: "POST" })
   }).parse(input))
   .handler(async ({ context, data }) => {
     const ctx = await schoolContext(context.supabase as never, context.userId);
-    if (!ctx || ctx.role === "teacher") throw new Error("FORBIDDEN");
+    if (!ctx) throw new Error("FORBIDDEN");
     const dept = ctx.role === "bgh" ? data.department : ctx.dept;
     if (!dept) throw new Error("FORBIDDEN");
     const { data: task, error } = await (context.supabase as any).rpc("school_transition_dept_task", {

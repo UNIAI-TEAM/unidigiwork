@@ -9,3 +9,4 @@
 - School department task boards derive scope from task owner/assignees joined to `tenant_member_profiles.department`; never duplicate department onto `tasks`, preventing membership drift.
 - In school tenants, a manager with a department (tổ trưởng) is scoped by the `tasks` SELECT policy + BEFORE UPDATE guard (`_school_lead_can_see_task`) to their department's tasks, so every task screen/RPC enforces it at the database, not per page.
 - In school tenants, a tổ trưởng manages only chat groups of their department (auto dept group or `chat_channels.school_scope_department_id`), enforced in the school chat RPCs.
+- School department task board: teachers view their own department board (`_school_can_view_dept_tasks`) but may only transition cards they own or are assigned; create stays tổ trưởng/BGH.
