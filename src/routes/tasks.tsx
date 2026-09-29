@@ -40,6 +40,7 @@ import {
 } from "lucide-react";
 import { usePanelCollapse, usePanelCollapseControls } from "@/hooks/use-panel-collapse";
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -73,6 +74,14 @@ export const Route = createFileRoute("/tasks")({
         content:
           "Bảng Kanban quản lý công việc, sprint, burndown và AI Project Copilot trên UNIWORK.",
       },
+      { property: "og:title", content: "Tasks & Projects · UNIWORK" },
+      {
+        property: "og:description",
+        content:
+          "Bảng Kanban quản lý công việc, sprint, burndown và AI Project Copilot trên UNIWORK.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: TasksPage,
@@ -141,6 +150,7 @@ function exportTasksCsv(rows: Task[]) {
 
 function TasksPage() {
   const [open, setOpen] = useSidebarState();
+  const [copilotHidden, setCopilotHidden] = usePanelCollapse("tasks-copilot", true);
   const [quickCreate, setQuickCreate] = useState<QuickCreateKind | null>(null);
   const { t } = useI18n();
   const [tab, setTab] = useState<
@@ -396,7 +406,7 @@ function TasksPage() {
         />
 
         <div className="flex flex-1 overflow-hidden">
-          <main className="flex-1 overflow-y-auto px-4 py-5 sm:px-6 lg:px-8">
+          <main className="min-w-0 flex-1 overflow-y-auto px-3 py-4 sm:px-5 sm:py-5 lg:px-6">
             {/* Project header row */}
             <div className="mb-5 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:flex sm:flex-wrap">
               <DropdownMenu>
@@ -444,6 +454,19 @@ function TasksPage() {
                   </button>
                 ))}
               </nav>
+              {copilotHidden && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setCopilotHidden(false)}
+                  aria-label="Hiện AI Copilot"
+                  title="Hiện AI Copilot"
+                  className="ml-auto hidden h-11 w-11 shrink-0 xl:inline-flex"
+                >
+                  <PanelRightOpen className="h-5 w-5" />
+                </Button>
+              )}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="ml-auto flex h-11 w-11 items-center justify-center rounded-lg hover:bg-surface-2">
@@ -808,7 +831,7 @@ function TasksPage() {
                 }`}
               >
                 {tab === "board" && (
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+                  <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-3 md:grid md:grid-cols-2 md:gap-4 md:overflow-visible md:pb-0 xl:grid-cols-5">
                     {columns.map((col) => (
                       <BoardColumn
                         key={col.status}
@@ -869,25 +892,28 @@ function TasksPage() {
             )}
           </main>
 
-          <CopilotPanel
-            total={total}
-            done={counts.done}
-            overdue={overdue}
-            progress={progress}
-            onGantt={() => setTab("timeline")}
-            onResource={() => navigateTasks({ to: "/people" })}
-            onExport={() => exportTasksCsv(tasks)}
-            onImport={() => {
-              if (!activeWs) {
-                toast.error("Hãy chọn workspace trước khi nhập");
-                return;
-              }
-              if (importing) return;
-              importInputRef.current?.click();
-            }}
-            onNewTask={() => setQuickCreate("task")}
-            onViewActivity={() => navigateTasks({ to: "/workspace/audit" })}
-          />
+          {!copilotHidden && (
+            <CopilotPanel
+              total={total}
+              done={counts.done}
+              overdue={overdue}
+              progress={progress}
+              onHide={() => setCopilotHidden(true)}
+              onGantt={() => setTab("timeline")}
+              onResource={() => navigateTasks({ to: "/people" })}
+              onExport={() => exportTasksCsv(tasks)}
+              onImport={() => {
+                if (!activeWs) {
+                  toast.error("Hãy chọn workspace trước khi nhập");
+                  return;
+                }
+                if (importing) return;
+                importInputRef.current?.click();
+              }}
+              onNewTask={() => setQuickCreate("task")}
+              onViewActivity={() => navigateTasks({ to: "/workspace/audit" })}
+            />
+          )}
         </div>
       </div>
     </div>
@@ -926,7 +952,7 @@ type QuickAddPayload = { title: string; priority: Priority; dueAt?: string };
 
 function BoardSkeleton() {
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+    <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-3 md:grid md:grid-cols-2 md:gap-4 md:overflow-visible md:pb-0 xl:grid-cols-5">
       {Array.from({ length: 5 }).map((_, i) => (
         <div key={i} className="rounded-xl border border-border bg-surface p-3">
           <div className="h-4 w-24 animate-pulse rounded bg-muted" />
@@ -962,7 +988,7 @@ function BoardColumn({
   const { t } = useI18n();
   const [adding, setAdding] = useState(false);
   return (
-    <div className="flex flex-col gap-3 rounded-xl bg-surface/40 p-3">
+    <div className="flex w-[min(82vw,20rem)] shrink-0 snap-start flex-col gap-3 rounded-xl bg-surface/40 p-3 md:w-auto">
       <div className="flex items-center gap-2 px-1">
         <span className={`h-2 w-2 rounded-full ${col.barColor}`} />
         <span className="text-sm font-semibold">{t(col.key)}</span>
@@ -1379,6 +1405,7 @@ function CopilotPanel({
   done,
   overdue,
   progress,
+  onHide,
   onGantt,
   onResource,
   onExport,
@@ -1390,6 +1417,7 @@ function CopilotPanel({
   done: number;
   overdue: number;
   progress: number;
+  onHide: () => void;
   onGantt: () => void;
   onResource: () => void;
   onExport: () => void;
@@ -1401,28 +1429,8 @@ function CopilotPanel({
   // Chỉ suy ra từ dữ liệu thật đang hiển thị; không có dữ liệu thì để trống.
   const risks = overdue > 0 ? [`${overdue} công việc đang quá hạn`] : [];
   const suggestions = overdue > 0 ? ["Ưu tiên xử lý các công việc quá hạn trước"] : [];
-  const [collapsed, setCollapsed] = usePanelCollapse("tasks-copilot");
-
-  if (collapsed) {
-    return (
-      <aside className="hidden w-12 shrink-0 flex-col items-center gap-3 border-l border-border bg-surface py-4 xl:flex">
-        <button
-          type="button"
-          onClick={() => setCollapsed(false)}
-          aria-expanded={false}
-          aria-label="Mở rộng panel AI"
-          title="Mở rộng panel AI"
-          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground"
-        >
-          <PanelRightOpen className="h-4 w-4" />
-        </button>
-        <Sparkles className="h-4 w-4 text-primary" />
-      </aside>
-    );
-  }
-
   return (
-    <aside className="hidden w-[340px] shrink-0 flex-col overflow-y-auto border-l border-border bg-surface xl:flex">
+    <aside className="hidden w-[300px] shrink-0 flex-col overflow-y-auto border-l border-border bg-surface xl:flex">
       <div className="flex items-center gap-2 border-b border-border px-5 py-4">
         <Sparkles className="h-5 w-5 text-primary" />
         <h2 className="text-base font-semibold">{t("tasks.copilot")}</h2>
@@ -1438,10 +1446,10 @@ function CopilotPanel({
         </button>
         <button
           type="button"
-          onClick={() => setCollapsed(true)}
+          onClick={onHide}
           aria-expanded
-          aria-label="Thu gọn panel AI"
-          title="Thu gọn panel AI"
+          aria-label="Ẩn AI Copilot"
+          title="Ẩn AI Copilot"
           className="rounded p-1 text-muted-foreground hover:bg-surface-2"
         >
           <PanelRightClose className="h-4 w-4" />

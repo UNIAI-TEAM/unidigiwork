@@ -325,10 +325,11 @@ function WorkspaceItem({
 }
 
 function useSidebarCollapsed() {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
 
   useEffect(() => {
-    setCollapsed(localStorage.getItem("sidebarCollapsed") === "true");
+    const stored = localStorage.getItem("sidebarCollapsed");
+    setCollapsed(stored === null ? true : stored === "true");
     const handler = (e: Event) => setCollapsed((e as CustomEvent<boolean>).detail);
     window.addEventListener("uniwork:sidebar-toggle", handler);
     return () => window.removeEventListener("uniwork:sidebar-toggle", handler);
