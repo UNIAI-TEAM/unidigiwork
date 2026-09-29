@@ -1,3 +1,4 @@
+import { withAppShell } from "@/components/page-shell";
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -21,7 +22,7 @@ export const Route = createFileRoute("/_authenticated/school-policies")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: PoliciesPage,
+  component: withAppShell(PoliciesPage),
 });
 
 const STATUSES: PolicyStatus[] = ["effective", "approved", "draft", "expired", "superseded", "withdrawn", "unknown"];

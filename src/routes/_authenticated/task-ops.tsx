@@ -1,3 +1,4 @@
+import { withAppShell } from "@/components/page-shell";
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -39,7 +40,7 @@ export const Route = createFileRoute("/_authenticated/task-ops")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: TaskOpsPage,
+  component: withAppShell(TaskOpsPage),
 });
 
 const PAGE_SIZE = 25;

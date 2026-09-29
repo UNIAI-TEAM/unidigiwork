@@ -1,3 +1,4 @@
+import { withAppShell } from "@/components/page-shell";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -22,7 +23,7 @@ export const Route = createFileRoute("/_authenticated/school-ops")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: SchoolOps,
+  component: withAppShell(SchoolOps),
 });
 
 function SchoolOps() {

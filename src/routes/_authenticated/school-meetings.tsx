@@ -1,3 +1,4 @@
+import { withAppShell } from "@/components/page-shell";
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -27,7 +28,7 @@ export const Route = createFileRoute("/_authenticated/school-meetings")({
       { name: "description", content: "Tạo, sửa, hủy lịch họp tổ và toàn trường, đồng bộ với bản tin điều hành." },
     ],
   }),
-  component: SchoolMeetingsPage,
+  component: withAppShell(SchoolMeetingsPage),
 });
 
 const DAY = 864e5;

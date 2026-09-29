@@ -1,3 +1,4 @@
+import { withAppShell } from "@/components/page-shell";
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -18,7 +19,7 @@ export const Route = createFileRoute("/_authenticated/school-directives")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: DirectivesPage,
+  component: withAppShell(DirectivesPage),
 });
 
 function DirectivesPage() {
