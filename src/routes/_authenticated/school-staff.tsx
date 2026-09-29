@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ArrowLeft, Copy, Upload, UserPlus, Users } from "lucide-react";
+import { ArrowLeft, Copy, Filter, Upload, UserPlus, Users, X } from "lucide-react";
 import {
   getSchoolStaff,
   inviteSchoolStaff,
@@ -16,6 +16,7 @@ import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 export const Route = createFileRoute("/_authenticated/school-staff")({
   head: () => ({
@@ -75,14 +76,28 @@ function SchoolStaffPage() {
     () => [...new Set([...(dq.data?.departments ?? []).map((x) => x.name), ...(d?.staff ?? []).map((s) => s.department).filter((x): x is string => !!x)])].sort(),
     [d, dq.data],
   );
+  const [roleFilter, setRoleFilter] = useState("");
+  const [deptFilter, setDeptFilter] = useState("");
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const filtered = useMemo(() => {
+    const all = d?.staff ?? [];
+    return all.filter((s) => {
+      if (deptFilter && (s.department ?? "") !== deptFilter) return false;
+      if (roleFilter === "tenant_admin") return ["tenant_owner", "tenant_admin"].includes(s.role);
+      if (roleFilter === "manager") return s.role === "manager";
+      if (roleFilter === "member") return ["member", "guest"].includes(s.role);
+      return true;
+    });
+  }, [d, roleFilter, deptFilter]);
+  const activeFilterCount = (roleFilter ? 1 : 0) + (deptFilter ? 1 : 0);
   const groups = useMemo(() => {
     const m = new Map<string, SchoolStaff[]>();
-    for (const s of d?.staff ?? []) {
+    for (const s of filtered) {
       const k = s.department ?? "";
       m.set(k, [...(m.get(k) ?? []), s]);
     }
     return [...m.entries()].sort((a, b) => (a[0] === "" ? 1 : b[0] === "" ? -1 : a[0].localeCompare(b[0])));
-  }, [d]);
+  }, [filtered]);
 
   const errMsg = (e: unknown) => {
     const m = e instanceof Error ? e.message : "";
