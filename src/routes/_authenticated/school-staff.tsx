@@ -8,6 +8,7 @@ import { ArrowLeft, Copy, Upload, UserPlus, Users } from "lucide-react";
 import {
   getSchoolStaff,
   inviteSchoolStaff,
+  listSchoolDepartments,
   updateSchoolStaff,
   type SchoolStaff,
 } from "@/lib/api/school-ops.functions";
@@ -66,11 +67,13 @@ function SchoolStaffPage() {
   const invite = useServerFn(inviteSchoolStaff);
   const q = useQuery({ queryKey: ["school-staff"], queryFn: () => fetchStaff() });
   const d = q.data;
+  const deptFn = useServerFn(listSchoolDepartments);
+  const dq = useQuery({ queryKey: ["school-departments"], queryFn: () => deptFn() });
   const isBgh = d?.enabled && d.role === "bgh";
 
   const depts = useMemo(
-    () => [...new Set((d?.staff ?? []).map((s) => s.department).filter((x): x is string => !!x))].sort(),
-    [d],
+    () => [...new Set([...(dq.data?.departments ?? []).map((x) => x.name), ...(d?.staff ?? []).map((s) => s.department).filter((x): x is string => !!x)])].sort(),
+    [d, dq.data],
   );
   const groups = useMemo(() => {
     const m = new Map<string, SchoolStaff[]>();
