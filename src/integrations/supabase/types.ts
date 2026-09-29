@@ -13758,6 +13758,10 @@ export type Database = {
         }
         Returns: string
       }
+      school_delete_chat_group: {
+        Args: { _correlation_id?: string; _id: string; _tenant_id: string }
+        Returns: undefined
+      }
       school_delete_department: {
         Args: {
           _correlation_id?: string
@@ -13782,6 +13786,17 @@ export type Database = {
           _token_hash: string
         }
         Returns: string
+      }
+      school_list_chat_groups: {
+        Args: { _tenant_id: string }
+        Returns: {
+          created_at: string
+          description: string
+          id: string
+          is_dept: boolean
+          member_ids: string[]
+          name: string
+        }[]
       }
       school_list_departments: {
         Args: { _tenant_id: string }
@@ -13895,6 +13910,16 @@ export type Database = {
         }
         Returns: string
       }
+      school_save_chat_group: {
+        Args: {
+          _correlation_id?: string
+          _description: string
+          _id: string
+          _name: string
+          _tenant_id: string
+        }
+        Returns: string
+      }
       school_save_department: {
         Args: {
           _correlation_id?: string
@@ -13934,6 +13959,16 @@ export type Database = {
           _title: string
         }
         Returns: string
+      }
+      school_set_chat_member: {
+        Args: {
+          _add: boolean
+          _channel_id: string
+          _correlation_id?: string
+          _tenant_id: string
+          _user_id: string
+        }
+        Returns: undefined
       }
       school_staff: {
         Args: { _tenant_id: string }
