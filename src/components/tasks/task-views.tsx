@@ -85,7 +85,7 @@ export function TaskListView({
         <tbody className="divide-y divide-border">
           {tasks.map((tk) => (
             <tr key={tk.id} className="hover:bg-surface-2/60">
-              <td className="px-4 py-3">
+              <td className="sticky left-0 z-10 max-w-[220px] truncate bg-surface px-4 py-3">
                 <Link
                   to="/tasks/$id"
                   params={{ id: tk.id }}
