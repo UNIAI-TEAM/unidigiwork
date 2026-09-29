@@ -685,11 +685,7 @@ function TasksPage() {
                 value={String(counts.done)}
                 valueClass="text-success"
               />
-              <KpiCard
-                label={t("tasks.kpi.inprogress")}
-                value={String(counts.in_progress)}
-                valueClass="text-sky-400"
-              />
+              <KpiCard label={t("tasks.kpi.inprogress")} value={String(counts.in_progress)} />
               <KpiCard label={t("tasks.kpi.todo")} value={String(counts.todo)} />
               <KpiCard
                 label={t("tasks.kpi.blocked")}
