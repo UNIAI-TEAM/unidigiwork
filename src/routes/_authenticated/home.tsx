@@ -39,6 +39,7 @@ import {
 } from "@/lib/api/home.functions";
 import { getHomeAiBrief } from "@/lib/api/home-brief.functions";
 import { transitionTask } from "@/lib/api/tasks.functions";
+import { TeacherMySpace } from "@/components/school/teacher-my-space";
 import { markNotificationsRead } from "@/lib/api/notifications.functions";
 import { setEmailMessagesRead } from "@/lib/api/emails.functions";
 import { useActiveTenant } from "@/features/tenants/hooks";
@@ -548,6 +549,9 @@ function HomePage() {
                 </Link>
               </div>
             </header>
+
+            <TeacherMySpace />
+
 
             {customizing ? (
               <HomeCustomizePanel
