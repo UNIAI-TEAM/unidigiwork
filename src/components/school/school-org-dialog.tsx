@@ -121,22 +121,21 @@ export function SchoolOrgDialogButton() {
             <UserPlus className="h-4 w-4" /> {t("sorg.inviteSend")}
           </Button>
           {link && (
-            <div className="space-y-1 rounded-lg border bg-muted/40 p-3">
-              <p className="text-xs text-muted-foreground">{t("sst.linksHint")}</p>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 truncate text-xs">{link}</code>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="min-h-11 gap-1"
-                  onClick={() => {
-                    navigator.clipboard.writeText(link);
-                    toast.success(t("sst.copy"));
-                  }}
-                >
-                  <Copy className="h-3.5 w-3.5" /> {t("sst.copy")}
-                </Button>
-              </div>
+            <div className="flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2">
+              <code className="min-w-0 flex-1 truncate text-xs">{link}</code>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="min-h-11 shrink-0 gap-1.5"
+                aria-label={t("sst.copy")}
+                onClick={() => {
+                  navigator.clipboard.writeText(link);
+                  toast.success(t("sst.copy"));
+                }}
+              >
+                <Copy className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">{t("sst.copy")}</span>
+              </Button>
             </div>
           )}
         </section>

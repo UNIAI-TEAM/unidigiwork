@@ -102,7 +102,7 @@ function SchoolOps() {
               <h2 id="school-snapshot" className="text-base font-semibold">{t("sops.schoolSnapshot")}</h2>
               <span className="text-xs text-muted-foreground">{t("sops.activeDepartments")}: {d.depts.length}</span>
             </div>
-            <div className="grid grid-cols-2 overflow-hidden rounded-lg border bg-card shadow-sm md:grid-cols-4">
+            <div className="flex snap-x snap-mandatory divide-x divide-border overflow-x-auto rounded-lg border bg-card shadow-sm">
               <Metric icon={Clock3} label={t("sops.open")} value={totals.open} />
               <Metric icon={CircleAlert} label={t("sops.overdue")} value={totals.overdue} alert={totals.overdue > 0} />
               <Metric icon={CheckCircle2} label={t("sops.done7")} value={totals.done} />
@@ -194,9 +194,9 @@ function SchoolOps() {
 
 function Metric({ icon: Icon, label, value, alert }: { icon: typeof Clock3; label: string; value: number; alert?: boolean }) {
   return (
-    <div className="border-b border-r p-4 last:border-r-0 md:border-b-0">
-      <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground"><Icon className="h-4 w-4" />{label}</div>
-      <p className={cn("mt-2 text-2xl font-semibold tabular-nums", alert && "text-destructive")}>{value}</p>
+    <div className="min-w-32 flex-1 snap-start px-3 py-2.5">
+      <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground"><Icon className="h-3.5 w-3.5" />{label}</div>
+      <p className={cn("mt-1 text-lg font-semibold tabular-nums", alert && "text-destructive")}>{value}</p>
     </div>
   );
 }
