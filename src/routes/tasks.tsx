@@ -114,15 +114,15 @@ type Task = {
 };
 
 const priorityColors: Record<Priority, string> = {
-  low: "bg-muted text-muted-foreground border border-border",
-  normal: "bg-sky-500/20 text-sky-300 border border-sky-500/30",
-  high: "bg-amber-500/20 text-amber-300 border border-amber-500/30",
-  urgent: "bg-destructive/20 text-destructive border border-destructive/30",
+  low: "bg-surface-2 text-muted-foreground",
+  normal: "",
+  high: "border border-border bg-surface-2 text-foreground",
+  urgent: "bg-destructive/15 text-destructive",
 };
 
 const columns: { status: Status; key: Key; barColor: string }[] = [
   { status: "todo", key: "tasks.col.todo", barColor: "bg-muted-foreground" },
-  { status: "in_progress", key: "tasks.col.inprogress", barColor: "bg-sky-500" },
+  { status: "in_progress", key: "tasks.col.inprogress", barColor: "bg-primary" },
   { status: "blocked", key: "tasks.col.blocked", barColor: "bg-destructive" },
   { status: "done", key: "tasks.col.done", barColor: "bg-success" },
   { status: "canceled", key: "tasks.col.canceled", barColor: "bg-muted" },
@@ -1340,7 +1340,7 @@ function ProjectOverview({
       label: t("tasks.col.inprogress"),
       value: counts.in_progress,
       pct: pct(counts.in_progress),
-      color: "bg-sky-500",
+      color: "bg-primary",
     },
     {
       label: t("tasks.col.todo"),
@@ -1403,7 +1403,7 @@ function DonutChart({
   // Donut dựng từ số liệu thật của workspace đang chọn.
   const varOf: Record<string, string> = {
     "bg-success": "hsl(var(--success))",
-    "bg-sky-500": "hsl(var(--primary))",
+    "bg-primary": "hsl(var(--primary))",
     "bg-muted-foreground": "hsl(var(--muted-foreground))",
     "bg-destructive": "hsl(var(--destructive))",
   };
