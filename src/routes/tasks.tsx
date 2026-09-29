@@ -11,7 +11,6 @@ import { QuickCreateDialog, type QuickCreateKind } from "@/components/quick-crea
 import { listMyWorkspaces } from "@/lib/api/meeting-rooms.functions";
 import { listTasks, createTask, transitionTask } from "@/lib/api/tasks.functions";
 import { suggestCandidatesForTask } from "@/lib/api/ai-market.functions";
-import { listTaskViews, saveTaskView, deleteTaskView } from "@/lib/api/task-views.functions";
 import {
   Plus,
   Filter,
@@ -31,7 +30,6 @@ import {
   Download,
   FileText,
   Loader2,
-  BookmarkPlus,
   X,
   PanelRightClose,
   Maximize2,
@@ -244,28 +242,6 @@ function TasksPage() {
     });
   }, [allTasks, priorityFilter, tagFilter, sortBy, overdueOnly, rangeDays]);
 
-  // Bộ lọc đã lưu ("view") theo người dùng
-  const viewsQuery = useQuery({ queryKey: ["task-views"], queryFn: () => listTaskViews() });
-  const savedViews = viewsQuery.data ?? [];
-  const [activeViewId, setActiveViewId] = useState<string>("");
-  const saveViewM = useMutation({
-    mutationFn: (name: string) =>
-      saveTaskView({ data: { name, tags: tagFilter, priority: priorityFilter } }),
-    onSuccess: () => {
-      toast.success("Đã lưu bộ lọc");
-      void queryClient.invalidateQueries({ queryKey: ["task-views"] });
-    },
-    onError: (e: Error) => toast.error(e.message || "Không lưu được bộ lọc"),
-  });
-  const deleteViewM = useMutation({
-    mutationFn: (viewId: string) => deleteTaskView({ data: { viewId } }),
-    onSuccess: () => {
-      setActiveViewId("");
-      toast.success("Đã xóa bộ lọc");
-      void queryClient.invalidateQueries({ queryKey: ["task-views"] });
-    },
-    onError: (e: Error) => toast.error(e.message || "Không xóa được bộ lọc"),
-  });
 
   // Realtime: mọi thay đổi trên tasks của workspace đang xem sẽ làm mới bảng.
   useEffect(() => {
@@ -703,58 +679,6 @@ function TasksPage() {
             </div>
 
             {/* Board */}
-            <div className="hidden flex-wrap items-center gap-2 rounded-xl border border-border bg-surface p-3 sm:flex">
-              <span className="text-xs font-medium text-muted-foreground">Bộ lọc đã lưu:</span>
-              {savedViews.length === 0 ? (
-                <span className="text-xs text-muted-foreground">Chưa có view nào</span>
-              ) : (
-                savedViews.map((v) => {
-                  const on = activeViewId === v.id;
-                  return (
-                    <span
-                      key={v.id}
-                      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors ${
-                        on
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : "border-border text-muted-foreground hover:border-primary hover:text-primary"
-                      }`}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveViewId(v.id);
-                          setTagFilter(v.tags);
-                          setPriorityFilter((v.priority || "") as Priority | "");
-                        }}
-                        className="font-medium"
-                      >
-                        {v.name}
-                      </button>
-                      <button
-                        type="button"
-                        aria-label={`Xóa bộ lọc ${v.name}`}
-                        disabled={deleteViewM.isPending}
-                        onClick={() => deleteViewM.mutate(v.id)}
-                        className="opacity-70 hover:opacity-100"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </span>
-                  );
-                })
-              )}
-              <button
-                type="button"
-                disabled={saveViewM.isPending || (tagFilter.length === 0 && !priorityFilter)}
-                onClick={() => {
-                  const name = window.prompt("Tên bộ lọc:")?.trim();
-                  if (name) saveViewM.mutate(name);
-                }}
-                className="ml-auto inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium transition-colors hover:bg-surface-2 disabled:opacity-50"
-              >
-                <BookmarkPlus className="h-3.5 w-3.5" /> Lưu bộ lọc hiện tại
-              </button>
-            </div>
 
             <Button
               type="button"
