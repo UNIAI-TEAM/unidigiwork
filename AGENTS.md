@@ -7,3 +7,4 @@
 - School policy metadata (số văn bản, hiệu lực, tổ áp dụng) lives in `document_policy_meta` keyed by document, never new columns on `documents`, so the core Documents module stays pack-neutral.
 - School departments are registered in `school_departments` (catalog, BGH-only via RPCs); membership stays in `tenant_member_profiles.department`, and rename/delete RPCs cascade names to profiles, meetings and pending invites so there is still one membership source.
 - School department task boards derive scope from task owner/assignees joined to `tenant_member_profiles.department`; never duplicate department onto `tasks`, preventing membership drift.
+- In school tenants, a manager with a department (tổ trưởng) is scoped by the `tasks` SELECT policy + BEFORE UPDATE guard (`_school_lead_can_see_task`) to their department's tasks, so every task screen/RPC enforces it at the database, not per page.
