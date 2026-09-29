@@ -10590,6 +10590,10 @@ export type Database = {
         Args: { _dept: string; _tenant_id: string; _uid: string }
         Returns: boolean
       }
+      _school_can_view_dept_tasks: {
+        Args: { _department: string; _tenant_id: string; _uid?: string }
+        Returns: boolean
+      }
       _school_can_view_ws: {
         Args: { _tenant_id: string; _uid: string; _ws: string }
         Returns: boolean
@@ -13940,6 +13944,7 @@ export type Database = {
           description: string
           due_at: string
           id: string
+          owner_id: string
           priority: Database["public"]["Enums"]["task_priority"]
           row_version: number
           status: Database["public"]["Enums"]["task_status"]
