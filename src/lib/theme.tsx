@@ -28,7 +28,7 @@ export type FontScale = "sm" | "md" | "lg" | "xl";
 export type FontFamily = "sans" | "serif" | "mono";
 
 export const FONT_FAMILIES: { id: FontFamily; label: string; sample: string }[] = [
-  { id: "sans", label: "Sans (mặc định)", sample: "ui-sans-serif, system-ui, sans-serif" },
+  { id: "sans", label: "Inter · Be Vietnam Pro (mặc định)", sample: '"Inter", "Be Vietnam Pro", sans-serif' },
   { id: "serif", label: "Serif", sample: "ui-serif, Georgia, serif" },
   { id: "mono", label: "Mono", sample: "ui-monospace, Menlo, monospace" },
 ];
