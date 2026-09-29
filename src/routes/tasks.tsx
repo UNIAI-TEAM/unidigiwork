@@ -114,19 +114,27 @@ type Task = {
 };
 
 const priorityColors: Record<Priority, string> = {
-  low: "bg-muted text-muted-foreground border border-border",
-  normal: "bg-sky-500/20 text-sky-300 border border-sky-500/30",
-  high: "bg-amber-500/20 text-amber-300 border border-amber-500/30",
-  urgent: "bg-destructive/20 text-destructive border border-destructive/30",
+  low: "bg-surface-2 text-muted-foreground",
+  normal: "",
+  high: "border border-border bg-surface-2 text-foreground",
+  urgent: "bg-destructive/15 text-destructive",
 };
 
 const columns: { status: Status; key: Key; barColor: string }[] = [
   { status: "todo", key: "tasks.col.todo", barColor: "bg-muted-foreground" },
-  { status: "in_progress", key: "tasks.col.inprogress", barColor: "bg-sky-500" },
+  { status: "in_progress", key: "tasks.col.inprogress", barColor: "bg-primary" },
   { status: "blocked", key: "tasks.col.blocked", barColor: "bg-destructive" },
   { status: "done", key: "tasks.col.done", barColor: "bg-success" },
   { status: "canceled", key: "tasks.col.canceled", barColor: "bg-muted" },
 ];
+
+const statusDot: Record<Status, string> = {
+  todo: "bg-muted-foreground",
+  in_progress: "bg-primary",
+  blocked: "bg-destructive",
+  done: "bg-success",
+  canceled: "bg-muted",
+};
 
 function fmtDate(v: string | null) {
   if (!v) return "";
@@ -685,11 +693,7 @@ function TasksPage() {
                 value={String(counts.done)}
                 valueClass="text-success"
               />
-              <KpiCard
-                label={t("tasks.kpi.inprogress")}
-                value={String(counts.in_progress)}
-                valueClass="text-sky-400"
-              />
+              <KpiCard label={t("tasks.kpi.inprogress")} value={String(counts.in_progress)} />
               <KpiCard label={t("tasks.kpi.todo")} value={String(counts.todo)} />
               <KpiCard
                 label={t("tasks.kpi.blocked")}
@@ -1265,11 +1269,11 @@ function TaskCard({
   const visibleTags = task.tags?.slice(0, 2) ?? [];
   const remainingTags = Math.max((task.tags?.length ?? 0) - visibleTags.length, 0);
   return (
-    <div className="group rounded-lg border border-border bg-surface p-3 transition-colors hover:border-primary/40">
+    <div className="group rounded-lg border border-border bg-surface p-3 transition-colors hover:border-foreground/20">
       <Link
         to="/tasks/$id"
         params={{ id: task.id }}
-        className="block text-sm font-medium leading-snug transition-colors hover:text-primary"
+        className="block text-sm font-medium leading-snug"
       >
         {task.title}
       </Link>
@@ -1289,11 +1293,13 @@ function TaskCard({
         </div>
       )}
       <div className="mt-3 flex min-h-5 items-center gap-2">
-        <span
-          className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${priorityColors[task.priority]}`}
-        >
-          {task.priority}
-        </span>
+        {task.priority !== "normal" && (
+          <span
+            className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${priorityColors[task.priority]}`}
+          >
+            {t(`m.tasks.priority.${task.priority}` as never)}
+          </span>
+        )}
         {task.due_at && (
           <span
             className={`ml-auto flex items-center gap-1 text-[11px] ${overdue ? "text-warning" : "text-muted-foreground"}`}
@@ -1309,7 +1315,7 @@ function TaskCard({
         value={task.status}
         onChange={(e) => onMove(task.id, e.target.value as Status)}
         aria-label="Chuyển trạng thái"
-        className="mt-2 min-h-11 w-full rounded-md border border-transparent bg-surface-2 px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:border-border hover:bg-surface-3 focus:outline-none sm:min-h-8"
+        className="mt-2 min-h-11 w-full rounded-md border border-border/60 bg-transparent px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:bg-surface-2 focus:outline-none sm:min-h-8"
       >
         {columns.map((c) => (
           <option key={c.status} value={c.status}>
@@ -1340,7 +1346,7 @@ function ProjectOverview({
       label: t("tasks.col.inprogress"),
       value: counts.in_progress,
       pct: pct(counts.in_progress),
-      color: "bg-sky-500",
+      color: "bg-primary",
     },
     {
       label: t("tasks.col.todo"),
@@ -1403,7 +1409,7 @@ function DonutChart({
   // Donut dựng từ số liệu thật của workspace đang chọn.
   const varOf: Record<string, string> = {
     "bg-success": "hsl(var(--success))",
-    "bg-sky-500": "hsl(var(--primary))",
+    "bg-primary": "hsl(var(--primary))",
     "bg-muted-foreground": "hsl(var(--muted-foreground))",
     "bg-destructive": "hsl(var(--destructive))",
   };
@@ -1499,17 +1505,16 @@ function MyTasks({ tasks, onViewAll }: { tasks: Task[]; onViewAll: () => void })
       </div>
       <div className="mt-2 divide-y divide-border">
         {list.map((tk) => (
-          <div key={tk.id} className="flex items-center gap-2 py-2 text-xs">
-            <span className="h-2 w-2 rounded-full bg-primary" />
-            <span className="text-muted-foreground">{tk.id}</span>
+          <Link
+            key={tk.id}
+            to="/tasks/$id"
+            params={{ id: tk.id }}
+            className="flex items-center gap-2 py-2 text-xs"
+          >
+            <span className={`h-2 w-2 shrink-0 rounded-full ${statusDot[tk.status]}`} />
             <span className="flex-1 truncate text-foreground">{tk.title}</span>
-            <span
-              className={`hidden rounded px-1.5 py-0.5 text-[10px] font-medium sm:inline ${priorityColors[tk.priority]}`}
-            >
-              {tk.priority}
-            </span>
             <span className="hidden text-muted-foreground md:inline">{fmtDate(tk.due_at)}</span>
-          </div>
+          </Link>
         ))}
       </div>
       <button

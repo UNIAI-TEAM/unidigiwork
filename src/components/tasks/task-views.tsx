@@ -40,7 +40,7 @@ export const PRIORITY_LABEL: Record<TaskPriority, string> = {
 
 const STATUS_COLOR: Record<TaskStatus, string> = {
   todo: "bg-muted-foreground",
-  in_progress: "bg-sky-500",
+  in_progress: "bg-primary",
   blocked: "bg-destructive",
   done: "bg-success",
   canceled: "bg-muted",
