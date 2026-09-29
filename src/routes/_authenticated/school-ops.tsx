@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { SchoolTimetable } from "@/components/school/school-timetable";
 import { BriefMeetingButton } from "@/components/school/brief-meeting-dialog";
+import { SchoolOrgDialogButton } from "@/components/school/school-org-dialog";
 
 export const Route = createFileRoute("/_authenticated/school-ops")({
   head: () => ({
@@ -80,11 +81,7 @@ function SchoolOps() {
             {t("sdt.open")}
           </Link>
           )}
-          {d.role === "bgh" && (
-          <Link to="/school-org" className="inline-flex min-h-11 items-center rounded-md border px-4 text-sm hover:bg-accent">
-            {t("sorg.open")}
-          </Link>
-          )}
+          {d.role === "bgh" && <SchoolOrgDialogButton />}
           <Link to="/school-staff" className="inline-flex min-h-11 items-center rounded-md border px-4 text-sm hover:bg-accent">
             {t("sst.open")}
           </Link>
