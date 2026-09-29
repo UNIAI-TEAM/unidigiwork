@@ -6130,6 +6130,78 @@ export type Database = {
           },
         ]
       }
+      school_dept_plans: {
+        Row: {
+          body: string | null
+          class_name: string | null
+          created_at: string
+          created_by: string
+          department: string
+          ends_at: string | null
+          id: string
+          idempotency_key: string
+          kind: string
+          row_version: number
+          starts_at: string | null
+          task_id: string | null
+          tenant_id: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          body?: string | null
+          class_name?: string | null
+          created_at?: string
+          created_by: string
+          department: string
+          ends_at?: string | null
+          id?: string
+          idempotency_key: string
+          kind: string
+          row_version?: number
+          starts_at?: string | null
+          task_id?: string | null
+          tenant_id: string
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          body?: string | null
+          class_name?: string | null
+          created_at?: string
+          created_by?: string
+          department?: string
+          ends_at?: string | null
+          id?: string
+          idempotency_key?: string
+          kind?: string
+          row_version?: number
+          starts_at?: string | null
+          task_id?: string | null
+          tenant_id?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_dept_plans_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_dept_plans_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sell_work_commercial_events: {
         Row: {
           actor_id: string | null
@@ -10487,6 +10559,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      _school_can_post_dept: {
+        Args: { _dept: string; _tenant: string; _uid: string }
+        Returns: boolean
+      }
       _school_can_view_dept: {
         Args: { _dept: string; _tenant_id: string; _uid: string }
         Returns: boolean
@@ -13691,6 +13767,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      school_delete_dept_plan: {
+        Args: { _correlation_id?: string; _id: string; _tenant_id: string }
+        Returns: undefined
+      }
       school_invite: {
         Args: {
           _correlation_id?: string
@@ -13711,6 +13791,29 @@ export type Database = {
           member_count: number
           name: string
           row_version: number
+        }[]
+      }
+      school_list_dept_plans: {
+        Args: {
+          _department: string
+          _from: string
+          _tenant_id: string
+          _to: string
+        }
+        Returns: {
+          author_name: string
+          body: string
+          can_edit: boolean
+          class_name: string
+          created_at: string
+          created_by: string
+          ends_at: string
+          id: string
+          kind: string
+          starts_at: string
+          task_id: string
+          task_status: string
+          title: string
         }[]
       }
       school_meetings: {
@@ -13799,6 +13902,21 @@ export type Database = {
           _id: string
           _name: string
           _tenant_id: string
+        }
+        Returns: string
+      }
+      school_save_dept_plan: {
+        Args: {
+          _body: string
+          _class_name: string
+          _correlation_id?: string
+          _department: string
+          _ends_at: string
+          _idempotency_key: string
+          _kind: string
+          _starts_at: string
+          _tenant_id: string
+          _title: string
         }
         Returns: string
       }
