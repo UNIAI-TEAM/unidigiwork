@@ -69,7 +69,7 @@ function SchoolOps() {
           <Link to="/school-my-directives" className="inline-flex min-h-11 items-center rounded-md border px-4 text-sm hover:bg-accent">{t("smd.open")}</Link>
           <Link to="/school-policies" className="inline-flex min-h-11 items-center rounded-md border px-4 text-sm hover:bg-accent">{t("spl.open")}</Link>
           <Link to="/school-dept-plans" className="inline-flex min-h-11 items-center rounded-md border px-4 text-sm hover:bg-accent">{t("sdp.open")}</Link>
-          {(d.role === "bgh" || d.role === "leader") && <Link to="/school-dept-progress" className="inline-flex min-h-11 items-center rounded-md border px-4 text-sm hover:bg-accent">{t("sdg.open")}</Link>}
+          {(d.role === "bgh" || d.role === "lead") && <Link to="/school-dept-progress" className="inline-flex min-h-11 items-center rounded-md border px-4 text-sm hover:bg-accent">{t("sdg.open")}</Link>}
           {d.role === "bgh" && <Link to="/school-chat-groups" className="inline-flex min-h-11 items-center rounded-md border px-4 text-sm hover:bg-accent">{t("scg.open")}</Link>}
           <Link to="/school-meetings" className="inline-flex min-h-11 items-center rounded-md border px-4 text-sm hover:bg-accent">
             {t("smt.open")}
