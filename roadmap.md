@@ -129,6 +129,11 @@
 - [x] Làm mới Tìm kiếm thành màn tìm hội thoại theo kiểu ChatGPT.
 - [x] Kiểm tra menu và tìm kiếm ở 390/440/820px.
 
+## Khôi phục menu chính cho Chat
+
+- [x] Gắn lại menu chính và thanh điều hướng trên `/chat` và `/chat/:channelId`.
+- [x] Xác nhận các màn `/m/chat` tiếp tục dùng menu mobile chung.
+
 ## PWA — Đăng ký theo dõi công việc
 
 - [x] Thêm trang mobile-native riêng để xem việc đang theo dõi và khám phá công việc.

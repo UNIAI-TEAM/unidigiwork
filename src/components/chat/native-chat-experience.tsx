@@ -30,12 +30,14 @@ import { SaveToUniworkDialog } from "@/components/conversation/save-to-uniwork-d
 import { ConversationIntelligencePanel } from "@/components/conversation/conversation-intelligence-panel";
 import { ExternalConversationView } from "@/components/conversation/external-conversation-view";
 import { listConversationImports } from "@/lib/api/conversation-work.functions";
+import { AppSidebar, AppTopbar, useSidebarState } from "@/components/app-shell";
 
 export function NativeChatExperience({
   initialChannelId,
 }: {
   initialChannelId?: string | undefined;
 }) {
+  const [sidebarOpen, setSidebarOpen] = useSidebarState();
   const { t, lang } = useI18n();
   const locale = localeTag(lang);
   const navigate = useNavigate();
@@ -111,7 +113,11 @@ export function NativeChatExperience({
   const active = channels.find((c) => c.id === selected) ?? null;
 
   return (
-    <div className="mx-auto flex h-[calc(100dvh-4rem)] w-full max-w-6xl gap-0 overflow-hidden px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 md:gap-4 md:px-4">
+    <div className="flex h-screen overflow-hidden bg-background text-foreground">
+      <AppSidebar active="chat" open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <AppTopbar variant="documents" onOpenSidebar={() => setSidebarOpen(true)} />
+        <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 gap-0 overflow-hidden px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 md:gap-4 md:px-4">
       {/* Danh sách phòng — ẩn trên điện thoại khi đang mở phòng */}
       <aside
         className={`${selected || externalId ? "hidden md:flex" : "flex"} w-full flex-col gap-3 md:w-72 md:shrink-0`}
@@ -295,11 +301,13 @@ export function NativeChatExperience({
           </div>
         )}
       </section>
-      <SaveToUniworkDialog
-        open={saveOpen}
-        onOpenChange={setSaveOpen}
-        onSaved={() => navigate({ to: "/conversations" })}
-      />
+          <SaveToUniworkDialog
+            open={saveOpen}
+            onOpenChange={setSaveOpen}
+            onSaved={() => navigate({ to: "/conversations" })}
+          />
+        </div>
+      </div>
     </div>
   );
 }
