@@ -44,6 +44,7 @@ function SchoolDeptTasksPage() {
   const depts = useQuery({ queryKey: ["school-departments"], queryFn: () => departmentsFn(), enabled: q.data?.role === "bgh" });
   const current = q.data?.dept ?? null;
   const tasks = q.data?.tasks ?? [];
+  const uid = q.data && "userId" in q.data ? q.data.userId : null;
 
   const transitionFn = useServerFn(transitionSchoolDeptTask);
   const transition = useMutation({
@@ -62,7 +63,7 @@ function SchoolDeptTasksPage() {
           <h1 className="text-2xl font-semibold">{t("sdtask.title")}{current ? ` · ${current}` : ""}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{t("sdtask.desc")}</p>
         </div>
-        <Button className="min-h-11" onClick={() => setCreateOpen(true)} disabled={!current}><Plus className="h-4 w-4" />{t("sdtask.create")}</Button>
+        {q.data?.role !== "teacher" && <Button className="min-h-11" onClick={() => setCreateOpen(true)} disabled={!current}><Plus className="h-4 w-4" />{t("sdtask.create")}</Button>}
       </header>
 
       {q.data?.role === "bgh" && <div className="flex gap-2 overflow-x-auto pb-1">
@@ -72,7 +73,7 @@ function SchoolDeptTasksPage() {
       {q.isLoading ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">{statuses.map((s) => <Skeleton key={s} className="h-64" />)}</div>
         : !current ? <StateMessage title={q.data?.role === "bgh" ? t("sdtask.pickDept") : t("sdtask.noDept")} />
         : <div className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3 xl:grid xl:grid-cols-4 xl:overflow-visible">
-          {statuses.map((status) => <TaskColumn key={status} status={status} tasks={tasks.filter((task) => task.status === status)} lang={lang} onMove={(task, next) => transition.mutate({ task, status: next })} busy={transition.isPending} />)}
+          {statuses.map((status) => <TaskColumn key={status} status={status} tasks={tasks.filter((task) => task.status === status)} lang={lang} onMove={(task, next) => transition.mutate({ task, status: next })} busy={transition.isPending} canMove={(task) => q.data?.role !== "teacher" || task.owner_id === uid || task.assignees.some((a) => a.user_id === uid)} />)}
         </div>}
 
       {current && q.data && <CreateTaskDialog open={createOpen} onClose={() => setCreateOpen(false)} department={current} members={q.data.members} />}
@@ -80,7 +81,7 @@ function SchoolDeptTasksPage() {
   );
 }
 
-function TaskColumn({ status, tasks, lang, onMove, busy }: { status: Status; tasks: SchoolDeptTask[]; lang: string; onMove: (task: SchoolDeptTask, status: Status) => void; busy: boolean }) {
+function TaskColumn({ status, tasks, lang, onMove, busy, canMove }: { status: Status; tasks: SchoolDeptTask[]; lang: string; onMove: (task: SchoolDeptTask, status: Status) => void; busy: boolean; canMove: (task: SchoolDeptTask) => boolean }) {
   const { t } = useI18n();
   return <section className="w-[min(84vw,21rem)] shrink-0 snap-start space-y-3 xl:w-auto">
     <div className="flex min-h-11 items-center justify-between border-b px-1"><h2 className="text-sm font-semibold">{t(`sdtask.status.${status}`)}</h2><span className="text-xs tabular-nums text-muted-foreground">{tasks.length}</span></div>
@@ -88,7 +89,7 @@ function TaskColumn({ status, tasks, lang, onMove, busy }: { status: Status; tas
       <div className="flex items-start justify-between gap-3"><Link to="/tasks/$id" params={{ id: task.id }} className="min-w-0 break-words text-sm font-semibold hover:text-primary">{task.title}</Link><PriorityDot priority={task.priority} /></div>
       {task.assignees[0] && <p className="flex items-center gap-2 truncate text-xs text-muted-foreground"><UserRound className="h-3.5 w-3.5 shrink-0" />{task.assignees[0].display_name ?? task.assignees[0].email}</p>}
       {task.due_at && <p className={cn("flex items-center gap-2 text-xs text-muted-foreground", task.status !== "done" && new Date(task.due_at) < new Date() && "text-destructive")}><CalendarDays className="h-3.5 w-3.5" />{new Date(task.due_at).toLocaleDateString(lang === "vi" ? "vi-VN" : "en-GB")}</p>}
-      <Select value={task.status} onValueChange={(value) => onMove(task, value as Status)} disabled={busy}><SelectTrigger aria-label={t("sdtask.changeStatus")}><SelectValue /></SelectTrigger><SelectContent>{statuses.map((s) => <SelectItem key={s} value={s}>{t(`sdtask.status.${s}`)}</SelectItem>)}</SelectContent></Select>
+      {canMove(task) && <Select value={task.status} onValueChange={(value) => onMove(task, value as Status)} disabled={busy}><SelectTrigger aria-label={t("sdtask.changeStatus")}><SelectValue /></SelectTrigger><SelectContent>{statuses.map((s) => <SelectItem key={s} value={s}>{t(`sdtask.status.${s}`)}</SelectItem>)}</SelectContent></Select>}
     </article>)}
   </section>;
 }

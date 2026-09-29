@@ -687,6 +687,13 @@
       "when": 1790693082115,
       "tag": "0097_school_chat_groups_lead_scope",
       "breakpoints": true
+    },
+    {
+      "idx": 98,
+      "version": "7",
+      "when": 1790693270796,
+      "tag": "0098_school_teacher_dept_task_board",
+      "breakpoints": true
     }
   ]
 }
