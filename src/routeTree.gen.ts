@@ -60,6 +60,7 @@ import { Route as AuthenticatedSearchRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedSchoolStaffRouteImport } from './routes/_authenticated/school-staff'
 import { Route as AuthenticatedSchoolPoliciesRouteImport } from './routes/_authenticated/school-policies'
 import { Route as AuthenticatedSchoolPackRouteImport } from './routes/_authenticated/school-pack'
+import { Route as AuthenticatedSchoolOrgRouteImport } from './routes/_authenticated/school-org'
 import { Route as AuthenticatedSchoolOpsRouteImport } from './routes/_authenticated/school-ops'
 import { Route as AuthenticatedSchoolMyDirectivesRouteImport } from './routes/_authenticated/school-my-directives'
 import { Route as AuthenticatedSchoolMeetingsRouteImport } from './routes/_authenticated/school-meetings'
@@ -483,6 +484,11 @@ const AuthenticatedSchoolPoliciesRoute =
 const AuthenticatedSchoolPackRoute = AuthenticatedSchoolPackRouteImport.update({
   id: '/school-pack',
   path: '/school-pack',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSchoolOrgRoute = AuthenticatedSchoolOrgRouteImport.update({
+  id: '/school-org',
+  path: '/school-org',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedSchoolOpsRoute = AuthenticatedSchoolOpsRouteImport.update({
@@ -1456,6 +1462,7 @@ export interface FileRoutesByFullPath {
   '/school-meetings': typeof AuthenticatedSchoolMeetingsRoute
   '/school-my-directives': typeof AuthenticatedSchoolMyDirectivesRoute
   '/school-ops': typeof AuthenticatedSchoolOpsRoute
+  '/school-org': typeof AuthenticatedSchoolOrgRoute
   '/school-pack': typeof AuthenticatedSchoolPackRoute
   '/school-policies': typeof AuthenticatedSchoolPoliciesRoute
   '/school-staff': typeof AuthenticatedSchoolStaffRoute
@@ -1668,6 +1675,7 @@ export interface FileRoutesByTo {
   '/school-meetings': typeof AuthenticatedSchoolMeetingsRoute
   '/school-my-directives': typeof AuthenticatedSchoolMyDirectivesRoute
   '/school-ops': typeof AuthenticatedSchoolOpsRoute
+  '/school-org': typeof AuthenticatedSchoolOrgRoute
   '/school-pack': typeof AuthenticatedSchoolPackRoute
   '/school-policies': typeof AuthenticatedSchoolPoliciesRoute
   '/school-staff': typeof AuthenticatedSchoolStaffRoute
@@ -1886,6 +1894,7 @@ export interface FileRoutesById {
   '/_authenticated/school-meetings': typeof AuthenticatedSchoolMeetingsRoute
   '/_authenticated/school-my-directives': typeof AuthenticatedSchoolMyDirectivesRoute
   '/_authenticated/school-ops': typeof AuthenticatedSchoolOpsRoute
+  '/_authenticated/school-org': typeof AuthenticatedSchoolOrgRoute
   '/_authenticated/school-pack': typeof AuthenticatedSchoolPackRoute
   '/_authenticated/school-policies': typeof AuthenticatedSchoolPoliciesRoute
   '/_authenticated/school-staff': typeof AuthenticatedSchoolStaffRoute
@@ -2105,6 +2114,7 @@ export interface FileRouteTypes {
     | '/school-meetings'
     | '/school-my-directives'
     | '/school-ops'
+    | '/school-org'
     | '/school-pack'
     | '/school-policies'
     | '/school-staff'
@@ -2317,6 +2327,7 @@ export interface FileRouteTypes {
     | '/school-meetings'
     | '/school-my-directives'
     | '/school-ops'
+    | '/school-org'
     | '/school-pack'
     | '/school-policies'
     | '/school-staff'
@@ -2534,6 +2545,7 @@ export interface FileRouteTypes {
     | '/_authenticated/school-meetings'
     | '/_authenticated/school-my-directives'
     | '/_authenticated/school-ops'
+    | '/_authenticated/school-org'
     | '/_authenticated/school-pack'
     | '/_authenticated/school-policies'
     | '/_authenticated/school-staff'
@@ -3115,6 +3127,13 @@ declare module '@tanstack/react-router' {
       path: '/school-pack'
       fullPath: '/school-pack'
       preLoaderRoute: typeof AuthenticatedSchoolPackRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/school-org': {
+      id: '/_authenticated/school-org'
+      path: '/school-org'
+      fullPath: '/school-org'
+      preLoaderRoute: typeof AuthenticatedSchoolOrgRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/school-ops': {
@@ -4617,6 +4636,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSchoolMeetingsRoute: typeof AuthenticatedSchoolMeetingsRoute
   AuthenticatedSchoolMyDirectivesRoute: typeof AuthenticatedSchoolMyDirectivesRoute
   AuthenticatedSchoolOpsRoute: typeof AuthenticatedSchoolOpsRoute
+  AuthenticatedSchoolOrgRoute: typeof AuthenticatedSchoolOrgRoute
   AuthenticatedSchoolPackRoute: typeof AuthenticatedSchoolPackRoute
   AuthenticatedSchoolPoliciesRoute: typeof AuthenticatedSchoolPoliciesRoute
   AuthenticatedSchoolStaffRoute: typeof AuthenticatedSchoolStaffRoute
@@ -4685,6 +4705,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSchoolMeetingsRoute: AuthenticatedSchoolMeetingsRoute,
   AuthenticatedSchoolMyDirectivesRoute: AuthenticatedSchoolMyDirectivesRoute,
   AuthenticatedSchoolOpsRoute: AuthenticatedSchoolOpsRoute,
+  AuthenticatedSchoolOrgRoute: AuthenticatedSchoolOrgRoute,
   AuthenticatedSchoolPackRoute: AuthenticatedSchoolPackRoute,
   AuthenticatedSchoolPoliciesRoute: AuthenticatedSchoolPoliciesRoute,
   AuthenticatedSchoolStaffRoute: AuthenticatedSchoolStaffRoute,

@@ -6076,6 +6076,50 @@ export type Database = {
           },
         ]
       }
+      school_departments: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          row_version: number
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          row_version?: number
+          tenant_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          row_version?: number
+          tenant_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_departments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sell_work_commercial_events: {
         Row: {
           actor_id: string | null
@@ -13627,6 +13671,15 @@ export type Database = {
         }
         Returns: string
       }
+      school_delete_department: {
+        Args: {
+          _correlation_id?: string
+          _id: string
+          _target_id: string
+          _tenant_id: string
+        }
+        Returns: undefined
+      }
       school_invite: {
         Args: {
           _correlation_id?: string
@@ -13638,6 +13691,16 @@ export type Database = {
           _token_hash: string
         }
         Returns: string
+      }
+      school_list_departments: {
+        Args: { _tenant_id: string }
+        Returns: {
+          description: string
+          id: string
+          member_count: number
+          name: string
+          row_version: number
+        }[]
       }
       school_meetings: {
         Args: {
@@ -13715,6 +13778,16 @@ export type Database = {
           _decision_id: string
           _idempotency_key: string
           _note: string
+        }
+        Returns: string
+      }
+      school_save_department: {
+        Args: {
+          _correlation_id?: string
+          _description: string
+          _id: string
+          _name: string
+          _tenant_id: string
         }
         Returns: string
       }

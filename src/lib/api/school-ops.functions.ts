@@ -274,3 +274,49 @@ export const cancelSchoolMeeting = createServerFn({ method: "POST" })
     if (error) throw new Error(stableCode(error.message));
     return { ok: true as const };
   });
+
+// ---------------- Tổ chuyên môn (BGH quản lý) ----------------
+export type SchoolDepartment = { id: string; name: string; description: string | null; member_count: number; row_version: number };
+
+export const listSchoolDepartments = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const ctx = await schoolContext(context.supabase as never, context.userId);
+    if (!ctx) return { enabled: false as const, isBgh: false, departments: [] as SchoolDepartment[] };
+    const { data, error } = await context.supabase.rpc("school_list_departments", { _tenant_id: ctx.tenantId });
+    if (error) throw new Error("FAILED");
+    return { enabled: true as const, isBgh: ctx.role === "bgh", departments: (data ?? []) as SchoolDepartment[] };
+  });
+
+export const saveSchoolDepartment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ id: z.string().uuid().nullable(), name: z.string().trim().min(1).max(80), description: z.string().trim().max(300).nullable() }).parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const ctx = await schoolContext(context.supabase as never, context.userId);
+    if (!ctx) throw new Error("PACK_DISABLED");
+    const { error } = await context.supabase.rpc("school_save_department", {
+      _tenant_id: ctx.tenantId, _id: data.id as string, _name: data.name, _description: (data.description ?? null) as string,
+      _correlation_id: crypto.randomUUID(),
+    });
+    if (error) throw new Error(deptCode(error.message));
+    return { ok: true };
+  });
+
+export const deleteSchoolDepartment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid(), targetId: z.string().uuid() }).parse(d))
+  .handler(async ({ context, data }) => {
+    const ctx = await schoolContext(context.supabase as never, context.userId);
+    if (!ctx) throw new Error("PACK_DISABLED");
+    const { error } = await context.supabase.rpc("school_delete_department", {
+      _tenant_id: ctx.tenantId, _id: data.id, _target_id: data.targetId, _correlation_id: crypto.randomUUID(),
+    });
+    if (error) throw new Error(deptCode(error.message));
+    return { ok: true };
+  });
+
+function deptCode(m: string) {
+  return ["DEPARTMENT_EXISTS", "DEPARTMENT_NOT_FOUND", "TARGET_REQUIRED", "PERMISSION_DENIED", "VALIDATION_FAILED"].find((c) => m.includes(c)) ?? "FAILED";
+}
