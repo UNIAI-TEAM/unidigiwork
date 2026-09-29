@@ -1,5 +1,4 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { readActiveTenantCookie } from "./active-tenant.server";
 
 type Pack = "business" | "school";
 
@@ -13,6 +12,7 @@ export async function resolveActivePack(
     .eq("user_id", userId)
     .eq("status", "active");
   const list = (rows ?? []) as Array<{ tenant_id: string; role: string }>;
+  const { readActiveTenantCookie } = await import("./active-tenant.server");
   const cookie = readActiveTenantCookie();
   const m = list.find((r) => r.tenant_id === cookie) ?? list[0];
   if (!m) return { tenantId: null, pack: "business", canManage: false };
