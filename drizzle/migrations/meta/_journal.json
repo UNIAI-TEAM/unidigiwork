@@ -659,6 +659,13 @@
       "when": 1790686248462,
       "tag": "0093_fix_school_department_task_list_scope",
       "breakpoints": true
+    },
+    {
+      "idx": 94,
+      "version": "7",
+      "when": 1790687180339,
+      "tag": "0094_school_dept_plan_lesson_to_task",
+      "breakpoints": true
     }
   ]
 }
