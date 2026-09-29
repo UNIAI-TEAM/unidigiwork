@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ArrowRight, CalendarDays, CheckCircle2, ChevronDown, CircleAlert, Clock3, GraduationCap, MessageSquare, Sparkles, Users } from "lucide-react";
+import { ArrowRight, BriefcaseBusiness, CalendarDays, CheckCircle2, ChevronDown, CircleAlert, Clock3, GraduationCap, MessageSquare, Sparkles, Users } from "lucide-react";
 import { createSchoolBrief, getSchoolOps, type SchoolBrief } from "@/lib/api/school-ops.functions";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
@@ -136,6 +136,7 @@ function SchoolOps() {
                 <nav className="space-y-1">
                   <QuickLink to="/school-staff" icon={Users} label={t("sst.open")} />
                   <QuickLink to="/school-dept-plans" icon={CalendarDays} label={t("sdp.open")} />
+                  {(d.role === "bgh" || d.role === "lead") && <QuickLink to="/school-dept-tasks" icon={BriefcaseBusiness} label={t("sdtask.open")} />}
                   {(d.role === "bgh" || d.role === "lead") && <QuickLink to="/school-dept-progress" icon={CheckCircle2} label={t("sdg.open")} />}
                   {d.role === "bgh" && <QuickLink to="/school-chat-groups" icon={MessageSquare} label={t("scg.open")} />}
                 </nav>
@@ -200,7 +201,7 @@ function Metric({ icon: Icon, label, value, alert }: { icon: typeof Clock3; labe
   );
 }
 
-function QuickLink({ to, icon: Icon, label }: { to: "/school-staff" | "/school-dept-plans" | "/school-dept-progress" | "/school-chat-groups"; icon: typeof Users; label: string }) {
+function QuickLink({ to, icon: Icon, label }: { to: "/school-staff" | "/school-dept-plans" | "/school-dept-tasks" | "/school-dept-progress" | "/school-chat-groups"; icon: typeof Users; label: string }) {
   return <Link to={to} className="grid min-h-11 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-md px-2 text-sm font-medium hover:bg-accent"><Icon className="h-4 w-4 text-muted-foreground" /><span className="truncate">{label}</span><ArrowRight className="h-4 w-4 text-muted-foreground" /></Link>;
 }
 
