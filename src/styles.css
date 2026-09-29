@@ -20,7 +20,7 @@
 
 @theme inline {
   --font-sans: "Inter", sans-serif;
-  --font-heading: "Inter", sans-serif;
+  --font-heading: "Be Vietnam Pro", "Inter", sans-serif;
   --font-mono: "Sometype Mono", monospace;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
