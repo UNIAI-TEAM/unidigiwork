@@ -71,11 +71,11 @@ export function TaskListView({
 }) {
   if (tasks.length === 0) return <EmptyState text="Chưa có công việc nào khớp bộ lọc." />;
   return (
-    <div className="overflow-x-auto rounded-xl border border-border bg-surface">
-      <table className="w-full min-w-[720px] text-sm">
+    <div className="-mx-3 overflow-x-auto border-y border-border bg-surface sm:mx-0 sm:rounded-xl sm:border">
+      <table className="w-full min-w-[640px] text-sm">
         <thead className="border-b border-border text-left text-xs text-muted-foreground">
           <tr>
-            <th className="px-4 py-3 font-medium">Công việc</th>
+            <th className="sticky left-0 z-10 bg-surface px-4 py-3 font-medium">Công việc</th>
             <th className="px-4 py-3 font-medium">Trạng thái</th>
             <th className="px-4 py-3 font-medium">Ưu tiên</th>
             <th className="px-4 py-3 font-medium">Hạn</th>
@@ -85,7 +85,7 @@ export function TaskListView({
         <tbody className="divide-y divide-border">
           {tasks.map((tk) => (
             <tr key={tk.id} className="hover:bg-surface-2/60">
-              <td className="px-4 py-3">
+              <td className="sticky left-0 z-10 max-w-[220px] truncate bg-surface px-4 py-3">
                 <Link
                   to="/tasks/$id"
                   params={{ id: tk.id }}
