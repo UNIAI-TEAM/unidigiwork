@@ -652,6 +652,13 @@
       "when": 1790686187288,
       "tag": "0092_fix_school_department_task_member_email",
       "breakpoints": true
+    },
+    {
+      "idx": 93,
+      "version": "7",
+      "when": 1790686248462,
+      "tag": "0093_fix_school_department_task_list_scope",
+      "breakpoints": true
     }
   ]
 }
