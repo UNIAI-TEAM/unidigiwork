@@ -39,7 +39,7 @@ export function SchoolTimetable({ department, onOpenBrief }: { department: strin
   const time = (s: string) => new Date(s).toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit" });
 
   return (
-    <section className="rounded-xl border bg-card p-4 shadow-sm md:p-5">
+    <section className="rounded-lg border bg-card p-4 shadow-sm md:p-5">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-base font-semibold">{t("sops.tt.title")}</h2>
@@ -62,16 +62,16 @@ export function SchoolTimetable({ department, onOpenBrief }: { department: strin
       ) : q.isError ? (
         <p className="mt-3 text-sm text-destructive">{t("sops.tt.error")}</p>
       ) : (
-        <div className="mt-3 grid gap-2 md:grid-cols-7">
+        <div className="mt-3 divide-y">
           {days.map((d) => {
             const items = byDay.get(dayKey(d)) ?? [];
             return (
-              <div key={d.toISOString()} className={cn("min-w-0 rounded-lg border p-2 md:min-h-24", dayKey(d) === today && "border-primary/50 bg-primary/5")}>
-                <div className="mb-1 text-xs font-medium text-muted-foreground">
+              <div key={d.toISOString()} className={cn("grid min-w-0 grid-cols-[76px_minmax(0,1fr)] gap-3 py-3 first:pt-1 last:pb-1", dayKey(d) === today && "text-primary")}>
+                <div className="text-xs font-medium text-muted-foreground">
                   {d.toLocaleDateString(loc, { weekday: "short", day: "2-digit", month: "2-digit" })}
                 </div>
                 {items.length === 0 ? (
-                  <p className="text-xs text-muted-foreground/70">{t("sops.tt.none")}</p>
+                    <p className="py-1 text-xs text-muted-foreground/70">{t("sops.tt.none")}</p>
                 ) : (
                   <ul className="space-y-1">
                     {items.map((it) => {
@@ -83,7 +83,7 @@ export function SchoolTimetable({ department, onOpenBrief }: { department: strin
                           ? `${t("sops.brief")} · ${t(it.title === "scheduled" ? "sops.scheduled" : "sops.manual")}`
                           : it.title;
                       const body = (
-                        <span className="flex min-h-11 items-start gap-1.5 rounded-md px-1.5 py-1.5 text-xs hover:bg-accent md:min-h-0">
+                          <span className="flex min-h-11 items-start gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-accent md:min-h-0">
                           <Icon className={cn("mt-0.5 h-3.5 w-3.5 shrink-0", overdue ? "text-destructive" : "text-muted-foreground")} />
                           <span className="min-w-0">
                             <span className="block tabular-nums text-muted-foreground">
