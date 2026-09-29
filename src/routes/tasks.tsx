@@ -42,6 +42,13 @@ import { usePanelCollapse, usePanelCollapseControls } from "@/hooks/use-panel-co
 import { AppSidebar, AppTopbar, useSidebarState, avatar } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -90,6 +97,9 @@ export const Route = createFileRoute("/tasks")({
 // Trạng thái công việc khớp enum task_status trong CSDL.
 type Status = "todo" | "in_progress" | "blocked" | "done" | "canceled";
 type Priority = "low" | "normal" | "high" | "urgent";
+type TaskTab = "overview" | "board" | "list" | "timeline" | "calendar" | "reports" | "files";
+
+const taskTabs: TaskTab[] = ["overview", "board", "list", "timeline", "calendar", "reports", "files"];
 
 type Task = {
   id: string;
@@ -153,9 +163,8 @@ function TasksPage() {
   const [copilotHidden, setCopilotHidden] = usePanelCollapse("tasks-copilot", true);
   const [quickCreate, setQuickCreate] = useState<QuickCreateKind | null>(null);
   const { t } = useI18n();
-  const [tab, setTab] = useState<
-    "overview" | "board" | "list" | "timeline" | "calendar" | "reports" | "files"
-  >("board");
+  const [tab, setTab] = useState<TaskTab>("board");
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const workspaces = useQuery({
@@ -194,6 +203,12 @@ function TasksPage() {
     () => Array.from(new Set(allTasks.flatMap((tk) => tk.tags ?? []))).sort(),
     [allTasks],
   );
+  const activeFilterCount =
+    tagFilter.length +
+    (priorityFilter ? 1 : 0) +
+    (sortBy !== "default" ? 1 : 0) +
+    (overdueOnly ? 1 : 0) +
+    (rangeDays ? 1 : 0);
   const tasks = useMemo(() => {
     const filtered = allTasks.filter(
       (tk) =>
@@ -441,10 +456,31 @@ function TasksPage() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <nav className="order-3 col-span-2 flex min-w-0 items-center gap-5 overflow-x-auto text-sm sm:order-none sm:col-auto">
-                {(
-                  ["overview", "board", "list", "timeline", "calendar", "reports", "files"] as const
-                ).map((id) => (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="order-3 col-span-2 min-h-11 w-full justify-between sm:hidden"
+                  >
+                    <span className="min-w-0 truncate">{t(`tasks.tab.${tab}` as Key)}</span>
+                    <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-[calc(100vw-1.5rem)]">
+                  {taskTabs.map((id) => (
+                    <DropdownMenuItem key={id} onSelect={() => setTab(id)} className="min-h-11">
+                      <span className={tab === id ? "font-semibold text-primary" : undefined}>
+                        {t(`tasks.tab.${id}` as Key)}
+                      </span>
+                      {tab === id && <CheckCircle2 className="ml-auto h-4 w-4 text-primary" />}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <nav className="hidden min-w-0 items-center gap-5 text-sm sm:flex">
+                {taskTabs.map((id) => (
                   <button
                     key={id}
                     onClick={() => setTab(id)}
@@ -668,7 +704,7 @@ function TasksPage() {
             </div>
 
             {/* Board */}
-            <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-surface p-3">
+            <div className="hidden flex-wrap items-center gap-2 rounded-xl border border-border bg-surface p-3 sm:flex">
               <span className="text-xs font-medium text-muted-foreground">Bộ lọc đã lưu:</span>
               {savedViews.length === 0 ? (
                 <span className="text-xs text-muted-foreground">Chưa có view nào</span>
@@ -721,7 +757,23 @@ function TasksPage() {
               </button>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-surface p-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setMobileFiltersOpen(true)}
+              className="mb-3 min-h-11 w-full justify-between sm:hidden"
+            >
+              <span className="inline-flex items-center gap-2">
+                <Filter className="h-4 w-4" /> {t("tasks.filters")}
+              </span>
+              {activeFilterCount > 0 && (
+                <span className="grid h-6 min-w-6 place-items-center rounded-full bg-primary px-1.5 text-xs text-primary-foreground">
+                  {activeFilterCount}
+                </span>
+              )}
+            </Button>
+
+            <div className="hidden flex-wrap items-center gap-2 rounded-xl border border-border bg-surface p-3 sm:flex">
               <span className="text-xs font-medium text-muted-foreground">Lọc:</span>
               <select
                 aria-label="Lọc theo mức ưu tiên"
@@ -817,6 +869,106 @@ function TasksPage() {
                 </button>
               )}
             </div>
+
+            <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
+              <SheetContent
+                side="bottom"
+                className="max-h-[85dvh] overflow-y-auto rounded-t-xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-5 sm:hidden"
+              >
+                <SheetHeader className="pr-8 text-left">
+                  <SheetTitle>{t("tasks.filters")}</SheetTitle>
+                  <SheetDescription>{t("tasks.filter.apply")}</SheetDescription>
+                </SheetHeader>
+
+                <div className="mt-5 space-y-5">
+                  <label className="block space-y-2">
+                    <span className="text-sm font-medium">{t("tasks.filter.priority")}</span>
+                    <select
+                      aria-label={t("tasks.filter.priority")}
+                      value={priorityFilter}
+                      onChange={(e) => {
+                        setActiveViewId("");
+                        setPriorityFilter(e.target.value as Priority | "");
+                      }}
+                      className="min-h-11 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                    >
+                      <option value="">Mọi mức ưu tiên</option>
+                      <option value="low">Thấp</option>
+                      <option value="normal">Bình thường</option>
+                      <option value="high">Cao</option>
+                      <option value="urgent">Khẩn cấp</option>
+                    </select>
+                  </label>
+
+                  <label className="block space-y-2">
+                    <span className="text-sm font-medium">{t("tasks.filter.sort")}</span>
+                    <select
+                      aria-label={t("tasks.filter.sort")}
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                      className="min-h-11 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                    >
+                      <option value="default">Mặc định</option>
+                      <option value="priority-desc">Ưu tiên: cao → thấp</option>
+                      <option value="priority-asc">Ưu tiên: thấp → cao</option>
+                      <option value="tag-asc">Nhãn: A → Z</option>
+                      <option value="tag-desc">Nhãn: Z → A</option>
+                    </select>
+                  </label>
+
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium">{t("tasks.filter.tags")}</div>
+                    {allTags.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">{t("tasks.filter.noTags")}</p>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {allTags.map((tg) => {
+                          const selected = tagFilter.includes(tg);
+                          return (
+                            <Button
+                              key={tg}
+                              type="button"
+                              variant={selected ? "default" : "outline"}
+                              onClick={() => {
+                                setActiveViewId("");
+                                setTagFilter(selected ? tagFilter.filter((x) => x !== tg) : [...tagFilter, tg]);
+                              }}
+                              className="min-h-11 rounded-full"
+                            >
+                              {tg}
+                            </Button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 pt-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="min-h-11"
+                      onClick={() => {
+                        setTagFilter([]);
+                        setPriorityFilter("");
+                        setSortBy("default");
+                        setActiveViewId("");
+                        navigateTasks({ to: "/tasks", search: { ws: activeWs } });
+                      }}
+                    >
+                      {t("tasks.filter.clear")}
+                    </Button>
+                    <Button
+                      type="button"
+                      className="min-h-11"
+                      onClick={() => setMobileFiltersOpen(false)}
+                    >
+                      {t("tasks.filter.apply")}
+                    </Button>
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
 
             {tasksQuery.isLoading && !tasksQuery.data ? (
               <BoardSkeleton />
