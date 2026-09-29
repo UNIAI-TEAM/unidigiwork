@@ -702,7 +702,6 @@ function TasksPage() {
                 aria-label="Lọc theo mức ưu tiên"
                 value={priorityFilter}
                 onChange={(e) => {
-                  setActiveViewId("");
                   setPriorityFilter(e.target.value as Priority | "");
                 }}
                 className="min-h-11 min-w-0 flex-1 rounded-lg border border-border bg-background px-2 py-1 text-xs outline-none focus:ring-2 focus:ring-ring sm:flex-none"
@@ -735,7 +734,6 @@ function TasksPage() {
                     <button
                       key={tg}
                       onClick={() => {
-                        setActiveViewId("");
                         setTagFilter(on ? tagFilter.filter((x) => x !== tg) : [...tagFilter, tg]);
                       }}
                       className={`rounded-full px-2 py-0.5 text-xs font-medium transition-colors ${
@@ -784,7 +782,6 @@ function TasksPage() {
                   onClick={() => {
                     setTagFilter([]);
                     setPriorityFilter("");
-                    setActiveViewId("");
                   }}
                   className="ml-auto text-xs text-primary hover:underline"
                 >
@@ -810,7 +807,6 @@ function TasksPage() {
                       aria-label={t("tasks.filter.priority")}
                       value={priorityFilter}
                       onChange={(e) => {
-                        setActiveViewId("");
                         setPriorityFilter(e.target.value as Priority | "");
                       }}
                       className="min-h-11 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
@@ -853,7 +849,6 @@ function TasksPage() {
                               type="button"
                               variant={selected ? "default" : "outline"}
                               onClick={() => {
-                                setActiveViewId("");
                                 setTagFilter(selected ? tagFilter.filter((x) => x !== tg) : [...tagFilter, tg]);
                               }}
                               className="min-h-11 rounded-full"
@@ -875,7 +870,6 @@ function TasksPage() {
                         setTagFilter([]);
                         setPriorityFilter("");
                         setSortBy("default");
-                        setActiveViewId("");
                         navigateTasks({ to: "/tasks", search: { ws: activeWs } });
                       }}
                     >
