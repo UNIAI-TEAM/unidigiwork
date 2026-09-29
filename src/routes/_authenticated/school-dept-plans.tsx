@@ -61,7 +61,7 @@ function DeptPlansPage() {
   const del = useMutation({
     mutationFn: (id: string) => delFn({ data: { id } }),
     onSuccess: () => { toast.success(t("sdp.deleted")); qc.invalidateQueries({ queryKey: ["school-dept-plans"] }); },
-    onError: (e: Error) => toast.error(t(`sdp.err.${e.message}`)),
+    onError: (e: Error) => toast.error(t(`sdp.err.${e.message}` as "sdp.err.SAVE_FAILED")),
   });
 
   const d = q.data;
@@ -145,7 +145,7 @@ function PlanRow({ p, onDelete }: { p: DeptPlan; onDelete: () => void }) {
           {p.body && <p className="whitespace-pre-wrap break-words text-sm text-muted-foreground">{p.body}</p>}
           {p.task_id && (
             <Link to="/tasks/$id" params={{ id: p.task_id }} className="inline-flex min-h-11 items-center text-sm text-primary hover:underline">
-              {t("sdp.openTask")}{p.task_status ? ` · ${t(`sdp.ts.${p.task_status}`)}` : ""}
+              {t("sdp.openTask")}{p.task_status ? ` · ${t(`sdp.ts.${p.task_status}` as "sdp.ts.todo")}` : ""}
             </Link>
           )}
         </div>
@@ -186,7 +186,7 @@ function PlanDialog({ open, onClose, kind, dept, monday }: { open: boolean; onCl
       setTitle(""); setCls(""); setBody(""); setKey(crypto.randomUUID());
       onClose();
     },
-    onError: (e: Error) => toast.error(t(`sdp.err.${e.message}`)),
+    onError: (e: Error) => toast.error(t(`sdp.err.${e.message}` as "sdp.err.SAVE_FAILED")),
   });
   const invalid = !title.trim() || (kind === "lesson" && new Date(end) <= new Date(start));
   return (
