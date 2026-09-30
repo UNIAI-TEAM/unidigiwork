@@ -76,9 +76,9 @@ export function TeacherMySpace() {
   const taught = lessons.filter((x) => x.task_status === "done" || (x.ends_at ?? x.starts_at ? new Date((x.ends_at ?? x.starts_at) as string).getTime() < now : false)).length;
   const doneAsg = assignments.filter((x) => x.task_status === "done").length;
   const stats = [
-    { k: "mys.stat.taught", v: `${taught}/${lessons.length}`, bad: false },
-    { k: "mys.stat.assignDone", v: `${doneAsg}/${assignments.length}`, bad: false },
-    { k: "mys.stat.overdue", v: String(q.data.overdue), bad: q.data.overdue > 0 },
+    { k: "mys.stat.taught" as const, v: `${taught}/${lessons.length}`, bad: false },
+    { k: "mys.stat.assignDone" as const, v: `${doneAsg}/${assignments.length}`, bad: false },
+    { k: "mys.stat.overdue" as const, v: String(q.data.overdue), bad: q.data.overdue > 0 },
   ];
   const img = preview ?? p.avatar_url;
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => setForm((s) => ({ ...s, [k]: e.target.value }));
