@@ -72,10 +72,31 @@ export function TeacherMySpace() {
   const assignments = q.data.plans.filter((x) => x.kind === "assignment");
   const fmt = (s: string | null) =>
     s ? new Date(s).toLocaleString(lang === "vi" ? "vi-VN" : "en-US", { weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "—";
+  const now = Date.now();
+  const taught = lessons.filter((x) => x.task_status === "done" || (x.ends_at ?? x.starts_at ? new Date((x.ends_at ?? x.starts_at) as string).getTime() < now : false)).length;
+  const doneAsg = assignments.filter((x) => x.task_status === "done").length;
+  const stats = [
+    { k: "mys.stat.taught" as const, v: `${taught}/${lessons.length}`, bad: false },
+    { k: "mys.stat.assignDone" as const, v: `${doneAsg}/${assignments.length}`, bad: false },
+    { k: "mys.stat.overdue" as const, v: String(q.data.overdue), bad: q.data.overdue > 0 },
+  ];
   const img = preview ?? p.avatar_url;
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => setForm((s) => ({ ...s, [k]: e.target.value }));
 
   return (
+    <div className="min-w-0 space-y-4">
+    <section aria-label={t("mys.stat.title")} className="rounded-xl border bg-card p-4">
+      <h2 className="font-heading text-base font-semibold">{t("mys.stat.title")}</h2>
+      <p className="text-xs text-muted-foreground">{t("mys.stat.hint")}</p>
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        {stats.map((x) => (
+          <div key={x.k} className="rounded-lg bg-muted/50 p-3">
+            <div className={`font-heading text-xl font-semibold tabular-nums ${x.bad ? "text-destructive" : ""}`}>{x.v}</div>
+            <div className="text-xs text-muted-foreground">{t(x.k)}</div>
+          </div>
+        ))}
+      </div>
+    </section>
     <section className="grid min-w-0 gap-4 lg:grid-cols-[360px_minmax(0,1fr)]" aria-label={t("mys.title")}>
       <form
         className="rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5"
@@ -126,6 +147,7 @@ export function TeacherMySpace() {
         </Link>
       </div>
     </section>
+    </div>
   );
 }
 

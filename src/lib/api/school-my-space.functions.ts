@@ -28,11 +28,12 @@ export const getMyTeacherSpace = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ from: z.string(), to: z.string() }).parse(d))
   .handler(async ({ context, data }) => {
     const ctx = await schoolContext(context.supabase as never, context.userId);
-    if (!ctx) return { enabled: false as const, tenantId: null, profile: null, plans: [] as MyPlan[] };
+    if (!ctx) return { enabled: false as const, tenantId: null, profile: null, plans: [] as MyPlan[], overdue: 0 };
     const sb = context.supabase as any;
-    const [{ data: p, error: pe }, { data: rows, error: re }] = await Promise.all([
+    const [{ data: p, error: pe }, { data: rows, error: re }, { data: od }] = await Promise.all([
       sb.rpc("school_get_my_profile", { _tenant_id: ctx.tenantId }),
       sb.rpc("school_list_my_plans", { _tenant_id: ctx.tenantId, _from: data.from, _to: data.to }),
+      sb.rpc("school_my_overdue_count", { _tenant_id: ctx.tenantId }),
     ]);
     if (pe || re) throw new Error("LOAD_FAILED");
     let avatar_url: string | null = null;
@@ -49,7 +50,7 @@ export const getMyTeacherSpace = createServerFn({ method: "POST" })
       department: p?.department ?? null,
       avatar_url,
     };
-    return { enabled: true as const, tenantId: ctx.tenantId as string, profile, plans: (rows ?? []) as MyPlan[] };
+    return { enabled: true as const, tenantId: ctx.tenantId as string, profile, plans: (rows ?? []) as MyPlan[], overdue: Number(od ?? 0) };
   });
 
 export const updateMyTeacherProfile = createServerFn({ method: "POST" })

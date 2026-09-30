@@ -13985,6 +13985,7 @@ export type Database = {
           title: string
         }[]
       }
+      school_my_overdue_count: { Args: { _tenant_id: string }; Returns: number }
       school_overview: {
         Args: { _tenant_id: string }
         Returns: {
